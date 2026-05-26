@@ -1,0 +1,1200 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Getalbegrip tot 1 Miljoen</title>
+    <!-- Tailwind CSS, Confetti, SortableJS & FontAwesome -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap');
+        body { font-family: 'Plus Jakarta Sans', sans-serif; }
+        .hidden { display: none; }
+        .card-anim { transition: transform 0.2s, box-shadow 0.2s; }
+        .card-anim:hover { transform: translateY(-2px); box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); }
+        .sortable-ghost { opacity: 0.4; background-color: #3b82f6 !important; }
+        .order-item { cursor: grab; user-select: none; touch-action: none; }
+        .order-item:active { cursor: grabbing; }
+
+        /* ── LOGIN ── */
+        #login-screen {
+            position: fixed; inset: 0; z-index: 9999;
+            background: linear-gradient(135deg, #4338ca 0%, #6d28d9 60%, #7c3aed 100%);
+            display: flex; align-items: center; justify-content: center; padding: 20px;
+        }
+        #login-screen.hidden { display: none !important; }
+        .login-card {
+            background: white; border-radius: 2rem; padding: 2.5rem 2rem;
+            width: 100%; max-width: 380px;
+            box-shadow: 0 25px 50px rgba(0,0,0,0.25); text-align: center;
+        }
+        .login-logo {
+            width: 80px; height: 80px; background: #ede9fe; border-radius: 1.5rem;
+            display: flex; align-items: center; justify-content: center;
+            margin: 0 auto 1.25rem; font-size: 2.5rem;
+            box-shadow: 0 4px 16px rgba(99,102,241,0.2);
+        }
+        .login-input {
+            width: 100%; padding: 14px 16px; border: 2px solid #e5e7eb; border-radius: 1rem;
+            font-family: 'Plus Jakarta Sans', sans-serif; font-size: 1rem; font-weight: 600;
+            color: #374151; margin-bottom: 12px; outline: none; transition: border-color 0.2s;
+            text-align: center;
+        }
+        .login-input:focus { border-color: #6d28d9; }
+        .login-input.err { border-color: #dc2626; background: #fef2f2; animation: shake 0.4s; }
+        @keyframes shake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-5px)} 75%{transform:translateX(5px)} }
+        .btn-login {
+            width: 100%; background: #6d28d9; color: white; border: none; border-radius: 1rem;
+            padding: 14px; font-family: 'Plus Jakarta Sans', sans-serif;
+            font-size: 1rem; font-weight: 700; cursor: pointer; transition: all 0.2s; margin-bottom: 12px;
+        }
+        .btn-login:hover { background: #5b21b6; transform: translateY(-1px); }
+        .btn-login:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+        .login-error { color: #dc2626; font-size: 0.85rem; font-weight: 700; min-height: 20px; margin-bottom: 8px; }
+        .btn-guest {
+            width: 100%; background: transparent; border: 2px solid #d1d5db;
+            border-radius: 1rem; padding: 12px; font-family: 'Plus Jakarta Sans', sans-serif;
+            font-size: 0.9rem; font-weight: 700; color: #6b7280; cursor: pointer; transition: all 0.2s;
+        }
+        .btn-guest:hover { border-color: #9ca3af; color: #374151; }
+        .teacher-link { margin-top: 16px; font-size: 0.75rem; color: #9ca3af; }
+        .teacher-link a { color: #6d28d9; text-decoration: none; font-weight: 700; }
+
+        /* ── USER BADGE in nav ── */
+        #user-badge {
+            display: none; align-items: center; gap: 10px;
+        }
+        #user-badge.show { display: flex; }
+        .user-avatar-nav {
+            width: 32px; height: 32px; border-radius: 50%;
+            background: #e0e7ff; display: flex; align-items: center; justify-content: center;
+            font-weight: 800; font-size: 0.85rem; color: #4338ca;
+        }
+        .user-name-nav { font-weight: 700; color: #1f2937; font-size: 0.85rem; }
+        .btn-logout-nav {
+            background: none; border: 1.5px solid #e5e7eb; border-radius: 0.65rem;
+            padding: 5px 12px; font-family: 'Plus Jakarta Sans', sans-serif;
+            font-size: 0.78rem; font-weight: 700; color: #9ca3af; cursor: pointer; transition: all 0.2s;
+        }
+        .btn-logout-nav:hover { border-color: #dc2626; color: #dc2626; }
+
+        /* ── SAVED BADGE ── */
+        #saved-badge {
+            display: none; align-items: center; justify-content: center; gap: 8px;
+            background: #e0e7ff; border: 1.5px solid #a5b4fc; border-radius: 1rem;
+            padding: 10px 16px; margin-top: 12px;
+            font-size: 0.85rem; font-weight: 700; color: #3730a3;
+        }
+        #saved-badge.show { display: flex; }
+    </style>
+</head>
+<body class="bg-slate-50 min-h-screen pb-20">
+
+    <!-- LOGIN SCREEN -->
+    <div id="login-screen">
+        <div class="login-card">
+            <div class="login-logo">🔢</div>
+            <h1 style="font-size:1.6rem;font-weight:800;color:#1f2937;margin-bottom:6px;">Getalbegrip</h1>
+            <p style="font-size:0.85rem;color:#6b7280;margin-bottom:1.5rem;">Voer je naam en code in</p>
+            <input class="login-input" id="login-naam" type="text" placeholder="Jouw voornaam" autocomplete="off" autocapitalize="words">
+            <input class="login-input" id="login-code" type="password" placeholder="Jouw code" autocomplete="off">
+            <div class="login-error" id="login-error"></div>
+            <button class="btn-login" id="btn-login" onclick="loginMetCode()">Inloggen</button>
+            <button class="btn-guest" onclick="loginGuest()">Doorgaan als gast (geen opslag)</button>
+            <div class="teacher-link"><a href="dashboard.html">Leerkracht? Klik hier</a></div>
+        </div>
+    </div>
+
+    <!-- NAVIGATIEBALK -->
+    <nav class="bg-white border-b border-slate-100 shadow-sm sticky top-0 z-40 px-6 py-4">
+        <div class="max-w-5xl mx-auto flex justify-between items-center">
+            <div class="flex items-center gap-3">
+                <div class="bg-indigo-600 text-white p-2.5 rounded-xl shadow-md shadow-indigo-600/20">
+                    <i class="fa-solid fa-arrow-up-9-1 text-lg"></i>
+                </div>
+                <div>
+                    <span class="text-xs font-bold text-indigo-600 uppercase tracking-wider block">Oefening</span>
+                    <h1 class="text-lg font-bold text-slate-800 leading-tight">Getalbegrip tot 1 Miljoen</h1>
+                </div>
+            </div>
+            <!-- USER BADGE -->
+            <div id="user-badge">
+                <div class="user-avatar-nav" id="user-avatar-nav">👤</div>
+                <div>
+                    <div class="user-name-nav" id="user-name-nav">Gast</div>
+                </div>
+                <button class="btn-logout-nav" onclick="doLogout()">Uitloggen</button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- HOOFDCONTAINER -->
+    <main class="max-w-4xl mx-auto px-4 mt-8">
+
+        <!-- PROGRESS BAR -->
+        <div id="progressContainer" class="hidden flex flex-col items-center mb-6 gap-2">
+            <div id="niveauLabel" class="text-xs font-bold text-slate-500 bg-slate-200/60 border border-slate-200 px-4 py-1.5 rounded-full uppercase tracking-wider">Onderdeel</div>
+            <div id="progressSectie" class="flex justify-center gap-2 text-3xl">
+                <div id="bullets-container" class="flex gap-1.5 flex-wrap justify-center"></div>
+            </div>
+        </div>
+
+        <!-- HOOFDMENU -->
+        <section id="menuSectie" class="space-y-6 animate-in fade-in duration-300">
+            <div class="text-center max-w-xl mx-auto mb-8">
+                <h2 class="text-3xl font-extrabold text-slate-800 tracking-tight">Oefen je Getalbegrip</h2>
+                <p class="text-slate-500 mt-2 text-sm">Word een kei in grote getallen tot 1 miljoen! Geen kommagetallen, puur inzicht.</p>
+            </div>
+
+            <div class="bg-amber-50 border border-amber-200 p-4 rounded-2xl max-w-xl mx-auto text-sm text-amber-900 font-medium text-left space-y-1">
+                <p>⚠️ <strong>Puntensysteem:</strong> Elk juist antwoord is <strong>1 punt</strong> waard.</p>
+                <p>💡 Gebruik je de <strong>Hint-knop</strong>? Dan verdien je nog maximaal <strong>0,5 punt</strong> voor die vraag!</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <!-- NIEUWE MODULE: Punten plaatsen voor leesbaarheid (EERSTE IN DE LIJST) -->
+                <button class="menu-btn card-anim bg-white p-5 border border-slate-200/60 rounded-2xl text-left flex items-center gap-4 hover:border-indigo-300 group transition-all md:col-span-2" onclick="startOnderdeel('leesbaar', 'Punten plaatsen voor leesbaarheid')">
+                    <div class="w-12 h-12 bg-indigo-50 text-indigo-500 rounded-xl flex items-center justify-center text-xl group-hover:bg-indigo-500 group-hover:text-white transition-colors"><i class="fa-solid fa-calculator"></i></div>
+                    <div><h3 class="font-bold text-slate-800">Punten plaatsen voor leesbaarheid</h3><p class="text-xs text-slate-400">Plaats de scheidingspunten correct (bijv. 7 543 233 of 7.543.233)</p></div>
+                </button>
+
+                <button class="menu-btn card-anim bg-white p-5 border border-slate-200/60 rounded-2xl text-left flex items-center gap-4 hover:border-indigo-300 group transition-all" onclick="startOnderdeel('waarde', 'Getalwaarde Aangeven')">
+                    <div class="w-12 h-12 bg-blue-50 text-blue-500 rounded-xl flex items-center justify-center text-xl group-hover:bg-blue-500 group-hover:text-white transition-colors"><i class="fa-solid fa-magnifying-glass"></i></div>
+                    <div><h3 class="font-bold text-slate-800">Getalwaarde Aangeven</h3><p class="text-xs text-slate-400">Welke waarde heeft het aangeduide cijfer?</p></div>
+                </button>
+
+                <button class="menu-btn card-anim bg-white p-5 border border-slate-200/60 rounded-2xl text-left flex items-center gap-4 hover:border-indigo-300 group transition-all" onclick="startOnderdeel('getalbeeld', 'Getalbeeld Benoemen')">
+                    <div class="w-12 h-12 bg-emerald-50 text-emerald-500 rounded-xl flex items-center justify-center text-xl group-hover:bg-emerald-500 group-hover:text-white transition-colors"><i class="fa-solid fa-cubes"></i></div>
+                    <div><h3 class="font-bold text-slate-800">Getalbeeld Benoemen</h3><p class="text-xs text-slate-400">Schrijf het getal op basis van de splitsing</p></div>
+                </button>
+
+                <button class="menu-btn card-anim bg-white p-5 border border-slate-200/60 rounded-2xl text-left flex items-center gap-4 hover:border-indigo-300 group transition-all" onclick="startOnderdeel('interpreteren', 'Getallen Interpreteren')">
+                    <div class="w-12 h-12 bg-amber-50 text-amber-500 rounded-xl flex items-center justify-center text-xl group-hover:bg-amber-500 group-hover:text-white transition-colors"><i class="fa-solid fa-brain"></i></div>
+                    <div><h3 class="font-bold text-slate-800">Interpreteren</h3><p class="text-xs text-slate-400">Posities van cijfers in grote getallen bepalen</p></div>
+                </button>
+
+                <button class="menu-btn card-anim bg-white p-5 border border-slate-200/60 rounded-2xl text-left flex items-center gap-4 hover:border-indigo-300 group transition-all" onclick="startOnderdeel('ordenen', 'Getallen Ordenen')">
+                    <div class="w-12 h-12 bg-purple-50 text-purple-600 rounded-xl flex items-center justify-center text-xl group-hover:bg-purple-500 group-hover:text-white transition-colors"><i class="fa-solid fa-sort-amount-up"></i></div>
+                    <div><h3 class="font-bold text-slate-800">Getallen Ordenen</h3><p class="text-xs text-slate-400">Zet grote getallen van klein naar groot</p></div>
+                </button>
+
+                <button class="menu-btn card-anim bg-white p-5 border border-slate-200/60 rounded-2xl text-left flex items-center gap-4 hover:border-indigo-300 group transition-all" onclick="startOnderdeel('getallenas', 'Getallenas Aanvullen')">
+                    <div class="w-12 h-12 bg-rose-50 text-rose-500 rounded-xl flex items-center justify-center text-xl group-hover:bg-rose-500 group-hover:text-white transition-colors"><i class="fa-solid fa-ruler-horizontal"></i></div>
+                    <div><h3 class="font-bold text-slate-800">Getallenas Aanvullen</h3><p class="text-xs text-slate-400">Bepaal de waarde op de lege plek</p></div>
+                </button>
+
+                <button class="menu-btn card-anim bg-white p-5 border border-slate-200/60 rounded-2xl text-left flex items-center gap-4 hover:border-indigo-300 group transition-all md:col-span-2" onclick="startOnderdeel('getallenrij', 'Getallenrij Aanvullen')">
+                    <div class="w-12 h-12 bg-teal-50 text-teal-500 rounded-xl flex items-center justify-center text-xl group-hover:bg-teal-500 group-hover:text-white transition-colors"><i class="fa-solid fa-list-ol"></i></div>
+                    <div><h3 class="font-bold text-slate-800">Getallenrij Aanvullen</h3><p class="text-xs text-slate-400">Ontdek de sprong en vul de rij aan (zonder kommagetallen)</p></div>
+                </button>
+            </div>
+            
+            <div class="pt-4 border-t border-slate-200">
+                <button class="w-full bg-indigo-50 text-indigo-600 border border-indigo-100 font-extrabold p-5 rounded-2xl hover:bg-indigo-600 hover:text-white transition-all flex items-center justify-center gap-3 text-lg cursor-pointer shadow-md" onclick="startOnderdeel('toets', 'Toets: Alles door elkaar')">
+                    <i class="fa-solid fa-graduation-cap"></i> Toets: alles door elkaar (20 vragen)
+                </button>
+            </div>
+        </section>
+
+        <!-- QUIZ/SPEL SCHERM -->
+        <section id="oefeningSectie" class="hidden">
+            <div class="bg-white p-6 md:p-8 rounded-[2rem] shadow-xl border border-slate-100 relative">
+                <!-- Sluitknop -->
+                <button class="absolute top-4 right-4 text-slate-300 hover:text-rose-500 transition-colors cursor-pointer" onclick="openExitModal()">
+                    <i class="fa-solid fa-circle-xmark text-xl"></i>
+                </button>
+
+                <!-- Vraagstelling en instructie -->
+                <div class="bg-indigo-50 border border-indigo-100 p-6 rounded-2xl text-center mb-4">
+                    <p class="text-xs font-bold text-indigo-400 uppercase tracking-widest mb-2" id="vraagTypeLabel">OPDRACHT</p>
+                    <h2 class="text-xl md:text-2xl font-extrabold text-slate-800 leading-relaxed" id="vraagZin">
+                        Laden...
+                    </h2>
+                </div>
+
+                <!-- EXTRA VISUEEL DISPLAY GEBIED (VOOR ONDERSTREEPTE CIJFERS) -->
+                <div id="extra-display" class="hidden text-center text-4xl tracking-widest font-extrabold text-slate-800 bg-slate-50 border border-slate-150 p-6 rounded-2xl mb-6"></div>
+
+                <!-- DYNAMISCH INPUT GEBIED -->
+                <div class="space-y-6 max-w-xl mx-auto flex flex-col items-center">
+                    
+                    <!-- TYP INVOERVELD -->
+                    <div id="text-input-container" class="w-full hidden">
+                        <input type="text" id="antwoordInput" autocomplete="off" spellcheck="false" placeholder="Typ je antwoord..." class="w-full p-5 text-center text-2xl font-bold rounded-2xl border-4 border-slate-200 focus:outline-none focus:border-indigo-500 bg-white text-slate-800">
+                    </div>
+
+                    <!-- SLEEP/SORTEER ELEMENT (Ordenen) -->
+                    <div id="sortable-container" class="w-full hidden flex flex-col items-center">
+                        <div id="sortable-list" class="flex flex-col gap-3 w-full max-w-md py-2">
+                            <!-- Items komen hier -->
+                        </div>
+                    </div>
+
+                    <!-- GETALLENAS VISUEEL ELEMENT -->
+                    <div id="numberline-container" class="w-full hidden bg-slate-50 p-6 rounded-2xl border border-slate-200/50 mb-4">
+                        <div class="w-full h-1 bg-slate-400 my-10 relative" id="numberline-axis">
+                            <!-- Streepjes en labels komen hier -->
+                        </div>
+                    </div>
+
+                    <!-- MULTIPLE CHOICE OPTIES -->
+                    <div id="options-container" class="w-full hidden grid grid-cols-1 sm:grid-cols-2 gap-3"></div>
+
+                    <!-- Feedback melding -->
+                    <div id="feedback" class="text-center font-bold text-sm md:text-base min-h-[28px] py-2 w-full"></div>
+
+                    <!-- Actieknoppen -->
+                    <div class="flex gap-3 w-full justify-center">
+                        <button id="hint-btn" onclick="showHint()" class="flex-1 py-4 bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 font-bold rounded-xl transition-all flex items-center justify-center gap-2 cursor-pointer shadow-sm">
+                            💡 Hint nodig?
+                        </button>
+                        <button id="check-btn" onclick="controleerAntwoord()" class="flex-1 py-4 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl transition-all flex items-center justify-center gap-2 cursor-pointer shadow-md">
+                            Controleer
+                        </button>
+                        <button id="next-btn" onclick="volgendeOefening()" class="hidden w-full bg-slate-900 hover:bg-black text-white font-bold py-4 rounded-xl transition-all flex items-center justify-center gap-2 cursor-pointer shadow-lg">
+                            Volgende vraag <i class="fa-solid fa-arrow-right ml-1"></i>
+                        </button>
+                    </div>
+
+                    <!-- Hint Box -->
+                    <div id="hint-box" class="hidden w-full p-5 bg-amber-50 border border-amber-200 text-amber-800 rounded-2xl text-sm leading-relaxed relative animate-in fade-in duration-200">
+                        <strong>💡 Tip:</strong> <span id="hint-text">...</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- EXIT MODAL -->
+        <div id="exit-modal" class="hidden fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+            <div class="bg-white rounded-3xl p-8 max-w-sm w-full text-center shadow-2xl border border-slate-100 space-y-6">
+                <div class="text-4xl">⚠️</div>
+                <div class="space-y-2">
+                    <h3 class="text-xl font-extrabold text-slate-800">Stoppen met oefenen?</h3>
+                    <p class="text-slate-500 text-sm">Je voortgang van deze ronde gaat verloren.</p>
+                </div>
+                <div class="flex gap-3">
+                    <button onclick="closeExitModal()" class="flex-1 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl transition-all cursor-pointer">
+                        Blijf oefenen
+                    </button>
+                    <button onclick="confirmExit()" class="flex-1 py-3 bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl transition-all cursor-pointer">
+                        Stoppen
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- EIND SCHERM -->
+        <section id="eindSectie" class="hidden text-center max-w-2xl mx-auto bg-white p-8 rounded-[2.5rem] shadow-xl border border-slate-100">
+            <div class="w-20 h-20 bg-amber-50 text-amber-500 text-4xl flex items-center justify-center rounded-2xl mx-auto mb-4">
+                <i class="fa-solid fa-crown animate-bounce"></i>
+            </div>
+            <h2 class="text-3xl font-extrabold text-slate-800">Sessie voltooid!</h2>
+            <p class="text-slate-400 text-xs mt-1">Bekijk hieronder je resultaten en foutenanalyse.</p>
+            
+            <div class="grid grid-cols-3 gap-4 my-6">
+                <div class="bg-indigo-50 p-4 rounded-2xl border border-indigo-100/60">
+                    <span class="block text-[10px] text-indigo-400 font-black uppercase mb-1">Score</span>
+                    <span id="score-val" class="text-2xl font-black text-indigo-600">0/10</span>
+                </div>
+                <div class="bg-emerald-50 p-4 rounded-2xl border border-emerald-100/60">
+                    <span class="block text-[10px] text-emerald-400 font-black uppercase mb-1">Percentage</span>
+                    <span id="percent-val" class="text-2xl font-black text-emerald-600">0%</span>
+                </div>
+                <div class="bg-amber-50 p-4 rounded-2xl border border-amber-100/60">
+                    <span class="block text-[10px] text-amber-400 font-black uppercase mb-1">Hints gebruikt</span>
+                    <span id="hints-val" class="text-2xl font-black text-amber-600">0</span>
+                </div>
+            </div>
+            <div id="saved-badge">
+                ✓ Score opgeslagen in de database
+            </div>
+
+            <!-- FOUTENANALYSIS -->
+            <div class="text-left space-y-4">
+                <h3 class="text-xl font-extrabold text-slate-800 flex items-center gap-2">
+                    <i class="fa-solid fa-clipboard-list text-indigo-500"></i> Foutenanalyse per vraag
+                </h3>
+                <div id="mistake-list" class="space-y-3 max-h-[350px] overflow-y-auto pr-2">
+                    <!-- Wordt gedetailleerd gevuld -->
+                </div>
+            </div>
+
+            <button class="w-full mt-8 bg-slate-950 text-white font-bold py-4 rounded-2xl hover:bg-black transition-all shadow-md cursor-pointer" onclick="stopOefening()">
+                <i class="fa-solid fa-house mr-2"></i> Terug naar hoofdmenu
+            </button>
+        </section>
+
+    </main>
+
+    <script>
+        // --- 1. GLOBALE HELPER FUNCTIES EN UTILITIES ---
+        function shuffle(array) {
+            let arr = [...array];
+            for (let i = arr.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [arr[i], arr[j]] = [arr[j], arr[i]];
+            }
+            return arr;
+        }
+
+        function generateUniqueNumbers(count, min, max) {
+            let nums = new Set();
+            while (nums.size < count) {
+                let n = Math.floor(Math.random() * (max - min)) + min;
+                nums.add(n);
+            }
+            return Array.from(nums);
+        }
+
+        // Formatteert getallen netjes met spaties tussen duizendtallen
+        function formatN(num) {
+            return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ");
+        }
+
+        // Formatteert getallen met punten als scheidingsteken (voor de nieuwe module)
+        function formatWithDots(num) {
+            return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+        }
+
+        // Verwijdert alle spaties en punten om puur numeriek te vergelijken
+        function cleanNumberStr(str) {
+            return str.replace(/\s+/g, '').replace(/\./g, '');
+        }
+
+        // --- 2. APPLICATIE INTEGRATIE STATE ---
+        let state = {
+            currentMode: '', // 'leesbaar', 'waarde', 'getalbeeld', 'interpreteren', 'ordenen', 'getallenas', 'getallenrij', 'toets'
+            currentIndex: 0,
+            score: 0.0,
+            hintsUsed: 0,
+            history: [],
+            currentHintUsedForQ: false,
+            totalQ: 10,
+            questions: [],
+            sortableInstance: null,
+            startTime: null,
+            endTime: null
+        };
+
+        const POSITIE_MAPPING = [
+            { char: "M", label: "Miljoenen (M)", value: 1000000 },
+            { char: "HD", label: "Honderdduizendtallen (HD)", value: 100000 },
+            { char: "TD", label: "Tienduizendtallen (TD)", value: 10000 },
+            { char: "D", label: "Duizendtallen (D)", value: 1000 },
+            { char: "H", label: "Honderdtallen (H)", value: 100 },
+            { char: "T", label: "Tientallen (T)", value: 10 },
+            { char: "E", label: "Eenheden (E)", value: 1 }
+        ];
+
+        // --- 3. DYNAMISCHE GENERATIE ENGINE (30 unieke vragen per module) ---
+        function buildFullQuestionDatabase() {
+            let db = {
+                leesbaar: [],
+                waarde: [],
+                getalbeeld: [],
+                interpreteren: [],
+                ordenen: [],
+                getallenas: [],
+                getallenrij: []
+            };
+
+            // 0. Punten plaatsen voor de leesbaarheid (Nieuwe module - 30 unieke vragen)
+            for (let i = 0; i < 30; i++) {
+                // Mix van getallen tussen 10 000 en 9 999 999
+                let num = i < 15 
+                    ? Math.floor(Math.random() * 89900) + 10100 // Tienduizendtallen / Honderdduizendtallen
+                    : Math.floor(Math.random() * 8999000) + 100100; // Miljoenen
+                
+                let rawStr = num.toString();
+                let correctStr = formatWithDots(num);
+
+                db.leesbaar.push({
+                    type: "text",
+                    title: `Zet de punten voor de leesbaarheid op de juiste plaats in het getal: <br><span class="text-3xl font-extrabold text-slate-800">${rawStr}</span>`,
+                    answer: correctStr,
+                    hint: "Onthoud: we beginnen achteraan te tellen. Zet na elke drie cijfers een punt (bijv. 7543233 wordt 7.543.233).",
+                    placeholder: "Vul het getal in met punten..."
+                });
+            }
+
+            // 1. Getalwaarde aangeven (30 unieke vragen met herstelde onderstreping en unieke opties)
+            const allLabels = [
+                "Eenheden (E)", "Tientallen (T)", "Honderdtallen (H)", 
+                "Duizendtallen (D)", "Tienduizendtallen (TD)", "Honderdduizendtallen (HD)"
+            ];
+
+            for (let i = 0; i < 30; i++) {
+                let num = Math.floor(Math.random() * 899000) + 10100; // Minimaal 5 cijfers
+                let numStr = num.toString();
+                let chosenCharIdx = Math.floor(Math.random() * numStr.length);
+                
+                let exponent = numStr.length - 1 - chosenCharIdx;
+                let correctLabel = allLabels[exponent];
+
+                // Highlighted getalbeeld met zuivere onderstreepte weergave bouwen
+                let highlightedStr = "";
+                numStr.split("").forEach((char, idx) => {
+                    if (idx === chosenCharIdx) {
+                        highlightedStr += `<span class="text-indigo-600 underline font-black decoration-4 decoration-indigo-500">${char}</span>`;
+                    } else {
+                        highlightedStr += char;
+                    }
+                });
+
+                // Zorg ervoor dat afleiders (distractors) GEEN duplicaten van correctLabel bevatten
+                let filteredLabels = allLabels.filter(lbl => lbl !== correctLabel);
+                let selectedDistractors = shuffle(filteredLabels).slice(0, 3);
+                let options = shuffle([correctLabel, ...selectedDistractors]);
+
+                db.waarde.push({
+                    type: "options",
+                    title: `Welke getalwaarde heeft het onderstreepte cijfer?`,
+                    html: highlightedStr,
+                    options: options,
+                    answer: correctLabel,
+                    hint: "Kijk goed naar de positie van het getal. Van rechts naar links is de vaste volgorde: Eenheden (E), Tientallen (T), Honderdtallen (H), Duizendtallen (D)..."
+                });
+            }
+
+            // 2. Getalbeeld benoemen (30 unieke omgekeerde vragen: splitsing -> getal)
+            for (let i = 0; i < 30; i++) {
+                let hD = Math.floor(Math.random() * 9) + 1; // 1-9
+                let tD = Math.floor(Math.random() * 10); // 0-9
+                let d = Math.floor(Math.random() * 10);
+                let h = Math.floor(Math.random() * 10);
+                let t = Math.floor(Math.random() * 10);
+                let e = Math.floor(Math.random() * 10);
+                
+                let value = hD * 100000 + tD * 10000 + d * 1000 + h * 100 + t * 10 + e;
+                
+                let parts = [];
+                if (hD > 0) parts.push(`${hD}HD`);
+                if (tD > 0) parts.push(`${tD}TD`);
+                if (d > 0) parts.push(`${d}D`);
+                if (h > 0) parts.push(`${h}H`);
+                if (t > 0) parts.push(`${t}T`);
+                if (e > 0) parts.push(`${e}E`);
+                
+                let promptText = parts.join(" ");
+
+                db.getalbeeld.push({
+                    type: "text",
+                    title: `Welk getal hoort bij: <br><span class="text-3xl font-extrabold text-indigo-600">${promptText}</span>?`,
+                    answer: formatN(value),
+                    hint: "Denk aan de positietabel: HD - TD - D - H - T - E. Schrijf een 0 op de plaats van de maten die niet in de opgave staan!",
+                    placeholder: "Typ het getal..."
+                });
+            }
+
+            // 3. Getallen interpreteren (30 unieke vragen over de posities van cijfers)
+            const interpreterenTypes = [
+                { label: "tientallen (T)", getVal: (nStr) => nStr[nStr.length - 2] || "0", h: "Kijk naar de tweede positie van rechts in het getal: de Tientallen (T)." },
+                { label: "honderdtallen (H)", getVal: (nStr) => nStr[nStr.length - 3] || "0", h: "Kijk naar de derde positie van rechts in het getal: de Honderdtallen (H)." },
+                { label: "duizendtallen (D)", getVal: (nStr) => nStr[nStr.length - 4] || "0", h: "Kijk naar de vierde positie van rechts in het getal: de Duizendtallen (D)." },
+                { label: "tienduizendtallen (TD)", getVal: (nStr) => nStr[nStr.length - 5] || "0", h: "Kijk naar de vijfde positie van rechts in het getal: de Tienduizendtallen (TD)." }
+            ];
+
+            for (let i = 0; i < 30; i++) {
+                let num = Math.floor(Math.random() * 899000) + 10100; // Minimaal 5 cijfers
+                let numStr = num.toString();
+                let chosenType = interpreterenTypes[i % interpreterenTypes.length];
+                let correctDigit = chosenType.getVal(numStr);
+
+                db.interpreteren.push({
+                    type: "text",
+                    title: `Welk cijfer staat op de plaats van de <b>${chosenType.label}</b> in het getal <b>${formatN(num)}</b>?`,
+                    answer: correctDigit,
+                    hint: chosenType.h,
+                    placeholder: "Typ alleen het cijfer..."
+                });
+            }
+
+            // 4. Getallen ordenen (30 vragen)
+            for (let i = 0; i < 30; i++) {
+                let vals = generateUniqueNumbers(3, 1000, 999000);
+                let sortedVals = [...vals].sort((a, b) => a - b);
+                let correctOrderIds = sortedVals.map(val => vals.indexOf(val)).join(',');
+
+                let items = vals.map((v, idx) => ({
+                    id: idx,
+                    val: v,
+                    text: formatN(v)
+                }));
+
+                db.ordenen.push({
+                    type: "ordenen",
+                    title: "Zet de volgende grote getallen in de juiste volgorde van klein naar groot (sleep de vakjes):",
+                    answer: correctOrderIds,
+                    items: items,
+                    hint: "Kijk eerst naar het aantal cijfers. Heeft het een gelijk aantal cijfers? Vergelijk dan van links naar rechts."
+                });
+            }
+
+            // 5. Getallenas aanvullen (30 vragen)
+            for (let i = 0; i < 30; i++) {
+                let base = Math.floor(Math.random() * 8) + 1;
+                let step = [10, 100, 1000, 10000][i % 4];
+                let missingIndex = Math.floor(Math.random() * 5) + 2;
+                
+                let labels = [];
+                let startValue = base * 10000;
+                for (let j = 0; j < 10; j++) {
+                    labels.push(startValue + j * step);
+                }
+
+                let missingVal = labels[missingIndex];
+                
+                let distractors = [
+                    missingVal - step,
+                    missingVal + step,
+                    parseInt(missingVal.toString().replace("0", "9")),
+                    missingVal + (step * 2)
+                ];
+
+                if (missingVal > 100) {
+                    let s = missingVal.toString();
+                    let swapped = s.substring(0, s.length - 2) + s.substring(s.length - 1) + s.substring(s.length - 2, s.length - 1);
+                    distractors.push(parseInt(swapped));
+                }
+
+                let options = shuffle([...new Set([missingVal, ...distractors])]).slice(0, 4);
+                if (!options.includes(missingVal)) {
+                    options[0] = missingVal;
+                }
+
+                db.getallenas.push({
+                    type: "getallenas",
+                    title: "Welk getal hoort op de plaats van de rode stip op de getallenas?",
+                    labels: labels,
+                    missingIndex: missingIndex,
+                    missingVal: missingVal,
+                    options: shuffle(options).map(o => formatN(o)),
+                    answer: formatN(missingVal),
+                    hint: `Kijk naar de schaal van de getallenas. Bereken de afstand (de sprong) tussen twee streepjes. De sprong is telkens ${formatN(step)}.`
+                });
+            }
+
+            // 6. Getallenrij aanvullen (30 eenvoudige vragen, T en E ALTIJD 0, GEEN negatieve getallen, GEEN kommagetallen)
+            const sequences = [
+                { s: 1000, label: "+1 000", h: "Er komt telkens 1 000 bij (+1 000)" },
+                { s: 2000, label: "+2 000", h: "Er komt telkens 2 000 bij (+2 000)" },
+                { s: 5000, label: "+5 000", h: "Er komt telkens 5 000 bij (+5 000)" },
+                { s: 10000, label: "+10 000", h: "Er komt telkens 10 000 bij (+10 000)" },
+                { s: 50000, label: "+50 000", h: "Er komt telkens 50 000 bij (+50 000)" },
+                { s: -1000, label: "-1 000", h: "Er gaat telkens 1 000 af (-1 000)" },
+                { s: -5000, label: "-5 000", h: "Er gaat telkens 5 000 af (-5 000)" },
+                { s: -10000, label: "-10 000", h: "Er gaat telkens 10 000 af (-10 000)" },
+                { s: -20000, label: "-20 000", h: "Er gaat telkens 20 000 af (-20 000)" }
+            ];
+
+            for (let i = 0; i < 30; i++) {
+                let seq = sequences[i % sequences.length];
+                // Startwaarde is afgerond op een duizendtal (T en E zijn dus altijd 0!)
+                let startThousands = Math.floor(Math.random() * 80) + 20; // 20 tot 100
+                let start = startThousands * 1000;
+                
+                let list = [];
+                for (let j = 0; j < 6; j++) {
+                    list.push(start + j * seq.s);
+                }
+
+                let correctAns = list[5];
+                let promptList = list.slice(0, 5).map(num => formatN(num)).join(" — ");
+
+                db.getallenrij.push({
+                    type: "text",
+                    title: `Vul de getallenrij aan met het volgende getal: <br><span class="text-2xl font-black text-indigo-700">${promptList} — ?</span>`,
+                    answer: formatN(correctAns),
+                    hint: `Ontdek de sprong tussen de opeenvolgende getallen. De sprong is telkens: ${seq.h}`,
+                    placeholder: "Volgende getal..."
+                });
+            }
+
+            return db;
+        }
+
+        // --- DATA INITIALISATIE ---
+        const FULL_DB = buildFullQuestionDatabase();
+
+        // --- 5. NAVIGATION / VIEW MANAGEMENT ---
+        function showView(view) {
+            document.getElementById("menuSectie").classList.toggle("hidden", view !== "menu-view");
+            document.getElementById("oefeningSectie").classList.toggle("hidden", view !== "game-view");
+            document.getElementById("eindSectie").classList.toggle("hidden", view !== "end-view");
+            document.getElementById("progressContainer").classList.toggle("hidden", view !== "game-view");
+            window.scrollTo(0, 0);
+        }
+
+        // --- 6. SPEL & TOETS CONTROLS ---
+        window.startOnderdeel = function(mode, label) {
+            state.currentMode = mode;
+            state.currentIndex = 0;
+            state.score = 0.0;
+            state.hintsUsed = 0;
+            state.history = [];
+            state.startTime = new Date();
+
+            document.getElementById("niveauLabel").innerText = label;
+
+            // Bepaal de vragen
+            if (mode === 'toets') {
+                state.totalQ = 20;
+                let selected = [];
+                // Eerlijke verdeling: exact 4 unieke vragen uit de geselecteerde hoofdonderwerpen (nu inclusief de nieuwe Noteermodule!)
+                const submodes = ['leesbaar', 'waarde', 'getalbeeld', 'interpreteren', 'ordenen'];
+                submodes.forEach(sub => {
+                    selected = selected.concat(shuffle(FULL_DB[sub]).slice(0, 4));
+                });
+                state.questions = shuffle(selected);
+            } else {
+                state.totalQ = 10;
+                state.questions = shuffle(FULL_DB[mode]).slice(0, 10);
+            }
+
+            buildProgressBullets();
+            showView("game-view");
+            laadVraag();
+        }
+
+        function buildProgressBullets() {
+            const container = document.getElementById("bullets-container");
+            container.innerHTML = "";
+            for (let i = 0; i < state.totalQ; i++) {
+                const bullet = document.createElement("span");
+                bullet.id = `bullet-${i}`;
+                bullet.className = "w-4 h-4 rounded-full bg-slate-200 border-2 border-slate-300 transition-all duration-300";
+                container.appendChild(bullet);
+            }
+        }
+
+        function updateProgressBullets() {
+            for (let i = 0; i < state.totalQ; i++) {
+                const bullet = document.getElementById(`bullet-${i}`);
+                if (bullet) {
+                    if (i < state.currentIndex) {
+                        bullet.className = "w-4 h-4 rounded-full bg-emerald-500 border-2 border-emerald-600";
+                    } else if (i === state.currentIndex) {
+                        bullet.className = "w-4 h-4 rounded-full bg-indigo-600 border-2 border-indigo-700 animate-pulse";
+                    } else {
+                        bullet.className = "w-4 h-4 rounded-full bg-slate-200 border-2 border-slate-300";
+                    }
+                }
+            }
+        }
+
+        function laadVraag() {
+            state.currentHintUsedForQ = false;
+            const q = state.questions[state.currentIndex];
+
+            // Vraagtitel instellen
+            let categoryLabel = state.currentMode === 'toets' ? "TOETS" : state.currentMode.toUpperCase();
+            document.getElementById("vraagTypeLabel").innerText = categoryLabel;
+            document.getElementById("vraagZin").innerHTML = q.title;
+
+            // Reset interfaces
+            document.getElementById("text-input-container").classList.add("hidden");
+            document.getElementById("sortable-container").classList.add("hidden");
+            document.getElementById("numberline-container").classList.add("hidden");
+            document.getElementById("options-container").classList.add("hidden");
+            document.getElementById("extra-display").classList.add("hidden");
+            document.getElementById("hint-box").classList.add("hidden");
+            document.getElementById("feedback").classList.add("hidden");
+            document.getElementById("next-btn").classList.add("hidden");
+
+            document.getElementById("check-btn").classList.remove("hidden");
+            document.getElementById("hint-btn").classList.remove("hidden");
+
+            updateProgressBullets();
+
+            // Specifieke HTML visualisatieweergave (zoals onderstreepte cijfers bij getalwaarde)
+            if (q.html && q.type === "options") {
+                const extraDisp = document.getElementById("extra-display");
+                extraDisp.innerHTML = q.html;
+                extraDisp.classList.remove("hidden");
+            }
+
+            // Render specifieke interface
+            if (q.type === "text") {
+                document.getElementById("text-input-container").classList.remove("hidden");
+                const inp = document.getElementById("antwoordInput");
+                inp.value = "";
+                inp.disabled = false;
+                inp.placeholder = q.placeholder || "Typ hier...";
+                inp.className = "w-full p-5 text-center text-2xl font-bold rounded-2xl border-4 border-slate-200 focus:outline-none focus:border-indigo-500 bg-white text-slate-800";
+                setTimeout(() => inp.focus(), 150);
+            } 
+            else if (q.type === "options") {
+                const optContainer = document.getElementById("options-container");
+                optContainer.classList.remove("hidden");
+                optContainer.innerHTML = "";
+
+                q.options.forEach(opt => {
+                    const btn = document.createElement("button");
+                    btn.className = "p-5 bg-white border-2 border-slate-200 rounded-2xl font-bold text-slate-700 hover:border-indigo-500 hover:bg-indigo-50 transition-all text-left shadow-sm cursor-pointer";
+                    btn.innerText = opt;
+                    btn.onclick = () => selectOption(opt, btn);
+                    optContainer.appendChild(btn);
+                });
+            }
+            else if (q.type === "ordenen") {
+                document.getElementById("sortable-container").classList.remove("hidden");
+                const list = document.getElementById("sortable-list");
+                list.innerHTML = "";
+
+                // Schud de startvolgorde
+                const shuffledItems = shuffle(q.items);
+                shuffledItems.forEach(item => {
+                    const el = document.createElement("div");
+                    el.dataset.id = item.id;
+                    el.className = "order-item bg-slate-50 border-2 border-slate-200 p-5 rounded-2xl shadow-sm text-center font-extrabold text-slate-800 text-lg active:scale-95 transition-all";
+                    el.innerText = item.text;
+                    list.appendChild(el);
+                });
+
+                if (state.sortableInstance) {
+                    state.sortableInstance.destroy();
+                }
+                state.sortableInstance = new Sortable(list, {
+                    animation: 200,
+                    ghostClass: 'sortable-ghost',
+                    forceFallback: true
+                });
+            }
+            else if (q.type === "getallenas") {
+                document.getElementById("numberline-container").classList.remove("hidden");
+                document.getElementById("options-container").classList.remove("hidden");
+                
+                // Getallenas tekenen
+                const axis = document.getElementById("numberline-axis");
+                axis.innerHTML = "";
+
+                // Begin- en eindlabels plaatsen
+                const startLabel = document.createElement("div");
+                startLabel.className = "absolute -top-8 left-0 text-xs font-bold text-slate-500 -translate-x-1/2";
+                startLabel.innerText = formatN(q.labels[0]);
+                axis.appendChild(startLabel);
+
+                const endLabel = document.createElement("div");
+                endLabel.className = "absolute -top-8 right-0 text-xs font-bold text-slate-500 translate-x-1/2";
+                endLabel.innerText = formatN(q.labels[q.labels.length - 1]);
+                axis.appendChild(endLabel);
+
+                // Streepjes trekken
+                q.labels.forEach((val, idx) => {
+                    const pos = (idx / (q.labels.length - 1)) * 100;
+                    const tick = document.createElement("div");
+                    tick.className = "absolute top-0 w-0.5 h-3 bg-slate-400";
+                    tick.style.left = `${pos}%`;
+                    axis.appendChild(tick);
+
+                    // De gezochte stip plaatsen
+                    if (idx === q.missingIndex) {
+                        const dot = document.createElement("div");
+                        dot.className = "absolute -top-2.5 w-6 h-6 bg-rose-500 rounded-full border-4 border-white shadow-md flex items-center justify-center -translate-x-1/2 z-10 animate-ping-short";
+                        dot.innerHTML = `<span class="text-[10px] font-black text-white">?</span>`;
+                        dot.style.left = `${pos}%`;
+                        axis.appendChild(dot);
+                    }
+                });
+
+                // Multiple choice knoppen
+                const optContainer = document.getElementById("options-container");
+                optContainer.innerHTML = "";
+
+                q.options.forEach(opt => {
+                    const btn = document.createElement("button");
+                    btn.className = "p-5 bg-white border-2 border-slate-200 rounded-2xl font-bold text-slate-700 hover:border-indigo-500 hover:bg-indigo-50 transition-all text-center shadow-sm cursor-pointer";
+                    btn.innerText = opt;
+                    btn.onclick = () => selectOption(opt, btn);
+                    optContainer.appendChild(btn);
+                });
+            }
+        }
+
+        // --- ANTWOORD VALIDATIE ---
+        function selectOption(opt, btnElement) {
+            if (!document.getElementById("next-btn").classList.contains("hidden")) return; // Reeds gecontroleerd
+            
+            const q = state.questions[state.currentIndex];
+            const isCorrect = (opt === q.answer);
+
+            // Blokkeer de rest en kleur de juiste/foute knoppen
+            document.querySelectorAll("#options-container button").forEach(btn => {
+                btn.disabled = true;
+                if (btn.innerText === q.answer) {
+                    btn.className = "p-5 bg-emerald-50 border-2 border-emerald-500 text-emerald-800 rounded-2xl font-extrabold text-left shadow-sm";
+                } else if (btn === btnElement) {
+                    btn.className = "p-5 bg-rose-50 border-2 border-rose-500 text-rose-800 rounded-2xl font-extrabold text-left shadow-sm";
+                } else {
+                    btn.className = "p-5 bg-slate-50 border-2 border-slate-100 text-slate-300 rounded-2xl font-bold text-left shadow-sm opacity-60";
+                }
+            });
+
+            evaluateAnswer(isCorrect, opt, q.answer);
+        }
+
+        function checkDragOrder() {
+            const list = document.getElementById("sortable-list");
+            const currentOrder = Array.from(list.children).map(el => el.dataset.id).join(',');
+            const q = state.questions[state.currentIndex];
+
+            const isCorrect = (currentOrder === q.answer);
+            
+            // Geef visuele feedback op de gesleepte elementen
+            Array.from(list.children).forEach((el, idx) => {
+                const targetVal = q.items[parseInt(el.dataset.id)].val;
+                const sortedVals = [...q.items].map(i => i.val).sort((a,b)=>a-b);
+                const isCorrectPlace = (targetVal === sortedVals[idx]);
+
+                if (isCorrectPlace) {
+                    el.className = "order-item bg-emerald-50 border-2 border-emerald-500 p-5 rounded-2xl shadow-sm text-center font-extrabold text-emerald-800 text-lg";
+                } else {
+                    el.className = "order-item bg-rose-50 border-2 border-rose-500 p-5 rounded-2xl shadow-sm text-center font-extrabold text-rose-800 text-lg";
+                }
+            });
+
+            if (state.sortableInstance) {
+                state.sortableInstance.option('disabled', true);
+            }
+
+            evaluateAnswer(isCorrect, "Sorteer-invoer", "Correcte volgorde");
+        }
+
+        function controleerAntwoord() {
+            const q = state.questions[state.currentIndex];
+            
+            if (q.type === "ordenen") {
+                checkDragOrder();
+                return;
+            }
+
+            const inp = document.getElementById("antwoordInput");
+            const userText = inp.value.trim();
+            const correctText = q.answer.trim();
+
+            if (!userText) return;
+
+            // FLEXIBELE PUNTEN EN SPATIE CHECK: Maakt invoer met/zonder punten en spaties overal als juist goedgekeurd!
+            const cleanUser = cleanNumberStr(userText);
+            const cleanCorrect = cleanNumberStr(correctText);
+
+            const isCorrect = (cleanUser.toLowerCase() === cleanCorrect.toLowerCase());
+
+            if (isCorrect) {
+                inp.className = "w-full p-5 text-center text-2xl font-bold rounded-2xl border-4 border-emerald-500 bg-emerald-50 text-emerald-800 outline-none";
+            } else {
+                inp.className = "w-full p-5 text-center text-2xl font-bold rounded-2xl border-4 border-rose-500 bg-rose-50 text-rose-800 outline-none";
+            }
+            inp.disabled = true;
+
+            evaluateAnswer(isCorrect, inp.value, q.answer);
+        }
+
+        function evaluateAnswer(isCorrect, userVal, correctVal) {
+            const q = state.questions[state.currentIndex];
+            const fb = document.getElementById("feedback");
+            fb.classList.remove("hidden");
+
+            let pointsEarned = 0;
+
+            if (isCorrect) {
+                pointsEarned = state.currentHintUsedForQ ? 0.5 : 1.0;
+                state.score += pointsEarned;
+
+                let pointsMsg = pointsEarned === 0.5 ? "+0,5 punt (tip gebruikt)" : "+1,0 punt";
+                fb.innerHTML = `🎉 Perfect gedaan! <span class="block text-sm font-semibold mt-1 text-emerald-600">${pointsMsg}</span>`;
+                fb.className = "p-5 rounded-2xl font-bold text-center bg-emerald-50 text-emerald-700 border border-emerald-100 shadow-sm";
+                
+                confetti({ particleCount: 30, spread: 55, origin: { y: 0.8 }, colors: ['#4f46e5', '#10b981'] });
+            } else {
+                pointsEarned = 0.0;
+                fb.innerHTML = `❌ Oeps! Dat klopt niet helemaal.<br>Het juiste antwoord is: <strong>${correctVal}</strong> <span class="block text-sm font-semibold mt-1 text-rose-500">(0,0 punten)</span>`;
+                fb.className = "p-5 rounded-2xl font-bold text-center bg-rose-50 text-rose-700 border border-rose-100 shadow-sm";
+            }
+
+            state.history.push({
+                title: q.title,
+                category: q.category || (q.type === 'ordenen' ? "GETALLEN ORDENEN" : "GETALBEGRIP"),
+                user: userVal || "(leeg)",
+                correct: correctVal,
+                points: pointsEarned,
+                isCorrect: isCorrect,
+                hintUsed: state.currentHintUsedForQ
+            });
+
+            document.getElementById("check-btn").classList.add("hidden");
+            document.getElementById("hint-btn").classList.add("hidden");
+            document.getElementById("next-btn").classList.remove("hidden");
+        }
+
+        function showHint() {
+            if (!state.currentHintUsedForQ) {
+                state.currentHintUsedForQ = true;
+                state.hintsUsed++;
+            }
+            const q = state.questions[state.currentIndex];
+            document.getElementById("hint-text").innerHTML = q.hint;
+            document.getElementById("hint-box").classList.remove("hidden");
+        }
+
+        function volgendeOefening() {
+            state.currentIndex++;
+            if (state.currentIndex < state.totalQ) {
+                laadVraag();
+            } else {
+                state.endTime = new Date();
+                showResults();
+            }
+        }
+
+        // --- RAPPORTAGE EN FINISH ---
+        function showResults() {
+            showView("end-view");
+            const roundedScore = Math.round(state.score * 10) / 10;
+            const percent = Math.round((roundedScore / state.totalQ) * 100);
+
+            // Sla op in Firebase als dit de toets was
+            if (state.currentMode === 'toets') {
+                saveToetsResultaat(roundedScore, state.totalQ, percent, state.hintsUsed, state.history);
+            }
+
+            document.getElementById("score-val").innerText = `${roundedScore.toString().replace('.', ',')}/${state.totalQ}`;
+            document.getElementById("percent-val").innerText = `${percent}%`;
+            document.getElementById("hints-val").innerText = state.hintsUsed;
+
+            const emoji = document.getElementById("result-emoji");
+            if (percent === 100) emoji.innerText = "👑";
+            else if (percent >= 80) emoji.innerText = "🌟";
+            else if (percent >= 50) emoji.innerText = "👍";
+            else emoji.innerText = "📚";
+
+            const list = document.getElementById("mistake-list");
+            list.innerHTML = "";
+
+            state.history.forEach((h, idx) => {
+                const card = document.createElement("div");
+                const borderClass = h.hintUsed 
+                    ? "border-amber-400 bg-amber-50/25 shadow-md shadow-amber-500/5"
+                    : (h.isCorrect ? "bg-emerald-50/30 border-emerald-100" : "bg-rose-50/30 border-rose-100");
+                
+                card.className = `p-5 rounded-2xl border flex flex-col gap-2 ${borderClass}`;
+                
+                card.innerHTML = `
+                    <div class="flex justify-between items-start flex-wrap gap-2">
+                        <span class="text-xs font-black uppercase tracking-wider ${h.isCorrect ? 'text-emerald-600' : 'text-rose-600'}">${h.category}</span>
+                        <span class="text-xs ${h.hintUsed ? 'bg-amber-100 text-amber-800 ring-2 ring-amber-300' : (h.isCorrect ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800')} px-2.5 py-1 rounded-md font-extrabold flex items-center gap-1">
+                            Score: ${h.points.toString().replace('.', ',')} pt ${h.hintUsed ? '(💡 TIP GEBRUIKT!)' : '(geen tip)'}
+                        </span>
+                    </div>
+                    <div class="text-slate-800 font-extrabold text-sm">${idx + 1}. ${h.title.replace(/<[^>]*>?/gm, '')}</div>
+                    
+                    ${h.hintUsed ? `
+                    <div class="text-[10px] font-black text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-2.5 py-1 flex items-center gap-1 w-fit">
+                        💡 OPGELOST MET BEHULP VAN EEN HINT (Maximale score: 0,5 punt)
+                    </div>` : ''}
+
+                    <div class="flex gap-4 text-xs mt-1 border-t border-dashed pt-2 ${h.isCorrect ? 'border-emerald-100' : 'border-rose-100'}">
+                        <div>Jouw antwoord: <span class="font-extrabold ${h.isCorrect ? 'text-emerald-700' : 'text-rose-700'}">${h.user}</span></div>
+                        ${!h.isCorrect ? `<div>Correct: <span class="font-extrabold text-slate-800">${h.correct}</span></div>` : ''}
+                    </div>
+                `;
+                list.appendChild(card);
+            });
+
+            if (percent === 100) {
+                confetti({ particleCount: 150, spread: 80, origin: { y: 0.6 } });
+            }
+        }
+
+        function stopOefening() {
+            showView("menu-view");
+        }
+
+        // --- GOOGLE SITES SYSTEM ACTIONS ---
+        function openExitModal() {
+            document.getElementById('exit-modal').classList.remove('hidden');
+        }
+
+        function closeModal() {
+            document.getElementById('exit-modal').classList.add('hidden');
+        }
+
+        function confirmExit() {
+            closeModal();
+            showView("menu-view");
+        }
+
+        // Enter toets ondersteuning
+        document.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                const nextVisible = !document.getElementById('next-btn').classList.contains('hidden');
+                if (nextVisible) {
+                    nextQuestion();
+                } else {
+                    const submitVisible = !document.getElementById('check-btn').classList.contains('hidden');
+                    if (submitVisible) {
+                        const isTextMode = !document.getElementById("text-input-container").classList.contains("hidden");
+                        if (isTextMode) {
+                            controleerAntwoord();
+                        }
+                    }
+                }
+            }
+        });
+
+        // Start direct in het hoofdmenu
+        window.onload = function() {
+            showView("menu-view");
+        }
+    </script>
+    <!-- FIREBASE: compat scripts (geen module-scope problemen) -->
+    <!-- FIREBASE -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    <script>
+        firebase.initializeApp({
+            apiKey: "AIzaSyCnQDVVAlK6jE-PPUUediRJMTbN0xqrLDE",
+            authDomain: "klaswebsite-database.firebaseapp.com",
+            projectId: "klaswebsite-database",
+            storageBucket: "klaswebsite-database.firebasestorage.app",
+            messagingSenderId: "42912327282",
+            appId: "1:42912327282:web:f13f2c706f6c42c115c4eb"
+        });
+        const fbDb = firebase.firestore();
+
+        // ── LEERLINGEN DATABASE (naam → code mapping) ──────────────────────
+        // Pas hier de namen en codes aan voor jouw klas
+        const LEERLINGEN = {
+            'ethanael':  'ethanael2025',
+            'eulalie':   'eulalie2025',
+            'gabriel':   'gabriel2025',
+            'kobe':      'kobe2025',
+            'kriss':     'kriss2025',
+            'kylian':    'kylian2025',
+            'leila':     'leila2025',
+            'stijn':     'stijn2025',
+            'meester':   'meester2025'
+        };
+
+        // ── LOGIN MET NAAM + CODE ──────────────────────────────────────────
+        function loginMetCode() {
+            var naam = document.getElementById('login-naam').value.trim().toLowerCase();
+            var code = document.getElementById('login-code').value.trim();
+            var errEl = document.getElementById('login-error');
+            var btn = document.getElementById('btn-login');
+
+            errEl.textContent = '';
+            document.getElementById('login-naam').classList.remove('err');
+            document.getElementById('login-code').classList.remove('err');
+
+            if (!naam) {
+                document.getElementById('login-naam').classList.add('err');
+                errEl.textContent = 'Vul je voornaam in.';
+                return;
+            }
+            if (!code) {
+                document.getElementById('login-code').classList.add('err');
+                errEl.textContent = 'Vul je code in.';
+                return;
+            }
+
+            // Check naam bestaat
+            if (!LEERLINGEN[naam]) {
+                document.getElementById('login-naam').classList.add('err');
+                errEl.textContent = 'Naam niet gevonden. Controleer je voornaam.';
+                return;
+            }
+
+            // Check code klopt
+            if (LEERLINGEN[naam] !== code) {
+                document.getElementById('login-code').classList.add('err');
+                errEl.textContent = 'Verkeerde code. Probeer opnieuw.';
+                return;
+            }
+
+            // Login gelukt
+            btn.disabled = true;
+            btn.textContent = 'Inloggen...';
+            window._leerlingNaam = naam.charAt(0).toUpperCase() + naam.slice(1);
+            window._leerlingId = naam;
+            window._isGuest = false;
+            afterLogin(window._leerlingNaam);
+        }
+
+        // Enter key support
+        document.addEventListener('DOMContentLoaded', function() {
+            ['login-naam', 'login-code'].forEach(function(id) {
+                var el = document.getElementById(id);
+                if (el) el.addEventListener('keypress', function(e) {
+                    if (e.key === 'Enter') loginMetCode();
+                });
+            });
+        });
+
+        function loginGuest() {
+            window._leerlingNaam = 'Gast';
+            window._leerlingId = null;
+            window._isGuest = true;
+            afterLogin('Gast');
+        }
+
+        function doLogout() {
+            window._leerlingNaam = null;
+            window._leerlingId = null;
+            window._isGuest = false;
+            document.getElementById('login-screen').classList.remove('hidden');
+            document.getElementById('user-badge').classList.remove('show');
+            showView('menuSectie');
+            // Reset login form
+            document.getElementById('login-naam').value = '';
+            document.getElementById('login-code').value = '';
+            document.getElementById('login-error').textContent = '';
+            var btn = document.getElementById('btn-login');
+            btn.disabled = false;
+            btn.textContent = 'Inloggen';
+        }
+
+        function afterLogin(naam) {
+            document.getElementById('login-screen').classList.add('hidden');
+            document.getElementById('user-badge').classList.add('show');
+            var letter = naam ? naam[0].toUpperCase() : '?';
+            document.getElementById('user-avatar-nav').textContent = letter;
+            document.getElementById('user-name-nav').textContent = naam;
+        }
+
+        // ── SCORE OPSLAAN ──────────────────────────────────────────────────
+        function saveToetsResultaat(score, total, percent, hintsUsed, history) {
+            var badge = document.getElementById('saved-badge');
+            badge.classList.remove('show');
+            if (window._isGuest || !window._leerlingId) return;
+
+            var catScores = {};
+            history.forEach(function(h) {
+                var cat = h.category || 'TOETS';
+                if (!catScores[cat]) catScores[cat] = { correct: 0, total: 0, points: 0 };
+                catScores[cat].total++;
+                catScores[cat].points = Math.round((catScores[cat].points + h.points) * 10) / 10;
+                if (h.isCorrect) catScores[cat].correct++;
+            });
+
+            fbDb.collection('getalbegrip_toets').add({
+                leerlingId:     window._leerlingId,
+                leerlingNaam:   window._leerlingNaam,
+                app:            'getalbegrip',
+                score:          score,
+                total:          total,
+                percentage:     percent,
+                hintsUsed:      hintsUsed,
+                categoryScores: catScores,
+                timestamp:      firebase.firestore.FieldValue.serverTimestamp()
+            }).then(function() {
+                badge.classList.add('show');
+            }).catch(function(e) { console.error('Opslaan mislukt:', e); });
+        }
+    </script>
+</body>
+</html>
