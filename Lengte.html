@@ -107,45 +107,38 @@ body { font-family: 'Nunito', sans-serif; background: #f0f7ff; margin: 0; paddin
 </style>
 </head>
 <body class="min-h-screen p-3">
-    <!-- LOGIN SCREEN -->
-    <div id="login-screen">
-      <div class="login-card">
-        <div class="login-logo">📏</div>
-        <h1 style="font-size:1.6rem;font-weight:800;color:#1f2937;margin-bottom:6px;">Lengte</h1>
-        <p style="font-size:.85rem;color:#6b7280;margin-bottom:1.25rem;">Voer je naam en code in</p>
-        <input class="login-input" id="login-naam" type="text" placeholder="Jouw voornaam" autocomplete="off" autocapitalize="words">
-        <input class="login-input" id="login-code" type="password" placeholder="Jouw code" autocomplete="off">
-        <div class="login-error" id="login-error"></div>
-        <button class="btn-login" id="btn-login" onclick="loginMetCode()">Inloggen</button>
-        <button class="btn-guest" onclick="loginGuest()">Doorgaan als gast (geen opslag)</button>
-        <div class="teacher-link"><a href="dashboard.html">Leerkracht? Klik hier</a></div>
-      </div>
-    </div>
 <div class="max-w-2xl mx-auto">
 
 <!-- ══ LOGIN ══ -->
-<div id="v-login" class="login-card p-8 mt-6 text-center space-y-5 max-w-md mx-auto">
+<div id="v-login" class="login-card p-8 mt-6 text-center max-w-md mx-auto" style="display:flex;flex-direction:column;gap:12px;">
   <div style="font-size:3rem">📏</div>
   <h1 style="font-size:1.6rem;font-weight:900;color:#1e3a5f;margin:0">Lengtematen Oefenapp</h1>
-  <p style="color:#64748b;font-size:.9rem;margin:0">Log in met je schoolaccount of speel als gast.</p>
-  <div id="login-err" class="hidden fb-err text-sm"></div>
-  <button class="btn-primary" id="fb-google-btn">
-    <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.31-8.16 2.31-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
-    Inloggen met schoolaccount
+  <p style="color:#64748b;font-size:.9rem;margin:0">Voer je naam en code in</p>
+  <div id="login-err" style="color:#dc2626;font-size:.85rem;font-weight:700;min-height:18px;display:none;"></div>
+  <input type="text" id="login-naam" placeholder="Jouw voornaam"
+    style="width:100%;padding:14px;border:2px solid #e2e8f0;border-radius:12px;font-family:inherit;font-size:1rem;font-weight:600;text-align:center;outline:none;"
+    autocomplete="off" autocapitalize="words">
+  <input type="password" id="login-code" placeholder="Jouw code"
+    style="width:100%;padding:14px;border:2px solid #e2e8f0;border-radius:12px;font-family:inherit;font-size:1rem;font-weight:600;text-align:center;outline:none;"
+    autocomplete="off">
+  <button id="btn-login" onclick="loginMetCode()"
+    style="width:100%;background:#1e3a5f;color:white;border:none;border-radius:12px;padding:14px;font-family:inherit;font-size:1rem;font-weight:700;cursor:pointer;">
+    Inloggen
   </button>
-  <div style="display:flex;align-items:center;gap:8px;color:#94a3b8;font-size:.78rem"><div style="flex:1;height:1px;background:#e2e8f0"></div>of<div style="flex:1;height:1px;background:#e2e8f0"></div></div>
-  <div style="background:#f8fafc;border:2px solid #e2e8f0;border-radius:12px;padding:12px;text-align:left">
-    <label style="font-size:.7rem;font-weight:800;color:#94a3b8;text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:5px">Naam (gast)</label>
-    <input type="text" id="fb-guest-name" class="form-input" placeholder="Bv. Milan">
+  <button onclick="loginGuest()"
+    style="width:100%;background:transparent;border:2px solid #e2e8f0;border-radius:12px;padding:12px;font-family:inherit;font-size:.9rem;font-weight:700;color:#6b7280;cursor:pointer;">
+    Doorgaan als gast (geen opslag)
+  </button>
+  <div style="font-size:.75rem;color:#9ca3af;margin-top:4px;">
+    <a href="dashboard.html" style="color:#1e3a5f;font-weight:700;text-decoration:none;">Leerkracht? Klik hier</a>
   </div>
-  <button class="btn-secondary" id="fb-guest-btn">👤 Spelen als gast (score niet bewaard)</button>
 </div>
 
-<!-- Badges -->
+<!-- User badge -->
 <div id="fb-user-badge" class="hidden user-badge mt-3 mb-1">
   <div class="badge-av" id="fb-init">?</div>
   <div><div id="fb-uname" style="font-size:.85rem;font-weight:800;color:#1e293b"></div><div id="fb-uemail" style="font-size:.7rem;color:#94a3b8"></div></div>
-  <button id="fb-logout" style="background:none;border:none;cursor:pointer;color:#94a3b8;font-size:.78rem;padding:3px 8px;border-left:1px solid #e2e8f0;margin-left:4px;font-family:'Nunito',sans-serif">↩ Uit</button>
+  <button id="fb-logout" onclick="doLogout()" style="background:none;border:none;cursor:pointer;color:#94a3b8;font-size:.78rem;padding:3px 8px;border-left:1px solid #e2e8f0;margin-left:4px;font-family:'Nunito',sans-serif">↩ Uit</button>
 </div>
 <div id="fb-guest-badge" class="hidden" style="background:#fefce8;border:1.5px solid #fde68a;border-radius:8px;padding:4px 10px;font-size:.75rem;font-weight:800;color:#d97706;margin-bottom:6px;width:fit-content">👤 Gast – score niet opgeslagen</div>
 
@@ -241,1064 +234,97 @@ body { font-family: 'Nunito', sans-serif; background: #f0f7ff; margin: 0; paddin
 
 </div><!-- /.max-w-2xl -->
 
-<script type="module">
-import { initializeApp }   from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getAuth, GoogleAuthProvider, signInWithRedirect, getRedirectResult, signOut, onAuthStateChanged }
-    from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-import { getFirestore, collection, addDoc, serverTimestamp }
-    from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-
-const FB = { apiKey:"AIzaSyCnQDVVAlK6jE-PPUUediRJMTbN0xqrLDE", authDomain:"klaswebsite-database.firebaseapp.com", projectId:"klaswebsite-database", storageBucket:"klaswebsite-database.firebasestorage.app", messagingSenderId:"42912327282", appId:"1:42912327282:web:f13f2c706f6c42c115c4eb" };
-const DOMAIN = "bsbodebrug.be";
-const app = initializeApp(FB);
-const auth = getAuth(app);
-const db   = getFirestore(app);
-
-// ── AUTH ──────────────────────────────────────────────────────────────────
-let CU = null, GUEST = false;
-getRedirectResult(auth).catch(e => showErr(e.message));
-onAuthStateChanged(auth, u => {
-  if (u) {
-    if (!u.email.endsWith("@"+DOMAIN)) { signOut(auth); showErr("Enkel @"+DOMAIN+" accounts."); return; }
-    CU = u; GUEST = false;
-    $("fb-init").textContent = (u.displayName||"L").split(" ").map(n=>n[0]).join("").toUpperCase().slice(0,2);
-    $("fb-uname").textContent = u.displayName||u.email;
-    $("fb-uemail").textContent = u.email;
-    s("fb-user-badge"); h("v-login"); s("v-menu");
-  } else { if (!GUEST) { CU=null; s("v-login"); h("v-menu"); } }
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script>
+firebase.initializeApp({
+  apiKey:"AIzaSyCnQDVVAlK6jE-PPUUediRJMTbN0xqrLDE",
+  authDomain:"klaswebsite-database.firebaseapp.com",
+  projectId:"klaswebsite-database",
+  storageBucket:"klaswebsite-database.firebasestorage.app",
+  messagingSenderId:"42912327282",
+  appId:"1:42912327282:web:f13f2c706f6c42c115c4eb"
 });
-$("fb-google-btn").onclick = async () => { const p=new GoogleAuthProvider(); p.setCustomParameters({hd:DOMAIN}); try{await signInWithRedirect(auth,p);}catch(e){showErr(e.message);} };
-$("fb-guest-btn").onclick = () => {
-  const n=$("fb-guest-name").value.trim();
-  if(!n){$("fb-guest-name").style.borderColor="#ef4444";return;}
-  GUEST=true; CU=null;
-  const gb=$("fb-guest-badge"); gb.textContent="👤 Gast: "+n+" – score niet opgeslagen"; s(gb); h("v-login"); s("v-menu");
-};
-$("fb-guest-name").oninput=function(){this.style.borderColor="";};
-$("fb-logout").onclick = async()=>{GUEST=false;CU=null;await signOut(auth);h("fb-user-badge");h("fb-guest-badge");h("v-menu");s("v-login");};
-function showErr(m){const el=$("login-err");el.textContent=m;s(el);}
-async function fbSave(rec){
-  if(GUEST||!CU)return false;
-  try{await addDoc(collection(db,"resultaten"),{uid:CU.uid,email:CU.email,displayName:CU.displayName||CU.email,photoURL:CU.photoURL||null,vak:"Wiskunde",timestamp:serverTimestamp(),...rec});return true;}
-  catch(e){console.error(e);return false;}
+const db = firebase.firestore();
+
+let CU = null, GUEST = false;
+
+// ── LOGIN MET NAAM + CODE ─────────────────────────────────────────────────
+async function loginMetCode() {
+  var naam = (document.getElementById('login-naam').value||'').trim().toLowerCase();
+  var code = (document.getElementById('login-code').value||'').trim();
+  var errEl = document.getElementById('login-err');
+  var btn   = document.getElementById('btn-login');
+  errEl.style.display='none'; errEl.textContent='';
+  document.getElementById('login-naam').style.borderColor='';
+  document.getElementById('login-code').style.borderColor='';
+  if (!naam) { errEl.textContent='Vul je voornaam in.'; errEl.style.display='block'; document.getElementById('login-naam').style.borderColor='#dc2626'; return; }
+  if (!code) { errEl.textContent='Vul je code in.';    errEl.style.display='block'; document.getElementById('login-code').style.borderColor='#dc2626'; return; }
+  btn.disabled=true; btn.textContent='Controleren...';
+  try {
+    var doc = await db.collection('leerlingen').doc(naam).get();
+    if (!doc.exists) { errEl.textContent='Naam niet gevonden.'; errEl.style.display='block'; btn.disabled=false; btn.textContent='Inloggen'; document.getElementById('login-naam').style.borderColor='#dc2626'; return; }
+    var data = doc.data();
+    if (data.code !== code) { errEl.textContent='Verkeerde code.'; errEl.style.display='block'; btn.disabled=false; btn.textContent='Inloggen'; document.getElementById('login-code').style.borderColor='#dc2626'; return; }
+    window._leerlingNaam = data.weergavenaam || naam;
+    window._leerlingId   = naam;
+    CU = {uid: naam, displayName: data.weergavenaam, email: naam+'@klas'};
+    GUEST = false;
+    // Update badge
+    var initials = (data.weergavenaam||naam).charAt(0).toUpperCase();
+    document.getElementById('fb-init').textContent  = initials;
+    document.getElementById('fb-uname').textContent = data.weergavenaam || naam;
+    document.getElementById('fb-uemail').textContent = '';
+    s('fb-user-badge'); h('v-login'); s('v-menu');
+  } catch(e) {
+    errEl.textContent='Fout: '+e.message; errEl.style.display='block'; btn.disabled=false; btn.textContent='Inloggen';
+  }
+}
+
+function loginGuest() {
+  GUEST = true; CU = null;
+  window._leerlingId = null; window._leerlingNaam = 'Gast';
+  var gb = document.getElementById('fb-guest-badge');
+  gb.textContent = '👤 Gast – score niet opgeslagen';
+  s(gb); h('v-login'); s('v-menu');
+}
+
+function doLogout() {
+  GUEST=false; CU=null; window._leerlingId=null; window._leerlingNaam=null;
+  h('fb-user-badge'); h('fb-guest-badge'); h('v-menu'); s('v-login');
+  document.getElementById('login-naam').value='';
+  document.getElementById('login-code').value='';
+  document.getElementById('btn-login').disabled=false;
+  document.getElementById('btn-login').textContent='Inloggen';
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  ['login-naam','login-code'].forEach(function(id) {
+    var el = document.getElementById(id);
+    if (el) el.addEventListener('keypress', function(e) { if(e.key==='Enter') loginMetCode(); });
+  });
+});
+
+async function fbSave(rec) {
+  if (GUEST || !CU) return false;
+  try {
+    await db.collection('lengte_toets').add({
+      leerlingId:   window._leerlingId,
+      leerlingNaam: window._leerlingNaam || 'Leerling',
+      timestamp:    firebase.firestore.FieldValue.serverTimestamp(),
+      ...rec
+    });
+    return true;
+  } catch(e) { console.error(e); return false; }
 }
 
 // ── UTILS ─────────────────────────────────────────────────────────────────
 function $(id){return document.getElementById(id);}
-function s(id){const el=typeof id==="string"?$(id):id; if(el){el.classList.remove("hidden");} }
+function s(id){const el=typeof id==="string"?$(id):id; if(el){el.classList.remove("hidden"); el.style.display='';} }
 function h(id){const el=typeof id==="string"?$(id):id; if(el){el.classList.add("hidden");} }
 function shuffle(a){let b=[...a];for(let i=b.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[b[i],b[j]]=[b[j],b[i]];}return b;}
 function rnd(a,b){return Math.floor(Math.random()*(b-a+1))+a;}
 function pick(arr,n){return shuffle(arr).slice(0,n);}
 
-// ══════════════════════════════════════════════════════════════════════════
-// VRAGENBANKEN
-// ══════════════════════════════════════════════════════════════════════════
-
-// ── 1. METEN (meetlat interactief) ────────────────────────────────────────
-// Elk item: lengte in mm (veelvoud van 5), max 250mm (25cm)
-function genMeten(){
-  const lijst=[];
-  for(let mm=10;mm<=250;mm+=5){
-    const cm=mm/10;
-    lijst.push({ mm, cm, label: mm%10===0 ? `${cm} cm` : `${Math.floor(cm)} cm ${mm%10} mm` });
-  }
-  return shuffle(lijst).slice(0,10);
-}
-
-// ── 2. JUISTE MAAT KIEZEN (50 vragen) ────────────────────────────────────
-function genKiezen(){
-  const items=[
-    {v:"Hoe lang is een potlood?",a:"18 cm",o:["18 cm","18 m","18 km","18 mm"],tip:"Een potlood past in je hand → centimeter."},
-    {v:"Hoe ver is het van Antwerpen naar Brussel?",a:"45 km",o:["45 km","45 cm","45 m","45 dm"],tip:"Afstanden tussen steden → kilometer."},
-    {v:"Hoe dik is een euromunt?",a:"2 mm",o:["2 mm","2 cm","2 dm","2 m"],tip:"Een munt is heel dun → millimeter."},
-    {v:"Hoe hoog is een klasdeur?",a:"2 m",o:["2 m","2 cm","2 km","2 mm"],tip:"Een deur is even groot als een volwassene → meter."},
-    {v:"Hoe lang is een zwembad?",a:"25 m",o:["25 m","25 cm","25 km","25 mm"],tip:"Een zwembad is lang maar geen kilometers → meter."},
-    {v:"Hoe lang is je pink?",a:"6 cm",o:["6 cm","6 m","6 km","6 mm"],tip:"Je pink is een paar centimeter lang."},
-    {v:"Hoe dik is een haar?",a:"0,07 mm",o:["0,07 mm","7 cm","7 m","7 km"],tip:"Een haar is dunner dan 1 mm → millimeter."},
-    {v:"Hoe lang is een auto?",a:"4 m",o:["4 m","4 cm","4 km","4 dm"],tip:"Een auto is een paar meter lang."},
-    {v:"Hoe lang is een voetbalveld?",a:"105 m",o:["105 m","105 cm","105 km","1 km"],tip:"Een voetbalveld is groot maar geen kilometer → meter."},
-    {v:"Hoe breed is een postzegel?",a:"25 mm",o:["25 mm","25 cm","25 m","25 km"],tip:"Een postzegel is heel klein → millimeter."},
-    {v:"Hoe ver is het naar de maan?",a:"384 000 km",o:["384 000 km","384 000 m","384 000 cm","384 000 mm"],tip:"Afstanden in de ruimte zijn enorm → kilometer."},
-    {v:"Hoe lang is een schoolbus?",a:"12 m",o:["12 m","12 cm","12 km","12 mm"],tip:"Een bus is groter dan een auto → meter."},
-    {v:"Hoe breed is een raam?",a:"90 cm",o:["90 cm","90 m","90 km","90 mm"],tip:"Een raam is iets kleiner dan 1 m → centimeter."},
-    {v:"Hoe lang is een mier?",a:"3 mm",o:["3 mm","3 cm","3 m","3 km"],tip:"Een mier is heel klein → millimeter."},
-    {v:"Hoe lang is een rugzak?",a:"45 cm",o:["45 cm","45 m","45 km","45 mm"],tip:"Een rugzak past op je rug → centimeter."},
-    {v:"Hoe lang is de snelweg van Gent naar Brugge?",a:"56 km",o:["56 km","56 m","56 cm","56 dm"],tip:"Afstanden op de weg → kilometer."},
-    {v:"Hoe dik is een schoolboek?",a:"2 cm",o:["2 cm","2 m","2 km","2 mm"],tip:"Een boek is een paar centimeter dik."},
-    {v:"Hoe hoog is een boom?",a:"15 m",o:["15 m","15 cm","15 km","15 mm"],tip:"Bomen zijn meerdere meters hoog."},
-    {v:"Hoe lang is een meetlat in de klas?",a:"30 cm",o:["30 cm","30 m","30 km","3 m"],tip:"De klassieke liniaal is 30 centimeter."},
-    {v:"Hoe breed is een vinger?",a:"15 mm",o:["15 mm","15 cm","15 m","15 km"],tip:"Een vinger is ongeveer 15 millimeter breed."},
-    {v:"Hoe lang is een trein?",a:"200 m",o:["200 m","200 cm","200 km","200 mm"],tip:"Een trein bestaat uit veel wagons → meter."},
-    {v:"Hoe ver kan een mens stappen in één minuut?",a:"100 m",o:["100 m","100 cm","100 km","100 mm"],tip:"Iemand stapt ongeveer 100 meter per minuut."},
-    {v:"Hoe groot is een mug?",a:"5 mm",o:["5 mm","5 cm","5 m","5 km"],tip:"Een mug is heel klein → millimeter."},
-    {v:"Hoe hoog is een flat van 10 verdiepingen?",a:"30 m",o:["30 m","30 cm","30 km","300 cm"],tip:"Elke verdieping is 3 meter → 10 × 3 = 30 m."},
-    {v:"Hoe lang is een duim?",a:"5 cm",o:["5 cm","5 m","5 km","5 mm"],tip:"Een duim is ongeveer 5 centimeter lang."},
-    {v:"Hoe breed is een tafel?",a:"80 cm",o:["80 cm","80 m","80 km","80 mm"],tip:"Een tafel is iets minder dan 1 meter breed → centimeter."},
-    {v:"Hoe lang is een spijker?",a:"5 cm",o:["5 cm","5 m","5 km","5 mm"],tip:"Een spijker is een paar centimeter lang."},
-    {v:"Hoe lang is een marathon?",a:"42 km",o:["42 km","42 m","42 cm","42 mm"],tip:"Een marathon is een lange afstand → kilometer."},
-    {v:"Hoe dik is een glasplaat?",a:"4 mm",o:["4 mm","4 cm","4 m","4 km"],tip:"Een glasplaat is een paar millimeter dik."},
-    {v:"Hoe hoog is een glas?",a:"12 cm",o:["12 cm","12 m","12 km","12 mm"],tip:"Een glas is een paar centimeter hoog."},
-    {v:"Hoe lang is een zwaaibrug?",a:"80 m",o:["80 m","80 cm","80 km","80 mm"],tip:"Een brug is veel meter lang."},
-    {v:"Hoe breed is een briefkaart?",a:"10 cm",o:["10 cm","10 m","10 km","10 mm"],tip:"Een briefkaart is een paar centimeter breed."},
-    {v:"Hoe lang is een olympisch zwembad?",a:"50 m",o:["50 m","50 cm","50 km","50 mm"],tip:"Een olympisch zwembad is 50 meter lang."},
-    {v:"Hoe lang is een aardhommel?",a:"22 mm",o:["22 mm","22 cm","22 m","22 km"],tip:"Een hommel is ongeveer 2 centimeter of 22 mm."},
-    {v:"Hoe dik is een krant?",a:"3 mm",o:["3 mm","3 cm","3 m","3 km"],tip:"Een krant is een paar millimeter dik."},
-    {v:"Hoe hoog is de Eiffeltoren?",a:"330 m",o:["330 m","330 cm","330 km","3 km"],tip:"De Eiffeltoren is 330 meter hoog."},
-    {v:"Hoe lang is een potloodpunt?",a:"5 mm",o:["5 mm","5 cm","5 m","5 km"],tip:"De punt van een potlood is een paar millimeter lang."},
-    {v:"Hoe ver loopt een wielrenner in de Ronde van Vlaanderen?",a:"273 km",o:["273 km","273 m","273 cm","2730 m"],tip:"Een grote wielerkoers heeft honderden kilometers."},
-    {v:"Hoe lang is een crocodil?",a:"4 m",o:["4 m","4 cm","4 km","40 cm"],tip:"Een crocodil is meerdere meters lang."},
-    {v:"Hoe breed is een deur?",a:"90 cm",o:["90 cm","90 m","9 m","90 mm"],tip:"Een deur is iets minder dan 1 meter breed."},
-    {v:"Hoe lang is een visdraad?",a:"100 m",o:["100 m","100 cm","100 km","10 m"],tip:"Een hengelsnoer is meerdere tientallen meters lang."},
-    {v:"Hoe lang is de rechteroever van de Schelde in Gent?",a:"2 km",o:["2 km","2 m","2 cm","200 m"],tip:"Kaaien langs een rivier zijn meerdere kilometers lang."},
-    {v:"Hoe dik is een tegel?",a:"10 mm",o:["10 mm","10 cm","1 m","100 mm"],tip:"Een tegel is een centimeter dik = 10 mm."},
-    {v:"Hoe breed is een broodmes?",a:"3 cm",o:["3 cm","3 m","3 km","3 mm"],tip:"Een mes is een paar centimeter breed."},
-    {v:"Hoe hoog is een stoel?",a:"45 cm",o:["45 cm","45 m","45 km","45 mm"],tip:"Een stoel is ongeveer 45 centimeter hoog."},
-    {v:"Hoe lang is een rolschaats?",a:"25 cm",o:["25 cm","25 m","25 km","25 mm"],tip:"Een rolschaats past aan je voet → centimeter."},
-    {v:"Hoe lang is een tennisracket?",a:"68 cm",o:["68 cm","68 m","68 km","68 mm"],tip:"Een racket is iets minder dan 1 meter lang."},
-    {v:"Hoe ver sprintte Usain Bolt in de finale?",a:"100 m",o:["100 m","100 cm","100 km","1 km"],tip:"Een sprint van 100 meter is een klassieke afstand."},
-    {v:"Hoe lang is een giraffe?",a:"5 m",o:["5 m","5 cm","5 km","50 cm"],tip:"Een giraffe is meerdere meters lang."},
-    {v:"Hoe dik is een vel papier?",a:"0,1 mm",o:["0,1 mm","1 mm","1 cm","0,1 cm"],tip:"Een vel papier is dunner dan 1 mm."},
-  ];
-  return shuffle(items);
-}
-
-// ── 3. OMTREK (50 figuren) ────────────────────────────────────────────────
-function genOmtrek(){
-  const shapes=[];
-  // Rechthoeken (20)
-  for(let i=0;i<20;i++){
-    const l=rnd(3,18),b=rnd(2,12);
-    shapes.push({shape:"rechthoek",l,b,ans:2*(l+b),unit:"cm",
-      v:`Bereken de omtrek van de rechthoek.`,
-      tip:`Omtrek rechthoek = 2 × (lengte + breedte) = 2 × (${l} + ${b}) = ${2*(l+b)} cm`});
-  }
-  // Vierkanten (15)
-  for(let i=0;i<15;i++){
-    const z=rnd(2,14);
-    shapes.push({shape:"vierkant",z,ans:4*z,unit:"cm",
-      v:`Bereken de omtrek van het vierkant.`,
-      tip:`Omtrek vierkant = 4 × zijde = 4 × ${z} = ${4*z} cm`});
-  }
-  // Driehoeken (10)
-  for(let i=0;i<10;i++){
-    const a=rnd(3,12),b=rnd(3,12),c=rnd(3,12);
-    shapes.push({shape:"driehoek",a,b,c,ans:a+b+c,unit:"cm",
-      v:`Bereken de omtrek van de driehoek.`,
-      tip:`Omtrek = ${a} + ${b} + ${c} = ${a+b+c} cm`});
-  }
-  // Regelmatige vijfhoeken (5)
-  for(let i=0;i<5;i++){
-    const z=rnd(2,10);
-    shapes.push({shape:"vijfhoek",z,ans:5*z,unit:"cm",
-      v:`Een regelmatige vijfhoek heeft 5 gelijke zijden. Bereken de omtrek.`,
-      tip:`Omtrek = 5 × ${z} = ${5*z} cm`});
-  }
-  return shuffle(shapes).slice(0,10);
-}
-
-// ── 4. TABEL (drag) ───────────────────────────────────────────────────────
-const TABEL = ["km","hm","dam","m","dm","cm","mm"];
-const TABEL_KLEUREN = {km:"#fce7f3",hm:"#fef3c7",dam:"#dcfce7",m:"#dbeafe",dm:"#ede9fe",cm:"#fef9c3",mm:"#fee2e2"};
-
-// ── 5. HERLEIDEN (50+ vragen, enkel gehele antwoorden) ───────────────────
-function genHerleiden(){
-  const items=[];
-  const conversies=[
-    // [van, naar, factor, regel, bronLijst]
-    ["mm","cm", 0.1,  "÷ 10",  [10,20,30,40,50,60,70,80,90,100,120,150,200,250,300]],
-    ["cm","mm", 10,   "× 10",  [1,2,3,4,5,6,7,8,9,10,12,15,20,25,30]],
-    ["cm","dm", 0.1,  "÷ 10",  [10,20,30,40,50,60,70,80,90,100,120,150]],
-    ["dm","cm", 10,   "× 10",  [1,2,3,4,5,6,7,8,9,10,12,15]],
-    ["dm","m",  0.1,  "÷ 10",  [10,20,30,40,50,60,70,80,90,100]],
-    ["m", "dm", 10,   "× 10",  [1,2,3,4,5,6,7,8,9,10,12,15]],
-    ["m", "cm", 100,  "× 100", [1,2,3,4,5,6,7,8,9,10]],
-    ["cm","m",  0.01, "÷ 100", [100,200,300,400,500,600,700,800,900,1000]],
-    ["km","m",  1000, "× 1000",[1,2,3,4,5,6,7,8,9,10]],
-    ["m", "km", 0.001,"÷ 1000",[1000,2000,3000,4000,5000,6000,7000,8000,9000,10000]],
-    ["dam","m", 10,   "× 10",  [1,2,3,4,5,6,7,8,9,10,15,20]],
-    ["m","dam", 0.1,  "÷ 10",  [10,20,30,40,50,60,70,80,90,100]],
-    ["hm","m",  100,  "× 100", [1,2,3,4,5,6,7,8,9,10]],
-    ["m","hm",  0.01, "÷ 100", [100,200,300,400,500,600,700,800,900,1000]],
-  ];
-  conversies.forEach(([van,naar,factor,regel,bronLijst])=>{
-    shuffle(bronLijst).forEach(val=>{
-      const ans=val*factor;
-      if(ans!==Math.round(ans))return; // Sla kommagetallen over
-      items.push({
-        van, naar, waarde:val, ans,
-        v:`${val} ${van} = ... ${naar}`,
-        tip:`${val} ${van} ${regel} = ${ans} ${naar}`
-      });
-    });
-  });
-  return shuffle(items);
-}
-
-// ── 6. REKENEN (50+ vragen, gemengde maten) ────────────────────────────────
-function genRekenen(){
-  const items=[];
-
-  // cm + mm (25 paren)
-  const cmMmPlus=[
-    [6,4,3,9],[8,5,2,7],[10,3,5,8],[12,6,4,7],[15,2,3,9],
-    [9,1,6,5],[7,8,2,4],[11,3,8,9],[14,5,6,8],[13,7,4,6],
-    [5,3,2,9],[8,2,5,6],[10,7,3,5],[12,1,7,9],[6,8,4,5],
-    [4,6,3,8],[9,3,7,9],[16,2,5,9],[7,5,4,7],[11,6,3,8],
-    [13,4,6,9],[8,7,5,5],[10,9,4,3],[15,6,7,8],[6,2,8,9],
-  ];
-  cmMmPlus.forEach(([a,b,c,d])=>{
-    const totMm=(a*10+b)+(c*10+d);
-    const resCm=Math.floor(totMm/10),resMm=totMm%10;
-    items.push({type:"gemengd_plus",a,b,c,d,
-      v:`${a} cm ${b} mm + ${c} cm ${d} mm = ... cm ... mm`,
-      ans1:resCm,ans2:resMm,u1:"cm",u2:"mm",
-      tip:`${a}cm ${b}mm + ${c}cm ${d}mm = ${totMm}mm = ${resCm}cm ${resMm}mm`});
-  });
-
-  // cm - mm (15 paren)
-  const cmMmMin=[
-    [12,5,4,8],[15,3,6,7],[10,2,3,9],[18,6,5,8],[20,4,7,9],
-    [14,7,3,8],[9,5,2,9],[16,3,5,6],[11,8,4,9],[13,4,6,7],
-    [17,2,8,9],[19,5,7,8],[12,9,5,6],[14,3,9,8],[16,7,4,9],
-  ];
-  cmMmMin.forEach(([a,b,c,d])=>{
-    const totMm=(a*10+b)-(c*10+d);
-    if(totMm<0)return;
-    const resCm=Math.floor(totMm/10),resMm=totMm%10;
-    items.push({type:"gemengd_min",a,b,c,d,
-      v:`${a} cm ${b} mm − ${c} cm ${d} mm = ... cm ... mm`,
-      ans1:resCm,ans2:resMm,u1:"cm",u2:"mm",
-      tip:`${a}cm ${b}mm − ${c}cm ${d}mm = ${totMm}mm = ${resCm}cm ${resMm}mm`});
-  });
-
-  // m + cm (10 paren)
-  [[5,30,2,40],[8,20,1,50],[3,70,4,80],[6,10,2,90],[7,40,3,60],
-   [4,50,5,70],[9,20,1,80],[2,30,6,40],[1,60,3,90],[5,80,2,50]].forEach(([a,b,c,d])=>{
-    const totCm=(a*100+b)+(c*100+d);
-    const resM=Math.floor(totCm/100),resCm2=totCm%100;
-    items.push({type:"gemengd_plus_m",a,b,c,d,
-      v:`${a} m ${b} cm + ${c} m ${d} cm = ... m ... cm`,
-      ans1:resM,ans2:resCm2,u1:"m",u2:"cm",
-      tip:`${a}m ${b}cm + ${c}m ${d}cm = ${totCm}cm = ${resM}m ${resCm2}cm`});
-  });
-
-  // m - cm (5 paren)
-  [[8,20,3,50],[10,30,4,70],[6,40,2,60],[9,10,5,80],[7,60,3,90]].forEach(([a,b,c,d])=>{
-    const totCm=(a*100+b)-(c*100+d);
-    if(totCm<0)return;
-    const resM=Math.floor(totCm/100),resCm2=totCm%100;
-    items.push({type:"gemengd_min_m",a,b,c,d,
-      v:`${a} m ${b} cm − ${c} m ${d} cm = ... m ... cm`,
-      ans1:resM,ans2:resCm2,u1:"m",u2:"cm",
-      tip:`${a}m ${b}cm − ${c}m ${d}cm = ${totCm}cm = ${resM}m ${resCm2}cm`});
-  });
-
-  // Eenvoudig cm optellen (10)
-  for(let i=0;i<10;i++){
-    const a=rnd(10,90),b=rnd(10,80);
-    items.push({type:"simple",v:`${a} cm + ${b} cm = ... cm`,ans1:a+b,ans2:null,u1:"cm",u2:null,tip:`${a}+${b}=${a+b}`});
-  }
-  // Eenvoudig cm aftrekken (10)
-  for(let i=0;i<10;i++){
-    const b=rnd(5,40),a=rnd(b+5,95);
-    items.push({type:"simple",v:`${a} cm − ${b} cm = ... cm`,ans1:a-b,ans2:null,u1:"cm",u2:null,tip:`${a}-${b}=${a-b}`});
-  }
-  // Eenvoudig mm optellen (5)
-  for(let i=0;i<5;i++){
-    const a=rnd(5,50),b=rnd(5,50);
-    items.push({type:"simple",v:`${a} mm + ${b} mm = ... mm`,ans1:a+b,ans2:null,u1:"mm",u2:null,tip:`${a}+${b}=${a+b}`});
-  }
-
-  return shuffle(items);
-}
-
-// ══════════════════════════════════════════════════════════════════════════
-// QUIZ ENGINE
-// ══════════════════════════════════════════════════════════════════════════
-const MODES = {
-  meten:    {lbl:"📐 Meten",      save:"Wiskunde - Lengtematen: Meten met meetlat"},
-  kiezen:   {lbl:"🤔 Juiste maat",save:"Wiskunde - Lengtematen: Juiste maat kiezen"},
-  omtrek:   {lbl:"🔷 Omtrek",     save:"Wiskunde - Lengtematen: Omtrek berekenen"},
-  tabel:    {lbl:"📊 Tabel",      save:"Wiskunde - Lengtematen: Lengtemaattabel"},
-  herleiden:{lbl:"🔄 Herleiden",  save:"Wiskunde - Lengtematen: Herleiden"},
-  rekenen:  {lbl:"➕ Rekenen",    save:"Wiskunde - Lengtematen: Rekenen"},
-  toets:    {lbl:"🏆 TOETS",      save:"Wiskunde - Lengtematen: Toets (alles door elkaar)"},
-};
-
-let QS = {}; // quiz state
-
-document.querySelectorAll(".menu-card").forEach(c=>c.addEventListener("click",()=>startMode(c.dataset.mode)));
-$("stop-btn").onclick=()=>{stopQuiz();};
-$("end-retry").onclick=()=>startMode(QS.mode);
-$("end-menu").onclick=()=>{h("v-end");s("v-menu");};
-$("tip-btn").onclick=()=>{
-  const q=QS.questions[QS.idx];
-  if(q&&q.tip){$("q-tip").textContent="💡 "+q.tip;s("q-tip");}
-};
-$("check-btn").onclick=checkAnswer;
-$("next-btn").onclick=nextQ;
-$("q-inp1").addEventListener("keypress",e=>{if(e.key==="Enter")checkAnswer();});
-$("q-inp2").addEventListener("keypress",e=>{if(e.key==="Enter")checkAnswer();});
-
-function stopQuiz(){h("v-quiz");s("v-menu");}
-
-function startMode(mode){
-  const isToets = mode==="toets";
-  let questions;
-  if(mode==="meten"){
-    questions=genMeten();
-  } else if(mode==="kiezen"){
-    questions=genKiezen().slice(0,10);
-  } else if(mode==="omtrek"){
-    questions=genOmtrek();
-  } else if(mode==="tabel"){
-    questions=[{_tabel:true}]; // Slechts 1 ronde, stopt als correct
-  } else if(mode==="herleiden"){
-    questions=genHerleiden().slice(0,10);
-  } else if(mode==="rekenen"){
-    questions=genRekenen().slice(0,10);
-  } else if(mode==="toets"){
-    questions=buildToets();
-  }
-
-  QS={ mode, questions, idx:0, score:0, history:[], isToets, startTime:new Date() };
-  h("v-menu"); h("v-end"); s("v-quiz");
-  $("q-mode-lbl").textContent=MODES[mode].lbl;
-  buildBullets();
-  renderQ();
-}
-
-function buildToets(){
-  // Eerste vraag = tabel (verplicht)
-  const q=[];
-  q.push({_tabel:true});
-  q.push(...pick(genMeten(),3));
-  q.push(...pick(genKiezen(),4));
-  q.push(...pick(genOmtrek(),4));
-  q.push(...pick(genHerleiden(),4));
-  q.push(...pick(genRekenen(),4));
-  return q.slice(0,20);
-}
-
-function buildBullets(){
-  const c=$("bullets"); c.innerHTML="";
-  const n=QS.questions.length;
-  for(let i=0;i<n;i++){
-    const b=document.createElement("div");
-    b.className="bullet"+(i===0?" bCur":"");
-    b.id="bl"+i; c.appendChild(b);
-  }
-}
-function updBullet(i,ok){
-  const b=$("bl"+i); if(!b)return;
-  b.classList.remove("bCur");
-  b.classList.add(ok?"bOk":"bErr");
-  const nb=$("bl"+(i+1)); if(nb)nb.classList.add("bCur");
-}
-
-// ── RENDER QUESTION ────────────────────────────────────────────────────────
-function renderQ(){
-  const {idx,questions,isToets}=QS;
-  const q=questions[idx];
-  const total=questions.length;
-
-  $("q-cnt").textContent=`${idx+1} / ${total}`;
-  h("q-fb"); h("q-tip"); h("next-btn"); s("check-btn");
-  h("q-ruler"); h("q-shape"); h("q-opts"); h("q-inp-wrap"); h("q-drag"); h("q-lt-tabel"); h("q-lt-tabel-force");
-  $("q-inp1").value=""; $("q-inp1").className="ans-inp"; $("q-inp1").disabled=false;
-  $("q-inp2").value=""; $("q-inp2").className="ans-inp"; $("q-inp2").disabled=false;
-  h("q-inp2-wrap");
-  if(!isToets)s("tip-btn"); else h("tip-btn");
-
-  if(q._tabel){ renderTabel(); return; }
-  if(q.mm!==undefined){ renderMeten(q); return; }
-  if(q.o){ renderMC(q); return; }
-  if(q.shape){ renderOmtrek(q); return; }
-  if(q.van){ renderHerleiden(q); return; }
-  if(q.type){ renderRekenen(q); return; }
-}
-
-// ── MEETLAT ────────────────────────────────────────────────────────────────
-let rulerState={};
-function renderMeten(q){
-  $("q-cat").textContent="📐 Meten";
-  $("q-txt").innerHTML=`Hoe lang is het rode lijnstuk? <br><span style="color:#64748b;font-size:.88rem">Sleep de meetlat onder het lijnstuk.</span>`;
-  s("q-ruler");
-  s("check-btn");
-
-  const canvas=$("ruler-canvas");
-  const W=canvas.parentElement.offsetWidth||340;
-  canvas.width=W; canvas.height=110;
-
-  // Lijnstuk = q.mm, maar geschaald zodat 1px = 1.5 eenheden max
-  const PX_PER_MM=1.8; // pixels per mm (visueel)
-  const lineLen=Math.round(q.mm*PX_PER_MM);
-  const lineX=30, lineY=25;
-  // Ruler: 300mm breed = 300*PX_PER_MM px
-  const rulerLen=Math.round(300*PX_PER_MM);
-  rulerState={
-    q, PX_PER_MM, lineLen, lineX, lineY,
-    rulerX: lineX-rnd(20,60)*PX_PER_MM, // startpositie meetlat (willekeurig off)
-    dragging:false, dragStartX:0, dragStartRulerX:0,
-    rulerLen, W
-  };
-  drawRuler();
-  canvas.onpointerdown=rulerPointerDown;
-  canvas.onpointermove=rulerPointerMove;
-  canvas.onpointerup=rulerPointerUp;
-  canvas.onpointercancel=rulerPointerUp;
-}
-
-function drawRuler(){
-  const {q,PX_PER_MM,lineLen,lineX,lineY,rulerX,rulerLen,W}=rulerState;
-  const canvas=$("ruler-canvas");
-  const ctx=canvas.getContext("2d");
-  ctx.clearRect(0,0,W,110);
-
-  // Achtergrond
-  ctx.fillStyle="#f0f7ff";
-  ctx.fillRect(0,0,W,110);
-
-  // Lijnstuk (rood)
-  ctx.strokeStyle="#dc2626";
-  ctx.lineWidth=4;
-  ctx.lineCap="round";
-  ctx.beginPath();
-  ctx.moveTo(lineX,lineY);
-  ctx.lineTo(lineX+lineLen,lineY);
-  ctx.stroke();
-  // Eindstreepjes lijnstuk
-  [lineX,lineX+lineLen].forEach(x=>{
-    ctx.beginPath();
-    ctx.moveTo(x,lineY-8);
-    ctx.lineTo(x,lineY+8);
-    ctx.stroke();
-  });
-
-  // Meetlat body
-  const ry=50, rh=45;
-  ctx.fillStyle="#fffbe6";
-  ctx.strokeStyle="#d97706";
-  ctx.lineWidth=2;
-  ctx.beginPath();
-  ctx.roundRect(rulerX,ry,rulerLen,rh,6);
-  ctx.fill();
-  ctx.stroke();
-
-  // Streepjes + labels op meetlat
-  for(let mm=0;mm<=300;mm++){
-    const x=rulerX+mm*PX_PER_MM;
-    if(x<-5||x>W+5)continue;
-    let tickH;
-    if(mm%10===0)      tickH=16;
-    else if(mm%5===0)  tickH=10;
-    else               tickH=5;
-    ctx.strokeStyle="#92400e";
-    ctx.lineWidth=mm%10===0?1.5:1;
-    ctx.beginPath();
-    ctx.moveTo(x,ry);
-    ctx.lineTo(x,ry+tickH);
-    ctx.stroke();
-    if(mm%10===0){
-      ctx.fillStyle="#78350f";
-      ctx.font="bold 11px Nunito,sans-serif";
-      ctx.textAlign="center";
-      ctx.fillText(mm/10+"",x,ry+28);
-    }
-  }
-  // Label "cm" aan begin
-  ctx.fillStyle="#78350f";
-  ctx.font="bold 10px Nunito,sans-serif";
-  ctx.textAlign="left";
-  ctx.fillText("cm",rulerX+4,ry+rh-4);
-
-  // Pijl/markering op meetlat ter hoogte van lijnstuk-start en -einde
-  // Lees af: offset van lijnstuk-start t.o.v. nul van meetlat
-  const offsetStart=(lineX-rulerX)/PX_PER_MM; // mm
-  const offsetEnd=offsetStart+q.mm;
-
-  // Toon "0" markering op meetlat
-  // Leeswaarde
-  const reading=Math.round(offsetEnd-offsetStart); // = q.mm altijd
-  // Toon meetwaarde onder de meetlat
-  const meas=offsetEnd; // mm vanaf nul meetlat tot einde lijnstuk
-  const measCm=Math.floor(meas/10);
-  const measMm=Math.round(meas%10);
-
-  // Verticale rode markeerlijn op meetlat = einde lijnstuk
-  const markX=lineX+lineLen;
-  if(markX>=rulerX&&markX<=rulerX+rulerLen){
-    ctx.strokeStyle="#2563eb";
-    ctx.lineWidth=2;
-    ctx.setLineDash([4,3]);
-    ctx.beginPath();
-    ctx.moveTo(markX,lineY+8);
-    ctx.lineTo(markX,ry+rh);
-    ctx.stroke();
-    ctx.setLineDash([]);
-  }
-
-  // Leesafstand in display
-  const offS=Math.round(offsetStart);
-  const offE=Math.round(offsetEnd);
-  const lenMm=offE-offS;
-  let leesTekst="";
-  if(offS>=0&&offE<=300&&lenMm>0){
-    const cm=Math.floor(lenMm/10);
-    const mm=lenMm%10;
-    leesTekst=cm>0&&mm>0?`${cm} cm ${mm} mm`:(cm>0?`${cm} cm`:`${mm} mm`);
-    $("ruler-reading").textContent="Meetlat toont: "+leesTekst;
-  } else {
-    $("ruler-reading").textContent="Schuif de meetlat zodat 0 onder het begin van het lijnstuk staat.";
-  }
-  rulerState.currentReading=lenMm;
-}
-
-function rulerPointerDown(e){
-  e.preventDefault();
-  rulerState.dragging=true;
-  rulerState.dragStartX=e.clientX||e.touches?.[0]?.clientX||0;
-  rulerState.dragStartRulerX=rulerState.rulerX;
-  $("ruler-canvas").setPointerCapture(e.pointerId);
-}
-function rulerPointerMove(e){
-  if(!rulerState.dragging)return;
-  e.preventDefault();
-  const cx=e.clientX;
-  const dx=cx-rulerState.dragStartX;
-  rulerState.rulerX=rulerState.dragStartRulerX+dx;
-  drawRuler();
-}
-function rulerPointerUp(e){
-  rulerState.dragging=false;
-}
-
-function checkMeten(){
-  const q=rulerState.q;
-  // Accepteer als leerling de nulstreep onder het begin van het lijnstuk heeft
-  // en de aflezing klopt (binnen 5mm tolerantie)
-  const offsetStart=(rulerState.lineX-rulerState.rulerX)/rulerState.PX_PER_MM;
-  const nulOK=Math.abs(offsetStart)<8; // nul moet dichtbij begin zijn
-  const lenMm=rulerState.currentReading;
-  const correct=nulOK&&Math.abs(lenMm-q.mm)<=5;
-
-  const corr=q.mm;
-  const corrCm=Math.floor(corr/10),corrMm=corr%10;
-  const corrTxt=corrCm>0&&corrMm>0?`${corrCm} cm ${corrMm} mm`:(corrCm>0?`${corrCm} cm`:`${corrMm} mm`);
-
-  showFB(correct,
-    `✅ Correct! Het lijnstuk is ${corrTxt}.`,
-    `❌ Niet helemaal. Het lijnstuk is <b>${corrTxt}</b>. Leg de 0 van de meetlat precies onder het begin van het lijnstuk.`
-  );
-  record(correct,`Lijnstuk aflezen`,corrTxt,String(lenMm)+"mm","Meten");
-  h("check-btn"); s("next-btn");
-}
-
-// ── MC ─────────────────────────────────────────────────────────────────────
-function renderMC(q){
-  $("q-cat").textContent="🤔 Juiste maat";
-  $("q-txt").textContent=q.v;
-  s("q-opts");
-  const cont=$("q-opts"); cont.innerHTML="";
-  shuffle(q.o).forEach(opt=>{
-    const btn=document.createElement("button");
-    btn.className="opt-btn pop";
-    btn.textContent=opt;
-    btn.onclick=()=>{
-      document.querySelectorAll(".opt-btn").forEach(b=>b.disabled=true);
-      const ok=opt===q.a;
-      btn.classList.add(ok?"correct":"wrong");
-      if(!ok) document.querySelectorAll(".opt-btn").forEach(b=>{if(b.textContent===q.a)b.classList.add("correct");});
-      showFB(ok,"✅ Correct!",`❌ Fout. Het juiste antwoord is: <b>${q.a}</b>`);
-      if(!ok&&!QS.isToets&&q.tip){$("q-tip").textContent="💡 "+q.tip;s("q-tip");}
-      record(ok,q.v,q.a,opt,"Juiste maat");
-      h("check-btn"); s("next-btn");
-    };
-    cont.appendChild(btn);
-  });
-  h("check-btn"); // MC gebruikt eigen onclick
-}
-
-// ── OMTREK ─────────────────────────────────────────────────────────────────
-function renderOmtrek(q){
-  $("q-cat").textContent="🔷 Omtrek";
-  $("q-txt").textContent=q.v;
-  // SVG
-  s("q-shape");
-  $("q-shape").innerHTML=drawShape(q);
-  // Input
-  s("q-inp-wrap");
-  $("q-unit1").textContent=q.unit||"cm";
-  h("q-inp2-wrap");
-  setTimeout(()=>$("q-inp1").focus(),80);
-}
-
-function drawShape(q){
-  if(q.shape==="rechthoek"){
-    const l=q.l,b=q.b;
-    return `<svg width="220" height="130" viewBox="0 0 220 130">
-      <rect x="25" y="20" width="170" height="90" fill="#dbeafe" stroke="#2563eb" stroke-width="3" rx="4"/>
-      <text x="110" y="14" text-anchor="middle" font-family="Nunito" font-weight="800" font-size="15" fill="#1e3a5f">${l} cm</text>
-      <text x="110" y="122" text-anchor="middle" font-family="Nunito" font-weight="800" font-size="15" fill="#1e3a5f">${l} cm</text>
-      <text x="12" y="70" text-anchor="middle" font-family="Nunito" font-weight="800" font-size="15" fill="#1e3a5f" transform="rotate(-90 12 70)">${b} cm</text>
-      <text x="208" y="70" text-anchor="middle" font-family="Nunito" font-weight="800" font-size="15" fill="#1e3a5f" transform="rotate(90 208 70)">${b} cm</text>
-    </svg>`;
-  } else if(q.shape==="vierkant"){
-    const z=q.z;
-    return `<svg width="140" height="140" viewBox="0 0 140 140">
-      <rect x="20" y="20" width="100" height="100" fill="#dcfce7" stroke="#16a34a" stroke-width="3" rx="4"/>
-      <text x="70" y="14" text-anchor="middle" font-family="Nunito" font-weight="800" font-size="15" fill="#1e3a5f">${z} cm</text>
-      <text x="70" y="132" text-anchor="middle" font-family="Nunito" font-weight="800" font-size="15" fill="#1e3a5f">${z} cm</text>
-      <text x="10" y="74" text-anchor="middle" font-family="Nunito" font-weight="800" font-size="15" fill="#1e3a5f" transform="rotate(-90 10 74)">${z} cm</text>
-      <text x="130" y="74" text-anchor="middle" font-family="Nunito" font-weight="800" font-size="15" fill="#1e3a5f" transform="rotate(90 130 74)">${z} cm</text>
-    </svg>`;
-  } else if(q.shape==="driehoek"){
-    const {a,b,c}=q;
-    return `<svg width="200" height="150" viewBox="0 0 200 150">
-      <polygon points="100,10 10,140 190,140" fill="#fef3c7" stroke="#d97706" stroke-width="3"/>
-      <text x="100" y="88" text-anchor="middle" font-family="Nunito" font-weight="800" font-size="14" fill="#78350f">${a} cm</text>
-      <text x="48" y="135" text-anchor="middle" font-family="Nunito" font-weight="800" font-size="14" fill="#78350f">${b} cm</text>
-      <text x="152" y="135" text-anchor="middle" font-family="Nunito" font-weight="800" font-size="14" fill="#78350f">${c} cm</text>
-    </svg>`;
-  } else if(q.shape==="vijfhoek"){
-    const z=q.z;
-    const pts=[];
-    for(let i=0;i<5;i++){const a=(i*72-90)*Math.PI/180;pts.push([100+70*Math.cos(a),90+70*Math.sin(a)]);}
-    const pStr=pts.map(p=>p[0].toFixed(1)+","+p[1].toFixed(1)).join(" ");
-    return `<svg width="200" height="180" viewBox="0 0 200 180">
-      <polygon points="${pStr}" fill="#ede9fe" stroke="#7c3aed" stroke-width="3"/>
-      <text x="100" y="170" text-anchor="middle" font-family="Nunito" font-weight="800" font-size="14" fill="#4c1d95">Elke zijde: ${z} cm</text>
-    </svg>`;
-  }
-  return "";
-}
-
-function checkOmtrek(){
-  const q=QS.questions[QS.idx];
-  const val=parseFloat($("q-inp1").value.trim());
-  if(isNaN(val)){ $("q-inp1").classList.add("shake"); return; }
-  const ok=Math.abs(val-q.ans)<0.05;
-  $("q-inp1").className="ans-inp "+(ok?"ok":"err");
-  $("q-inp1").disabled=true;
-  showFB(ok,"✅ Correct! Goed berekend!",`❌ Fout. De omtrek is <b>${q.ans} ${q.unit}</b>`);
-  if(!ok&&!QS.isToets&&q.tip){$("q-tip").textContent="💡 "+q.tip;s("q-tip");}
-  record(ok,q.v,String(q.ans),String(val),"Omtrek");
-  h("check-btn"); s("next-btn");
-}
-
-// ── TABEL DRAG DROP ────────────────────────────────────────────────────────
-let tabState={};
-function renderTabel(){
-  $("q-cat").textContent="📊 Lengtemaattabel";
-  $("q-txt").innerHTML="Sleep de eenheden <b>van lang naar kort</b>: km → mm";
-  s("q-drag");
-  const cont=$("q-drag");
-  cont.innerHTML="";
-  h("tip-btn");
-
-  const chips=shuffle([...TABEL]);
-  tabState={slots:Array(7).fill(null),dragging:null,done:false};
-
-  // Slots rij
-  const sRow=document.createElement("div");
-  sRow.style.cssText="display:flex;flex-wrap:wrap;gap:4px;justify-content:center;margin-bottom:12px";
-  sRow.id="tab-slots";
-  TABEL.forEach((_,i)=>{
-    const s2=document.createElement("div");
-    s2.className="slot"; s2.dataset.idx=i; s2.id="slot-"+i;
-    s2.textContent="";
-    // drag over
-    s2.addEventListener("dragover",e=>{e.preventDefault();s2.classList.add("over");});
-    s2.addEventListener("dragleave",()=>s2.classList.remove("over"));
-    s2.addEventListener("drop",e=>{e.preventDefault();s2.classList.remove("over");dropOnSlot(i);});
-    // touch
-    s2.addEventListener("touchend",e=>{e.preventDefault();dropOnSlot(i);},{passive:false});
-    sRow.appendChild(s2);
-  });
-  cont.appendChild(sRow);
-
-  // Pool
-  const pool=document.createElement("div");
-  pool.className="chip-pool"; pool.id="tab-pool";
-  pool.addEventListener("dragover",e=>{e.preventDefault();pool.classList.add("over");});
-  pool.addEventListener("dragleave",()=>pool.classList.remove("over"));
-  pool.addEventListener("drop",e=>{e.preventDefault();pool.classList.remove("over");dropOnPool();});
-  pool.addEventListener("touchend",e=>{e.preventDefault();dropOnPool();},{passive:false});
-  chips.forEach(val=>pool.appendChild(makeChip(val)));
-  cont.appendChild(pool);
-
-  // Controleer knop
-  s("check-btn");
-  $("check-btn").onclick=checkTabel;
-}
-
-function makeChip(val){
-  const c=document.createElement("div");
-  c.className="drag-chip"; c.textContent=val; c.dataset.val=val; c.draggable=true;
-  c.style.background=TABEL_KLEUREN[val]||"#1e3a5f";
-  c.style.color="#1e293b";
-  c.addEventListener("dragstart",()=>{tabState.dragging=val;c.style.opacity=".5";});
-  c.addEventListener("dragend",()=>{c.style.opacity="1";});
-  // Touch
-  c.addEventListener("touchstart",e=>{tabState.dragging=val;},{passive:true});
-  return c;
-}
-
-function dropOnSlot(idx){
-  if(!tabState.dragging)return;
-  const val=tabState.dragging;
-  // Verwijder uit vorig slot als al geplaatst
-  tabState.slots.forEach((v,i)=>{if(v===val&&i!==idx){tabState.slots[i]=null;const s2=$("slot-"+i);if(s2){s2.textContent="";s2.classList.remove("filled");}}});
-  // Verwijder uit pool
-  document.querySelectorAll(".drag-chip").forEach(c=>{if(c.dataset.val===val&&c.parentElement?.id==="tab-pool")c.remove();});
-  // Zet huidig slot vrij terug in pool als al bezet
-  if(tabState.slots[idx]){
-    const old=tabState.slots[idx];
-    $("tab-pool")?.appendChild(makeChip(old));
-  }
-  tabState.slots[idx]=val;
-  const sl=$("slot-"+idx);
-  if(sl){sl.textContent=val;sl.classList.add("filled");sl.style.background=TABEL_KLEUREN[val]||"#dbeafe";}
-  tabState.dragging=null;
-}
-
-function dropOnPool(){
-  if(!tabState.dragging)return;
-  const val=tabState.dragging;
-  // Verwijder uit slot
-  tabState.slots.forEach((v,i)=>{if(v===val){tabState.slots[i]=null;const s2=$("slot-"+i);if(s2){s2.textContent="";s2.classList.remove("filled");s2.style.background="";}}});
-  // Terug in pool
-  if(!document.querySelector(`#tab-pool [data-val="${val}"]`))
-    $("tab-pool")?.appendChild(makeChip(val));
-  tabState.dragging=null;
-}
-
-function checkTabel(){
-  if(tabState.done)return;
-  const ok=tabState.slots.every((v,i)=>v===TABEL[i]);
-  TABEL.forEach((_,i)=>{
-    const sl=$("slot-"+i);
-    if(!sl)return;
-    sl.classList.remove("filled");
-    if(tabState.slots[i]===TABEL[i]) sl.classList.add("ok-slot");
-    else { sl.classList.add("err-slot"); sl.textContent=TABEL[i]; }
-  });
-  showFB(ok,"✅ Uitstekend! Je kent de volgorde!",`❌ Niet helemaal. De juiste volgorde is: ${TABEL.join(" → ")}`);
-
-  if(ok){
-    tabState.done=true;
-    record(ok,"Lengtemaattabel slepen",TABEL.join("→"),tabState.slots.join("→"),"Tabel");
-    h("check-btn"); s("next-btn");
-    if(QS.mode==="tabel"){
-      // Tabel modus stopt na 1 correcte invulling
-      $("next-btn").textContent="Klaar! →";
-    }
-  } else {
-    // Niet correct: toon juiste antwoord in slots, laat opnieuw proberen
-    setTimeout(()=>{
-      TABEL.forEach((_,i)=>{
-        const sl=$("slot-"+i);
-        if(sl){sl.className="slot";sl.textContent="";}
-      });
-      tabState.slots=Array(7).fill(null);
-      document.querySelectorAll(".drag-chip").forEach(c=>c.remove());
-      const pool=$("tab-pool");
-      if(pool){pool.innerHTML="";shuffle([...TABEL]).forEach(v=>pool.appendChild(makeChip(v)));}
-      h("q-fb");
-    },2200);
-  }
-}
-
-// ── HERLEIDEN ──────────────────────────────────────────────────────────────
-let herState={};
-function renderHerleiden(q){
-  $("q-cat").textContent="🔄 Herleiden";
-  $("q-txt").textContent=q.v;
-  // Toon lengtemaattabel
-  s("q-lt-tabel");
-  $("q-lt-tabel").innerHTML=buildLtTabel(q.waarde,q.van);
-  // Input
-  s("q-inp-wrap");
-  $("q-unit1").textContent=q.naar;
-  h("q-inp2-wrap");
-  herState={q,pogingen:0,tabelVerplicht:false};
-  setTimeout(()=>$("q-inp1").focus(),80);
-}
-
-// Zet een getal om naar een map van kolom→cijfer
-// Bv: 20 cm → {cm:"2", mm:"0"}  |  300 m → {hm:"3","dam":"0","m":"0"}
-// Strategie: schrijf het getal uit in mm (kleinste eenheid), dan verdeel de cijfers
-function getKolomCijfers(waarde, eenheid) {
-  // Positie van elke eenheid in de tabel (index)
-  const idx = {km:0,hm:1,dam:2,m:3,dm:4,cm:5,mm:6};
-  // Hoeveel mm is 1 van deze eenheid?
-  const mmPerUnit = {km:1e6,hm:1e5,dam:1e4,m:1e3,dm:100,cm:10,mm:1};
-  const totalMm = waarde * mmPerUnit[eenheid];
-  // Splits in kolommen van rechts naar links
-  const units = ["km","hm","dam","m","dm","cm","mm"];
-  const rest_vals = [1e6,1e5,1e4,1e3,100,10,1];
-  const result = {};
-  let remaining = totalMm;
-  units.forEach((u,i)=>{
-    const digit = Math.floor(remaining / rest_vals[i]);
-    remaining = remaining % rest_vals[i];
-    result[u] = digit;
-  });
-  return result;
-}
-
-function buildLtTabel(waarde, eenheid) {
-  const cijfers = getKolomCijfers(waarde, eenheid);
-  const cols = TABEL;
-  // Bepaal welke kolommen een waarde hebben (van het eerste niet-nul cijfer tot de eenheidskolom)
-  const idx = {km:0,hm:1,dam:2,m:3,dm:4,cm:5,mm:6};
-  const eenheidIdx = idx[eenheid];
-  // Zoek eerste significante kolom
-  let startIdx = 0;
-  for(let i=0;i<cols.length;i++){ if(cijfers[cols[i]]>0){ startIdx=i; break; } }
-
-  let html=`<table class="lt-table"><tr>`;
-  cols.forEach(c=>html+=`<th class="${c}-col">${c}</th>`);
-  html+=`</tr><tr>`;
-  cols.forEach((c,i)=>{
-    const dig = cijfers[c];
-    // Toon cijfer als het tussen startIdx en eenheidIdx valt
-    if(i>=startIdx && i<=eenheidIdx && dig!==undefined){
-      html+=`<td class="${c}-col"><b style="font-size:1rem;color:#1e3a5f">${dig}</b></td>`;
-    } else {
-      html+=`<td class="${c}-col">&nbsp;</td>`;
-    }
-  });
-  html+=`</tr></table>`;
-  return html;
-}
-
-function buildLtTabelForce(q) {
-  const cijfers = getKolomCijfers(q.waarde, q.van);
-  const ansCijfers = getKolomCijfers(q.ans, q.naar);
-  const cols = TABEL;
-  const idx = {km:0,hm:1,dam:2,m:3,dm:4,cm:5,mm:6};
-  const vanIdx = idx[q.van];
-  const naarIdx = idx[q.naar];
-  const startIdx = Math.min(vanIdx, naarIdx);
-  const endIdx   = Math.max(vanIdx, naarIdx);
-
-  let html=`<table class="lt-table"><tr>`;
-  cols.forEach(c=>html+=`<th class="${c}-col">${c}</th>`);
-  html+=`</tr><tr>`;
-  cols.forEach((c,i)=>{
-    if(i===vanIdx){
-      // Toon bronwaarde cijfer
-      const dig=cijfers[c]; 
-      html+=`<td class="${c}-col"><b style="font-size:1rem;color:#1e3a5f">${dig!==undefined?dig:q.waarde}</b></td>`;
-    } else if(i===naarIdx){
-      // Invulveld voor het antwoord
-      html+=`<td class="${c}-col"><input type="number" class="lt-inp" id="lt-force-inp" placeholder="?" style="width:38px"></td>`;
-    } else if(i>startIdx && i<endIdx){
-      // Tussenliggende kolommen tonen 0
-      html+=`<td class="${c}-col"><b style="font-size:0.95rem;color:#94a3b8">0</b></td>`;
-    } else {
-      html+=`<td class="${c}-col">&nbsp;</td>`;
-    }
-  });
-  html+=`</tr></table>`;
-  return html;
-}
-
-function checkHerleiden(){
-  const q=herState.q;
-  // Als tabel-verplicht modus actief
-  if(herState.tabelVerplicht){
-    const ltInp=$("lt-force-inp");
-    if(!ltInp)return;
-    const val=parseFloat(ltInp.value.trim());
-    if(isNaN(val)){ltInp.classList.add("shake");return;}
-    const ok=Math.abs(val-q.ans)<0.05;
-    ltInp.className="lt-inp "+(ok?"lt-ok":"lt-err");
-    ltInp.disabled=true;
-    if(ok){
-      // Herstel hoofdinput ook
-      $("q-inp1").value=q.ans;
-      $("q-inp1").className="ans-inp ok";
-      showFB(true,"✅ Correct via de tabel! Goed zo!");
-    } else {
-      ltInp.value=q.ans; // toon correct
-      showFB(false,`❌ Het juiste antwoord is <b>${q.ans} ${q.naar}</b>. Je ziet het nu in de tabel.`);
-    }
-    record(ok,q.v,String(q.ans),String(val),"Herleiden");
-    h("check-btn"); s("next-btn"); herState.tabelVerplicht=false;
-    return;
-  }
-
-  const val=parseFloat($("q-inp1").value.trim());
-  if(isNaN(val)){$("q-inp1").classList.add("shake");return;}
-  const ok=Math.abs(val-q.ans)<0.05;
-
-  if(ok){
-    $("q-inp1").className="ans-inp ok"; $("q-inp1").disabled=true;
-    showFB(true,"✅ Correct!",null);
-    record(true,q.v,String(q.ans),String(val),"Herleiden");
-    h("check-btn"); s("next-btn");
-  } else {
-    herState.pogingen++;
-    $("q-inp1").className="ans-inp err";
-    if(herState.pogingen>=1){
-      // Verplicht tabel invullen
-      herState.tabelVerplicht=true;
-      $("q-inp1").disabled=true;
-      s("q-lt-tabel-force");
-      $("q-lt-force-content").innerHTML=buildLtTabelForce(q);
-      // Update check-btn label
-      $("check-btn").textContent="Controleer tabel";
-      showFB(false,"❌ Fout! Vul nu de tabel in en probeer opnieuw via de tabel.",null);
-      record(false,q.v,String(q.ans),String(val),"Herleiden");
-    } else {
-      showFB(false,"❌ Fout. Probeer nog eens!",null);
-    }
-  }
-}
-
-// ── REKENEN ────────────────────────────────────────────────────────────────
-function renderRekenen(q){
-  $("q-cat").textContent="➕ Rekenen";
-  $("q-txt").textContent=q.v;
-  s("q-inp-wrap");
-  $("q-unit1").textContent=q.u1;
-  if(q.ans2!==null&&q.ans2!==undefined){
-    s("q-inp2-wrap");
-    $("q-unit2").textContent=q.u2;
-  } else {
-    h("q-inp2-wrap");
-  }
-  setTimeout(()=>$("q-inp1").focus(),80);
-}
-
-function checkRekenen(){
-  const q=QS.questions[QS.idx];
-  const v1=parseFloat($("q-inp1").value.trim());
-  if(isNaN(v1)){$("q-inp1").classList.add("shake");return;}
-
-  let ok=false;
-  if(q.ans2!==null&&q.ans2!==undefined){
-    const v2=parseFloat($("q-inp2").value.trim());
-    if(isNaN(v2)){$("q-inp2").classList.add("shake");return;}
-    ok=Math.abs(v1-q.ans1)<0.05&&Math.abs(v2-q.ans2)<0.05;
-    $("q-inp2").className="ans-inp "+(ok?"ok":"err");
-    $("q-inp2").disabled=true;
-    if(!ok){$("q-inp2").value=q.ans2;}
-  } else {
-    ok=Math.abs(v1-q.ans1)<0.05;
-  }
-  $("q-inp1").className="ans-inp "+(ok?"ok":"err");
-  $("q-inp1").disabled=true;
-  if(!ok){$("q-inp1").value=q.ans1;}
-
-  const corrTxt=q.ans2!==null&&q.ans2!==undefined?`${q.ans1} ${q.u1} en ${q.ans2} ${q.u2}`:`${q.ans1} ${q.u1}`;
-  showFB(ok,"✅ Correct! Goed gedaan!",`❌ Fout. Het juiste antwoord is: <b>${corrTxt}</b>`);
-  if(!ok&&!QS.isToets&&q.tip){$("q-tip").textContent="💡 "+q.tip;s("q-tip");}
-  record(ok,q.v,corrTxt,String(v1),"Rekenen");
-  h("check-btn"); s("next-btn");
-}
-
-// ── CENTRALE CHECK ─────────────────────────────────────────────────────────
-function checkAnswer(){
-  const q=QS.questions[QS.idx];
-  if(q._tabel)   { checkTabel(); return; }
-  if(q.mm!==undefined){ checkMeten(); return; }
-  if(q.o)        { return; } // MC heeft eigen handler
-  if(q.shape)    { checkOmtrek(); return; }
-  if(q.van)      { checkHerleiden(); return; }
-  if(q.type)     { checkRekenen(); return; }
-}
-
-// ── FEEDBACK / RECORD ──────────────────────────────────────────────────────
-function showFB(ok,okMsg,errMsg){
-  const el=$("q-fb");
-  el.innerHTML=ok?okMsg:errMsg;
-  el.className=(ok?"fb-ok pop":"fb-err pop shake");
-  s(el);
-}
-
-function record(ok,vraag,juist,leerling,cat){
-  QS.history.push({vraagNr:QS.idx+1,formule:vraag,juistAntwoord:juist,antwoordLeerling:leerling,isJuist:ok,categorie:cat});
-  if(ok)QS.score++;
-  updBullet(QS.idx,ok);
-}
-
-// ── NEXT ───────────────────────────────────────────────────────────────────
-function nextQ(){
-  // Reset herleiden check-btn label
-  $("check-btn").textContent="Controleer";
-  $("check-btn").onclick=checkAnswer;
-
-  QS.idx++;
-  if(QS.idx>=QS.questions.length) showEnd();
-  else renderQ();
-}
-
-// ── EINDSCHERM ─────────────────────────────────────────────────────────────
-async function showEnd(){
-  h("v-quiz"); s("v-end");
-  const {score,questions,history,isToets,mode}=QS;
-  const total=questions.length;
-  const pct=Math.round((score/total)*100);
-
-  $("end-score").textContent=`${score}/${total}`;
-  $("end-pct").textContent=pct+"%";
-  $("end-pct").style.color=pct>=75?"#16a34a":pct>=50?"#d97706":"#dc2626";
-  $("end-emoji").textContent=pct===100?"🏆":pct>=75?"🌟":pct>=50?"👍":"📚";
-  $("end-title").textContent=pct===100?"Perfect!":pct>=75?"Heel goed!":pct>=50?"Goed geprobeerd!":"Blijf oefenen!";
-
-  if(window.confetti&&pct>=75)window.confetti({particleCount:80,spread:70,origin:{y:.7}});
-
-  // Foutenanalyse
-  const fouten=history.filter(h2=>!h2.isJuist);
-  if(fouten.length>0){
-    s("end-analyse");
-    const list=$("end-fouten"); list.innerHTML="";
-    fouten.forEach(f=>{
-      const d=document.createElement("div");
-      d.style="background:#fef2f2;border:2px solid #fca5a5;border-radius:10px;padding:10px 12px;font-size:.88rem;";
-      d.innerHTML=`<b style="color:#b91c1c">Vraag ${f.vraagNr}:</b> ${f.formule}<br><span style="color:#64748b">Jouw antwoord: <b>${f.antwoordLeerling}</b> — Juist: <b style="color:#15803d">${f.juistAntwoord}</b></span>`;
-      list.appendChild(d);
-    });
-  } else h("end-analyse");
-
-  // Opslaan (enkel toets)
-  const sb=$("end-save");
-  if(isToets){
-    s(sb);
-    sb.textContent="⏳ Score opslaan...";
-    sb.style.cssText="background:#eff6ff;color:#2563eb;border-radius:10px;padding:10px;font-size:.85rem;font-weight:700;";
-    const ms=new Date()-QS.startTime;
-    const m=Math.floor(ms/60000),ss=((ms%60000)/1000).toFixed(0);
-    const ok=await fbSave({
-      oefening:MODES.toets.save,
-      score,totaal:total,nauwkeurigheid:pct,
-      tijdsduur:`${String(m).padStart(2,"0")}:${String(ss).padStart(2,"0")}`,
-      vragen:history
-    });
-    sb.textContent=ok?"✅ Score opgeslagen in database!":(GUEST?"👤 Gast – score niet opgeslagen":"❌ Opslaan mislukt");
-    sb.style.background=ok?"#f0fdf4":GUEST?"#fefce8":"#fef2f2";
-    sb.style.color=ok?"#15803d":GUEST?"#d97706":"#b91c1c";
-  } else h(sb);
-}
-
-</script>
-    <script>
-    function afterLogin(naam) {
-        document.getElementById('login-screen').classList.add('hidden');
-        // Try common user display elements
-        var nb = document.getElementById('user-badge') || document.getElementById('user-bar');
-        if (nb) { nb.classList.add('show'); nb.style.display='flex'; }
-        var na = document.getElementById('user-avatar') || document.getElementById('u-av') || document.getElementById('user-avatar-nav');
-        if (na) na.textContent = naam ? naam[0].toUpperCase() : '👤';
-        var nn = document.getElementById('user-name') || document.getElementById('u-nm') || document.getElementById('user-name-nav');
-        if (nn) nn.textContent = naam;
-        var nr = document.getElementById('u-rl');
-        if (nr) nr.textContent = window._isGuest ? 'Gast' : '';
-    }
-    </script>
 </body>
 </html>
