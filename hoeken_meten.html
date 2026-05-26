@@ -1,0 +1,885 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Hoeken Meten</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Fredoka:wght@400;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Nunito',sans-serif;background:#f0f4ff;min-height:100vh;overflow-x:hidden;}
+.ff{font-family:'Fredoka',sans-serif;}
+.hidden{display:none!important;}
+
+/* LOGIN */
+#login-screen{position:fixed;inset:0;z-index:9999;background:linear-gradient(135deg,#1e3a5f 0%,#1d4ed8 60%,#7c3aed 100%);display:flex;align-items:center;justify-content:center;padding:20px;}
+#login-screen.hidden{display:none!important;}
+.login-card{background:white;border-radius:2rem;padding:2.5rem 2rem;width:100%;max-width:380px;box-shadow:0 25px 50px rgba(0,0,0,0.25);text-align:center;}
+.login-logo{width:80px;height:80px;background:#dbeafe;border-radius:1.5rem;display:flex;align-items:center;justify-content:center;margin:0 auto 1.25rem;font-size:2.5rem;}
+.btn-google{display:flex;align-items:center;justify-content:center;gap:12px;width:100%;background:white;border:2px solid #e5e7eb;border-radius:1rem;padding:14px 20px;font-family:'Nunito',sans-serif;font-size:1rem;font-weight:700;color:#374151;cursor:pointer;transition:all .2s;margin-bottom:12px;}
+.btn-google:hover{border-color:#1d4ed8;background:#eff6ff;transform:translateY(-1px);}
+.btn-google:disabled{opacity:.6;cursor:not-allowed;transform:none;}
+.btn-guest{width:100%;background:transparent;border:2px solid #d1d5db;border-radius:1rem;padding:12px;font-family:'Nunito',sans-serif;font-size:.9rem;font-weight:700;color:#6b7280;cursor:pointer;transition:all .2s;}
+.btn-guest:hover{border-color:#9ca3af;color:#374151;}
+
+/* USER BAR */
+#user-bar{display:none;align-items:center;justify-content:space-between;background:white;border-radius:16px;padding:10px 18px;margin-bottom:12px;box-shadow:0 2px 12px rgba(0,0,0,0.06);border:1px solid #bfdbfe;}
+#user-bar.show{display:flex;}
+.u-av{width:34px;height:34px;border-radius:50%;background:#dbeafe;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:.9rem;color:#1d4ed8;flex-shrink:0;}
+.btn-lo{background:none;border:1.5px solid #e5e7eb;border-radius:.65rem;padding:5px 12px;font-family:'Nunito',sans-serif;font-size:.78rem;font-weight:700;color:#9ca3af;cursor:pointer;transition:all .2s;}
+.btn-lo:hover{border-color:#dc2626;color:#dc2626;}
+
+/* APP */
+.app{max-width:680px;margin:0 auto;padding:12px;}
+
+/* MENU */
+.menu-header{background:linear-gradient(135deg,#1e3a5f,#1d4ed8);border-radius:20px;padding:28px 24px;color:white;margin-bottom:16px;text-align:center;}
+.menu-card{background:white;border-radius:18px;padding:20px 22px;cursor:pointer;border:2.5px solid transparent;transition:all .2s;box-shadow:0 3px 14px rgba(0,0,0,0.07);display:flex;align-items:center;gap:16px;margin-bottom:12px;}
+.menu-card:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,0,0,0.12);border-color:#1d4ed8;}
+.menu-card:active{transform:scale(0.98);}
+.mico{width:56px;height:56px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:1.6rem;flex-shrink:0;}
+.mttl{font-weight:800;font-size:1.05rem;color:#1e1b4b;}
+.msub{font-size:.8rem;color:#6b7280;font-weight:600;margin-top:2px;}
+.toets-card{background:linear-gradient(135deg,#1e3a5f,#1d4ed8);border-color:transparent!important;}
+.toets-card .mttl{color:white!important;}
+.toets-card .msub{color:rgba(255,255,255,0.7)!important;}
+.toets-card .mico{background:rgba(255,255,255,0.2);}
+
+/* QUIZ CONTAINER */
+.quiz-wrap{background:white;border-radius:20px;box-shadow:0 8px 30px rgba(0,0,0,0.08);overflow:hidden;}
+.quiz-header{background:linear-gradient(135deg,#1e3a5f,#1d4ed8);padding:16px 20px;color:white;display:flex;align-items:center;gap:12px;}
+.back-btn{background:rgba(255,255,255,0.2);border:none;border-radius:10px;color:white;padding:8px 12px;cursor:pointer;font-size:1rem;font-weight:800;font-family:'Nunito',sans-serif;}
+.back-btn:hover{background:rgba(255,255,255,0.35);}
+.prog-wrap{background:rgba(255,255,255,0.25);border-radius:99px;height:7px;overflow:hidden;flex:1;}
+.prog-fill{height:100%;background:white;border-radius:99px;transition:width .4s ease;}
+.quiz-body{padding:20px;}
+
+/* STAP INDICATOREN */
+.steps-row{display:flex;gap:8px;margin-bottom:20px;}
+.step-dot{flex:1;height:6px;border-radius:99px;background:#e5e7eb;transition:background .3s;}
+.step-dot.done{background:#22c55e;}
+.step-dot.active{background:#1d4ed8;}
+
+/* PHASE LABELS */
+.phase-label{font-size:.7rem;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:#6b7280;margin-bottom:8px;}
+.phase-title{font-family:'Fredoka',sans-serif;font-size:1.3rem;color:#1e1b4b;margin-bottom:16px;font-weight:600;}
+
+/* CANVAS AREA */
+.canvas-wrap{position:relative;width:100%;border-radius:14px;overflow:hidden;background:#f8fafc;border:2px solid #e5e7eb;margin-bottom:16px;touch-action:none;}
+canvas{display:block;width:100%;height:auto;}
+
+/* MC BUTTONS */
+.mc-row{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px;}
+.mc-btn{flex:1;min-width:100px;background:#f8fafc;border:3px solid #e2e8f0;border-radius:14px;padding:14px 10px;font-size:.9rem;font-weight:800;cursor:pointer;transition:all .15s;font-family:'Nunito',sans-serif;color:#1e293b;text-align:center;}
+.mc-btn:hover:not(:disabled){border-color:#1d4ed8;background:#eff6ff;}
+.mc-btn.correct{border-color:#16a34a!important;background:#f0fdf4!important;color:#15803d!important;}
+.mc-btn.wrong{border-color:#dc2626!important;background:#fef2f2!important;color:#991b1b!important;animation:shake .4s;}
+.mc-btn:disabled{cursor:default;}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
+
+/* INPUT */
+.ans-row{display:flex;align-items:center;gap:10px;margin-bottom:14px;justify-content:center;}
+.ans-input{width:90px;height:56px;font-size:1.5rem;text-align:center;border:3px solid #d1d5db;border-radius:12px;font-family:'Nunito',sans-serif;font-weight:800;outline:none;transition:all .2s;}
+.ans-input:focus{border-color:#1d4ed8;}
+.ans-input.ok{border-color:#16a34a!important;background:#f0fdf4;color:#15803d;}
+.ans-input.err{border-color:#dc2626!important;background:#fef2f2;animation:shake .4s;}
+.ans-unit{font-size:1.2rem;font-weight:800;color:#374151;}
+
+/* FEEDBACK */
+.fb{min-height:26px;text-align:center;font-weight:700;font-size:.95rem;margin-bottom:10px;}
+
+/* BUTTONS */
+.btn-primary{background:#1d4ed8;color:white;border:none;border-radius:12px;padding:13px 28px;font-family:'Nunito',sans-serif;font-size:1rem;font-weight:800;cursor:pointer;transition:all .2s;}
+.btn-primary:hover{filter:brightness(.9);}
+.btn-next{background:#1d4ed8;color:white;border:none;border-radius:12px;padding:14px;width:100%;font-family:'Nunito',sans-serif;font-size:1rem;font-weight:800;cursor:pointer;transition:all .2s;margin-top:10px;display:none;}
+.btn-next.show{display:block;}
+.btn-next:hover{filter:brightness(.9);}
+
+/* SNAP INDICATOR */
+.snap-hint{text-align:center;font-size:.8rem;font-weight:700;color:#6b7280;margin-bottom:8px;}
+.snap-hint.snapped{color:#16a34a;}
+
+/* INSTRUCTIONS */
+.instr-box{background:#eff6ff;border-radius:12px;padding:12px 14px;margin-bottom:14px;font-size:.85rem;font-weight:700;color:#1d4ed8;line-height:1.5;}
+
+/* RESULT */
+.result-overlay{position:fixed;inset:0;z-index:100;background:#f0f4ff;display:none;flex-direction:column;align-items:center;justify-content:flex-start;padding:1.5rem 1.25rem;overflow-y:auto;}
+.result-overlay.show{display:flex;}
+.result-card{background:white;border-radius:2rem;padding:2rem 1.5rem;width:100%;max-width:440px;box-shadow:0 8px 40px rgba(29,78,216,.18);}
+.score-ring{width:120px;height:120px;border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;margin:0 auto 1.5rem;font-family:'Fredoka',sans-serif;border:5px solid #1d4ed8;background:#eff6ff;color:#1d4ed8;}
+.stat-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;}
+.stat-box{border-radius:1rem;padding:14px 10px;text-align:center;}
+.snum{font-family:'Fredoka',sans-serif;font-size:1.8rem;font-weight:600;}
+.slbl{font-size:.7rem;font-weight:800;text-transform:uppercase;letter-spacing:.05em;margin-top:2px;}
+#saved-badge{display:none;align-items:center;justify-content:center;gap:8px;background:#dbeafe;border:1.5px solid #93c5fd;border-radius:1rem;padding:10px 16px;margin-top:12px;font-size:.85rem;font-weight:700;color:#1d4ed8;font-family:'Nunito',sans-serif;}
+#saved-badge.show{display:flex;}
+.btn-restart{width:100%;margin-top:1.25rem;background:#1d4ed8;color:white;border:none;border-radius:1rem;padding:14px;font-family:'Nunito',sans-serif;font-size:1rem;font-weight:800;cursor:pointer;}
+        /* ── LOGIN ── */
+        #login-screen {
+            position:fixed; inset:0; z-index:9999;
+            background:linear-gradient(135deg,#4338ca 0%,#6d28d9 60%,#7c3aed 100%);
+            display:flex; align-items:center; justify-content:center; padding:20px;
+        }
+        #login-screen.hidden { display:none!important; }
+        .login-card {
+            background:white; border-radius:2rem; padding:2.5rem 2rem;
+            width:100%; max-width:380px;
+            box-shadow:0 25px 50px rgba(0,0,0,0.25); text-align:center;
+        }
+        .login-logo {
+            width:80px; height:80px; background:#ede9fe; border-radius:1.5rem;
+            display:flex; align-items:center; justify-content:center;
+            margin:0 auto 1.25rem; font-size:2.5rem;
+        }
+        .login-input {
+            width:100%; padding:14px 16px; border:2px solid #e5e7eb; border-radius:1rem;
+            font-family:inherit; font-size:1rem; font-weight:600; color:#374151;
+            margin-bottom:10px; outline:none; transition:border-color .2s; text-align:center;
+        }
+        .login-input:focus { border-color:#6d28d9; }
+        .login-input.err { border-color:#dc2626; background:#fef2f2; animation:loginShake .4s; }
+        @keyframes loginShake{0%,100%{transform:translateX(0)}25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
+        .btn-login {
+            width:100%; background:#6d28d9; color:white; border:none; border-radius:1rem;
+            padding:14px; font-family:inherit; font-size:1rem; font-weight:700;
+            cursor:pointer; transition:all .2s; margin-bottom:10px;
+        }
+        .btn-login:hover { background:#5b21b6; }
+        .btn-login:disabled { opacity:.6; cursor:not-allowed; }
+        .login-error { color:#dc2626; font-size:.85rem; font-weight:700; min-height:20px; margin-bottom:8px; }
+        .btn-guest {
+            width:100%; background:transparent; border:2px solid #d1d5db; border-radius:1rem;
+            padding:12px; font-family:inherit; font-size:.9rem; font-weight:700;
+            color:#6b7280; cursor:pointer; transition:all .2s;
+        }
+        .btn-guest:hover { border-color:#9ca3af; color:#374151; }
+        .teacher-link { margin-top:14px; font-size:.75rem; color:#9ca3af; }
+        .teacher-link a { color:#6d28d9; text-decoration:none; font-weight:700; }
+    </style>
+</head>
+<body>
+    <!-- LOGIN SCREEN -->
+    <div id="login-screen">
+      <div class="login-card">
+        <div class="login-logo">📐</div>
+        <h1 style="font-size:1.6rem;font-weight:800;color:#1f2937;margin-bottom:6px;">Hoeken Meten</h1>
+        <p style="font-size:.85rem;color:#6b7280;margin-bottom:1.25rem;">Voer je naam en code in</p>
+        <input class="login-input" id="login-naam" type="text" placeholder="Jouw voornaam" autocomplete="off" autocapitalize="words">
+        <input class="login-input" id="login-code" type="password" placeholder="Jouw code" autocomplete="off">
+        <div class="login-error" id="login-error"></div>
+        <button class="btn-login" id="btn-login" onclick="loginMetCode()">Inloggen</button>
+        <button class="btn-guest" onclick="loginGuest()">Doorgaan als gast (geen opslag)</button>
+        <div class="teacher-link"><a href="dashboard.html">Leerkracht? Klik hier</a></div>
+      </div>
+    </div>
+
+<!-- LOGIN -->
+<div id="login-screen">
+  <div class="login-card">
+    <div class="login-logo">📐</div>
+    <h1 style="font-size:1.6rem;font-weight:900;color:#1f2937;margin-bottom:6px;" class="ff">Hoeken Meten</h1>
+    <p style="font-size:.85rem;color:#6b7280;margin-bottom:1.5rem;">Log in om je toetsresultaten bij te houden</p>
+    <button class="btn-google" id="btn-google-login" onclick="loginGoogle()">
+      <svg width="20" height="20" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9.1 3.5l6.8-6.8C35.8 2.4 30.3 0 24 0 14.7 0 6.7 5.4 2.6 13.3l7.9 6.1C12.4 13.1 17.7 9.5 24 9.5z"/><path fill="#4285F4" d="M46.5 24.5c0-1.6-.1-3.1-.4-4.5H24v8.5h12.7c-.5 2.9-2.2 5.4-4.7 7l7.4 5.7c4.3-4 6.8-9.9 7.1-16.7z"/><path fill="#FBBC05" d="M10.5 28.6A14.5 14.5 0 0 1 9.5 24c0-1.6.3-3.1.9-4.6l-7.9-6.1A24 24 0 0 0 0 24c0 3.9.9 7.5 2.6 10.7l7.9-6.1z"/><path fill="#34A853" d="M24 48c6.3 0 11.6-2.1 15.5-5.7l-7.4-5.7c-2.1 1.4-4.8 2.2-8.1 2.2-6.3 0-11.6-3.6-13.5-8.8l-7.9 6.1C6.7 42.6 14.7 48 24 48z"/></svg>
+      Inloggen met Google
+    </button>
+    <button class="btn-guest" onclick="loginGuest()">Doorgaan als gast (geen opslag)</button>
+  </div>
+</div>
+
+<div class="app">
+  <div id="user-bar">
+    <div style="display:flex;align-items:center;gap:10px;">
+      <div class="u-av" id="u-av">👤</div>
+      <div><div style="font-weight:800;color:#1f2937;font-size:.88rem;" id="u-nm">Gast</div><div style="font-size:.7rem;color:#6b7280;font-weight:600;" id="u-rl">Gast</div></div>
+    </div>
+    <button class="btn-lo" onclick="doLogout()">Uitloggen</button>
+  </div>
+
+  <!-- MENU -->
+  <div id="v-menu">
+    <div class="menu-header">
+      <div style="font-size:2.2rem;margin-bottom:8px;">📐</div>
+      <div class="ff" style="font-size:2rem;font-weight:700;">Hoeken Meten</div>
+      <div style="font-size:.9rem;opacity:.85;margin-top:4px;">Leer een geodriehoek gebruiken</div>
+    </div>
+    <div class="menu-card" onclick="startGame('oefenen')">
+      <div class="mico" style="background:#dbeafe;">📏</div>
+      <div>
+        <div class="mttl">Oefenen</div>
+        <div class="msub">6 hoeken meten · geen score opgeslagen</div>
+      </div>
+    </div>
+    <div class="menu-card toets-card" onclick="startGame('toets')">
+      <div class="mico">🏆</div>
+      <div>
+        <div class="mttl">Toets</div>
+        <div class="msub">6 hoeken · score wordt opgeslagen</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- QUIZ -->
+  <div id="v-quiz" class="hidden">
+    <div class="quiz-wrap">
+      <div class="quiz-header">
+        <button class="back-btn" onclick="goMenu()">←</button>
+        <div style="flex:1;">
+          <div style="font-size:.7rem;font-weight:800;text-transform:uppercase;letter-spacing:.06em;opacity:.85;" id="q-mode-lbl">Oefenen</div>
+          <div style="display:flex;align-items:center;gap:8px;margin-top:4px;">
+            <div class="prog-wrap"><div class="prog-fill" id="q-prog"></div></div>
+            <span style="font-size:.78rem;font-weight:800;white-space:nowrap;" id="q-cnt">1/6</span>
+          </div>
+        </div>
+        <div style="background:rgba(255,255,255,0.2);border-radius:.75rem;padding:6px 12px;font-size:.8rem;font-weight:800;" id="q-timer">00:00</div>
+      </div>
+      <div class="quiz-body">
+        <div class="steps-row">
+          <div class="step-dot active" id="sd0"></div>
+          <div class="step-dot" id="sd1"></div>
+          <div class="step-dot" id="sd2"></div>
+        </div>
+        <div id="q-content"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- RESULT -->
+<div class="result-overlay" id="v-result">
+  <div class="result-card">
+    <div class="score-ring">
+      <div style="font-size:2rem;font-weight:700;" id="res-score">0/6</div>
+      <div style="font-size:.7rem;font-weight:800;text-transform:uppercase;opacity:.7;">Score</div>
+    </div>
+    <div class="stat-row">
+      <div class="stat-box" style="background:#f0fdf4;"><div class="snum" style="color:#16a34a;" id="res-cor">0</div><div class="slbl" style="color:#16a34a;">Juist</div></div>
+      <div class="stat-box" style="background:#fff1f2;"><div class="snum" style="color:#e11d48;" id="res-wrg">0</div><div class="slbl" style="color:#e11d48;">Fouten</div></div>
+    </div>
+    <div class="stat-box" style="background:#eff6ff;text-align:center;margin-bottom:12px;"><div class="snum" style="color:#1d4ed8;" id="res-time">00:00</div><div class="slbl" style="color:#1d4ed8;">Tijd</div></div>
+    <div id="res-detail" style="margin-bottom:10px;"></div>
+    <div id="saved-badge">✓ Score opgeslagen in de database</div>
+    <button class="btn-restart" onclick="restartGame()">Opnieuw beginnen</button>
+    <button onclick="goMenu()" style="width:100%;margin-top:8px;background:none;border:2px solid #e5e7eb;border-radius:1rem;padding:12px;font-family:'Nunito',sans-serif;font-size:.9rem;font-weight:700;color:#6b7280;cursor:pointer;">← Terug naar menu</button>
+  </div>
+</div>
+
+<!-- FIREBASE -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script>
+firebase.initializeApp({apiKey:"AIzaSyCnQDVVAlK6jE-PPUUediRJMTbN0xqrLDE",authDomain:"klaswebsite-database.firebaseapp.com",projectId:"klaswebsite-database",storageBucket:"klaswebsite-database.firebasestorage.app",messagingSenderId:"42912327282",appId:"1:42912327282:web:f13f2c706f6c42c115c4eb"});
+var fbAuth=firebase.auth(),fbDb=firebase.firestore(),fbProv=new firebase.auth.GoogleAuthProvider();
+fbAuth.getRedirectResult().then(function(r){if(r&&r.user){window._fbUser=r.user;window._fbGuest=false;window._lh=true;afterLogin(r.user);}}).catch(function(e){console.error(e);});
+fbAuth.onAuthStateChanged(function(u){if(u&&!window._lh){window._lh=true;window._fbUser=u;window._fbGuest=false;afterLogin(u);}});
+function loginGoogle(){var b=document.getElementById('btn-google-login');b.textContent='Doorverwijzen...';b.disabled=true;fbAuth.signInWithRedirect(fbProv);}
+function loginGuest(){window._fbUser=null;window._fbGuest=true;window._lh=true;afterLogin(null);}
+function doLogout(){window._lh=false;window._fbUser=null;window._fbGuest=false;fbAuth.signOut().then(function(){document.getElementById('login-screen').classList.remove('hidden');document.getElementById('user-bar').classList.remove('show');showV('v-menu');var b=document.getElementById('btn-google-login');b.innerHTML='<svg width="20" height="20" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9.1 3.5l6.8-6.8C35.8 2.4 30.3 0 24 0 14.7 0 6.7 5.4 2.6 13.3l7.9 6.1C12.4 13.1 17.7 9.5 24 9.5z"/><path fill="#4285F4" d="M46.5 24.5c0-1.6-.1-3.1-.4-4.5H24v8.5h12.7c-.5 2.9-2.2 5.4-4.7 7l7.4 5.7c4.3-4 6.8-9.9 7.1-16.7z"/><path fill="#FBBC05" d="M10.5 28.6A14.5 14.5 0 0 1 9.5 24c0-1.6.3-3.1.9-4.6l-7.9-6.1A24 24 0 0 0 0 24c0 3.9.9 7.5 2.6 10.7l7.9-6.1z"/><path fill="#34A853" d="M24 48c6.3 0 11.6-2.1 15.5-5.7l-7.4-5.7c-2.1 1.4-4.8 2.2-8.1 2.2-6.3 0-11.6-3.6-13.5-8.8l-7.9 6.1C6.7 42.6 14.7 48 24 48z"/></svg> Inloggen met Google';b.disabled=false;});}
+function afterLogin(u){document.getElementById('login-screen').classList.add('hidden');document.getElementById('user-bar').classList.add('show');if(u){document.getElementById('u-av').textContent=u.displayName?u.displayName[0].toUpperCase():'?';document.getElementById('u-nm').textContent=u.displayName||u.email||'Leerling';document.getElementById('u-rl').textContent=u.email||'Ingelogd';}else{document.getElementById('u-av').textContent=String.fromCodePoint(0x1F464);document.getElementById('u-nm').textContent='Gast';document.getElementById('u-rl').textContent='Gast \u2014 scores worden niet opgeslagen';}}
+function saveScore(data){document.getElementById('saved-badge').classList.remove('show');if(window._fbGuest||!window._fbUser)return;fbDb.collection('hoeken_meten_toets').add(Object.assign({userId:window._fbUser.uid,displayName:window._fbUser.displayName||'Leerling',email:window._fbUser.email||''},data,{timestamp:firebase.firestore.FieldValue.serverTimestamp()})).then(function(){document.getElementById('saved-badge').classList.add('show');}).catch(function(e){console.error(e);});}
+</script>
+
+<script>
+// ── UTILS ─────────────────────────────────────────────────────────────────
+function showV(id){['v-menu','v-quiz','v-result'].forEach(function(v){document.getElementById(v).classList.add('hidden');});document.getElementById(id).classList.remove('hidden');}
+function fmt(s){return String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0');}
+function shuffle(a){var b=a.slice();for(var i=b.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=b[i];b[i]=b[j];b[j]=t;}return b;}
+
+// ── ANGLE POOL ────────────────────────────────────────────────────────────
+var ALL_ANGLES=[];
+for(var _a=20;_a<=175;_a+=5){ALL_ANGLES.push(_a);}
+// Exclude 90 from stomp/scherp pool, keep separately
+function genAngles(){
+  var pool=shuffle(ALL_ANGLES.slice());
+  // Ensure variety: at least 1 scherp (<90), 1 recht (90), 1 stomp (>90)
+  var scherp=pool.filter(function(a){return a<90;});
+  var recht=pool.filter(function(a){return a===90;});
+  var stomp=pool.filter(function(a){return a>90;});
+  var chosen=[];
+  chosen.push(scherp[Math.floor(Math.random()*scherp.length)]);
+  chosen.push(90);
+  chosen.push(stomp[Math.floor(Math.random()*stomp.length)]);
+  // Fill remaining 3 from random
+  var rest=shuffle(pool.filter(function(a){return chosen.indexOf(a)===-1;}));
+  chosen=chosen.concat(rest.slice(0,3));
+  return shuffle(chosen);
+}
+
+// ── GAME STATE ────────────────────────────────────────────────────────────
+var GS={mode:'oefenen',angles:[],idx:0,phase:0,correct:0,wrong:0,timer:0,timerInt:null,results:[],snapped:false,geoX:0,geoY:0,geoRot:0,dragging:false,rotating:false,lastX:0,lastY:0,lastAngle:0};
+
+function startGame(mode){
+  GS.mode=mode;
+  GS.angles=genAngles();
+  GS.idx=0;GS.phase=0;GS.correct=0;GS.wrong=0;GS.results=[];
+  document.getElementById('q-mode-lbl').textContent=mode==='toets'?'Toets':'Oefenen';
+  GS.timer=0;GS.timerInt=setInterval(function(){GS.timer++;document.getElementById('q-timer').textContent=fmt(GS.timer);},1000);
+  showV('v-quiz');
+  renderQuestion();
+}
+window.startGame=startGame;
+
+function goMenu(){clearInterval(GS.timerInt);showV('v-menu');}
+window.goMenu=goMenu;
+
+function restartGame(){document.getElementById('v-result').className='result-overlay';startGame(GS.mode);}
+window.restartGame=restartGame;
+
+// ── RENDER QUESTION ───────────────────────────────────────────────────────
+function renderQuestion(){
+  var ang=GS.angles[GS.idx];
+  var total=GS.angles.length;
+  GS.phase=0;GS.snapped=false;
+  document.getElementById('q-cnt').textContent=(GS.idx+1)+'/'+total;
+  document.getElementById('q-prog').style.width=((GS.idx/total)*100)+'%';
+  updateStepDots(0);
+  renderPhase1(ang);
+}
+
+function updateStepDots(phase){
+  for(var i=0;i<3;i++){
+    var d=document.getElementById('sd'+i);
+    d.className='step-dot'+(i<phase?' done':i===phase?' active':'');
+  }
+}
+
+// ── PHASE 1: Scherp / Recht / Stomp ──────────────────────────────────────
+function renderPhase1(ang){
+  var content=document.getElementById('q-content');
+  // Draw angle SVG
+  var svgStr=drawAngleSVG(ang,260,180,false);
+  content.innerHTML=
+    '<div class="phase-label">Stap 1 van 3</div>'+
+    '<div class="phase-title">Wat voor soort hoek is dit?</div>'+
+    '<div style="display:flex;justify-content:center;margin-bottom:16px;">'+svgStr+'</div>'+
+    '<div class="mc-row" id="mc-row"></div>'+
+    '<div class="fb" id="fb"></div>'+
+    '<button class="btn-next" id="btn-next" onclick="nextPhase()">Stap 2: Geodriehoek plaatsen →</button>';
+
+  var correct=ang<90?'scherp':ang===90?'recht':'stomp';
+  var opts=[{k:'scherp',l:'📐 Scherpe hoek',s:'kleiner dan 90°'},{k:'recht',l:'📏 Rechte hoek',s:'precies 90°'},{k:'stomp',l:'📐 Stompe hoek',s:'groter dan 90°'}];
+  var row=content.querySelector('#mc-row');
+  opts.forEach(function(o){
+    var b=document.createElement('button');
+    b.className='mc-btn';
+    b.innerHTML='<div style="font-size:.95rem;">'+o.l+'</div><div style="font-size:.72rem;opacity:.7;margin-top:2px;">'+o.s+'</div>';
+    b.onclick=function(){
+      if(b.disabled)return;
+      row.querySelectorAll('.mc-btn').forEach(function(x){x.disabled=true;});
+      if(o.k===correct){
+        b.classList.add('correct');
+        content.querySelector('#fb').innerHTML='<span style="color:#16a34a;">✓ Juist! Dit is een '+o.l.replace(/^📐 |^📏 /,'')+' ('+ang+'°)</span>';
+        content.querySelector('#btn-next').classList.add('show');
+      } else {
+        b.classList.add('wrong');
+        GS.wrong++;
+        content.querySelector('#fb').innerHTML='<span style="color:#dc2626;">Niet juist. Kijk goed naar de grootte van de hoek.</span>';
+        setTimeout(function(){
+          b.classList.remove('wrong');
+          row.querySelectorAll('.mc-btn').forEach(function(x){x.disabled=false;});
+        },800);
+      }
+    };
+    row.appendChild(b);
+  });
+}
+window.nextPhase=function(){GS.phase=1;updateStepDots(1);renderPhase2(GS.angles[GS.idx]);};
+
+// ── PHASE 2: Geodriehoek positioneren ────────────────────────────────────
+var _canvas, _ctx, _cw, _ch, _ang, _vtx, _arm1, _arm2, _scale;
+
+function renderPhase2(ang){
+  var content=document.getElementById('q-content');
+  content.innerHTML=
+    '<div class="phase-label">Stap 2 van 3</div>'+
+    '<div class="phase-title">Leg de geodriehoek op de hoek</div>'+
+    '<div class="instr-box">'+
+      '💡 Sleep de geodriehoek naar het hoekpunt. Roteer met twee vingers (of het draaiwiel). '+
+      'De geodriehoek klikt vast als je hem goed hebt!'+
+    '</div>'+
+    '<div class="snap-hint" id="snap-hint">📍 Nog niet vastgeklikt</div>'+
+    '<div class="canvas-wrap" id="canvas-wrap">'+
+      '<canvas id="geo-canvas"></canvas>'+
+    '</div>'+
+    '<div class="fb" id="fb"></div>'+
+    '<button class="btn-next" id="btn-next" onclick="confirmSnap()">Geodriehoek is goed geplaatst ✓</button>';
+
+  initCanvas(ang);
+}
+
+function initCanvas(ang){
+  _ang=ang;
+  var wrap=document.getElementById('canvas-wrap');
+  var W=wrap.clientWidth||560;
+  var H=Math.round(W*0.65);
+  _cw=W; _ch=H;
+  _scale=W/560;
+
+  var cvs=document.getElementById('geo-canvas');
+  cvs.width=W; cvs.height=H;
+  _ctx=cvs.getContext('2d');
+
+  // Hoekpunt in midden-links gebied
+  _vtx={x:Math.round(W*0.38), y:Math.round(H*0.58)};
+  // Arm lengths
+  var armLen=Math.round(W*0.42);
+  // Arm 1: horizontal right
+  _arm1={x:_vtx.x+armLen, y:_vtx.y};
+  // Arm 2: at angle ang from arm1 (CCW)
+  var rad=ang*Math.PI/180;
+  _arm2={x:_vtx.x+Math.round(armLen*Math.cos(rad)), y:_vtx.y-Math.round(armLen*Math.sin(rad))};
+
+  // Initial geodriehoek position: center of canvas, not snapped
+  GS.geoX=Math.round(W*0.6);
+  GS.geoY=Math.round(H*0.3);
+  GS.geoRot=0; // degrees
+  GS.snapped=false;
+
+  drawScene();
+  bindCanvasEvents(cvs);
+}
+
+function drawScene(){
+  if(!_ctx)return;
+  var W=_cw, H=_ch;
+  _ctx.clearRect(0,0,W,H);
+
+  // Background
+  _ctx.fillStyle='#f8fafc';
+  _ctx.fillRect(0,0,W,H);
+
+  // Draw the angle
+  drawAngleOnCanvas(_ctx, _vtx, _arm1, _arm2, _ang, _scale);
+
+  // Draw geodriehoek
+  drawGeodriehoek(_ctx, GS.geoX, GS.geoY, GS.geoRot, _scale, GS.snapped);
+
+  // Snap indicator
+  var sh=document.getElementById('snap-hint');
+  if(sh){
+    if(GS.snapped){
+      sh.textContent='✅ Vastgeklikt op het hoekpunt!';
+      sh.className='snap-hint snapped';
+      var nb=document.getElementById('btn-next');
+      if(nb)nb.classList.add('show');
+    } else {
+      sh.textContent='📍 Sleep de geodriehoek naar het hoekpunt';
+      sh.className='snap-hint';
+    }
+  }
+}
+
+function drawAngleOnCanvas(ctx, vtx, arm1, arm2, ang, sc){
+  // Arc
+  var arcR=Math.round(35*sc);
+  var a1=Math.atan2(arm1.y-vtx.y, arm1.x-vtx.x);
+  var a2=Math.atan2(arm2.y-vtx.y, arm2.x-vtx.x);
+  ctx.beginPath();
+  ctx.moveTo(vtx.x,vtx.y);
+  ctx.arc(vtx.x,vtx.y,arcR,a1,a2,true);
+  ctx.closePath();
+  ctx.fillStyle='rgba(29,78,216,0.1)';
+  ctx.fill();
+
+  // Arms
+  ctx.strokeStyle='#1e3a5f';
+  ctx.lineWidth=Math.max(2,3*sc);
+  ctx.lineCap='round';
+  ctx.beginPath();ctx.moveTo(vtx.x,vtx.y);ctx.lineTo(arm1.x,arm1.y);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(vtx.x,vtx.y);ctx.lineTo(arm2.x,arm2.y);ctx.stroke();
+
+  // Vertex dot
+  ctx.beginPath();ctx.arc(vtx.x,vtx.y,Math.max(4,5*sc),0,Math.PI*2);
+  ctx.fillStyle='#1d4ed8';ctx.fill();
+
+  // Angle label
+  ctx.save();
+  var midA=(a1+a2)/2;
+  var lx=vtx.x+Math.cos(midA)*arcR*1.8;
+  var ly=vtx.y+Math.sin(midA)*arcR*1.8;
+  ctx.font='bold '+Math.round(14*sc)+'px Nunito,sans-serif';
+  ctx.fillStyle='#1d4ed8';
+  ctx.textAlign='center';ctx.textBaseline='middle';
+  ctx.fillText('?',lx,ly);
+  ctx.restore();
+}
+
+// ── GEODRIEHOEK DRAWING ───────────────────────────────────────────────────
+function drawGeodriehoek(ctx, cx, cy, rotDeg, sc, snapped){
+  ctx.save();
+  ctx.translate(cx, cy);
+  ctx.rotate(rotDeg*Math.PI/180);
+
+  // Geodriehoek: semicircle protractor shape
+  // Base width (diameter of semicircle)
+  var R=Math.round(110*sc);
+  var baseH=Math.round(28*sc); // thickness of the base rectangle
+
+  // Color
+  var fillColor=snapped?'rgba(34,197,94,0.18)':'rgba(147,197,253,0.22)';
+  var strokeColor=snapped?'#16a34a':'#1d4ed8';
+
+  // Draw semicircle body
+  ctx.beginPath();
+  ctx.arc(0,0,R,Math.PI,0,false); // top half
+  ctx.lineTo(R,baseH);
+  ctx.lineTo(-R,baseH);
+  ctx.closePath();
+  ctx.fillStyle=fillColor;
+  ctx.fill();
+  ctx.strokeStyle=strokeColor;
+  ctx.lineWidth=Math.max(1.5,2*sc);
+  ctx.stroke();
+
+  // Flat base line with center mark
+  ctx.beginPath();ctx.moveTo(-R,0);ctx.lineTo(R,0);
+  ctx.strokeStyle=strokeColor;ctx.lineWidth=Math.max(1,1.5*sc);ctx.stroke();
+
+  // Center mark (origin point of geodriehoek)
+  ctx.beginPath();ctx.arc(0,0,Math.max(3,4*sc),0,Math.PI*2);
+  ctx.fillStyle=snapped?'#16a34a':'#1d4ed8';ctx.fill();
+
+  // Tick marks and degree labels on the arc
+  var fontSize=Math.round(8*sc);
+  ctx.font='bold '+fontSize+'px Nunito,sans-serif';
+
+  for(var deg=0;deg<=180;deg+=10){
+    var rad=deg*Math.PI/180;
+    // Inner arc angles: 0 is right, 180 is left (standard)
+    var ax=-Math.cos(rad)*R; // mirror because we go left to right
+    var ay=-Math.sin(rad)*R;
+
+    var isMajor=deg%30===0;
+    var tickLen=isMajor?Math.round(12*sc):Math.round(7*sc);
+    var tx=-Math.cos(rad)*(R-tickLen);
+    var ty=-Math.sin(rad)*(R-tickLen);
+
+    ctx.beginPath();
+    ctx.moveTo(ax,ay);
+    ctx.lineTo(tx,ty);
+    ctx.strokeStyle=strokeColor;
+    ctx.lineWidth=Math.max(1,isMajor?1.5*sc:1*sc);
+    ctx.stroke();
+
+    // Labels every 10°
+    if(deg%10===0){
+      var lDist=R-Math.round(18*sc);
+      var lx2=-Math.cos(rad)*lDist;
+      var ly2=-Math.sin(rad)*lDist;
+      ctx.save();
+      ctx.translate(lx2,ly2);
+      ctx.rotate(rad-Math.PI/2);
+      ctx.fillStyle=strokeColor;
+      ctx.textAlign='center';ctx.textBaseline='middle';
+      ctx.font='bold '+fontSize+'px Nunito,sans-serif';
+      ctx.fillText(String(deg),0,0);
+      ctx.restore();
+
+      // Outer scale (180-deg)
+      if(deg!==0&&deg!==180){
+        var oLDist=R-Math.round(8*sc);
+        var olx=-Math.cos(rad)*oLDist;
+        var oly=-Math.sin(rad)*oLDist;
+        ctx.save();
+        ctx.translate(olx,oly);
+        ctx.rotate(rad-Math.PI/2);
+        ctx.fillStyle='rgba(220,38,38,0.7)';
+        ctx.font=(fontSize-1)+'px Nunito,sans-serif';
+        ctx.textAlign='center';ctx.textBaseline='middle';
+        ctx.fillText(String(180-deg),0,0);
+        ctx.restore();
+      }
+    }
+  }
+
+  // 0 and 180 labels at ends
+  ctx.save();
+  ctx.font='bold '+fontSize+'px Nunito,sans-serif';
+  ctx.fillStyle=strokeColor;ctx.textAlign='center';ctx.textBaseline='middle';
+  ctx.fillText('0',R+Math.round(10*sc),0);
+  ctx.fillText('180',-R-Math.round(12*sc),0);
+  ctx.restore();
+
+  // Minor ticks every 5°
+  for(var d5=0;d5<=180;d5+=5){
+    if(d5%10!==0){
+      var r5=d5*Math.PI/180;
+      var a5x=-Math.cos(r5)*R;
+      var a5y=-Math.sin(r5)*R;
+      var t5x=-Math.cos(r5)*(R-Math.round(5*sc));
+      var t5y=-Math.sin(r5)*(R-Math.round(5*sc));
+      ctx.beginPath();ctx.moveTo(a5x,a5y);ctx.lineTo(t5x,t5y);
+      ctx.strokeStyle=strokeColor;ctx.lineWidth=sc;ctx.stroke();
+    }
+  }
+
+  ctx.restore();
+}
+
+// ── SNAP LOGIC ────────────────────────────────────────────────────────────
+var SNAP_DIST=30; // px, scaled later
+var SNAP_ROT=12;  // degrees tolerance
+
+function checkSnap(){
+  var sd=SNAP_DIST*_scale;
+  var sr=SNAP_ROT;
+
+  // Geodriehoek origin must be near vertex
+  var dx=GS.geoX-_vtx.x;
+  var dy=GS.geoY-_vtx.y;
+  var dist=Math.sqrt(dx*dx+dy*dy);
+
+  if(dist>sd){GS.snapped=false;return;}
+
+  // The geodriehoek's 0°-baseline must align with one of the arms
+  // Arm1 direction angle (in degrees from positive x-axis)
+  var arm1Dir=Math.atan2(_arm1.y-_vtx.y, _arm1.x-_vtx.x)*180/Math.PI;
+  var arm2Dir=Math.atan2(_arm2.y-_vtx.y, _arm2.x-_vtx.x)*180/Math.PI;
+
+  // Geodriehoek rotation: the flat base (0° line) is along the positive x-axis when rot=0
+  // So the 0° end points in direction geoRot, 180° end in geoRot+180
+  var gRot=GS.geoRot%360;
+  if(gRot<0)gRot+=360;
+
+  // Check if base aligns with arm1 (or arm2)
+  function angleDiff(a,b){var d=Math.abs((a-b+360)%360);return d>180?360-d:d;}
+
+  var ok1a=angleDiff(gRot,arm1Dir)<sr && angleDiff((gRot+180)%360,arm2Dir)<sr*(180/_ang*0.8);
+  var ok1b=angleDiff(gRot,arm2Dir)<sr && angleDiff((gRot+180)%360,arm1Dir)<sr*(180/_ang*0.8);
+
+  if(ok1a||ok1b){
+    // Snap!
+    GS.geoX=_vtx.x;
+    GS.geoY=_vtx.y;
+    // Snap rotation to exact arm direction
+    if(ok1a) GS.geoRot=arm1Dir;
+    else GS.geoRot=arm2Dir;
+    GS.snapped=true;
+  } else {
+    GS.snapped=false;
+  }
+}
+
+// ── CANVAS EVENTS ─────────────────────────────────────────────────────────
+function bindCanvasEvents(cvs){
+  // Mouse
+  cvs.addEventListener('mousedown',function(e){
+    var pos=getPos(e,cvs);
+    GS.dragging=true;GS.rotating=false;
+    GS.lastX=pos.x;GS.lastY=pos.y;
+    e.preventDefault();
+  });
+  cvs.addEventListener('mousemove',function(e){
+    if(!GS.dragging)return;
+    var pos=getPos(e,cvs);
+    if(e.shiftKey){
+      // Rotate with shift
+      var cx=GS.geoX,cy=GS.geoY;
+      var prevA=Math.atan2(GS.lastY-cy,GS.lastX-cx)*180/Math.PI;
+      var curA=Math.atan2(pos.y-cy,pos.x-cx)*180/Math.PI;
+      GS.geoRot+=curA-prevA;
+    } else {
+      GS.geoX+=pos.x-GS.lastX;
+      GS.geoY+=pos.y-GS.lastY;
+    }
+    GS.lastX=pos.x;GS.lastY=pos.y;
+    GS.snapped=false;
+    checkSnap();
+    drawScene();
+    e.preventDefault();
+  });
+  cvs.addEventListener('mouseup',function(){GS.dragging=false;});
+  cvs.addEventListener('mouseleave',function(){GS.dragging=false;});
+
+  // Wheel = rotate
+  cvs.addEventListener('wheel',function(e){
+    GS.geoRot+=(e.deltaY>0?2:-2);
+    GS.snapped=false;checkSnap();drawScene();
+    e.preventDefault();
+  },{passive:false});
+
+  // Touch
+  var lastTouchDist=null,lastTouchMidX=null,lastTouchMidY=null,lastTouchRot=null;
+  cvs.addEventListener('touchstart',function(e){
+    if(e.touches.length===1){
+      var t=e.touches[0];
+      var pos=getPos(t,cvs);
+      GS.dragging=true;
+      GS.lastX=pos.x;GS.lastY=pos.y;
+    } else if(e.touches.length===2){
+      GS.dragging=false;
+      var t1=e.touches[0],t2=e.touches[1];
+      var p1=getPos(t1,cvs),p2=getPos(t2,cvs);
+      lastTouchDist=Math.hypot(p2.x-p1.x,p2.y-p1.y);
+      lastTouchMidX=(p1.x+p2.x)/2;lastTouchMidY=(p1.y+p2.y)/2;
+      lastTouchRot=Math.atan2(p2.y-p1.y,p2.x-p1.x)*180/Math.PI;
+    }
+    e.preventDefault();
+  },{passive:false});
+
+  cvs.addEventListener('touchmove',function(e){
+    if(e.touches.length===1&&GS.dragging){
+      var t=e.touches[0];
+      var pos=getPos(t,cvs);
+      GS.geoX+=pos.x-GS.lastX;
+      GS.geoY+=pos.y-GS.lastY;
+      GS.lastX=pos.x;GS.lastY=pos.y;
+      GS.snapped=false;checkSnap();drawScene();
+    } else if(e.touches.length===2){
+      var t1=e.touches[0],t2=e.touches[1];
+      var p1=getPos(t1,cvs),p2=getPos(t2,cvs);
+      var newRot=Math.atan2(p2.y-p1.y,p2.x-p1.x)*180/Math.PI;
+      if(lastTouchRot!==null) GS.geoRot+=newRot-lastTouchRot;
+      lastTouchRot=newRot;
+      GS.snapped=false;checkSnap();drawScene();
+    }
+    e.preventDefault();
+  },{passive:false});
+
+  cvs.addEventListener('touchend',function(e){
+    if(e.touches.length===0){GS.dragging=false;lastTouchDist=null;lastTouchRot=null;}
+  });
+}
+
+function getPos(e,cvs){
+  var rect=cvs.getBoundingClientRect();
+  var clientX=e.clientX!==undefined?e.clientX:e.touches?e.touches[0].clientX:0;
+  var clientY=e.clientY!==undefined?e.clientY:e.touches?e.touches[0].clientY:0;
+  return {x:(clientX-rect.left)*(cvs.width/rect.width),y:(clientY-rect.top)*(cvs.height/rect.height)};
+}
+
+window.confirmSnap=function(){
+  if(!GS.snapped){
+    document.getElementById('fb').innerHTML='<span style="color:#dc2626;">Leg de geodriehoek eerst goed op het hoekpunt!</span>';
+    return;
+  }
+  GS.phase=2;updateStepDots(2);renderPhase3(GS.angles[GS.idx]);
+};
+
+// ── PHASE 3: Aflezen ──────────────────────────────────────────────────────
+function renderPhase3(ang){
+  var content=document.getElementById('q-content');
+  // Redraw canvas frozen (no interaction), show reading line
+  content.innerHTML=
+    '<div class="phase-label">Stap 3 van 3</div>'+
+    '<div class="phase-title">Hoeveel graden meet de hoek?</div>'+
+    '<div class="instr-box">Kijk op de geodriehoek: welke waarde staat er op de schoot van de hoek?</div>'+
+    '<div class="canvas-wrap" id="canvas-wrap2">'+
+      '<canvas id="geo-canvas2"></canvas>'+
+    '</div>'+
+    '<div class="ans-row">'+
+      '<input type="number" class="ans-input" id="ans" placeholder="?" min="0" max="180" step="1">'+
+      '<span class="ans-unit">°</span>'+
+      '<button class="btn-primary" id="btn-ch">Controleer</button>'+
+    '</div>'+
+    '<div class="fb" id="fb"></div>'+
+    '<button class="btn-next" id="btn-next" onclick="nextQuestion()">Volgende hoek →</button>';
+
+  // Redraw frozen scene
+  var wrap=document.getElementById('canvas-wrap2');
+  var W=wrap.clientWidth||560;
+  var H=Math.round(W*0.65);
+  var cvs=document.getElementById('geo-canvas2');
+  cvs.width=W;cvs.height=H;
+  var ctx2=cvs.getContext('2d');
+  ctx2.fillStyle='#f8fafc';ctx2.fillRect(0,0,W,H);
+  drawAngleOnCanvas(ctx2,_vtx,_arm1,_arm2,ang,W/560);
+  drawGeodriehoek(ctx2,GS.geoX,GS.geoY,GS.geoRot,W/560,true);
+
+  // Reading line: draw a line from center of geo to where arm2 intersects
+  ctx2.save();
+  ctx2.setLineDash([4,4]);
+  ctx2.strokeStyle='rgba(220,38,38,0.5)';ctx2.lineWidth=1.5;
+  ctx2.beginPath();ctx2.moveTo(_vtx.x,_vtx.y);ctx2.lineTo(_arm2.x,_arm2.y);ctx2.stroke();
+  ctx2.restore();
+
+  var input=document.getElementById('ans');
+  input.focus();
+  input.addEventListener('keypress',function(e){if(e.key==='Enter')document.getElementById('btn-ch').click();});
+
+  document.getElementById('btn-ch').onclick=function(){
+    var val=parseInt(input.value);
+    if(isNaN(val)){document.getElementById('fb').innerHTML='<span style="color:#ea580c;">Vul een getal in!</span>';return;}
+    var fb=document.getElementById('fb');
+    if(val===ang){
+      input.classList.add('ok');
+      input.disabled=true;
+      document.getElementById('btn-ch').style.display='none';
+      GS.correct++;
+      GS.results.push({ang:ang,userAns:val,ok:true});
+      fb.innerHTML='<span style="color:#16a34a;">✓ Juist! De hoek is '+ang+'°</span>';
+      document.getElementById('btn-next').classList.add('show');
+      if(window.confetti)confetti({particleCount:60,spread:50,origin:{y:.8}});
+    } else {
+      GS.wrong++;
+      GS.results.push({ang:ang,userAns:val,ok:false});
+      input.classList.add('err');
+      setTimeout(function(){input.classList.remove('err');},500);
+      var hint=val<ang?'Te klein. ':val>ang?'Te groot. ':'';
+      fb.innerHTML='<span style="color:#dc2626;">'+hint+'Kijk nog eens goed op de geodriehoek. Probeer opnieuw!</span>';
+    }
+  };
+}
+
+window.nextQuestion=function(){
+  GS.idx++;
+  if(GS.idx>=GS.angles.length) showResults();
+  else renderQuestion();
+};
+
+// ── RESULTS ───────────────────────────────────────────────────────────────
+function showResults(){
+  clearInterval(GS.timerInt);
+  var total=GS.angles.length;
+  var pct=Math.round((GS.correct/total)*100);
+
+  document.getElementById('v-result').className='result-overlay show';
+  document.getElementById('res-score').textContent=GS.correct+'/'+total;
+  document.getElementById('res-cor').textContent=GS.correct;
+  document.getElementById('res-wrg').textContent=GS.wrong;
+  document.getElementById('res-time').textContent=fmt(GS.timer);
+
+  var det=document.getElementById('res-detail');
+  det.innerHTML='<div style="font-size:.72rem;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:#6b7280;margin-bottom:10px;padding-bottom:6px;border-bottom:2px solid #e5e7eb;">Overzicht per hoek</div>';
+  GS.results.forEach(function(r,i){
+    det.innerHTML+='<div style="display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:.75rem;margin-bottom:6px;background:'+(r.ok?'#f0fdf4':'#fff1f2')+';font-size:.88rem;font-weight:700;">'+
+      '<span style="font-size:1rem;">'+(r.ok?'✅':'❌')+'</span>'+
+      '<span>Hoek '+(i+1)+': <b>'+r.ang+'°</b></span>'+
+      (r.ok?'':'<span style="color:#6b7280;margin-left:auto;">Jouw antwoord: '+r.userAns+'°</span>')+
+    '</div>';
+  });
+
+  document.getElementById('saved-badge').classList.remove('show');
+  if(GS.mode==='toets'&&!window._fbGuest&&window._fbUser){
+    saveScore({score:GS.correct,total:total,percentage:pct,wrongAttempts:GS.wrong,timeSeconds:GS.timer,angles:GS.results.map(function(r){return {angle:r.ang,correct:r.ok,userAnswer:r.userAns};})});
+  }
+  if(window.confetti&&pct>=80)confetti({particleCount:120,spread:70,origin:{y:.5}});
+}
+
+// ── ANGLE SVG (for phase 1 preview) ──────────────────────────────────────
+function drawAngleSVG(ang, W, H, showDeg){
+  var vtxX=Math.round(W*0.38), vtxY=Math.round(H*0.72);
+  var armLen=Math.round(W*0.45);
+  var arm1x=vtxX+armLen, arm1y=vtxY;
+  var rad=ang*Math.PI/180;
+  var arm2x=vtxX+Math.round(armLen*Math.cos(rad));
+  var arm2y=vtxY-Math.round(armLen*Math.sin(rad));
+  var arcR=24;
+  var a1=0, a2=-rad;
+  // Arc path
+  var ax=vtxX+arcR, ay=vtxY;
+  var bx=vtxX+Math.round(arcR*Math.cos(rad)), by=vtxY-Math.round(arcR*Math.sin(rad));
+  var large=ang>180?1:0;
+  return '<svg width="'+W+'" height="'+H+'" viewBox="0 0 '+W+' '+H+'" style="border-radius:12px;background:#f8fafc;">'+
+    '<path d="M '+vtxX+' '+vtxY+' L '+ax+' '+ay+' A '+arcR+' '+arcR+' 0 '+large+' 0 '+bx+' '+by+' Z" fill="rgba(29,78,216,0.1)"/>'+
+    '<line x1="'+vtxX+'" y1="'+vtxY+'" x2="'+arm1x+'" y2="'+arm1y+'" stroke="#1e3a5f" stroke-width="3" stroke-linecap="round"/>'+
+    '<line x1="'+vtxX+'" y1="'+vtxY+'" x2="'+arm2x+'" y2="'+arm2y+'" stroke="#1e3a5f" stroke-width="3" stroke-linecap="round"/>'+
+    '<circle cx="'+vtxX+'" cy="'+vtxY+'" r="5" fill="#1d4ed8"/>'+
+    (showDeg?'<text x="'+(vtxX+arcR*1.7)+'" y="'+(vtxY-arcR*0.8)+'" font-family="Nunito,sans-serif" font-size="14" font-weight="800" fill="#1d4ed8">'+ang+'°</text>':'')+
+    '</svg>';
+}
+</script>
+</body>
+</html>

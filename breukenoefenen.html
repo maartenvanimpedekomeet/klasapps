@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Breuken Leerapp</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Fredoka:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;}
+body{font-family:'Nunito',sans-serif;background:#fdf4ff;margin:0;padding:0;}
+.ff{font-family:'Fredoka',sans-serif;}
+.hidden{display:none!important;}
+
+/* LOGIN */
+#login-screen{position:fixed;inset:0;z-index:9999;background:linear-gradient(135deg,#6d28d9 0%,#a855f7 60%,#c084fc 100%);display:flex;align-items:center;justify-content:center;padding:20px;}
+#login-screen.hidden{display:none!important;}
+.login-card{background:white;border-radius:2rem;padding:2.5rem 2rem;width:100%;max-width:380px;box-shadow:0 25px 50px rgba(0,0,0,0.25);text-align:center;}
+.login-logo{width:80px;height:80px;background:#f3e8ff;border-radius:1.5rem;display:flex;align-items:center;justify-content:center;margin:0 auto 1.25rem;font-size:2.5rem;box-shadow:0 4px 16px rgba(168,85,247,0.25);}
+.btn-google{display:flex;align-items:center;justify-content:center;gap:12px;width:100%;background:white;border:2px solid #e5e7eb;border-radius:1rem;padding:14px 20px;font-family:'Nunito',sans-serif;font-size:1rem;font-weight:700;color:#374151;cursor:pointer;transition:all .2s;margin-bottom:12px;}
+.btn-google:hover{border-color:#a855f7;background:#fdf4ff;transform:translateY(-1px);}
+.btn-google:disabled{opacity:.6;cursor:not-allowed;transform:none;}
+.btn-guest{width:100%;background:transparent;border:2px solid #d1d5db;border-radius:1rem;padding:12px;font-family:'Nunito',sans-serif;font-size:.9rem;font-weight:700;color:#6b7280;cursor:pointer;transition:all .2s;}
+.btn-guest:hover{border-color:#9ca3af;color:#374151;}
+
+/* USER BAR */
+#user-bar{display:none;align-items:center;justify-content:space-between;background:white;border-radius:16px;padding:10px 18px;margin-bottom:12px;box-shadow:0 2px 12px rgba(0,0,0,0.06);border:1px solid #e9d5ff;}
+#user-bar.show{display:flex;}
+.u-av{width:34px;height:34px;border-radius:50%;background:#f3e8ff;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:.9rem;color:#7e22ce;flex-shrink:0;}
+.u-nm{font-weight:800;color:#1f2937;font-size:.88rem;}
+.u-rl{font-size:.7rem;color:#6b7280;font-weight:600;}
+.btn-lo{background:none;border:1.5px solid #e5e7eb;border-radius:.65rem;padding:5px 12px;font-family:'Nunito',sans-serif;font-size:.78rem;font-weight:700;color:#9ca3af;cursor:pointer;transition:all .2s;}
+.btn-lo:hover{border-color:#dc2626;color:#dc2626;}
+
+/* SAVED BADGE */
+#saved-badge{display:none;align-items:center;justify-content:center;gap:8px;background:#f3e8ff;border:1.5px solid #d8b4fe;border-radius:1rem;padding:10px 16px;margin-top:12px;font-size:.85rem;font-weight:700;color:#6d28d9;font-family:'Nunito',sans-serif;}
+#saved-badge.show{display:flex;}
+
+/* LAYOUT */
+.app{max-width:640px;margin:0 auto;padding:12px;}
+
+/* MENU */
+.menu-header{background:linear-gradient(135deg,#7c3aed,#a855f7);border-radius:20px;padding:24px 20px;color:white;margin-bottom:16px;text-align:center;}
+.menu-card{background:white;border-radius:18px;padding:16px 18px;cursor:pointer;border:2.5px solid transparent;transition:all .2s;box-shadow:0 3px 14px rgba(0,0,0,0.07);display:flex;align-items:center;gap:14px;margin-bottom:10px;}
+.menu-card:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,0,0,0.12);border-color:#a855f7;}
+.menu-card:active{transform:scale(0.98);}
+.mico{width:48px;height:48px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:1.4rem;flex-shrink:0;}
+.mttl{font-weight:800;font-size:.95rem;color:#1e1b4b;}
+.msub{font-size:.75rem;color:#6b7280;font-weight:600;}
+.toets-card{background:linear-gradient(135deg,#1e1b4b,#4c1d95);border-color:transparent!important;margin-top:6px;}
+.toets-card .mttl{color:white!important;}
+.toets-card .msub{color:rgba(255,255,255,0.7)!important;}
+.toets-card .mico{background:rgba(255,255,255,0.2);}
+
+/* MODULE HEADER */
+.mod-hdr{background:linear-gradient(135deg,var(--mc),color-mix(in srgb,var(--mc) 65%,black));border-radius:18px 18px 0 0;padding:16px 18px;color:white;display:flex;align-items:center;gap:12px;}
+.back-btn{background:rgba(255,255,255,0.2);border:none;border-radius:10px;color:white;padding:8px 12px;cursor:pointer;font-size:1.1rem;font-weight:800;transition:background .2s;font-family:'Nunito',sans-serif;}
+.back-btn:hover{background:rgba(255,255,255,0.35);}
+.prog-wrap{background:rgba(255,255,255,0.25);border-radius:99px;height:7px;overflow:hidden;flex:1;}
+.prog-fill{height:100%;background:white;border-radius:99px;transition:width .4s ease;}
+.mod-body{background:white;border-radius:0 0 18px 18px;padding:20px;box-shadow:0 8px 30px rgba(0,0,0,0.08);}
+
+/* BREUK SVG */
+.breuk{display:inline-flex;flex-direction:column;align-items:center;font-weight:800;line-height:1.1;}
+.breuk .tl{border-bottom:3px solid #1e1b4b;padding:2px 10px;font-size:1.8rem;}
+.breuk .nm{padding:2px 10px;font-size:1.8rem;}
+.breuk-lg .tl,.breuk-lg .nm{font-size:2.4rem;}
+.breuk-sm .tl,.breuk-sm .nm{font-size:1.2rem;}
+
+/* OPTIONS */
+.opt-btn{background:#f8fafc;border:3px solid #e2e8f0;border-radius:14px;padding:12px 16px;font-size:1rem;font-weight:700;cursor:pointer;transition:all .15s;width:100%;text-align:center;font-family:'Nunito',sans-serif;color:#1e293b;}
+.opt-btn:hover:not(:disabled){border-color:var(--mc,#a855f7);background:color-mix(in srgb,var(--mc,#a855f7) 8%,white);}
+.opt-btn.correct{border-color:#16a34a!important;background:#f0fdf4!important;color:#15803d!important;}
+.opt-btn.wrong{border-color:#dc2626!important;background:#fef2f2!important;color:#991b1b!important;animation:shake .4s;}
+.opt-btn:disabled{cursor:default;}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
+
+/* INPUT */
+.breuk-input{width:60px;height:56px;font-size:1.5rem;text-align:center;border:3px solid #d1d5db;border-radius:12px;font-family:'Nunito',sans-serif;font-weight:800;outline:none;transition:all .2s;}
+.breuk-input:focus{border-color:var(--mc,#a855f7);}
+.breuk-input.ok{border-color:#16a34a!important;background:#f0fdf4;color:#15803d;}
+.breuk-input.err{border-color:#dc2626!important;background:#fef2f2;animation:shake .4s;}
+
+/* GETALLENAS */
+.number-line-wrap{overflow-x:auto;padding:12px 0;}
+.nl-svg{display:block;margin:0 auto;}
+
+/* ACTION BUTTONS */
+.btn-check{background:var(--mc,#a855f7);color:white;border:none;border-radius:12px;padding:12px 28px;font-family:'Nunito',sans-serif;font-size:1rem;font-weight:800;cursor:pointer;transition:all .2s;}
+.btn-check:hover{filter:brightness(.9);}
+.btn-next{background:var(--mc,#a855f7);color:white;border:none;border-radius:12px;padding:14px;width:100%;font-family:'Nunito',sans-serif;font-size:1rem;font-weight:800;cursor:pointer;transition:all .2s;margin-top:14px;display:none;}
+.btn-next.show{display:block;}
+.btn-next:hover{filter:brightness(.9);}
+.q-label{font-size:.72rem;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:#6b7280;margin-bottom:8px;}
+
+/* RESULT */
+.result-overlay{position:fixed;inset:0;z-index:100;background:#fdf4ff;display:none;flex-direction:column;align-items:center;justify-content:flex-start;padding:1.5rem 1.25rem;overflow-y:auto;}
+.result-overlay.show{display:flex;}
+.result-card{background:white;border-radius:2rem;padding:2rem 1.5rem;width:100%;max-width:440px;box-shadow:0 8px 40px rgba(109,40,217,.18);}
+.score-ring{width:120px;height:120px;border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;margin:0 auto 1.5rem;font-family:'Fredoka',sans-serif;border:5px solid var(--mc,#a855f7);background:color-mix(in srgb,var(--mc,#a855f7) 10%,white);color:var(--mc,#a855f7);}
+.stat-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;}
+.stat-box{border-radius:1rem;padding:14px 10px;text-align:center;}
+.snum{font-family:'Fredoka',sans-serif;font-size:1.8rem;font-weight:600;}
+.slbl{font-size:.7rem;font-weight:800;text-transform:uppercase;letter-spacing:.05em;margin-top:2px;}
+.analysis-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:.75rem;margin-bottom:6px;font-size:.88rem;font-weight:700;}
+.analysis-item.good{background:#f0fdf4;color:#166534;}
+.analysis-item.good .dot{background:#22c55e;}
+.analysis-item.bad{background:#fff1f2;color:#9f1239;}
+.analysis-item.bad .dot{background:#f43f5e;}
+.dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;}
+.btn-restart{width:100%;margin-top:1.25rem;background:var(--mc,#a855f7);color:white;border:none;border-radius:1rem;padding:14px;font-family:'Nunito',sans-serif;font-size:1rem;font-weight:800;cursor:pointer;}
+.btn-restart:hover{filter:brightness(.9);}
+
+/* MODULE START */
+.mod-start{background:white;border-radius:18px;padding:2rem;text-align:center;box-shadow:0 8px 30px rgba(0,0,0,0.08);}
+.mod-start h2{font-family:'Fredoka',sans-serif;font-size:1.8rem;margin:.75rem 0 .5rem;}
+.mod-start p{color:#6b7280;font-size:.9rem;margin-bottom:1.5rem;}
+.btn-start{background:var(--mc,#a855f7);color:white;border:none;border-radius:1.25rem;padding:14px 32px;font-family:'Nunito',sans-serif;font-size:1.1rem;font-weight:800;cursor:pointer;transition:all .2s;box-shadow:0 6px 20px color-mix(in srgb,var(--mc,#a855f7) 35%,transparent);}
+.btn-start:hover{filter:brightness(.9);transform:translateY(-2px);}
+
+/* Breuk display large */
+.vraag-breuk{background:#fdf4ff;border-radius:1.25rem;padding:20px;display:flex;align-items:center;justify-content:center;gap:16px;margin-bottom:1.25rem;min-height:120px;flex-wrap:wrap;}
+.qlabel{text-align:center;font-size:.72rem;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:#6b7280;margin-bottom:8px;}
+
+/* Taart visualisatie */
+.taart-rij{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-bottom:14px;}
+
+/* Step-based (breuk van getal) */
+.step-row{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:10px 12px;border-radius:12px;border:2px solid #e5e7eb;margin-bottom:8px;transition:all .2s;}
+.step-row.active{border-color:var(--mc,#a855f7);background:color-mix(in srgb,var(--mc,#a855f7) 5%,white);}
+.step-row.dimmed{opacity:.35;pointer-events:none;}
+.step-row.done{border-color:#16a34a;background:#f0fdf4;}
+.step-txt{font-size:.88rem;font-weight:700;color:#374151;}
+.step-txt .acc{color:var(--mc,#a855f7);}
+
+/* Vergelijken symbool */
+.symb-box{width:70px;height:70px;border:3px dashed #d1d5db;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:2rem;font-weight:800;color:#374151;transition:all .2s;}
+.symb-box.answered{border-style:solid;border-color:#16a34a;background:#f0fdf4;color:#16a34a;}
+.symb-box.wrong-ans{border-color:#dc2626!important;color:#dc2626!important;}
+.symb-btn{width:64px;height:64px;background:white;border:3px solid #d1d5db;border-radius:12px;font-size:1.6rem;font-weight:800;cursor:pointer;transition:all .2s;font-family:'Nunito',sans-serif;}
+.symb-btn:hover{border-color:var(--mc,#a855f7);background:color-mix(in srgb,var(--mc,#a855f7) 8%,white);}
+
+/* Color themes */
+.t-woordenschat{--mc:#7c3aed;}
+.t-getallenas{--mc:#0891b2;}
+.t-vergelijk{--mc:#dc2626;}
+.t-gehelen{--mc:#9333ea;}
+.t-gelijkwaardig{--mc:#ea580c;}
+.t-gelijknamig{--mc:#0369a1;}
+.t-breukgetal{--mc:#16a34a;}
+.t-toets{--mc:#1e1b4b;}
+
+/* Noemer highlight */
+.hl-noemer{color:#dc2626;font-weight:900;}
+.hl-teller{color:#2563eb;font-weight:900;}
+.hl-geheel{color:#16a34a;font-weight:900;}
+</style>
+</head>
+<body>
+    <!-- LOGIN SCREEN -->
+    <div id="login-screen">
+      <div class="login-card">
+        <div class="login-logo">➗</div>
+        <h1 style="font-size:1.6rem;font-weight:800;color:#1f2937;margin-bottom:6px;">Breuken</h1>
+        <p style="font-size:.85rem;color:#6b7280;margin-bottom:1.25rem;">Voer je naam en code in</p>
+        <input class="login-input" id="login-naam" type="text" placeholder="Jouw voornaam" autocomplete="off" autocapitalize="words">
+        <input class="login-input" id="login-code" type="password" placeholder="Jouw code" autocomplete="off">
+        <div class="login-error" id="login-error"></div>
+        <button class="btn-login" id="btn-login" onclick="loginMetCode()">Inloggen</button>
+        <button class="btn-guest" onclick="loginGuest()">Doorgaan als gast (geen opslag)</button>
+        <div class="teacher-link"><a href="dashboard.html">Leerkracht? Klik hier</a></div>
+      </div>
+    </div>
+
+<!-- LOGIN -->
+<div id="login-screen">
+  <div class="login-card">
+    <div class="login-logo">➗</div>
+    <h1 style="font-size:1.6rem;font-weight:900;color:#1f2937;margin-bottom:6px;" class="ff">Breuken</h1>
+    <p style="font-size:.85rem;color:#6b7280;margin-bottom:1.5rem;">Log in om je toetsresultaten bij te houden</p>
+    <button class="btn-google" id="btn-google-login" onclick="loginGoogle()">
+      <svg width="20" height="20" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9.1 3.5l6.8-6.8C35.8 2.4 30.3 0 24 0 14.7 0 6.7 5.4 2.6 13.3l7.9 6.1C12.4 13.1 17.7 9.5 24 9.5z"/><path fill="#4285F4" d="M46.5 24.5c0-1.6-.1-3.1-.4-4.5H24v8.5h12.7c-.5 2.9-2.2 5.4-4.7 7l7.4 5.7c4.3-4 6.8-9.9 7.1-16.7z"/><path fill="#FBBC05" d="M10.5 28.6A14.5 14.5 0 0 1 9.5 24c0-1.6.3-3.1.9-4.6l-7.9-6.1A24 24 0 0 0 0 24c0 3.9.9 7.5 2.6 10.7l7.9-6.1z"/><path fill="#34A853" d="M24 48c6.3 0 11.6-2.1 15.5-5.7l-7.4-5.7c-2.1 1.4-4.8 2.2-8.1 2.2-6.3 0-11.6-3.6-13.5-8.8l-7.9 6.1C6.7 42.6 14.7 48 24 48z"/></svg>
+      Inloggen met Google
+    </button>
+    <button class="btn-guest" onclick="loginGuest()">Doorgaan als gast (geen opslag)</button>
+  </div>
+</div>
+
+<div class="app">
+  <!-- USER BAR -->
+  <div id="user-bar">
+    <div style="display:flex;align-items:center;gap:10px;">
+      <div class="u-av" id="u-av">👤</div>
+      <div><div class="u-nm" id="u-nm">Gast</div><div class="u-rl" id="u-rl">Gast</div></div>
+    </div>
+    <button class="btn-lo" onclick="doLogout()">Uitloggen</button>
+  </div>
+
+  <!-- MENU -->
+  <div id="v-menu">
+    <div class="menu-header">
+      <div class="ff" style="font-size:2rem;font-weight:700;">Breuken 🍕</div>
+      <div style="font-size:.9rem;opacity:.85;margin-top:4px;">Kies een oefening</div>
+    </div>
+    <div class="menu-card" onclick="openMod('woordenschat')"><div class="mico" style="background:#f3e8ff;">📖</div><div><div class="mttl">Woordenschat</div><div class="msub">Teller · noemer · breukstreep · geheel</div></div></div>
+    <div class="menu-card" onclick="openMod('getallenas')"><div class="mico" style="background:#e0f2fe;">📏</div><div><div class="mttl">Breuken op de getallenas</div><div class="msub">Duid de breuk aan op de juiste plek</div></div></div>
+    <div class="menu-card" onclick="openMod('vergelijk')"><div class="mico" style="background:#fee2e2;">⚖️</div><div><div class="mttl">Breuken vergelijken</div><div class="msub">Gelijke noemer of gelijke teller</div></div></div>
+    <div class="menu-card" onclick="openMod('gehelen')"><div class="mico" style="background:#faf5ff;">🔢</div><div><div class="mttl">Gehelen uit breuken halen</div><div class="msub">Onechte breuk → gemengd getal</div></div></div>
+    <div class="menu-card" onclick="openMod('gelijkwaardig')"><div class="mico" style="background:#fff7ed;">🔄</div><div><div class="mttl">Gelijkwaardige breuken</div><div class="msub">Breuken met andere noemer maken</div></div></div>
+    <div class="menu-card" onclick="openMod('gelijknamig')"><div class="mico" style="background:#e0f2fe;">🔀</div><div><div class="mttl">Vergelijken via gelijknamig maken</div><div class="msub">Zelfde noemer → dan vergelijken</div></div></div>
+    <div class="menu-card" onclick="openMod('breukgetal')"><div class="mico" style="background:#dcfce7;">🍰</div><div><div class="mttl">Breuk van een getal</div><div class="msub">Stap voor stap berekenen</div></div></div>
+    <div class="menu-card toets-card" onclick="openMod('toets')"><div class="mico">🏆</div><div><div class="mttl">Toets — Alles door elkaar</div><div class="msub">40 vragen · score wordt opgeslagen</div></div></div>
+  </div>
+
+  <!-- MODULE -->
+  <div id="v-mod" class="hidden">
+    <div class="mod-hdr" id="mod-hdr">
+      <button class="back-btn" onclick="goMenu()">←</button>
+      <div style="flex:1;">
+        <div style="font-size:.7rem;font-weight:800;text-transform:uppercase;letter-spacing:.06em;opacity:.85;" id="mod-title">Module</div>
+        <div style="display:flex;align-items:center;gap:8px;margin-top:4px;">
+          <div class="prog-wrap"><div class="prog-fill" id="mod-prog"></div></div>
+          <span style="font-size:.78rem;font-weight:800;white-space:nowrap;" id="mod-qcnt">1/10</span>
+        </div>
+      </div>
+      <div style="background:rgba(255,255,255,0.2);border-radius:.75rem;padding:6px 12px;font-size:.8rem;font-weight:800;" id="mod-timer">00:00</div>
+    </div>
+    <div id="mod-start-box" class="mod-start">
+      <div style="font-size:3rem;" id="ms-icon">➗</div>
+      <h2 id="ms-title">Module</h2>
+      <p id="ms-desc">Beschrijving</p>
+      <button class="btn-start" onclick="startMod()">Start de oefening</button>
+    </div>
+    <div id="q-area" class="mod-body hidden"></div>
+  </div>
+</div>
+
+<!-- RESULT -->
+<div class="result-overlay" id="v-result">
+  <div class="result-card">
+    <div class="score-ring" id="res-ring">
+      <div style="font-size:2rem;font-weight:700;" id="res-score">0/0</div>
+      <div style="font-size:.7rem;font-weight:800;text-transform:uppercase;opacity:.7;">Score</div>
+    </div>
+    <div class="stat-row">
+      <div class="stat-box" style="background:#f0fdf4;"><div class="snum" style="color:#16a34a;" id="res-cor">0</div><div class="slbl" style="color:#16a34a;">Juist</div></div>
+      <div class="stat-box" style="background:#fff1f2;"><div class="snum" style="color:#e11d48;" id="res-wrg">0</div><div class="slbl" style="color:#e11d48;">Fouten</div></div>
+    </div>
+    <div class="stat-box" style="background:#eff6ff;text-align:center;margin-bottom:10px;"><div class="snum" style="color:#1d4ed8;" id="res-time">00:00</div><div class="slbl" style="color:#1d4ed8;">Tijd</div></div>
+    <div id="res-analysis"></div>
+    <div id="saved-badge">✓ Score opgeslagen in de database</div>
+    <button class="btn-restart" onclick="restartMod()">Opnieuw beginnen</button>
+    <button onclick="goMenu()" style="width:100%;margin-top:8px;background:none;border:2px solid #e5e7eb;border-radius:1rem;padding:12px;font-family:'Nunito',sans-serif;font-size:.9rem;font-weight:700;color:#6b7280;cursor:pointer;">← Terug naar menu</button>
+  </div>
+</div>
+
+<!-- FIREBASE -->
+<!-- FIREBASE -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    <script>
+        firebase.initializeApp({
+            apiKey:"AIzaSyCnQDVVAlK6jE-PPUUediRJMTbN0xqrLDE",
+            authDomain:"klaswebsite-database.firebaseapp.com",
+            projectId:"klaswebsite-database",
+            storageBucket:"klaswebsite-database.firebasestorage.app",
+            messagingSenderId:"42912327282",
+            appId:"1:42912327282:web:f13f2c706f6c42c115c4eb"
+        });
+        const fbDb = firebase.firestore();
+
+        // ── LOGIN (leest leerlingen uit Firestore) ────────────────────
+        async function loginMetCode() {
+            var naam = (document.getElementById('login-naam').value||'').trim().toLowerCase();
+            var code = (document.getElementById('login-code').value||'').trim();
+            var errEl = document.getElementById('login-error');
+            var btn = document.getElementById('btn-login');
+            errEl.textContent = '';
+            document.getElementById('login-naam').classList.remove('err');
+            document.getElementById('login-code').classList.remove('err');
+            if (!naam) { errEl.textContent='Vul je voornaam in.'; document.getElementById('login-naam').classList.add('err'); return; }
+            if (!code) { errEl.textContent='Vul je code in.'; document.getElementById('login-code').classList.add('err'); return; }
+            btn.disabled=true; btn.textContent='Controleren...';
+            try {
+                var doc = await fbDb.collection('leerlingen').doc(naam).get();
+                if (!doc.exists) {
+                    errEl.textContent='Naam niet gevonden.'; btn.disabled=false; btn.textContent='Inloggen';
+                    document.getElementById('login-naam').classList.add('err'); return;
+                }
+                var data = doc.data();
+                if (data.code !== code) {
+                    errEl.textContent='Verkeerde code.'; btn.disabled=false; btn.textContent='Inloggen';
+                    document.getElementById('login-code').classList.add('err'); return;
+                }
+                window._leerlingNaam = data.weergavenaam || naam;
+                window._leerlingId = naam;
+                window._isGuest = false;
+                afterLogin(window._leerlingNaam);
+            } catch(e) {
+                errEl.textContent='Fout: '+e.message; btn.disabled=false; btn.textContent='Inloggen';
+            }
+        }
+
+        function loginGuest() {
+            window._leerlingNaam='Gast'; window._leerlingId=null; window._isGuest=true;
+            afterLogin('Gast');
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            ['login-naam','login-code'].forEach(function(id) {
+                var el=document.getElementById(id);
+                if(el) {
+                    el.addEventListener('keypress',function(e){if(e.key==='Enter')loginMetCode();});
+                    el.addEventListener('focus',function(){el.classList.remove('err');document.getElementById('login-error').textContent='';});
+                }
+            });
+        });
+    </script>
+</body>
+</html>

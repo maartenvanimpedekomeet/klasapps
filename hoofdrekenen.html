@@ -1,0 +1,886 @@
+<!DOCTYPE html>
+
+<html lang="nl">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Rekenmeester Oefenplatform</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <style>
+
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+
+    body { font-family: 'Inter', sans-serif; }
+
+    .animate-fade-in { animation: fadeIn 0.5s ease-out; }
+
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* ── LOGIN ── */
+        #login-screen {
+            position:fixed; inset:0; z-index:9999;
+            background:linear-gradient(135deg,#4338ca 0%,#6d28d9 60%,#7c3aed 100%);
+            display:flex; align-items:center; justify-content:center; padding:20px;
+        }
+        #login-screen.hidden { display:none!important; }
+        .login-card {
+            background:white; border-radius:2rem; padding:2.5rem 2rem;
+            width:100%; max-width:380px;
+            box-shadow:0 25px 50px rgba(0,0,0,0.25); text-align:center;
+        }
+        .login-logo {
+            width:80px; height:80px; background:#ede9fe; border-radius:1.5rem;
+            display:flex; align-items:center; justify-content:center;
+            margin:0 auto 1.25rem; font-size:2.5rem;
+            box-shadow:0 4px 16px rgba(99,102,241,0.2);
+        }
+        .login-input {
+            width:100%; padding:14px 16px; border:2px solid #e5e7eb; border-radius:1rem;
+            font-family:inherit; font-size:1rem; font-weight:600; color:#374151;
+            margin-bottom:10px; outline:none; transition:border-color .2s; text-align:center;
+        }
+        .login-input:focus { border-color:#6d28d9; }
+        .login-input.err { border-color:#dc2626; background:#fef2f2; animation:loginShake .4s; }
+        @keyframes loginShake{0%,100%{transform:translateX(0)}25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
+        .btn-login {
+            width:100%; background:#6d28d9; color:white; border:none; border-radius:1rem;
+            padding:14px; font-family:inherit; font-size:1rem; font-weight:700;
+            cursor:pointer; transition:all .2s; margin-bottom:10px;
+        }
+        .btn-login:hover { background:#5b21b6; }
+        .btn-login:disabled { opacity:.6; cursor:not-allowed; }
+        .login-error { color:#dc2626; font-size:.85rem; font-weight:700; min-height:20px; margin-bottom:8px; }
+        .btn-guest {
+            width:100%; background:transparent; border:2px solid #d1d5db; border-radius:1rem;
+            padding:12px; font-family:inherit; font-size:.9rem; font-weight:700;
+            color:#6b7280; cursor:pointer; transition:all .2s;
+        }
+        .btn-guest:hover { border-color:#9ca3af; color:#374151; }
+        .teacher-link { margin-top:14px; font-size:.75rem; color:#9ca3af; }
+        .teacher-link a { color:#6d28d9; text-decoration:none; font-weight:700; }
+    </style>
+
+</head>
+
+<body class="bg-slate-50 min-h-screen">
+    <!-- LOGIN SCREEN -->
+    <div id="login-screen">
+      <div class="login-card">
+        <div class="login-logo">➕</div>
+        <h1 style="font-size:1.6rem;font-weight:800;color:#1f2937;margin-bottom:6px;">Hoofdrekenen</h1>
+        <p style="font-size:.85rem;color:#6b7280;margin-bottom:1.25rem;">Voer je naam en code in</p>
+        <input class="login-input" id="login-naam" type="text" placeholder="Jouw voornaam" autocomplete="off" autocapitalize="words">
+        <input class="login-input" id="login-code" type="password" placeholder="Jouw code" autocomplete="off">
+        <div class="login-error" id="login-error"></div>
+        <button class="btn-login" id="btn-login" onclick="loginMetCode()">Inloggen</button>
+        <button class="btn-guest" onclick="loginGuest()">Doorgaan als gast (geen opslag)</button>
+        <div class="teacher-link"><a href="dashboard.html">Leerkracht? Klik hier</a></div>
+      </div>
+    </div>
+    <!-- ── LOGIN VIEW ── -->
+    <div id="login-view" style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:50vh;gap:16px;padding:20px;max-width:400px;margin:0 auto;">
+        <div style="font-size:2.5rem;">🔐</div>
+        <h2 style="font-size:1.3rem;font-weight:800;color:#1e293b;text-align:center;margin:0;">Aanmelden</h2>
+        <p style="color:#64748b;font-size:0.85rem;text-align:center;margin:0;max-width:320px;">Log in met je schoolaccount om je score op te slaan, of speel als gast.</p>
+        <div id="login-error" style="display:none;background:#fee2e2;border:1px solid #fca5a5;color:#b91c1c;padding:10px 16px;border-radius:10px;font-size:0.82rem;font-weight:600;max-width:320px;text-align:center;width:100%;box-sizing:border-box;"></div>
+        <button id="fb-google-btn" style="display:flex;align-items:center;gap:10px;background:#1e293b;color:white;border:none;border-radius:12px;padding:13px 20px;font-size:0.9rem;font-weight:700;cursor:pointer;width:100%;max-width:320px;justify-content:center;">
+            <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.31-8.16 2.31-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
+            Inloggen met schoolaccount
+        </button>
+        <div style="display:flex;align-items:center;gap:8px;width:100%;max-width:320px;color:#94a3b8;font-size:0.75rem;"><div style="flex:1;height:1px;background:#e2e8f0;"></div>of<div style="flex:1;height:1px;background:#e2e8f0;"></div></div>
+        <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:12px;width:100%;max-width:320px;box-sizing:border-box;">
+            <label style="font-size:0.68rem;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:0.06em;display:block;margin-bottom:5px;">Naam (gast)</label>
+            <input type="text" id="fb-guest-name" placeholder="Bv. Milan" style="width:100%;padding:9px 11px;border:1px solid #e2e8f0;border-radius:7px;font-size:0.88rem;font-weight:600;box-sizing:border-box;outline:none;">
+        </div>
+        <button id="fb-guest-btn" style="background:#f1f5f9;color:#475569;border:none;border-radius:10px;padding:11px 20px;font-size:0.88rem;font-weight:600;cursor:pointer;width:100%;max-width:320px;">
+            👤 Spelen als gast (score niet bewaard)
+        </button>
+    </div>
+    <div id="fb-user-badge" style="display:none;align-items:center;gap:8px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:6px 12px;margin-bottom:10px;width:fit-content;">
+        <div id="fb-user-initials" style="width:26px;height:26px;background:#3b82f6;border-radius:6px;color:white;font-weight:700;font-size:0.75rem;display:flex;align-items:center;justify-content:center;">?</div>
+        <div><div id="fb-user-name" style="font-size:0.82rem;font-weight:700;color:#1e293b;"></div><div id="fb-user-email" style="font-size:0.68rem;color:#94a3b8;"></div></div>
+        <button id="fb-logout-btn" style="background:none;border:none;cursor:pointer;color:#94a3b8;font-size:0.75rem;padding:3px 8px;border-left:1px solid #e2e8f0;margin-left:4px;">↩ Uit</button>
+    </div>
+    <div id="fb-guest-badge" style="display:none;background:#fefce8;border:1px solid #fde68a;border-radius:8px;padding:4px 10px;font-size:0.72rem;font-weight:700;color:#d97706;margin-bottom:8px;">👤 Gast – score niet opgeslagen</div>
+
+
+
+
+<div id="app" style="display:none;"></div>
+
+
+
+<script>
+
+// --- APP LOGICA ---
+
+let state = {
+
+    view: 'menu', // menu, quiz, results
+
+    category: null,
+
+    showTimer: true,
+
+    questions: [],
+
+    currentIndex: 0,
+
+    userAnswer: '',
+
+    timeLeft: 120,
+
+    isActive: false,
+
+    results: [],
+
+    timerInterval: null
+
+};
+
+
+
+const categories = [
+
+    { id: 'plusminus10', label: 'Optellen en aftrekken tot 10', range: 10 },
+
+    { id: 'plusminus20', label: 'Optellen en aftrekken tot 20', range: 20 },
+
+    { id: 'plusminus100', label: 'Optellen en aftrekken tot 100', range: 100 },
+
+    { id: 'tafels', label: 'De maaltafels', type: 'multiply' },
+
+    { id: 'deeltafels', label: 'De deeltafels', type: 'divide' },
+
+];
+
+
+
+function isBridgeOperation(a, b, op, range) {
+
+    if (range === 20) {
+
+    if (op === '+') return (a % 10) + (b % 10) >= 10 && a + b > 10;
+
+    if (op === '-') return (a % 10) < (b % 10) && a > 10;
+
+    }
+
+    if (range === 100) {
+
+    if (op === '+') return (a % 10) + (b % 10) >= 10;
+
+    if (op === '-') return (a % 10) < (b % 10);
+
+    }
+
+    return false;
+
+}
+
+
+
+function generateQuestion(cat) {
+
+    let a, b, op, ans;
+
+    const isPlus = Math.random() > 0.5;
+
+
+
+    if (cat.id.includes('plusminus')) {
+
+    op = isPlus ? '+' : '-';
+
+    if (cat.range === 10) {
+
+    if (isPlus) {
+
+    ans = Math.floor(Math.random() * 11);
+
+    a = Math.floor(Math.random() * (ans + 1));
+
+    b = ans - a;
+
+    } else {
+
+    a = Math.floor(Math.random() * 11);
+
+    b = Math.floor(Math.random() * (a + 1));
+
+    ans = a - b;
+
+    }
+
+    } else if (cat.range === 20) {
+
+    if (isPlus) {
+
+    a = Math.floor(Math.random() * 19) + 1;
+
+    b = Math.floor(Math.random() * (20 - a)) + 1;
+
+    ans = a + b;
+
+    } else {
+
+    a = Math.floor(Math.random() * 20) + 1;
+
+    b = Math.floor(Math.random() * a) + 1;
+
+    ans = a - b;
+
+    }
+
+    } else {
+
+    if (isPlus) {
+
+    a = Math.floor(Math.random() * 90) + 5;
+
+    b = Math.floor(Math.random() * (100 - a)) + 1;
+
+    ans = a + b;
+
+    } else {
+
+    a = Math.floor(Math.random() * 95) + 5;
+
+    b = Math.floor(Math.random() * a) + 1;
+
+    ans = a - b;
+
+    }
+
+    }
+
+    return {    
+
+    text: `${a} ${op} ${b}`,    
+
+    ans,    
+
+    meta: { a, b, op, range: cat.range, isBridge: isBridgeOperation(a, b, op, cat.range) }    
+
+    };
+
+    } else if (cat.type === 'multiply') {
+
+    a = Math.floor(Math.random() * 10) + 1;
+
+    b = Math.floor(Math.random() * 10) + 1;
+
+    return { text: `${a} x ${b}`, ans: a * b, meta: { a, b, type: 'tafel' } };
+
+    } else {
+
+    b = Math.floor(Math.random() * 10) + 1;
+
+    ans = Math.floor(Math.random() * 10) + 1;
+
+    a = b * ans;
+
+    return { text: `${a} : ${b}`, ans: ans, meta: { a, b, type: 'deeltafel' } };
+
+    }
+
+}
+
+
+
+// --- RENDER FUNCTIES ---
+
+
+
+function render() {
+
+    const app = document.getElementById('app');
+
+    if (state.view === 'menu') {
+
+    app.innerHTML = renderMenu();
+
+    } else if (state.view === 'quiz') {
+
+    app.innerHTML = renderQuiz();
+
+    document.getElementById('answer-input').focus();
+
+    } else if (state.view === 'results') {
+
+    app.innerHTML = renderResults();
+
+    }
+
+    lucide.createIcons();
+
+}
+
+
+
+function renderMenu() {
+
+    return `
+
+    <div class="max-w-2xl mx-auto p-6 animate-fade-in py-12">
+
+    <div class="text-center mb-10">
+
+    <h1 class="text-4xl font-bold text-slate-800 mb-2">Rekenmeester</h1>
+
+    <p class="text-slate-500">Kies een categorie en start de training van 2 minuten.</p>
+
+    </div>
+
+    <div class="grid gap-4 mb-8">
+
+    ${categories.map(cat => `
+
+    <button onclick="startQuiz('${cat.id}')" class="flex items-center justify-between p-5 bg-white border-2 border-slate-100 rounded-2xl hover:border-indigo-400 hover:shadow-lg transition-all text-left group">
+
+    <span class="text-lg font-medium text-slate-700">${cat.label}</span>
+
+    <i data-lucide="play" class="w-5 h-5 text-indigo-500 opacity-0 group-hover:opacity-100 transition-opacity"></i>
+
+    </button>
+
+    `).join('')}
+
+    </div>
+
+    <div class="bg-slate-100 p-6 rounded-2xl flex items-center justify-between">
+
+    <div class="flex items-center gap-3 text-slate-600 font-medium">
+
+    <i data-lucide="settings-2" class="w-5 h-5"></i>
+
+    <span>Instellingen</span>
+
+    </div>
+
+    <label class="flex items-center cursor-pointer">
+
+    <span class="mr-3 text-sm text-slate-500">Toon tijdsbalk</span>
+
+    <input type="checkbox" class="hidden" ${state.showTimer ? 'checked' : ''} onchange="toggleTimer()">
+
+    <div class="w-10 h-6 rounded-full transition-colors ${state.showTimer ? 'bg-indigo-500' : 'bg-slate-300'} relative">
+
+    <div class="absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition-transform ${state.showTimer ? 'translate-x-4' : ''}"></div>
+
+    </div>
+
+    </label>
+
+    </div>
+
+    </div>
+
+    `;
+
+}
+
+
+
+function renderQuiz() {
+
+    const progress = (state.timeLeft / 120) * 100;
+
+    const currentQ = state.questions[state.currentIndex];
+
+    return `
+
+    <div class="max-w-xl mx-auto p-6 h-screen flex flex-col justify-center animate-fade-in">
+
+    ${state.showTimer ? `
+
+    <div class="fixed top-0 left-0 w-full h-1.5 bg-slate-200">
+
+    <div class="h-full bg-indigo-500 transition-all duration-1000 ease-linear" style="width: ${progress}%"></div>
+
+    </div>
+
+    ` : ''}
+
+    <div class="text-center mb-12">
+
+    <p class="text-slate-400 text-sm uppercase tracking-widest mb-4">Oefening ${state.currentIndex + 1}</p>
+
+    <h2 class="text-7xl font-bold text-slate-800">${currentQ.text} = ?</h2>
+
+    </div>
+
+    <form onsubmit="handleAnswer(event)" class="flex flex-col gap-6">
+
+    <input id="answer-input" type="number" class="text-4xl text-center p-6 border-4 border-indigo-100 rounded-3xl focus:border-indigo-500 focus:outline-none" placeholder="..." required>
+
+    <button type="submit" class="bg-indigo-600 text-white py-4 rounded-2xl text-xl font-bold hover:bg-indigo-700 transition-all">
+
+    Controleren (Enter)
+
+    </button>
+
+    </form>
+
+    </div>
+
+    `;
+
+}
+
+
+
+function renderResults() {
+
+    const correctCount = state.results.filter(r => r.correct).length;
+
+    const wrongCount = state.results.length - correctCount;
+
+    const analysis = analyzeResults();
+
+
+
+    return `
+
+    <div class="max-w-3xl mx-auto p-6 animate-fade-in py-12">
+
+    <div class="text-center mb-8">
+
+    <h2 class="text-3xl font-bold text-slate-800">Resultaten</h2>
+
+    <p class="text-slate-500">${state.category.label}</p>
+
+    </div>
+
+    <div class="grid grid-cols-2 gap-4 mb-8">
+
+    <div class="bg-emerald-50 border border-emerald-100 p-6 rounded-3xl text-center">
+
+    <div class="text-emerald-600 font-bold text-4xl mb-1">${correctCount}</div>
+
+    <div class="text-emerald-700 font-medium text-sm">Juist</div>
+
+    </div>
+
+    <div class="bg-rose-50 border border-rose-100 p-6 rounded-3xl text-center">
+
+    <div class="text-rose-600 font-bold text-4xl mb-1">${wrongCount}</div>
+
+    <div class="text-rose-700 font-medium text-sm">Fout</div>
+
+    </div>
+
+    </div>
+
+    <div class="bg-white border-2 border-slate-100 rounded-3xl p-6 mb-8">
+
+    <h3 class="text-xl font-bold text-slate-800 mb-6 flex items-center gap-2">Uitgebreide Analyse</h3>
+
+    <div class="overflow-x-auto">
+
+    <table class="w-full text-left">
+
+    <thead>
+
+    <tr class="border-b border-slate-100 text-xs text-slate-400 uppercase">
+
+    <th class="pb-3">Categorie</th>
+
+    <th class="pb-3 text-center">Totaal</th>
+
+    <th class="pb-3 text-center">Juist</th>
+
+    <th class="pb-3 text-center text-rose-500">Fout</th>
+
+    <th class="pb-3 text-right">Status</th>
+
+    </tr>
+
+    </thead>
+
+    <tbody class="divide-y divide-slate-50">
+
+    ${analysis.map(row => `
+
+    <tr>
+
+    <td class="py-4 font-medium">${row.label}</td>
+
+    <td class="py-4 text-center">${row.total}</td>
+
+    <td class="py-4 text-center text-emerald-600 font-bold">${row.correct}</td>
+
+    <td class="py-4 text-center text-rose-600 font-bold">${row.wrong}</td>
+
+    <td class="py-4 text-right">
+
+    <span class="px-3 py-1 rounded-full text-xs font-bold ${row.status === 'good' ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'}">
+
+    ${row.status === 'good' ? 'Goed' : 'Oefenen'}
+
+    </span>
+
+    </td>
+
+    </tr>
+
+    `).join('')}
+
+    </tbody>
+
+    </table>
+
+    </div>
+
+    </div>
+
+    <button onclick="state.view = 'menu'; render();" class="w-full bg-slate-800 text-white py-5 rounded-3xl font-bold hover:bg-slate-900 transition-colors">
+
+    Terug naar menu
+
+    </button>
+
+    </div>
+
+    `;
+
+}
+
+
+
+// --- ACTIONS ---
+
+
+
+function toggleTimer() {
+
+    state.showTimer = !state.showTimer;
+
+    render();
+
+}
+
+
+
+function startQuiz(catId) {
+
+    state.category = categories.find(c => c.id === catId);
+
+    state.questions = [generateQuestion(state.category)];
+
+    state.currentIndex = 0;
+
+    state.results = [];
+
+    state.timeLeft = 120;
+
+    state.isActive = true;
+
+    state.view = 'quiz';
+
+    
+
+    render();
+
+
+
+    state.timerInterval = setInterval(() => {
+
+    state.timeLeft--;
+
+    if (state.timeLeft <= 0) {
+
+    clearInterval(state.timerInterval);
+
+    state.isActive = false;
+
+    state.view = 'results';
+
+    render();
+
+    } else if (state.view === 'quiz') {
+
+    const progress = (state.timeLeft / 120) * 100;
+
+    const bar = document.querySelector('.bg-indigo-500');
+
+    if (bar) bar.style.width = progress + '%';
+
+    }
+
+    }, 1000);
+
+}
+
+
+
+function handleAnswer(e) {
+
+    e.preventDefault();
+
+    const input = document.getElementById('answer-input');
+
+    const val = parseInt(input.value);
+
+    const currentQ = state.questions[state.currentIndex];
+
+    
+
+    state.results.push({
+
+    ...currentQ,
+
+    userAns: val,
+
+    correct: val === currentQ.ans
+
+    });
+
+
+
+    state.currentIndex++;
+
+    state.questions.push(generateQuestion(state.category));
+
+    render();
+
+}
+
+
+
+function analyzeResults() {
+
+    const analysis = [];
+
+    if (state.category.id.includes('plusminus')) {
+
+    const criteria = [
+
+    { label: 'Optellen zonder brug', filter: (r) => r.meta.op === '+' && !r.meta.isBridge },
+
+    { label: 'Optellen met brug', filter: (r) => r.meta.op === '+' && r.meta.isBridge },
+
+    { label: 'Aftrekken zonder brug', filter: (r) => r.meta.op === '-' && !r.meta.isBridge },
+
+    { label: 'Aftrekken met brug', filter: (r) => r.meta.op === '-' && r.meta.isBridge }
+
+    ];
+
+    criteria.forEach(c => {
+
+    const filtered = state.results.filter(c.filter);
+
+    if (filtered.length > 0) {
+
+    const correct = filtered.filter(f => f.correct).length;
+
+    analysis.push({
+
+    label: c.label,
+
+    total: filtered.length,
+
+    correct: correct,
+
+    wrong: filtered.length - correct,
+
+    status: (correct / filtered.length >= 0.8) ? 'good' : 'bad'
+
+    });
+
+    }
+
+    });
+
+    } else {
+
+    for (let i = 1; i <= 10; i++) {
+
+    const filtered = state.results.filter(r => r.meta.b === i);
+
+    if (filtered.length > 0) {
+
+    const correct = filtered.filter(f => f.correct).length;
+
+    analysis.push({
+
+    label: `Tafel van ${i}`,
+
+    total: filtered.length,
+
+    correct: correct,
+
+    wrong: filtered.length - correct,
+
+    status: (correct / filtered.length >= 0.8) ? 'good' : 'bad'
+
+    });
+
+    }
+
+    }
+
+    }
+
+    return analysis;
+
+}
+
+
+
+// Initial render
+
+render();
+
+</script>
+
+
+
+
+<script type="module">
+    import { initializeApp }   from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+    import { getAuth, GoogleAuthProvider, signInWithRedirect, getRedirectResult, signOut, onAuthStateChanged }
+        from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+    import { getFirestore, collection, addDoc, serverTimestamp }
+        from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+    const firebaseConfig = {
+        apiKey:            "AIzaSyCnQDVVAlK6jE-PPUUediRJMTbN0xqrLDE",
+        authDomain:        "klaswebsite-database.firebaseapp.com",
+        projectId:         "klaswebsite-database",
+        storageBucket:     "klaswebsite-database.firebasestorage.app",
+        messagingSenderId: "42912327282",
+        appId:             "1:42912327282:web:f13f2c706f6c42c115c4eb",
+        measurementId:     "G-V5MC9BY19Q"
+    };
+    const ALLOWED_DOMAIN = "bsbodebrug.be";
+    const _fbApp  = initializeApp(firebaseConfig);
+    const _fbAuth = getAuth(_fbApp);
+    const _fbDb   = getFirestore(_fbApp);
+    // ── FIREBASE AUTH ─────────────────────────────────────────────────────────
+    let _fbCurrentUser = null, _fbIsGuest = false, _fbGuestName = "";
+
+    getRedirectResult(_fbAuth).catch(e => _fbShowLoginErr(e.message));
+
+    onAuthStateChanged(_fbAuth, user => {
+        if (user) {
+            if (!user.email.endsWith("@" + ALLOWED_DOMAIN)) {
+                signOut(_fbAuth);
+                _fbShowLoginErr("Enkel @" + ALLOWED_DOMAIN + " schoolaccounts worden opgeslagen.");
+                return;
+            }
+            _fbCurrentUser = user; _fbIsGuest = false;
+            document.getElementById("fb-user-initials").textContent = (user.displayName||"L").split(" ").map(n=>n[0]).join("").toUpperCase().substring(0,2);
+            document.getElementById("fb-user-name").textContent  = user.displayName || user.email;
+            document.getElementById("fb-user-email").textContent = user.email;
+            document.getElementById("login-view").style.display  = "none";
+            document.getElementById("fb-user-badge").style.display = "flex";
+            if (typeof _fbOnReady === "function") _fbOnReady();
+        } else {
+            if (!_fbIsGuest) { _fbCurrentUser = null; document.getElementById("login-view").style.display = "flex"; }
+        }
+    });
+
+    document.getElementById("fb-google-btn").addEventListener("click", async () => {
+        const p = new GoogleAuthProvider();
+        p.setCustomParameters({ hd: ALLOWED_DOMAIN });
+        try { await signInWithRedirect(_fbAuth, p); } catch(e) { _fbShowLoginErr(e.message); }
+    });
+
+    document.getElementById("fb-guest-btn").addEventListener("click", () => {
+        const n = document.getElementById("fb-guest-name").value.trim();
+        if (!n) { document.getElementById("fb-guest-name").style.borderColor="#f87171"; return; }
+        _fbIsGuest = true; _fbCurrentUser = null; _fbGuestName = n;
+        document.getElementById("login-view").style.display = "none";
+        const gb = document.getElementById("fb-guest-badge");
+        gb.style.display = "block"; gb.textContent = "👤 Gast: " + n + " – score niet opgeslagen";
+        if (typeof _fbOnReady === "function") _fbOnReady();
+    });
+    document.getElementById("fb-guest-name").addEventListener("input", function(){ this.style.borderColor=""; });
+
+    document.getElementById("fb-logout-btn").addEventListener("click", async () => {
+        _fbIsGuest = false; _fbCurrentUser = null;
+        await signOut(_fbAuth);
+        document.getElementById("fb-user-badge").style.display = "none";
+        document.getElementById("fb-guest-badge").style.display = "none";
+        document.getElementById("login-view").style.display = "flex";
+    });
+
+    function _fbShowLoginErr(msg) {
+        const el = document.getElementById("login-error");
+        el.textContent = msg; el.style.display = "block";
+    }
+
+    async function _fbSave(record) {
+        if (_fbIsGuest || !_fbCurrentUser) return false;
+        try {
+            await addDoc(collection(_fbDb, "resultaten"), {
+                uid: _fbCurrentUser.uid, email: _fbCurrentUser.email,
+                displayName: _fbCurrentUser.displayName || _fbCurrentUser.email,
+                photoURL: _fbCurrentUser.photoURL || null,
+                vak: "Wiskunde", timestamp: serverTimestamp(), ...record
+            });
+            return true;
+        } catch(e) { console.error("Firebase save:", e); return false; }
+    }
+
+    function _fbOnReady() { document.getElementById("app").style.display = ""; }
+
+    const HR_LABELS = {
+        'plusminus10':  "Wiskunde - Hoofdrekenen: Optellen en aftrekken tot 10",
+        'plusminus20':  "Wiskunde - Hoofdrekenen: Optellen en aftrekken tot 20",
+        'plusminus100': "Wiskunde - Hoofdrekenen: Optellen en aftrekken tot 100",
+        'tafels':       "Wiskunde - Hoofdrekenen: Maaltafels",
+        'deeltafels':   "Wiskunde - Hoofdrekenen: Deeltafels"
+    };
+
+    // Patch render to intercept results view
+    const origRender = window.render;
+    window.render = async function() {
+        if (origRender) origRender.apply(this, arguments);
+        // When results view is shown, save
+        if (window.state && window.state.view === "results" && !window.state._fbSaved) {
+            window.state._fbSaved = true;
+            const catId = window.state.category ? window.state.category.id : "onbekend";
+            const label = HR_LABELS[catId] || ("Wiskunde - Hoofdrekenen: " + catId);
+            const results = window.state.results || [];
+            const correctQ = results.filter(r=>r.correct).length;
+            const totalQ = results.length;
+            const nw = totalQ>0 ? Math.round((correctQ/totalQ)*100) : 0;
+            const ok = await _fbSave({
+                oefening: label,
+                score: correctQ, totaal: totalQ, nauwkeurigheid: nw, tijdsduur:"–",
+                vragen: results.map((r,i) => ({
+                    vraagNr:i+1, formule: r.question||"–",
+                    antwoordLeerling: String(r.userAnswer||"–"),
+                    juistAntwoord: String(r.correctAnswer||"–"),
+                    isJuist: r.correct, categorie: label
+                }))
+            });
+            // Inject status into results container
+            setTimeout(() => {
+                const app = document.getElementById("app");
+                if (app) {
+                    let box = document.getElementById("fb-hr-status");
+                    if (!box) { box=document.createElement("div"); box.id="fb-hr-status"; box.style="font-size:0.85rem;font-weight:700;text-align:center;padding:8px;border-radius:8px;margin:8px;"; app.prepend(box); }
+                    box.style.background = ok?"#f0fdf4":(_fbIsGuest?"#fefce8":"#fef2f2");
+                    box.style.color = ok?"#16a34a":(_fbIsGuest?"#d97706":"#dc2626");
+                    box.textContent = ok?"✅ Score opgeslagen!":(_fbIsGuest?"👤 Gast – niet opgeslagen":"❌ Opslaan mislukt");
+                }
+            }, 100);
+        }
+    };
+</script>
+</body>
+
+</html>
+
+
+

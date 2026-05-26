@@ -1,0 +1,900 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>De Juiste Maateenheid Gebruiken</title>
+    <!-- Tailwind CSS, Confetti & FontAwesome -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap');
+        body { font-family: 'Plus Jakarta Sans', sans-serif; }
+        .hidden { display: none; }
+        .card-anim { transition: transform 0.2s, box-shadow 0.2s; }
+        .card-anim:hover { transform: translateY(-3px); box-shadow: 0 10px 15px -3px rgba(0,0,0,0.05); }
+        /* ── LOGIN ── */
+        #login-screen {
+            position:fixed; inset:0; z-index:9999;
+            background:linear-gradient(135deg,#4338ca 0%,#6d28d9 60%,#7c3aed 100%);
+            display:flex; align-items:center; justify-content:center; padding:20px;
+        }
+        #login-screen.hidden { display:none!important; }
+        .login-card {
+            background:white; border-radius:2rem; padding:2.5rem 2rem;
+            width:100%; max-width:380px;
+            box-shadow:0 25px 50px rgba(0,0,0,0.25); text-align:center;
+        }
+        .login-logo {
+            width:80px; height:80px; background:#ede9fe; border-radius:1.5rem;
+            display:flex; align-items:center; justify-content:center;
+            margin:0 auto 1.25rem; font-size:2.5rem;
+            box-shadow:0 4px 16px rgba(99,102,241,0.2);
+        }
+        .login-input {
+            width:100%; padding:14px 16px; border:2px solid #e5e7eb; border-radius:1rem;
+            font-family:inherit; font-size:1rem; font-weight:600; color:#374151;
+            margin-bottom:10px; outline:none; transition:border-color .2s; text-align:center;
+        }
+        .login-input:focus { border-color:#6d28d9; }
+        .login-input.err { border-color:#dc2626; background:#fef2f2; animation:loginShake .4s; }
+        @keyframes loginShake{0%,100%{transform:translateX(0)}25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
+        .btn-login {
+            width:100%; background:#6d28d9; color:white; border:none; border-radius:1rem;
+            padding:14px; font-family:inherit; font-size:1rem; font-weight:700;
+            cursor:pointer; transition:all .2s; margin-bottom:10px;
+        }
+        .btn-login:hover { background:#5b21b6; }
+        .btn-login:disabled { opacity:.6; cursor:not-allowed; }
+        .login-error { color:#dc2626; font-size:.85rem; font-weight:700; min-height:20px; margin-bottom:8px; }
+        .btn-guest {
+            width:100%; background:transparent; border:2px solid #d1d5db; border-radius:1rem;
+            padding:12px; font-family:inherit; font-size:.9rem; font-weight:700;
+            color:#6b7280; cursor:pointer; transition:all .2s;
+        }
+        .btn-guest:hover { border-color:#9ca3af; color:#374151; }
+        .teacher-link { margin-top:14px; font-size:.75rem; color:#9ca3af; }
+        .teacher-link a { color:#6d28d9; text-decoration:none; font-weight:700; }
+    </style>
+</head>
+<body class="bg-slate-50 min-h-screen pb-20">
+    <!-- LOGIN SCREEN -->
+    <div id="login-screen">
+      <div class="login-card">
+        <div class="login-logo">📏</div>
+        <h1 style="font-size:1.6rem;font-weight:800;color:#1f2937;margin-bottom:6px;">Maateenheden</h1>
+        <p style="font-size:.85rem;color:#6b7280;margin-bottom:1.25rem;">Voer je naam en code in</p>
+        <input class="login-input" id="login-naam" type="text" placeholder="Jouw voornaam" autocomplete="off" autocapitalize="words">
+        <input class="login-input" id="login-code" type="password" placeholder="Jouw code" autocomplete="off">
+        <div class="login-error" id="login-error"></div>
+        <button class="btn-login" id="btn-login" onclick="loginMetCode()">Inloggen</button>
+        <button class="btn-guest" onclick="loginGuest()">Doorgaan als gast (geen opslag)</button>
+        <div class="teacher-link"><a href="dashboard.html">Leerkracht? Klik hier</a></div>
+      </div>
+    </div>
+    <!-- ── LOGIN VIEW ── -->
+    <div id="login-view" style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:50vh;gap:16px;padding:20px;max-width:400px;margin:0 auto;">
+        <div style="font-size:2.5rem;">🔐</div>
+        <h2 style="font-size:1.3rem;font-weight:800;color:#1e293b;text-align:center;margin:0;">Aanmelden</h2>
+        <p style="color:#64748b;font-size:0.85rem;text-align:center;margin:0;max-width:320px;">Log in met je schoolaccount om je score op te slaan, of speel als gast.</p>
+        <div id="login-error" style="display:none;background:#fee2e2;border:1px solid #fca5a5;color:#b91c1c;padding:10px 16px;border-radius:10px;font-size:0.82rem;font-weight:600;max-width:320px;text-align:center;width:100%;box-sizing:border-box;"></div>
+        <button id="fb-google-btn" style="display:flex;align-items:center;gap:10px;background:#1e293b;color:white;border:none;border-radius:12px;padding:13px 20px;font-size:0.9rem;font-weight:700;cursor:pointer;width:100%;max-width:320px;justify-content:center;">
+            <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.31-8.16 2.31-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
+            Inloggen met schoolaccount
+        </button>
+        <div style="display:flex;align-items:center;gap:8px;width:100%;max-width:320px;color:#94a3b8;font-size:0.75rem;"><div style="flex:1;height:1px;background:#e2e8f0;"></div>of<div style="flex:1;height:1px;background:#e2e8f0;"></div></div>
+        <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:12px;width:100%;max-width:320px;box-sizing:border-box;">
+            <label style="font-size:0.68rem;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:0.06em;display:block;margin-bottom:5px;">Naam (gast)</label>
+            <input type="text" id="fb-guest-name" placeholder="Bv. Milan" style="width:100%;padding:9px 11px;border:1px solid #e2e8f0;border-radius:7px;font-size:0.88rem;font-weight:600;box-sizing:border-box;outline:none;">
+        </div>
+        <button id="fb-guest-btn" style="background:#f1f5f9;color:#475569;border:none;border-radius:10px;padding:11px 20px;font-size:0.88rem;font-weight:600;cursor:pointer;width:100%;max-width:320px;">
+            👤 Spelen als gast (score niet bewaard)
+        </button>
+    </div>
+    <div id="fb-user-badge" style="display:none;align-items:center;gap:8px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:6px 12px;margin-bottom:10px;width:fit-content;">
+        <div id="fb-user-initials" style="width:26px;height:26px;background:#3b82f6;border-radius:6px;color:white;font-weight:700;font-size:0.75rem;display:flex;align-items:center;justify-content:center;">?</div>
+        <div><div id="fb-user-name" style="font-size:0.82rem;font-weight:700;color:#1e293b;"></div><div id="fb-user-email" style="font-size:0.68rem;color:#94a3b8;"></div></div>
+        <button id="fb-logout-btn" style="background:none;border:none;cursor:pointer;color:#94a3b8;font-size:0.75rem;padding:3px 8px;border-left:1px solid #e2e8f0;margin-left:4px;">↩ Uit</button>
+    </div>
+    <div id="fb-guest-badge" style="display:none;background:#fefce8;border:1px solid #fde68a;border-radius:8px;padding:4px 10px;font-size:0.72rem;font-weight:700;color:#d97706;margin-bottom:8px;">👤 Gast – score niet opgeslagen</div>
+<div id="fb-maat-wrapper" style="display:none;">
+
+
+    <!-- NAVIGATIEBALK -->
+    <nav class="bg-white border-b border-slate-100 shadow-sm sticky top-0 z-40 px-6 py-4">
+        <div class="max-w-5xl mx-auto flex justify-between items-center">
+            <div class="flex items-center gap-3">
+                <div class="bg-indigo-600 text-white p-2.5 rounded-xl shadow-md shadow-indigo-600/20">
+                    <i class="fa-solid fa-ruler-combined text-lg"></i>
+                </div>
+                <div>
+                    <span class="text-xs font-bold text-indigo-600 uppercase tracking-wider block">Oefening</span>
+                    <h1 class="text-lg font-bold text-slate-800 leading-tight">De Juiste Maateenheid</h1>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- HOOFDCONTAINER -->
+    <main class="max-w-4xl mx-auto px-4 mt-8">
+
+        <!-- PROGRESS BAR -->
+        <div id="progressContainer" class="hidden flex flex-col items-center mb-6 gap-2">
+            <div id="niveauLabel" class="text-xs font-bold text-slate-500 bg-slate-200/60 border border-slate-200 px-4 py-1.5 rounded-full uppercase tracking-wider">Onderdeel</div>
+            <div id="progressSectie" class="flex justify-center gap-2 text-3xl">
+                <!-- Dynamische bolletjes op basis van aantal vragen -->
+                <div id="bullets-container" class="flex gap-1.5 flex-wrap justify-center"></div>
+            </div>
+        </div>
+
+        <!-- HOOFDMENU -->
+        <section id="menuSectie" class="space-y-8 animate-in fade-in duration-300">
+            <div class="text-center max-w-xl mx-auto">
+                <h2 class="text-3xl font-extrabold text-slate-800 tracking-tight">Maatbeheersing & Toetsen</h2>
+                <p class="text-slate-500 mt-2 text-sm">Kies hieronder een specifieke toets of stel zelf je oefening samen!</p>
+            </div>
+
+            <!-- OFFICIËLE TOETS MODI -->
+            <div class="space-y-4">
+                <h3 class="font-bold text-slate-700 text-sm uppercase tracking-wider flex items-center gap-2">
+                    <i class="fa-solid fa-graduation-cap text-indigo-500"></i> Officiële Toetsen
+                </h3>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <button class="menu-btn card-anim bg-white p-5 border border-slate-200/60 rounded-2xl text-left flex items-center gap-4 hover:border-indigo-300 group transition-all" onclick="startToets('toets-lengte', 'Toets: Lengtematen')">
+                        <div class="w-12 h-12 bg-blue-50 text-blue-500 rounded-xl flex items-center justify-center text-xl group-hover:bg-blue-500 group-hover:text-white transition-colors"><i class="fa-solid fa-ruler"></i></div>
+                        <div>
+                            <h4 class="font-extrabold text-slate-800">Toets Lengtematen</h4>
+                            <p class="text-xs text-slate-400">10 vragen • mm, cm, dm, m, km</p>
+                        </div>
+                    </button>
+
+                    <button class="menu-btn card-anim bg-white p-5 border border-slate-200/60 rounded-2xl text-left flex items-center gap-4 hover:border-indigo-300 group transition-all" onclick="startToets('toets-inhoud', 'Toets: Inhoudsmaten')">
+                        <div class="w-12 h-12 bg-teal-50 text-teal-600 rounded-xl flex items-center justify-center text-xl group-hover:bg-teal-600 group-hover:text-white transition-colors"><i class="fa-solid fa-flask"></i></div>
+                        <div>
+                            <h4 class="font-extrabold text-slate-800">Toets Inhoudsmaten</h4>
+                            <p class="text-xs text-slate-400">10 vragen • ml, cl, dl, l</p>
+                        </div>
+                    </button>
+
+                    <button class="menu-btn card-anim bg-white p-5 border border-slate-200/60 rounded-2xl text-left flex items-center gap-4 hover:border-indigo-300 group transition-all" onclick="startToets('toets-gewicht', 'Toets: Gewicht')">
+                        <div class="w-12 h-12 bg-amber-50 text-amber-500 rounded-xl flex items-center justify-center text-xl group-hover:bg-amber-500 group-hover:text-white transition-colors"><i class="fa-solid fa-weight-scale"></i></div>
+                        <div>
+                            <h4 class="font-extrabold text-slate-800">Toets Gewicht</h4>
+                            <p class="text-xs text-slate-400">10 vragen • g, kg, t</p>
+                        </div>
+                    </button>
+
+                    <button class="menu-btn card-anim bg-white p-5 border border-slate-200/60 rounded-2xl text-left flex items-center gap-4 hover:border-indigo-300 group transition-all" onclick="startToets('toets-alles', 'Toets: Alles door elkaar')">
+                        <div class="w-12 h-12 bg-purple-50 text-purple-600 rounded-xl flex items-center justify-center text-xl group-hover:bg-purple-500 group-hover:text-white transition-colors"><i class="fa-solid fa-shuffle"></i></div>
+                        <div>
+                            <h4 class="font-extrabold text-slate-800">Toets Alles door elkaar</h4>
+                            <p class="text-xs text-slate-400">15 vragen • Alle 11 maten gegarandeerd!</p>
+                        </div>
+                    </button>
+                </div>
+            </div>
+
+            <!-- CUSTOM BROWSE/OEFENEN -->
+            <div class="space-y-4 pt-4 border-t border-slate-200">
+                <h3 class="font-bold text-slate-700 text-sm uppercase tracking-wider flex items-center gap-2">
+                    <i class="fa-solid fa-sliders text-indigo-500"></i> Zelf Oefening Samenstellen
+                </h3>
+                <div class="bg-white p-6 rounded-3xl border border-slate-200/60 space-y-6">
+                    <div>
+                        <span class="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">1. Selecteer de gewenste maten:</span>
+                        <div class="flex flex-wrap gap-2">
+                            <!-- Lengtematen -->
+                            <button onclick="toggleCustomUnit('mm')" id="pill-mm" class="px-3 py-1.5 bg-slate-100 border border-slate-200 text-slate-600 font-bold rounded-xl text-xs hover:bg-slate-200 transition-all">mm</button>
+                            <button onclick="toggleCustomUnit('cm')" id="pill-cm" class="px-3 py-1.5 bg-slate-100 border border-slate-200 text-slate-600 font-bold rounded-xl text-xs hover:bg-slate-200 transition-all">cm</button>
+                            <button onclick="toggleCustomUnit('dm')" id="pill-dm" class="px-3 py-1.5 bg-slate-100 border border-slate-200 text-slate-600 font-bold rounded-xl text-xs hover:bg-slate-200 transition-all">dm</button>
+                            <button onclick="toggleCustomUnit('m')" id="pill-m" class="px-3 py-1.5 bg-slate-100 border border-slate-200 text-slate-600 font-bold rounded-xl text-xs hover:bg-slate-200 transition-all">m</button>
+                            <button onclick="toggleCustomUnit('dam')" id="pill-dam" class="px-3 py-1.5 bg-slate-100 border border-slate-200 text-slate-600 font-bold rounded-xl text-xs hover:bg-slate-200 transition-all">dam</button>
+                            <button onclick="toggleCustomUnit('hm')" id="pill-hm" class="px-3 py-1.5 bg-slate-100 border border-slate-200 text-slate-600 font-bold rounded-xl text-xs hover:bg-slate-200 transition-all">hm</button>
+                            <button onclick="toggleCustomUnit('km')" id="pill-km" class="px-3 py-1.5 bg-slate-100 border border-slate-200 text-slate-600 font-bold rounded-xl text-xs hover:bg-slate-200 transition-all">km</button>
+                            <!-- Inhoudsmaten -->
+                            <button onclick="toggleCustomUnit('ml')" id="pill-ml" class="px-3 py-1.5 bg-slate-100 border border-slate-200 text-slate-600 font-bold rounded-xl text-xs hover:bg-slate-200 transition-all">ml</button>
+                            <button onclick="toggleCustomUnit('cl')" id="pill-cl" class="px-3 py-1.5 bg-slate-100 border border-slate-200 text-slate-600 font-bold rounded-xl text-xs hover:bg-slate-200 transition-all">cl</button>
+                            <button onclick="toggleCustomUnit('dl')" id="pill-dl" class="px-3 py-1.5 bg-slate-100 border border-slate-200 text-slate-600 font-bold rounded-xl text-xs hover:bg-slate-200 transition-all">dl</button>
+                            <button onclick="toggleCustomUnit('l')" id="pill-l" class="px-3 py-1.5 bg-slate-100 border border-slate-200 text-slate-600 font-bold rounded-xl text-xs hover:bg-slate-200 transition-all">l</button>
+                            <!-- Gewicht -->
+                            <button onclick="toggleCustomUnit('g')" id="pill-g" class="px-3 py-1.5 bg-slate-100 border border-slate-200 text-slate-600 font-bold rounded-xl text-xs hover:bg-slate-200 transition-all">g</button>
+                            <button onclick="toggleCustomUnit('kg')" id="pill-kg" class="px-3 py-1.5 bg-slate-100 border border-slate-200 text-slate-600 font-bold rounded-xl text-xs hover:bg-slate-200 transition-all">kg</button>
+                            <button onclick="toggleCustomUnit('t')" id="pill-t" class="px-3 py-1.5 bg-slate-100 border border-slate-200 text-slate-600 font-bold rounded-xl text-xs hover:bg-slate-200 transition-all">t</button>
+                        </div>
+                    </div>
+
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                        <div>
+                            <span class="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">2. Aantal Vragen:</span>
+                            <div class="flex gap-2">
+                                <button onclick="setCustomQCount(5)" id="count-5" class="px-4 py-2 bg-indigo-600 text-white font-bold rounded-xl text-sm transition-all">5</button>
+                                <button onclick="setCustomQCount(10)" id="count-10" class="px-4 py-2 bg-slate-100 text-slate-600 font-bold rounded-xl text-sm hover:bg-slate-200 transition-all">10</button>
+                                <button onclick="setCustomQCount(15)" id="count-15" class="px-4 py-2 bg-slate-100 text-slate-600 font-bold rounded-xl text-sm hover:bg-slate-200 transition-all">15</button>
+                            </div>
+                        </div>
+                        <button onclick="startCustomOefening()" class="w-full sm:w-auto px-8 py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-2xl shadow-lg shadow-indigo-600/20 flex items-center justify-center gap-2 active:scale-[0.98] transition-all cursor-pointer">
+                            <i class="fa-solid fa-play"></i> Start Custom Oefening
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- OEFEN/TOETS VIEW -->
+        <section id="oefeningSectie" class="hidden">
+            <div class="bg-white p-6 md:p-8 rounded-[2rem] shadow-xl border border-slate-100 relative">
+                <!-- Terug/Exit knop -->
+                <button class="absolute top-4 right-4 text-slate-300 hover:text-rose-500 transition-colors cursor-pointer" onclick="openExitModal()">
+                    <i class="fa-solid fa-circle-xmark text-xl"></i>
+                </button>
+
+                <!-- Vraagstelling -->
+                <div class="bg-indigo-50 border border-indigo-100 p-6 rounded-2xl text-center mb-8">
+                    <p class="text-xs font-bold text-indigo-400 uppercase tracking-widest mb-2">Zet de juiste maateenheid op de stip:</p>
+                    <h2 class="text-xl md:text-2xl font-extrabold text-slate-800 leading-relaxed" id="vraagZin">
+                        Laden...
+                    </h2>
+                </div>
+
+                <!-- Keuzebuttons -->
+                <div class="space-y-4">
+                    <div id="options-grid" class="grid grid-cols-2 md:grid-cols-4 gap-3 justify-center">
+                        <!-- Wordt dynamisch gevuld -->
+                    </div>
+
+                    <div id="feedback" class="text-center font-bold text-sm md:text-base min-h-[28px] py-2"></div>
+
+                    <!-- Knoppenbalk onderin -->
+                    <div class="flex gap-3 justify-center pt-4">
+                        <button id="hint-btn" onclick="showHint()" class="flex-1 py-4 bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 font-bold rounded-xl transition-all flex items-center justify-center gap-2 cursor-pointer">
+                            💡 Hint nodig?
+                        </button>
+                        <button id="next-btn" onclick="volgendeVraag()" class="hidden flex-1 py-4 bg-slate-900 hover:bg-black text-white font-bold rounded-xl transition-all flex items-center justify-center gap-2 cursor-pointer">
+                            Volgende vraag <i class="fa-solid fa-arrow-right"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Hint Box -->
+                <div id="hint-box" class="hidden mt-6 p-5 bg-amber-50 border border-amber-200 text-amber-800 rounded-2xl text-sm leading-relaxed relative animate-in fade-in duration-200">
+                    <strong>💡 Tip:</strong> <span id="hint-text">...</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- EXIT TOETS MODAL -->
+        <div id="exit-modal" class="hidden fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+            <div class="bg-white rounded-3xl p-8 max-w-sm w-full text-center shadow-2xl border border-slate-100 space-y-6">
+                <div class="text-4xl">⚠️</div>
+                <div class="space-y-2">
+                    <h3 class="text-xl font-extrabold text-slate-800">Stoppen met de toets?</h3>
+                    <p class="text-slate-500 text-sm">Je voortgang van deze ronde gaat verloren.</p>
+                </div>
+                <div class="flex gap-3">
+                    <button onclick="closeExitModal()" class="flex-1 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl transition-all cursor-pointer">
+                        Blijf oefenen
+                    </button>
+                    <button onclick="confirmExit()" class="flex-1 py-3 bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl transition-all cursor-pointer">
+                        Stoppen
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- EIND RAPPORT SCHERM -->
+        <section id="eindSectie" class="hidden text-center max-w-2xl mx-auto bg-white p-8 rounded-[2.5rem] shadow-xl border border-slate-100">
+            <div class="w-20 h-20 bg-amber-50 text-amber-500 text-4xl flex items-center justify-center rounded-2xl mx-auto mb-4">
+                <i class="fa-solid fa-crown animate-bounce"></i>
+            </div>
+            <h2 class="text-3xl font-extrabold text-slate-800">Toets voltooid!</h2>
+            <p class="text-slate-400 text-xs mt-1">Hieronder zie je jouw gedetailleerde resultaten.</p>
+            
+            <div class="grid grid-cols-3 gap-4 my-6">
+                <div class="bg-indigo-50 p-4 rounded-2xl border border-indigo-100/60">
+                    <span class="block text-[10px] text-indigo-400 font-black uppercase mb-1">Score</span>
+                    <span id="score-val" class="text-2xl font-black text-indigo-600">0/10</span>
+                </div>
+                <div class="bg-emerald-50 p-4 rounded-2xl border border-emerald-100/60">
+                    <span class="block text-[10px] text-emerald-400 font-black uppercase mb-1">Nauwkeurigheid</span>
+                    <span id="percent-val" class="text-2xl font-black text-emerald-600">0%</span>
+                </div>
+                <div class="bg-amber-50 p-4 rounded-2xl border border-amber-100/60">
+                    <span class="block text-[10px] text-amber-400 font-black uppercase mb-1">Hints gebruikt</span>
+                    <span id="hints-val" class="text-2xl font-black text-amber-600">0</span>
+                </div>
+            </div>
+
+            <!-- FOUTENANALYSIS -->
+            <div class="text-left space-y-4">
+                <h3 class="text-xl font-extrabold text-slate-800 flex items-center gap-2">
+                    <i class="fa-solid fa-clipboard-list text-indigo-500"></i> Foutenanalyse per opgave
+                </h3>
+                <div id="mistake-list" class="space-y-3 max-h-[350px] overflow-y-auto pr-2">
+                    <!-- Wordt dynamisch gevuld -->
+                </div>
+            </div>
+
+            <button class="w-full mt-8 bg-slate-950 text-white font-bold py-4 rounded-2xl hover:bg-black transition-all shadow-md cursor-pointer" onclick="stopOefening()">
+                <i class="fa-solid fa-house mr-2"></i> Terug naar hoofdmenu
+            </button>
+        </section>
+
+    </main>
+
+    <script>
+        // --- 1. GIGANTISCHE, DIDACTISCH STERKE VRAGENPOOL (MET DESIGNATED TARGET UNITS) ---
+        const QUESTION_POOL = [
+            // LENGTEMATEN (mm, cm, dm, m, dam, hm, km)
+            { text: "De dikte van een vingernagel is ongeveer 1 ...", category: "lengte", unit: "mm", hint: "Denk aan een hele kleine maat, dunner dan een centimeter!" },
+            { text: "Een kleine mier is ongeveer 5 ... lang.", category: "lengte", unit: "mm", hint: "Een mier is erg klein. We meten hem in..." },
+            { text: "De dikte van een muntstuk van €2 is ongeveer 2 ...", category: "lengte", unit: "mm", hint: "Een muntstuk is heel dun." },
+            { text: "De dikte van een smartphone is ongeveer 8 ...", category: "lengte", unit: "mm", hint: "Smartphones zijn erg dun gemaakt." },
+            
+            { text: "Een gewone balpen heeft een lengte van ongeveer 14 ...", category: "lengte", unit: "cm", hint: "Dit kun je gemakkelijk meten met je schoolliniaal." },
+            { text: "Een tandenborstel is ongeveer 18 ... lang.", category: "lengte", unit: "cm", hint: "Het past makkelijk in je hand." },
+            { text: "De breedte van een A4-schrift is ongeveer 21 ...", category: "lengte", unit: "cm", hint: "Ongeveer twee decimeter, of ..." },
+            { text: "De hoogte van een blikje frisdrank is ongeveer 12 ...", category: "lengte", unit: "cm", hint: "Kleiner dan een meter, groter dan een millimeter." },
+            
+            { text: "Een nieuwe schoolliniaal is vaak 3 ... lang.", category: "lengte", unit: "dm", hint: "Dit is gelijk aan 30 centimeter." },
+            { text: "Een grote tablet is ongeveer 2 ... breed.", category: "lengte", unit: "dm", hint: "Dit is gelijk aan 20 centimeter." },
+            { text: "De lengte van een volwassen voet is ongeveer 2,5 ...", category: "lengte", unit: "dm", hint: "Ongeveer 25 centimeter." },
+            { text: "De breedte van een computertoetsenbord is ongeveer 4,5 ...", category: "lengte", unit: "dm", hint: "Ongeveer 45 centimeter." },
+            
+            { text: "Een tweepersoonsbed is meestal 2 ... lang.", category: "lengte", unit: "m", hint: "Dit is de lengte van een volwassen persoon plus wat extra ruimte." },
+            { text: "De hoogte van een klasdeur is ongeveer 2 ...", category: "lengte", unit: "m", hint: "Groot genoeg zodat volwassenen eronderdoor kunnen lopen." },
+            { text: "Een voetbalveld heeft een lengte van ongeveer 100 ...", category: "lengte", unit: "m", hint: "De standaardmaat voor sportvelden." },
+            { text: "De hoogte van een leraar is gemiddeld 1,8 ...", category: "lengte", unit: "m", hint: "Mensen meten we meestal in centimeter of..." },
+            
+            // dam (decameter = 10m) - Alleen voor custom oefening!
+            { text: "De hoogte van een klein appartementsgebouw van 3 verdiepingen is ongeveer 1 ...", category: "lengte", unit: "dam", hint: "Dit is gelijk aan 10 meter." },
+            { text: "De lengte van een grote stadsbus is ongeveer 1,5 ...", category: "lengte", unit: "dam", hint: "Dit is gelijk aan 15 meter." },
+            { text: "De lengte van een jonge blauwe vinvis is ongeveer 2 ...", category: "lengte", unit: "dam", hint: "Dit is gelijk aan 20 meter." },
+
+            // hm (hectometer = 100m) - Alleen voor custom oefening!
+            { text: "Een atletiekbaan heeft een sprintbaan van precies 1 ... lang.", category: "lengte", unit: "hm", hint: "Dit is gelijk aan 100 meter." },
+            { text: "Een groot voetbalveld heeft een lengte van ongeveer 1 ...", category: "lengte", unit: "hm", hint: "Een voetbalveld is ongeveer 100 meter lang." },
+            { text: "De totale hoogte van alle bollen van het Atomium samen is net iets meer dan 1 ...", category: "lengte", unit: "hm", hint: "Dit is iets meer dan 100 meter." },
+
+            { text: "De afstand tussen Brussel en Gent is ongeveer 55 ...", category: "lengte", unit: "km", hint: "Afstanden tussen steden meten we in..." },
+            { text: "Een stevige wandeling door het bos duurt 2 uren en is 8 ... lang.", category: "lengte", unit: "km", hint: "Grote afstanden te voet of met de auto." },
+            { text: "De lengte van de Belgische kustlijn is ongeveer 67 ...", category: "lengte", unit: "km", hint: "Dit is een erg grote afstand langs de zee." },
+
+            // INHOUDSMATEN (ml, cl, dl, l)
+            { text: "Een kleine injectiespuit bevat 2 ... vloeistof.", category: "inhoud", unit: "ml", hint: "Een heel kleine hoeveelheid vloeistof." },
+            { text: "Een koffielepel gevuld met hoestsiroop is ongeveer 5 ...", category: "inhoud", unit: "ml", hint: "Dit is een erg klein volume." },
+            { text: "Een regendruppel bevat ongeveer 0,05 ... water.", category: "inhoud", unit: "ml", hint: "Minder dan een centiliter." },
+            
+            { text: "Een blikje frisdrank heeft een inhoud van 33 ...", category: "inhoud", unit: "cl", hint: "Dit is gelijk aan 330 milliliter." },
+            { text: "Een klein brikje fruitsap bevat 20 ...", category: "inhoud", unit: "cl", hint: "Ideaal voor in de boekentas." },
+            { text: "Een kopje koffie bevat ongeveer 15 ...", category: "inhoud", unit: "cl", hint: "Iets minder dan een blikje frisdrank." },
+            
+            { text: "Een flink glas water bevat ongeveer 2,5 ...", category: "inhoud", unit: "dl", hint: "Dit is gelijk aan 25 centiliter." },
+            { text: "Een kom warme soep bevat ongeveer 3 ...", category: "inhoud", unit: "dl", hint: "Gelijk aan 300 milliliter." },
+            { text: "Een klein flesje water bevat 5 ...", category: "inhoud", unit: "dl", hint: "Dit is exact een halve liter." },
+            
+            { text: "Een karton melk heeft een inhoud van 1 ...", category: "inhoud", unit: "l", hint: "De standaardmaat voor melk en fruitsap in grote brikken." },
+            { text: "Een grote poetsemmer bevat ongeveer 10 ... water.", category: "inhoud", unit: "l", hint: "Genoeg water om het hele huis te dweilen." },
+            { text: "In een badkuip past ongeveer 120 ... water.", category: "inhoud", unit: "l", hint: "Een groot volume om heerlijk in te liggen." },
+            { text: "De tank van een gezinsauto kan 50 ... benzine bevatten.", category: "inhoud", unit: "l", hint: "Dit is een flinke brandstofvoorraad." },
+
+            // GEWICHT (g, kg, t) -> MILLIGRAM (mg) IS VOLLEDIG VERWIJDERD
+            { text: "Een gezonde appel weegt ongeveer 150 ...", category: "gewicht", unit: "g", hint: "Fruit wegen we meestal in deze maateenheid." },
+            { text: "Een briefkaart weegt ongeveer 5 ...", category: "gewicht", unit: "g", hint: "Lichter dan een appel." },
+            { text: "Een smartphone weegt gemiddeld 180 ...", category: "gewicht", unit: "g", hint: "Ongeveer evenveel als een flinke appel." },
+            { text: "Een groot brood weegt ongeveer 800 ...", category: "gewicht", unit: "g", hint: "Dit is bijna een kilogram." },
+            
+            { text: "Een groot pak kristalsuiker weegt exact 1 ...", category: "gewicht", unit: "kg", hint: "Gelijk aan 1000 gram." },
+            { text: "Een leerling uit het zesde leerjaar weegt ongeveer 40 ...", category: "gewicht", unit: "kg", hint: "Het gewicht van een persoon." },
+            { text: "Een stevige stadsfiets weegt ongeveer 16 ...", category: "gewicht", unit: "kg", hint: "Zwaar om op te tillen, maar makkelijk te berijden." },
+            { text: "Een zak aardappelen weegt 5 ...", category: "gewicht", unit: "kg", hint: "Genoeg voor een hele week eten." },
+            
+            { text: "Een volwassen Afrikaanse olifant weegt ongeveer 5 ...", category: "gewicht", unit: "t", hint: "Ongeveer 5000 kilogram. Extreem zwaar!" },
+            { text: "Een kleine personenauto weegt ongeveer 1,2 ...", category: "gewicht", unit: "t", hint: "Ongeveer 1200 kilogram." },
+            { text: "Een grote vrachtwagen mag maximaal 32 ... wegen.", category: "gewicht", unit: "t", hint: "De zwaarste gewichten op de weg." }
+        ];
+
+        // --- 2. CONFIGURATIE CATEGORIE MAPPING (mg is eruit!) ---
+        const MATEN_GROEPEN = {
+            lengte: ["mm", "cm", "dm", "m", "km"], // Officiële lengtematen voor toetsen
+            inhoud: ["ml", "cl", "dl", "l"],
+            gewicht: ["g", "kg", "t"] // mg is verwijderd
+        };
+
+        const CUSTOM_LENGTE_MATEN = ["mm", "cm", "dm", "m", "dam", "hm", "km"];
+
+        let state = {
+            currentMode: '', // 'toets-lengte', 'toets-inhoud', 'toets-gewicht', 'toets-alles', 'custom'
+            questions: [],
+            currentIndex: 0,
+            score: 0,
+            foutenAantal: 0,
+            hintsUsed: 0,
+            history: [],
+            currentHintUsedForQ: false,
+            totalQ: 10,
+            
+            // Custom setup state
+            customSelectedUnits: [],
+            customQCount: 5
+        };
+
+        // --- 3. UTILITY FUNCTIES ---
+        function shuffle(array) {
+            let arr = [...array];
+            for (let i = arr.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [arr[i], arr[j]] = [arr[j], arr[i]];
+            }
+            return arr;
+        }
+
+        function showView(view) {
+            document.getElementById("menuSectie").classList.toggle("hidden", view !== "menu-view");
+            document.getElementById("oefeningSectie").classList.toggle("hidden", view !== "game-view");
+            document.getElementById("eindSectie").classList.toggle("hidden", view !== "end-view");
+            document.getElementById("progressContainer").classList.toggle("hidden", view !== "game-view");
+        }
+
+        // --- 4. TOETS SELECTIE-ALGORITME (dam, hm & mg zijn uitgesloten van toetsen!) ---
+        function buildQuestionsForMode(mode) {
+            let selectedQuestions = [];
+            
+            if (mode === 'toets-lengte') {
+                state.totalQ = 10;
+                const units = MATEN_GROEPEN.lengte; // mm, cm, dm, m, km (GEEN dam en hm!)
+                const categoryPool = QUESTION_POOL.filter(q => q.category === 'lengte' && q.unit !== 'dam' && q.unit !== 'hm');
+                
+                // Neem van elke unit minstens 1 willekeurige vraag
+                units.forEach(u => {
+                    const unitPool = categoryPool.filter(q => q.unit === u);
+                    if (unitPool.length) {
+                        selectedQuestions.push(shuffle(unitPool)[0]);
+                    }
+                });
+
+                // Vul de rest aan tot we 10 stuks hebben
+                const remainingPool = shuffle(categoryPool.filter(q => !selectedQuestions.includes(q)));
+                while (selectedQuestions.length < 10 && remainingPool.length) {
+                    selectedQuestions.push(remainingPool.pop());
+                }
+            }
+            else if (mode === 'toets-inhoud') {
+                state.totalQ = 10;
+                const units = MATEN_GROEPEN.inhoud; // ml, cl, dl, l
+                const categoryPool = QUESTION_POOL.filter(q => q.category === 'inhoud');
+                
+                units.forEach(u => {
+                    const unitPool = categoryPool.filter(q => q.unit === u);
+                    if (unitPool.length) {
+                        selectedQuestions.push(shuffle(unitPool)[0]);
+                    }
+                });
+
+                const remainingPool = shuffle(categoryPool.filter(q => !selectedQuestions.includes(q)));
+                while (selectedQuestions.length < 10 && remainingPool.length) {
+                    selectedQuestions.push(remainingPool.pop());
+                }
+            }
+            else if (mode === 'toets-gewicht') {
+                state.totalQ = 10;
+                const units = MATEN_GROEPEN.gewicht; // g, kg, t
+                const categoryPool = QUESTION_POOL.filter(q => q.category === 'gewicht' && q.unit !== 'mg');
+                
+                units.forEach(u => {
+                    const unitPool = categoryPool.filter(q => q.unit === u);
+                    if (unitPool.length) {
+                        selectedQuestions.push(shuffle(unitPool)[0]);
+                    }
+                });
+
+                const remainingPool = shuffle(categoryPool.filter(q => !selectedQuestions.includes(q)));
+                while (selectedQuestions.length < 10 && remainingPool.length) {
+                    selectedQuestions.push(remainingPool.pop());
+                }
+            }
+            else if (mode === 'toets-alles') {
+                // Toets alles door elkaar: we eisen dat de 12 officiële units (GEEN dam, hm en mg) vertegenwoordigd zijn!
+                state.totalQ = 15;
+                const allUnits = [...MATEN_GROEPEN.lengte, ...MATEN_GROEPEN.inhoud, ...MATEN_GROEPEN.gewicht];
+                
+                allUnits.forEach(u => {
+                    const unitPool = QUESTION_POOL.filter(q => q.unit === u);
+                    if (unitPool.length) {
+                        selectedQuestions.push(shuffle(unitPool)[0]);
+                    }
+                });
+
+                // Vul aan met nog 3 willekeurige vragen (geen dam, hm, of mg!) om tot 15 te komen
+                const remainingPool = shuffle(QUESTION_POOL.filter(q => !selectedQuestions.includes(q) && q.unit !== 'dam' && q.unit !== 'hm' && q.unit !== 'mg'));
+                while (selectedQuestions.length < 15 && remainingPool.length) {
+                    selectedQuestions.push(remainingPool.pop());
+                }
+            }
+            else if (mode === 'custom') {
+                state.totalQ = state.customQCount;
+                // Filter de pool op basis van geselecteerde maateenheden uit het menu (mag dam/hm bevatten)
+                const filteredPool = QUESTION_POOL.filter(q => state.customSelectedUnits.includes(q.unit));
+                
+                if (filteredPool.length === 0) {
+                    // Fallback zonder dam, hm en mg
+                    selectedQuestions = shuffle(QUESTION_POOL.filter(q => q.unit !== 'dam' && q.unit !== 'hm' && q.unit !== 'mg')).slice(0, state.totalQ);
+                } else {
+                    selectedQuestions = shuffle(filteredPool).slice(0, state.totalQ);
+                }
+            }
+
+            return shuffle(selectedQuestions);
+        }
+
+        // --- 5. INITIALISATIE VAN SPEL EN TOETSEN ---
+        window.startToets = function(toetsType, label) {
+            state.currentMode = toetsType;
+            state.currentIndex = 0;
+            state.score = 0;
+            state.foutenAantal = 0;
+            state.hintsUsed = 0;
+            state.history = [];
+            state.questions = buildQuestionsForMode(toetsType);
+            
+            document.getElementById("niveauLabel").innerText = label;
+            buildProgressBullets();
+            showView("game-view");
+            laadVraag();
+        }
+
+        // --- CUSTOM OEFENING FUNCTIES ---
+        window.toggleCustomUnit = function(unit) {
+            const pill = document.getElementById(`pill-${unit}`);
+            if (state.customSelectedUnits.includes(unit)) {
+                state.customSelectedUnits = state.customSelectedUnits.filter(u => u !== unit);
+                pill.className = "px-3 py-1.5 bg-slate-100 border border-slate-200 text-slate-600 font-bold rounded-xl text-xs hover:bg-slate-200 transition-all";
+            } else {
+                state.customSelectedUnits.push(unit);
+                pill.className = "px-3 py-1.5 bg-indigo-600 border border-indigo-700 text-white font-bold rounded-xl text-xs transition-all";
+            }
+        }
+
+        window.setCustomQCount = function(count) {
+            state.customQCount = count;
+            [5, 10, 15].forEach(num => {
+                const btn = document.getElementById(`count-${num}`);
+                if (num === count) {
+                    btn.className = "px-4 py-2 bg-indigo-600 text-white font-bold rounded-xl text-sm transition-all";
+                } else {
+                    btn.className = "px-4 py-2 bg-slate-100 text-slate-600 font-bold rounded-xl text-sm hover:bg-slate-200 transition-all";
+                }
+            });
+        }
+
+        window.startCustomOefening = function() {
+            if (state.customSelectedUnits.length === 0) {
+                const fb = document.getElementById('feedback');
+                fb.innerHTML = "<span class='text-rose-500 font-extrabold'><i class='fa-solid fa-triangle-exclamation'></i> Selecteer eerst minstens één maateenheid hierboven!</span>";
+                return;
+            }
+            startToets('custom', `Custom Oefening (${state.customQCount} vr)`);
+        }
+
+        // --- PROGRESS BULLETS ---
+        function buildProgressBullets() {
+            const container = document.getElementById("bullets-container");
+            container.innerHTML = "";
+            for (let i = 0; i < state.totalQ; i++) {
+                const bullet = document.createElement("span");
+                bullet.id = `bullet-${i}`;
+                bullet.className = "w-4 h-4 rounded-full bg-slate-200 border-2 border-slate-300 transition-all duration-300";
+                container.appendChild(bullet);
+            }
+        }
+
+        function updateProgressBullets() {
+            for (let i = 0; i < state.totalQ; i++) {
+                const bullet = document.getElementById(`bullet-${i}`);
+                if (bullet) {
+                    if (i < state.currentIndex) {
+                        bullet.className = "w-4 h-4 rounded-full bg-emerald-500 border-2 border-emerald-600";
+                    } else if (i === state.currentIndex) {
+                        bullet.className = "w-4 h-4 rounded-full bg-indigo-600 border-2 border-indigo-700 animate-pulse";
+                    } else {
+                        bullet.className = "w-4 h-4 rounded-full bg-slate-200 border-2 border-slate-300";
+                    }
+                }
+            }
+        }
+
+        // --- RENDERING EN QUIZ INTERACTIE ---
+        function laadVraag() {
+            state.currentHintUsedForQ = false;
+            const q = state.questions[state.currentIndex];
+            
+            document.getElementById("vraagZin").innerHTML = q.text.replace("...", "<span class='text-indigo-600 border-b-4 border-dashed border-indigo-400 px-6 py-0.5 mx-1 font-black'>...</span>");
+            document.getElementById("feedback").innerHTML = "";
+            document.getElementById("hint-box").classList.add("hidden");
+            document.getElementById("next-btn").classList.add("hidden");
+            document.getElementById("hint-btn").classList.remove("hidden");
+
+            updateProgressBullets();
+            buildOptionsGrid(q);
+        }
+
+        function buildOptionsGrid(q) {
+            const grid = document.getElementById("options-grid");
+            grid.innerHTML = "";
+
+            // Bepaal welke optie-groep getoond moet worden op basis van de categorie van de vraag
+            let choices = [...MATEN_GROEPEN[q.category]];
+            
+            // Als we met custom oefeningen werken en dam of hm geselecteerd zijn, moeten ze getoond worden
+            if (q.category === 'lengte' && (q.unit === 'dam' || q.unit === 'hm' || state.customSelectedUnits.includes('dam') || state.customSelectedUnits.includes('hm'))) {
+                choices = CUSTOM_LENGTE_MATEN;
+            }
+
+            choices.forEach(opt => {
+                const btn = document.createElement("button");
+                btn.className = "p-5 bg-white border-2 border-slate-200 rounded-2xl hover:border-indigo-500 hover:bg-indigo-50/50 transition-all text-center font-extrabold text-slate-800 text-lg shadow-sm cursor-pointer active:scale-95";
+                btn.innerText = opt;
+                btn.onclick = () => checkAnswer(opt, btn);
+                grid.appendChild(btn);
+            });
+        }
+
+        function checkAnswer(selectedOpt, btnElement) {
+            if (document.getElementById("next-btn").classList.contains("hidden") === false) return; // Reeds beantwoord
+            
+            const q = state.questions[state.currentIndex];
+            const isCorrect = (selectedOpt === q.unit);
+            
+            // Blokkeer de rest en kleur de knoppen
+            document.querySelectorAll("#options-grid button").forEach(btn => {
+                btn.disabled = true;
+                if (btn.innerText === q.unit) {
+                    btn.className = "p-5 bg-emerald-500 border-2 border-emerald-600 text-white rounded-2xl font-extrabold text-lg shadow-sm text-center";
+                } else if (btn === btnElement) {
+                    btn.className = "p-5 bg-rose-500 border-2 border-rose-600 text-white rounded-2xl font-extrabold text-lg shadow-sm text-center";
+                } else {
+                    btn.className = "p-5 bg-slate-100 border-2 border-slate-200 text-slate-300 rounded-2xl font-extrabold text-lg text-center opacity-60";
+                }
+            });
+
+            const fb = document.getElementById("feedback");
+            if (isCorrect) {
+                state.score++;
+                fb.innerHTML = "<span class='text-emerald-600 text-base'><i class='fa-solid fa-circle-check'></i> Schitterend! Dat is de juiste maat.</span>";
+                confetti({ particleCount: 35, spread: 60, origin: { y: 0.8 } });
+            } else {
+                if (!state.huidigeVraagFoutGeweest) {
+                    state.foutenAantal++;
+                }
+                fb.innerHTML = `<span class='text-rose-600 text-base'><i class='fa-solid fa-circle-xmark'></i> Oei! Het juiste antwoord was: <b class='text-slate-800 text-lg font-black'>${q.unit}</b>.</span>`;
+            }
+
+            // Sla op in geschiedenis voor eindrapport
+            state.history.push({
+                question: q.text,
+                userAnswer: selectedOpt,
+                correctAnswer: q.unit,
+                isCorrect: isCorrect,
+                hintUsed: state.currentHintUsedForQ
+            });
+
+            document.getElementById("next-btn").classList.remove("hidden");
+            document.getElementById("hint-btn").classList.add("hidden");
+        }
+
+        window.showHint = function() {
+            if (!state.currentHintUsedForQ) {
+                state.currentHintUsedForQ = true;
+                state.hintsUsed++;
+            }
+            const q = state.questions[state.currentIndex];
+            document.getElementById("hint-text").innerHTML = q.hint;
+            document.getElementById("hint-box").classList.remove("hidden");
+        }
+
+        window.volgendeVraag = function() {
+            state.currentIndex++;
+            if (state.currentIndex < state.totalQ) {
+                laadVraag();
+            } else {
+                sluitSessieAf();
+            }
+        }
+
+        // --- 6. RAPPORTAGE EN FINISH ---
+        function sluitSessieAf() {
+            showView("end-view");
+            const scoreInBreuk = `${state.score}/${state.totalQ}`;
+            const nauwkeurigheid = Math.round((state.score / state.totalQ) * 100);
+
+            document.getElementById("score-val").innerText = scoreInBreuk;
+            document.getElementById("percent-val").innerText = `${nauwkeurigheid}%`;
+            document.getElementById("hints-val").innerText = state.hintsUsed;
+
+            const list = document.getElementById("mistake-list");
+            list.innerHTML = "";
+
+            state.history.forEach((h, idx) => {
+                const card = document.createElement("div");
+                card.className = "p-4 rounded-xl border flex flex-col gap-2 " + 
+                    (h.isCorrect ? "bg-emerald-50/40 border-emerald-100" : "bg-rose-50/40 border-rose-100");
+                
+                card.innerHTML = `
+                    <div class="flex justify-between items-center text-xs font-bold ${h.isCorrect ? 'text-emerald-600' : 'text-rose-600'}">
+                        <span>OPGAVE ${idx + 1}</span>
+                        <span>${h.isCorrect ? '✓ GOED' : '✕ FOUT'}</span>
+                    </div>
+                    <div class="text-slate-800 text-sm font-semibold">${h.question.replace("...", `<b>[ ${h.correctAnswer} ]</b>`)}</div>
+                    <div class="text-xs text-slate-500 mt-1 border-t border-dashed pt-1 flex justify-between">
+                        <span>Jouw keuze: <strong class="${h.isCorrect ? 'text-emerald-700' : 'text-rose-700'}">${h.userAnswer}</strong></span>
+                        ${!h.isCorrect ? `<span>Juiste maat: <strong class="text-slate-800">${h.correctAnswer}</strong></span>` : ''}
+                    </div>
+                `;
+                list.appendChild(card);
+            });
+
+            if (nauwkeurigheid === 100) {
+                confetti({ particleCount: 150, spread: 80, origin: { y: 0.6 } });
+            }
+        }
+
+        window.stopOefening = function() {
+            showView("menu-view");
+        }
+
+        // --- 7. MODAL BEHEER ---
+        window.openExitModal = function() {
+            document.getElementById("exit-modal").classList.remove("hidden");
+        }
+
+        window.closeExitModal = function() {
+            document.getElementById("exit-modal").classList.add("hidden");
+        }
+
+        window.confirmExit = function() {
+            closeExitModal();
+            showView("menu-view");
+        }
+    </script>
+</div><!-- /fb-maat-wrapper -->
+
+<script type="module">
+    import { initializeApp }   from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+    import { getAuth, GoogleAuthProvider, signInWithRedirect, getRedirectResult, signOut, onAuthStateChanged }
+        from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+    import { getFirestore, collection, addDoc, serverTimestamp }
+        from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+    const firebaseConfig = {
+        apiKey:            "AIzaSyCnQDVVAlK6jE-PPUUediRJMTbN0xqrLDE",
+        authDomain:        "klaswebsite-database.firebaseapp.com",
+        projectId:         "klaswebsite-database",
+        storageBucket:     "klaswebsite-database.firebasestorage.app",
+        messagingSenderId: "42912327282",
+        appId:             "1:42912327282:web:f13f2c706f6c42c115c4eb",
+        measurementId:     "G-V5MC9BY19Q"
+    };
+    const ALLOWED_DOMAIN = "bsbodebrug.be";
+    const _fbApp  = initializeApp(firebaseConfig);
+    const _fbAuth = getAuth(_fbApp);
+    const _fbDb   = getFirestore(_fbApp);
+    // ── FIREBASE AUTH ─────────────────────────────────────────────────────────
+    let _fbCurrentUser = null, _fbIsGuest = false, _fbGuestName = "";
+
+    getRedirectResult(_fbAuth).catch(e => _fbShowLoginErr(e.message));
+
+    onAuthStateChanged(_fbAuth, user => {
+        if (user) {
+            if (!user.email.endsWith("@" + ALLOWED_DOMAIN)) {
+                signOut(_fbAuth);
+                _fbShowLoginErr("Enkel @" + ALLOWED_DOMAIN + " schoolaccounts worden opgeslagen.");
+                return;
+            }
+            _fbCurrentUser = user; _fbIsGuest = false;
+            document.getElementById("fb-user-initials").textContent = (user.displayName||"L").split(" ").map(n=>n[0]).join("").toUpperCase().substring(0,2);
+            document.getElementById("fb-user-name").textContent  = user.displayName || user.email;
+            document.getElementById("fb-user-email").textContent = user.email;
+            document.getElementById("login-view").style.display  = "none";
+            document.getElementById("fb-user-badge").style.display = "flex";
+            if (typeof _fbOnReady === "function") _fbOnReady();
+        } else {
+            if (!_fbIsGuest) { _fbCurrentUser = null; document.getElementById("login-view").style.display = "flex"; }
+        }
+    });
+
+    document.getElementById("fb-google-btn").addEventListener("click", async () => {
+        const p = new GoogleAuthProvider();
+        p.setCustomParameters({ hd: ALLOWED_DOMAIN });
+        try { await signInWithRedirect(_fbAuth, p); } catch(e) { _fbShowLoginErr(e.message); }
+    });
+
+    document.getElementById("fb-guest-btn").addEventListener("click", () => {
+        const n = document.getElementById("fb-guest-name").value.trim();
+        if (!n) { document.getElementById("fb-guest-name").style.borderColor="#f87171"; return; }
+        _fbIsGuest = true; _fbCurrentUser = null; _fbGuestName = n;
+        document.getElementById("login-view").style.display = "none";
+        const gb = document.getElementById("fb-guest-badge");
+        gb.style.display = "block"; gb.textContent = "👤 Gast: " + n + " – score niet opgeslagen";
+        if (typeof _fbOnReady === "function") _fbOnReady();
+    });
+    document.getElementById("fb-guest-name").addEventListener("input", function(){ this.style.borderColor=""; });
+
+    document.getElementById("fb-logout-btn").addEventListener("click", async () => {
+        _fbIsGuest = false; _fbCurrentUser = null;
+        await signOut(_fbAuth);
+        document.getElementById("fb-user-badge").style.display = "none";
+        document.getElementById("fb-guest-badge").style.display = "none";
+        document.getElementById("login-view").style.display = "flex";
+    });
+
+    function _fbShowLoginErr(msg) {
+        const el = document.getElementById("login-error");
+        el.textContent = msg; el.style.display = "block";
+    }
+
+    async function _fbSave(record) {
+        if (_fbIsGuest || !_fbCurrentUser) return false;
+        try {
+            await addDoc(collection(_fbDb, "resultaten"), {
+                uid: _fbCurrentUser.uid, email: _fbCurrentUser.email,
+                displayName: _fbCurrentUser.displayName || _fbCurrentUser.email,
+                photoURL: _fbCurrentUser.photoURL || null,
+                vak: "Wiskunde", timestamp: serverTimestamp(), ...record
+            });
+            return true;
+        } catch(e) { console.error("Firebase save:", e); return false; }
+    }
+
+    function _fbOnReady() {
+        document.getElementById("fb-maat-wrapper").style.display = "";
+    }
+
+    const MAAT_LABELS = {
+        "toets-lengte":  "Wiskunde - Maateenheden: Toets Lengtematen",
+        "toets-inhoud":  "Wiskunde - Maateenheden: Toets Inhoudsmaten",
+        "toets-gewicht": "Wiskunde - Maateenheden: Toets Gewicht",
+        "toets-alles":   "Wiskunde - Maateenheden: Toets Alles door elkaar"
+    };
+
+    // Patch sluitSessieAf
+    const _origSluit = window.sluitSessieAf;
+    window.sluitSessieAf = async function() {
+        if (_origSluit) _origSluit.apply(this, arguments);
+
+        const mode = window.state ? window.state.currentMode : "onbekend";
+        // Only save official toetsen, not custom
+        if (!mode.startsWith("toets-")) return;
+
+        const label = MAAT_LABELS[mode] || ("Wiskunde - Maateenheden: " + mode);
+        const s = window.state || {};
+        const h = s.history || [];
+        const nw = s.score !== undefined && s.totalQ ? Math.round((s.score/s.totalQ)*100) : 0;
+
+        const ok = await _fbSave({
+            oefening:    label,
+            score:       s.score || 0,
+            totaal:      s.totalQ || 10,
+            nauwkeurigheid: nw,
+            hintsGebruikt: s.hintsUsed || 0,
+            tijdsduur:   "–",
+            vragen: h.map((item,i) => ({
+                vraagNr:          i+1,
+                formule:          item.question || "–",
+                antwoordLeerling: item.userAnswer || "–",
+                juistAntwoord:    item.correctAnswer || "–",
+                isJuist:          item.isCorrect,
+                categorie:        label
+            }))
+        });
+
+        const statusBox = document.getElementById("db-status-box");
+        if (statusBox) {
+            statusBox.innerHTML = ok
+                ? '<i class="fa-solid fa-circle-check text-emerald-500"></i> Score opgeslagen in database!'
+                : (_fbIsGuest ? '<i class="fa-solid fa-user-secret text-amber-500"></i> Gast – score niet opgeslagen'
+                              : '<i class="fa-solid fa-circle-xmark text-rose-500"></i> Opslaan mislukt');
+            statusBox.style.background = ok ? "#f0fdf4" : (_fbIsGuest ? "#fefce8" : "#fef2f2");
+        }
+    };
+</script>
+</body>
+</html>

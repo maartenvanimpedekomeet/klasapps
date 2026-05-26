@@ -1,0 +1,1035 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>De Geld & Reken Trainer</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap');
+        body { font-family: 'Plus Jakarta Sans', sans-serif; }
+        .hidden { display: none; }
+        .card-anim { transition: transform 0.2s, box-shadow 0.2s; }
+        .card-anim:hover { transform: translateY(-2px); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); }
+        .money-item { transition: transform 0.1s ease; }
+        .money-item:active { transform: scale(0.9); }
+        /* LOGIN */
+        #login-screen {
+            position: fixed; inset: 0; z-index: 1000;
+            background: linear-gradient(135deg, #059669 0%, #047857 50%, #065f46 100%);
+            display: flex; align-items: center; justify-content: center; padding: 20px;
+        }
+        #login-screen.hidden { display: none; }
+        .login-card {
+            background: white; border-radius: 2rem; padding: 2.5rem 2rem;
+            width: 100%; max-width: 380px;
+            box-shadow: 0 25px 50px rgba(0,0,0,0.25); text-align: center;
+        }
+        .login-logo {
+            width: 80px; height: 80px; background: #ecfdf5; border-radius: 1.5rem;
+            display: flex; align-items: center; justify-content: center;
+            margin: 0 auto 1.25rem; font-size: 2.5rem;
+            box-shadow: 0 4px 16px rgba(5,150,105,0.2);
+        }
+        .btn-google {
+            display: flex; align-items: center; justify-content: center; gap: 12px;
+            width: 100%; background: white; border: 2px solid #e5e7eb; border-radius: 1rem;
+            padding: 14px 20px; font-family: 'Plus Jakarta Sans', sans-serif;
+            font-size: 1rem; font-weight: 700; color: #374151; cursor: pointer;
+            transition: all 0.2s; margin-bottom: 12px;
+        }
+        .btn-google:hover { border-color: #059669; background: #f0fdf4; transform: translateY(-1px); }
+        .btn-google:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+        .btn-guest {
+            width: 100%; background: transparent; border: 2px solid #d1d5db;
+            border-radius: 1rem; padding: 12px; font-family: 'Plus Jakarta Sans', sans-serif;
+            font-size: 0.9rem; font-weight: 700; color: #6b7280; cursor: pointer; transition: all 0.2s;
+        }
+        .btn-guest:hover { border-color: #9ca3af; color: #374151; }
+        #user-bar {
+            display: flex; align-items: center; justify-content: space-between;
+            background: white; border-radius: 1.5rem; padding: 12px 20px;
+            margin-bottom: 1.5rem; box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+            border: 1px solid #e5e7eb;
+        }
+        #user-bar.hidden { display: none; }
+        .user-info { display: flex; align-items: center; gap: 10px; }
+        .user-avatar {
+            width: 36px; height: 36px; border-radius: 50%;
+            background: #d1fae5; display: flex; align-items: center; justify-content: center;
+            font-weight: 800; font-size: 1rem; color: #065f46;
+        }
+        .user-name { font-weight: 700; color: #1f2937; font-size: 0.9rem; }
+        .user-role { font-size: 0.72rem; color: #6b7280; font-weight: 600; }
+        .btn-logout {
+            background: none; border: 1.5px solid #e5e7eb; border-radius: 0.75rem;
+            padding: 6px 14px; font-family: 'Plus Jakarta Sans', sans-serif;
+            font-size: 0.8rem; font-weight: 700; color: #9ca3af; cursor: pointer; transition: all 0.2s;
+        }
+        .btn-logout:hover { border-color: #dc2626; color: #dc2626; }
+        #saved-badge {
+            display: none; align-items: center; justify-content: center; gap: 8px;
+            background: #d1fae5; border: 1.5px solid #6ee7b7; border-radius: 1rem;
+            padding: 10px 16px; margin-top: 12px;
+            font-size: 0.85rem; font-weight: 700; color: #065f46;
+        }
+        #saved-badge.show { display: flex; }
+    </style>
+</head>
+<body class="bg-slate-50 min-h-screen pb-20">
+
+    <!-- LOGIN SCREEN -->
+    <div id="login-screen">
+      <div class="login-card">
+        <div class="login-logo">💶</div>
+        <h1 style="font-size:1.6rem;font-weight:800;color:#1f2937;margin-bottom:6px;">Geld Rekenen</h1>
+        <p style="font-size:.85rem;color:#6b7280;margin-bottom:1.25rem;">Voer je naam en code in</p>
+        <input class="login-input" id="login-naam" type="text" placeholder="Jouw voornaam" autocomplete="off" autocapitalize="words">
+        <input class="login-input" id="login-code" type="password" placeholder="Jouw code" autocomplete="off">
+        <div class="login-error" id="login-error"></div>
+        <button class="btn-login" id="btn-login" onclick="loginMetCode()">Inloggen</button>
+        <button class="btn-guest" onclick="loginGuest()">Doorgaan als gast (geen opslag)</button>
+        <div class="teacher-link"><a href="dashboard.html">Leerkracht? Klik hier</a></div>
+      </div>
+    </div>
+
+    <div id="app" class="max-w-4xl mx-auto p-4 py-8">
+        
+        <!-- USER BAR -->
+        <div id="user-bar" class="hidden">
+            <div class="user-info">
+                <div class="user-avatar" id="user-avatar">👤</div>
+                <div>
+                    <div class="user-name" id="user-name">Gast</div>
+                    <div class="user-role" id="user-role">Gast — scores worden niet opgeslagen</div>
+                </div>
+            </div>
+            <button class="btn-logout" onclick="doLogout()">Uitloggen</button>
+        </div>
+
+        <!-- MENU VIEW -->
+        <div id="setup-view" class="bg-white rounded-[2.5rem] shadow-xl p-8 md:p-12 border border-slate-100 text-center space-y-8 animate-in fade-in duration-300">
+            <div class="inline-flex p-4 bg-emerald-100 rounded-3xl text-emerald-600 text-5xl">
+                💶
+            </div>
+            <div class="space-y-2">
+                <h1 class="text-4xl font-extrabold text-slate-900 tracking-tight">De Geld & Reken Trainer</h1>
+                <p class="text-slate-500 font-medium text-lg">Kies een doel om te oefenen of start de grote eindtoets!</p>
+            </div>
+
+            <div class="bg-amber-50 border border-amber-200 p-4 rounded-2xl max-w-xl mx-auto text-sm text-amber-900 font-medium text-left space-y-1">
+                <p>⚠️ <strong>Puntensysteem:</strong> Elk juist antwoord is <strong>1 punt</strong> waard.</p>
+                <p>💡 Gebruik je de <strong>Hint-knop</strong>? Dan verdien je nog maximaal <strong>0,5 punt</strong> voor die vraag!</p>
+                <p>🎯 <strong>Tip:</strong> Let goed op bij gepast betalen, soms moet het met zo weinig mogelijk munten en biljetten!</p>
+            </div>
+
+            <!-- Oefendoelen Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-3xl mx-auto">
+                <button onclick="startMode('betalen')" class="card-anim bg-slate-50 p-6 rounded-2xl border-2 border-slate-100 hover:border-emerald-500 text-left flex items-center gap-4 transition-all">
+                    <div class="text-3xl">🤝</div>
+                    <div>
+                        <h3 class="font-bold text-slate-800">Gepast betalen</h3>
+                        <p class="text-xs text-slate-500">Leg munten en briefjes op de toonbank (soms met zo min mogelijk stuks!)</p>
+                    </div>
+                </button>
+
+                <button onclick="startMode('inwisselen')" class="card-anim bg-slate-50 p-6 rounded-2xl border-2 border-slate-100 hover:border-emerald-500 text-left flex items-center gap-4 transition-all">
+                    <div class="text-3xl">🔄</div>
+                    <div>
+                        <h3 class="font-bold text-slate-800">Geld inwisselen</h3>
+                        <p class="text-xs text-slate-500">Wissel briefjes om voor munten en omgekeerd</p>
+                    </div>
+                </button>
+
+                <button onclick="startMode('noteren')" class="card-anim bg-slate-50 p-6 rounded-2xl border-2 border-slate-100 hover:border-emerald-500 text-left flex items-center gap-4 transition-all">
+                    <div class="text-3xl">✍️</div>
+                    <div>
+                        <h3 class="font-bold text-slate-800">Bedragen noteren</h3>
+                        <p class="text-xs text-slate-500">Kommagetallen, euro's en centen schrijven</p>
+                    </div>
+                </button>
+
+                <button onclick="startMode('rekenen')" class="card-anim bg-slate-50 p-6 rounded-2xl border-2 border-slate-100 hover:border-emerald-500 text-left flex items-center gap-4 transition-all">
+                    <div class="text-3xl">➕</div>
+                    <div>
+                        <h3 class="font-bold text-slate-800">Rekenen met geld</h3>
+                        <p class="text-xs text-slate-500">Reken sommen uit en schrijf in euro en cent</p>
+                    </div>
+                </button>
+
+                <button onclick="startMode('winstverlies')" class="card-anim bg-slate-50 p-6 rounded-2xl border-2 border-slate-100 hover:border-emerald-500 text-left flex items-center gap-4 transition-all md:col-span-2 max-w-md mx-auto w-full">
+                    <div class="text-3xl">📈</div>
+                    <div>
+                        <h3 class="font-bold text-slate-800">Winst of Verlies</h3>
+                        <p class="text-xs text-slate-500">Inkoop, verkoop, winst en verlies berekenen</p>
+                    </div>
+                </button>
+            </div>
+
+            <!-- Grote Toets Knop -->
+            <div class="pt-6 border-t border-slate-100 max-w-md mx-auto">
+                <button onclick="startMode('mix')" class="w-full py-5 bg-emerald-600 text-white rounded-2xl font-black text-xl hover:bg-emerald-700 shadow-xl shadow-emerald-100 active:scale-[0.98] transition-all flex items-center justify-center gap-3">
+                    <span>🏆</span> START DE GROTE TOETS (20 VRAGEN)
+                </button>
+            </div>
+        </div>
+
+        <!-- QUIZ VIEW -->
+        <div id="quiz-view" class="hidden max-w-2xl mx-auto">
+            <div class="bg-white rounded-[2.5rem] shadow-2xl overflow-hidden border border-slate-100">
+                <!-- Voortgang -->
+                <div class="h-3 bg-slate-100 w-full">
+                    <div id="progress-bar" class="h-full bg-emerald-600 transition-all duration-300" style="width: 0%"></div>
+                </div>
+
+                <div class="p-8 md:p-12">
+                    <!-- Top Bar -->
+                    <div class="flex justify-between items-center mb-8">
+                        <button onclick="openExitModal()" class="text-sm font-bold text-slate-400 hover:text-emerald-600 flex items-center gap-2 transition-colors cursor-pointer">
+                            <span class="text-lg">←</span> Stop
+                        </button>
+                        <span id="counter" class="text-sm font-bold text-emerald-500 bg-emerald-50 px-4 py-2 rounded-full">Vraag 1/10</span>
+                    </div>
+
+                    <div class="space-y-6">
+                        <!-- Categorie & Titel -->
+                        <div class="text-center space-y-2 relative">
+                            <div class="flex gap-2 justify-center items-center flex-wrap">
+                                <span id="q-category" class="px-3 py-1 bg-emerald-100 text-emerald-700 rounded-lg text-xs font-black uppercase tracking-wider">GEPAST BETALEN</span>
+                                <span id="q-special-badge" class="hidden px-3 py-1 bg-rose-500 text-white rounded-lg text-xs font-black uppercase tracking-wider animate-pulse">⚠️ ZO MIN MOGELIJK MUNTEN/BILJETTEN!</span>
+                            </div>
+                            <h2 id="q-title" class="text-xl md:text-2xl font-extrabold text-slate-800 leading-relaxed">...</h2>
+                        </div>
+
+                        <!-- INTERACTIEVE INTERFACE VOOR GEPAST BETALEN (DOEL 1) -->
+                        <div id="payment-interface" class="hidden space-y-6 animate-in fade-in duration-300">
+                            <!-- Toonbank / Toetsenbord van neergelegd geld -->
+                            <div class="bg-slate-50 border-2 border-dashed border-slate-200 rounded-2xl p-6 min-h-[140px] flex flex-wrap gap-3 items-center justify-center relative">
+                                <span class="absolute top-2 left-3 text-[10px] font-bold text-slate-400 uppercase">Jouw toonbank:</span>
+                                <div id="placed-money-container" class="flex flex-wrap gap-2 justify-center"></div>
+                                <div id="empty-counter-text" class="text-slate-400 text-sm italic">Klik op de biljetten en munten om ze neer te leggen...</div>
+                            </div>
+                            
+                            <div class="text-center font-bold text-slate-700 text-lg">
+                                Neergelegd bedrag: <span id="current-placed-amount" class="text-emerald-600">€0,00</span>
+                            </div>
+
+                            <!-- Geld lade (klikbare items) -->
+                            <div class="bg-slate-100 p-4 rounded-2xl space-y-4">
+                                <p class="text-xs font-bold text-slate-400 uppercase tracking-widest text-center">Geldlade (klik om te pakken):</p>
+                                <!-- Briefjes -->
+                                <div class="flex flex-wrap justify-center gap-3">
+                                    <button onclick="addMoney(50.00)" class="money-item bg-amber-500 text-white font-bold px-4 py-2 rounded-lg border-2 border-amber-600 text-sm shadow-sm">€50</button>
+                                    <button onclick="addMoney(20.00)" class="money-item bg-blue-500 text-white font-bold px-4 py-2 rounded-lg border-2 border-blue-600 text-sm shadow-sm">€20</button>
+                                    <button onclick="addMoney(10.00)" class="money-item bg-red-500 text-white font-bold px-4 py-2 rounded-lg border-2 border-red-600 text-sm shadow-sm">€10</button>
+                                    <button onclick="addMoney(5.00)" class="money-item bg-emerald-500 text-white font-bold px-4 py-2 rounded-lg border-2 border-emerald-600 text-sm shadow-sm">€5</button>
+                                </div>
+                                <!-- Munten -->
+                                <div class="flex flex-wrap justify-center gap-3">
+                                    <button onclick="addMoney(2.00)" class="money-item w-12 h-12 rounded-full bg-yellow-100 border-4 border-yellow-500 text-yellow-800 font-extrabold flex items-center justify-center shadow-sm text-sm">€2</button>
+                                    <button onclick="addMoney(1.00)" class="money-item w-10 h-10 rounded-full bg-slate-100 border-4 border-slate-400 text-slate-700 font-extrabold flex items-center justify-center shadow-sm text-xs">€1</button>
+                                    <button onclick="addMoney(0.50)" class="money-item w-10 h-10 rounded-full bg-amber-100 border-4 border-amber-500 text-amber-800 font-extrabold flex items-center justify-center shadow-sm text-xs">50c</button>
+                                    <button onclick="addMoney(0.20)" class="money-item w-9 h-9 rounded-full bg-amber-100 border-4 border-amber-400 text-amber-800 font-extrabold flex items-center justify-center shadow-sm text-xs">20c</button>
+                                    <button onclick="addMoney(0.10)" class="money-item w-8 h-8 rounded-full bg-amber-100 border-4 border-amber-300 text-amber-800 font-extrabold flex items-center justify-center shadow-sm text-[10px]">10c</button>
+                                    <button onclick="addMoney(0.05)" class="money-item w-7 h-7 rounded-full bg-amber-50 border-4 border-amber-200 text-amber-800 font-extrabold flex items-center justify-center shadow-sm text-[10px]">5c</button>
+                                </div>
+                                <div class="text-center">
+                                    <button onclick="clearPlacedMoney()" class="text-xs text-red-500 hover:text-red-700 font-bold underline">Toonbank leegmaken</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- TEXT INVOER CONTAINER VOOR ALGEMENE VRAGEN -->
+                        <div id="text-input-container" class="hidden space-y-4">
+                            <input id="user-input" type="text" autocomplete="off" spellcheck="false"
+                                class="w-full p-5 text-center text-2xl font-bold rounded-2xl border-4 border-slate-100 outline-none transition-all focus:border-emerald-500 focus:bg-emerald-50/30 text-slate-800"
+                                placeholder="Typ hier...">
+                            <p id="helper-notation-label" class="text-xs font-bold text-slate-400 text-center tracking-wide hidden">Hulpje bij de schrijfwijze: bijv. <b>7,50</b> of <b>7 euro 50</b></p>
+                        </div>
+
+                        <!-- MEERKEUZE OPTIES -->
+                        <div id="options-container" class="hidden grid grid-cols-1 gap-3"></div>
+
+                        <!-- Actie Buttons -->
+                        <div class="flex gap-3" id="quiz-actions">
+                            <button id="hint-btn" onclick="showHint()" class="flex-1 py-4 bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 font-bold rounded-xl transition-all flex items-center justify-center gap-2 cursor-pointer">
+                                💡 Hint nodig?
+                            </button>
+                            <button id="submit-btn" onclick="checkAnswer()" class="flex-2 py-4 px-8 bg-emerald-600 hover:bg-emerald-700 text-white font-black rounded-xl transition-all shadow-md cursor-pointer">
+                                CONTROLEER
+                            </button>
+                        </div>
+
+                        <!-- Hint Box -->
+                        <div id="hint-box" class="hidden p-5 bg-amber-50 border border-amber-200 text-amber-800 rounded-2xl text-sm leading-relaxed relative">
+                            <strong>💡 Hulpje:</strong> <span id="hint-text">...</span>
+                        </div>
+
+                        <!-- Feedback Box -->
+                        <div id="feedback" class="hidden p-5 rounded-2xl font-bold text-center"></div>
+
+                        <!-- Volgende Knop -->
+                        <button id="next-btn" onclick="nextQuestion()" class="hidden w-full bg-slate-900 text-white py-5 rounded-2xl font-black text-lg hover:bg-black transition-all shadow-lg">
+                            VOLGENDE VRAAG →
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- AFSLUIT MODAL -->
+        <div id="exit-modal" class="hidden fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+            <div class="bg-white rounded-3xl p-8 max-w-sm w-full text-center shadow-2xl border border-slate-100 space-y-6">
+                <div class="text-4xl">⚠️</div>
+                <div class="space-y-2">
+                    <h3 class="text-xl font-extrabold text-slate-800">Stoppen met oefenen?</h3>
+                    <p class="text-slate-500 text-sm">Je gemaakte antwoorden van deze ronde gaan verloren.</p>
+                </div>
+                <div class="flex gap-3">
+                    <button onclick="closeExitModal()" class="flex-1 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl transition-all">
+                        Blijf oefenen
+                    </button>
+                    <button onclick="confirmExit()" class="flex-1 py-3 bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl transition-all">
+                        Stoppen
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- RESULTATEN & FOUTENANALYSIS -->
+        <div id="result-view" class="hidden max-w-3xl mx-auto space-y-6">
+            <div class="bg-white rounded-[2.5rem] p-10 text-center shadow-xl border border-white space-y-6 relative">
+                <div id="result-emoji" class="text-7xl">🏆</div>
+                <div class="space-y-2">
+                    <h2 class="text-4xl font-black text-slate-800">Oefenronde Voltooid!</h2>
+                    <p class="text-slate-500 font-medium">Bekijk hieronder je resultaten en foutenanalyse.</p>
+                </div>
+                
+                <div class="grid grid-cols-3 gap-4">
+                    <div class="bg-emerald-50 p-6 rounded-3xl border border-emerald-100">
+                        <span class="block text-xs text-emerald-400 font-bold uppercase mb-1">Score</span>
+                        <span id="score-val" class="text-3xl font-black text-emerald-600">0/10</span>
+                    </div>
+                    <div class="bg-blue-50 p-6 rounded-3xl border border-blue-100">
+                        <span class="block text-xs text-blue-400 font-bold uppercase mb-1">Percentage</span>
+                        <span id="percent-val" class="text-3xl font-black text-blue-600">0%</span>
+                    </div>
+                    <div class="bg-amber-50 p-6 rounded-3xl border border-amber-100">
+                        <span class="block text-xs text-amber-400 font-bold uppercase mb-1">Hints Gebruikt</span>
+                        <span id="hints-val" class="text-3xl font-black text-amber-600">0</span>
+                    </div>
+                </div>
+                <div id="saved-badge">
+                    ✓ Score opgeslagen in de database
+                </div>
+            </div>
+
+            <!-- FOUTENANALYSIS -->
+            <div class="bg-white rounded-[2.5rem] p-10 shadow-xl border border-slate-100 space-y-6">
+                <h3 class="text-2xl font-extrabold text-slate-800 flex items-center gap-3">
+                    <span class="bg-emerald-100 p-2 rounded-xl text-lg">📝</span> Jouw Foutenanalyse
+                </h3>
+                <div id="mistake-list" class="space-y-4"></div>
+                <button onclick="showView('setup-view')" class="w-full bg-slate-900 text-white py-5 rounded-2xl font-black text-lg hover:bg-black transition-all shadow-md">
+                    TERUG NAAR MENU
+                </button>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // --- GIGANTISCHE EN UNIEKE DATABASE (30 vragen per categorie = 150 unieke vragen) ---
+        const MASTER_QUESTION_DATABASE = {
+            betalen: [
+                { id: "b1", title: "Milan wil een stripboek kopen voor €4,50. Leg dit bedrag gepast neer op de toonbank.", answer: 4.50, strict: false, hint: "Gebruik munten of een briefje van €5 en vraag je af hoe je €4,50 maakt." },
+                { id: "b2", title: "Noor wil een lekkere donut kopen van €1,25. Leg dit bedrag gepast neer op de toonbank met ZO MIN MOGELIJK muntstukken.", answer: 1.25, strict: true, optimalPieces: 2, hint: "Voor €1,25 heb je met zo min mogelijk munten nodig: €1 en een munt van 20c + 5c." },
+                { id: "b3", title: "Lars wil een fris drankje kopen van €2,15. Leg dit bedrag gepast neer op de toonbank.", answer: 2.15, strict: false, hint: "Tel de euro's en de centen apart op: €2 munt en dan 15 cent." },
+                { id: "b4", title: "Sophie koopt een doos kleurpotloden van €3,75. Leg dit bedrag neer met ZO MIN MOGELIJK stuks.", answer: 3.75, strict: true, optimalPieces: 3, hint: "Gebruik een munt van €2, een munt van €1, een munt van 50c, een munt van 20c en een van 5c." },
+                { id: "b5", title: "Daan wil een springtouw kopen voor €3,80. Leg dit bedrag gepast neer op de toonbank.", answer: 3.80, strict: false, hint: "Combineer munten van €2 en €1, met muntstukken van 50c, 20c of 10c." },
+                { id: "b6", title: "Tess wil een pluche beer kopen van €14,50. Leg dit bedrag neer met ZO MIN MOGELIJK briefjes of munten.", answer: 14.50, strict: true, optimalPieces: 3, hint: "Leg neer: Briefje van €10, een briefje van €2 en €2 munt? Nee, briefje van €10, briefje van €5 (te veel). Gebruik: briefje van €10, munt van €2, munt van €2, munt van 50c." },
+                { id: "b7", title: "Emma koopt een brik fruitsap van €1,65. Leg dit bedrag gepast neer op de toonbank.", answer: 1.65, strict: false, hint: "Combineer €1 met de juiste munten om 65 cent te bekomen." },
+                { id: "b8", title: "Sander wil een grote zak knikkers kopen voor €2,40. Leg dit bedrag neer met ZO MIN MOGELIJK stuks.", answer: 2.40, strict: true, optimalPieces: 2, hint: "Gebruik een munt van €2 en een munt van 20c + 20c." },
+                { id: "b9", title: "Klaas wil een gezonde snack kopen voor €1,85. Leg dit bedrag gepast neer op de toonbank.", answer: 1.85, strict: false, hint: "Leg €1 neer, voeg 50c, 20c, 10c en 5c toe." },
+                { id: "b10", title: "Anko koopt een doosje aardbeien van €3,20. Leg dit bedrag neer met ZO MIN MOGELIJK stuks.", answer: 3.20, strict: true, optimalPieces: 2, hint: "Leg een munt van €2, een munt van €1 en een munt van 20c neer." },
+                { id: "b11", title: "Eva wil een pen kopen van €1,10. Leg dit bedrag gepast neer op de toonbank.", answer: 1.10, strict: false, hint: "Heel eenvoudig: combineer een euro met een muntje van 10 cent." },
+                { id: "b12", title: "Jan wil een schrift kopen van €2,35. Leg dit bedrag neer met ZO MIN MOGELIJK stuks.", answer: 2.35, strict: true, optimalPieces: 3, hint: "Leg een munt van €2 neer, dan een munt van 20c, 10c en 5c." },
+                { id: "b13", title: "Roos wil een lolly kopen voor €0,75. Leg dit bedrag gepast neer op de toonbank.", answer: 0.75, strict: false, hint: "Geen hele euro nodig! Leg munten neer die samen 75 cent vormen." },
+                { id: "b14", title: "Pim wil een gum kopen van €0,85. Leg dit bedrag neer met ZO MIN MOGELIJK stuks.", answer: 0.85, strict: true, optimalPieces: 3, hint: "Zet de centen samen: 50c + 20c + 10c + 5c." },
+                { id: "b15", title: "Lotte koopt een tijdschrift van €5,50. Leg dit bedrag gepast neer op de toonbank.", answer: 5.50, strict: false, hint: "Gebruik een briefje van €5 en een muntstuk van 50 cent." },
+                { id: "b16", title: "Thijs wil een ijsje kopen van €2,85. Leg dit bedrag neer met ZO MIN MOGELIJK stuks.", answer: 2.85, strict: true, optimalPieces: 4, hint: "Munten: €2, 50c, 20c, 10c, 5c." },
+                { id: "b17", title: "Maud wil een rolletje drop kopen voor €1,45. Leg dit bedrag gepast neer op de toonbank.", answer: 1.45, strict: false, hint: "Leg €1 neer, en maak dan 45 cent met andere munten." },
+                { id: "b18", title: "Gijs koopt een warme wafel van €2,20. Leg dit bedrag neer met ZO MIN MOGELIJK stuks.", answer: 2.20, strict: true, optimalPieces: 2, hint: "Enkel een munt van €2 en een munt van 20 cent zijn nodig!" },
+                { id: "b19", title: "Lieke wil een flesje water kopen van €1,30. Leg dit bedrag gepast neer op de toonbank.", answer: 1.30, strict: false, hint: "Leg €1 neer en voeg 30 cent toe met losse munten." },
+                { id: "b20", title: "Sem wil een banaan kopen voor €0,65. Leg dit bedrag neer met ZO MIN MOGELIJK stuks.", answer: 0.65, strict: true, optimalPieces: 2, hint: "Leg een munt van 50c, een munt van 10c en een munt van 5c neer." },
+                { id: "b21", title: "Floor koopt een passer voor €4,95. Leg dit bedrag gepast neer op de toonbank.", answer: 4.95, strict: false, hint: "Combineer munten van €2, €2, 50c, 20c, 20c, 5c." },
+                { id: "b22", title: "Mats wil een liniaal kopen van €1,95. Leg dit bedrag neer met ZO MIN MOGELIJK stuks.", answer: 1.95, strict: true, optimalPieces: 4, hint: "Leg €1, 50c, 20c, 20c en 5c neer." },
+                { id: "b23", title: "Bente wil een appel kopen voor €0,45. Leg dit bedrag gepast neer op de toonbank.", answer: 0.45, strict: false, hint: "Maak 45 cent met de munten uit de lade." },
+                { id: "b24", title: "Hugo koopt een doosje rozijnen van €0,95. Leg dit bedrag neer met ZO MIN MOGELIJK stuks.", answer: 0.95, strict: true, optimalPieces: 3, hint: "Gebruik 50c, 20c, 20c en 5c." },
+                { id: "b25", title: "Fleur wil een stripboek kopen van €6,30. Leg dit bedrag gepast neer op de toonbank.", answer: 6.30, strict: false, hint: "Combineer een briefje of munt van €5, munt van €1 en munt van 30 cent." },
+                { id: "b26", title: "Sven wil een pakje kaarten kopen van €3,40. Leg dit bedrag neer met ZO MIN MOGELIJK stuks.", answer: 3.40, strict: true, optimalPieces: 3, hint: "Leg neer: munt van €2, munt van €1, munt van 20c, munt van 20c." },
+                { id: "b27", title: "Suze wil een wafel kopen voor €1,70. Leg dit bedrag gepast neer op de toonbank.", answer: 1.70, strict: false, hint: "Leg €1 neer, voeg 50c en 20c toe." },
+                { id: "b28", title: "Ruben koopt een chocoladebroodje van €1,55. Leg dit bedrag neer met ZO MIN MOGELIJK stuks.", answer: 1.55, strict: true, optimalPieces: 3, hint: "Een munt van €1, een munt van 50c en een munt van 5c." },
+                { id: "b29", title: "Lotte wil een potlood kopen voor €0,35. Leg dit bedrag gepast neer op de toonbank.", answer: 0.35, strict: false, hint: "Maak 35 cent met de munten uit de lade." },
+                { id: "b30", title: "Daan wil een pakje kauwgom kopen van €1,15. Leg dit bedrag neer met ZO MIN MOGELIJK stuks.", answer: 1.15, strict: true, optimalPieces: 3, hint: "Gebruik een munt van €1, een van 10c en een van 5c." }
+            ],
+            inwisselen: [
+                { id: "i1", title: "Sander wisselt een briefje van €10 in. Hoeveel briefjes van €5 krijgt hij terug?", answer: "2", hint: "Hoeveel keer past 5 in 10?" },
+                { id: "i2", title: "Emma wisselt een briefje van €20 in. Hoeveel briefjes van €5 krijgt zij terug?", answer: "4", hint: "Hoeveel keer past 5 in 20?" },
+                { id: "i3", title: "Noor wisselt een briefje van €50 in. Hoeveel briefjes van €10 krijgt zij terug?", answer: "5", hint: "Deel 50 door 10." },
+                { id: "i4", title: "Lars wisselt een briefje van €100 in. Hoeveel briefjes van €10 krijgt hij terug?", answer: "10", hint: "In €100 gaan precies tien briefjes van €10." },
+                { id: "i5", title: "Sophie wisselt een briefje van €100 in. Hoeveel briefjes van €20 krijgt zij terug?", answer: "5", hint: "Deel 100 door 20." },
+                { id: "i6", title: "Daan wisselt een briefje van €100 in. Hoeveel briefjes van €50 krijgt hij terug?", answer: "2", hint: "Hoeveel keer past 50 in 100?" },
+                { id: "i7", title: "Tess wisselt een briefje van €20 in. Hoeveel briefjes van €10 krijgt zij terug?", answer: "2", hint: "Hoeveel briefjes van €10 heb je nodig voor €20?" },
+                { id: "i8", title: "Milan wisselt een briefje van €50 in. Hoeveel briefjes van €5 krijgt hij terug?", answer: "10", hint: "Deel 50 door 5." },
+                { id: "i9", title: "Lucas wisselt een briefje van €10 in. Hoeveel munten van €2 krijgt hij terug?", answer: "5", hint: "Hoeveel munten van €2 maken samen €10?" },
+                { id: "i10", title: "Klaas wisselt een briefje van €20 in. Hoeveel munten van €2 krijgt hij terug?", answer: "10", hint: "Deel 20 door 2." },
+                { id: "i11", title: "Julia wisselt een briefje van €5 in. Hoeveel munten van €1 krijgt zij terug?", answer: "5", hint: "Elke euro is één munt van €1." },
+                { id: "i12", title: "Niels wisselt een briefje van €10 in. Hoeveel munten van €1 krijgt hij terug?", answer: "10", hint: "Je krijgt evenveel munten als het bedrag waard is." },
+                { id: "i13", title: "Sarah wisselt een briefje van €20 in. Hoeveel munten van €1 krijgt zij terug?", answer: "20", hint: "Voor €20 krijg je exact 20 losse euro's." },
+                { id: "i14", title: "Maud wisselt een munt van €2 in. Hoeveel muntjes van 50 cent krijgt zij terug?", answer: "4", hint: "In €1 gaan twee munten van 50 cent. Hoeveel gaan er in €2?" },
+                { id: "i15", title: "Bart wisselt een munt van €2 in. Hoeveel muntjes van 20 cent krijgt hij terug?", answer: "10", hint: "In €1 gaan 5 muntjes van 20 cent. Bereken voor €2." },
+                { id: "i16", title: "Sven wisselt een munt van €1 in. Hoeveel muntjes van 10 cent krijgt hij terug?", answer: "10", hint: "Hoeveel keer past 10 cent in 100 cent (1 euro)?" },
+                { id: "i17", title: "Anouk wisselt een munt van €1 in. Hoeveel muntjes van 5 cent krijgt zij terug?", answer: "20", hint: "Hoeveel keer past 5 in 100 cent?" },
+                { id: "i18", title: "Tom wisselt een munt van €2 in. Hoeveel muntjes van 10 cent krijgt hij terug?", answer: "20", hint: "In €1 gaan 10 muntjes van 10c. Bereken voor €2." },
+                { id: "i19", title: "Lotte wisselt een munt van €50 cent in. Hoeveel muntjes van 10 cent krijgt zij terug?", answer: "5", hint: "Deel 50 cent door 10 cent." },
+                { id: "i20", title: "Floor wisselt een munt van €50 cent in. Hoeveel muntjes van 5 cent krijgt zij terug?", answer: "10", hint: "Deel 50 cent door 5 cent." },
+                { id: "i21", title: "Mats wisselt een munt van €20 cent in. Hoeveel muntjes van 5 cent krijgt hij terug?", answer: "4", hint: "Hoeveel keer past 5 in 20?" },
+                { id: "i22", title: "Thijs wisselt een briefje van €10 in. Hoeveel briefjes van €5 krijgt hij terug?", answer: "2", hint: "Dit is een eenvoudige deling: 10 delen door 5." },
+                { id: "i23", title: "Gijs wisselt een briefje van €50 in. Hoeveel briefjes van €10 krijgt hij terug?", answer: "5", hint: "Hoeveel keer past €10 in €50?" },
+                { id: "i24", title: "Bente wisselt een briefje van €100 in. Hoeveel briefjes van €50 krijgt zij terug?", answer: "2", hint: "Twee briefjes van €50 maken samen €100." },
+                { id: "i25", title: "Sanne wisselt een briefje van €20 in. Hoeveel briefjes van €10 krijgt zij terug?", answer: "2", hint: "Twee briefjes van €10 maken samen €20." },
+                { id: "i26", title: "Ruben wisselt een briefje van €5 in. Hoeveel munten van €1 krijgt hij terug?", answer: "5", hint: "Elke euro is één munt waard." },
+                { id: "i27", title: "Iris wisselt een briefje van €10 in. Hoeveel munten van €2 krijgt zij terug?", answer: "5", hint: "Vijf munten van €2 maken samen €10." },
+                { id: "i28", title: "Hugo wisselt een briefje van €20 in. Hoeveel munten van €2 krijgt hij terug?", answer: "10", hint: "Tien munten van €2 maken samen €20." },
+                { id: "i29", title: "Twan wisselt een munt van €2 in. Hoeveel muntjes van 50 cent krijgt hij terug?", answer: "4", hint: "Er gaan 4 muntjes van 50 cent in een munt van €2." },
+                { id: "i30", title: "Fleur wisselt een munt van €1 in. Hoeveel muntjes van 20 cent krijgt zij terug?", answer: "5", hint: "Er gaan 5 muntjes van 20 cent in een munt van €1." }
+            ],
+            noteren: [
+                { id: "n1", title: "Hoe noteer je 350 cent in euro's met een komma en een euroteken?", answer: "€3,50", hint: "Denk eraan: 100 cent is €1,00. Dus 350 cent is €3,50." },
+                { id: "n2", title: "Hoeveel cent is €4,25? Schrijf alleen het getal op.", answer: "425", hint: "Vermenigvuldig het aantal euro's met 100 om de centen te vinden." },
+                { id: "n3", title: "Schrijf 'twaalf euro en vijftig cent' in cijfers met een euroteken en een komma.", answer: "€12,50", hint: "Zet de euro's voor de komma en de centen achter de komma." },
+                { id: "n4", title: "Hoe noteer je 85 cent in euro's met een euroteken en een komma?", answer: "€0,85", hint: "Omdat het minder is dan 1 euro, schrijf je €0 voor de komma." },
+                { id: "n5", title: "Hoeveel cent is €19,95? Schrijf alleen het getal op.", answer: "1995", hint: "Haal de komma en het euroteken weg om de centen over te houden." },
+                { id: "n6", title: "Schrijf 'vijfenzestig euro' in cijfers met een euroteken en een komma.", answer: "€65,00", hint: "Schrijf dit op als €65,00." },
+                { id: "n7", title: "Hoe noteer je 120 cent in euro's met een komma en een euroteken?", answer: "€1,20", hint: "120 cent is 1 euro en 20 cent." },
+                { id: "n8", title: "Hoeveel cent is €2,50? Schrijf alleen het getal op.", answer: "250", hint: "Vermenigvuldig met 100." },
+                { id: "n9", title: "Schrijf 'acht euro en vijf cent' in cijfers met een euroteken en een komma.", answer: "€8,05", hint: "Let op: vijf cent schrijf je als ,05 en niet als ,50!" },
+                { id: "n10", title: "Hoe noteer je 45 cent in euro's met een euroteken en een komma?", answer: "€0,45", hint: "Schrijf een nul voor de komma." },
+                { id: "n11", title: "Hoeveel cent is €10,00? Schrijf alleen het getal op.", answer: "1000", hint: "Tien euro is duizend cent." },
+                { id: "n12", title: "Schrijf 'drie euro en vijftien cent' in cijfers met een euroteken en een komma.", answer: "€3,15", hint: "Schrijf dit op als €3,15." },
+                { id: "n13", title: "Hoe noteer je 600 cent in euro's met een komma en een euroteken?", answer: "€6,00", hint: "Dit zijn precies zes hele euro's." },
+                { id: "n14", title: "Hoeveel cent is €0,95? Schrijf alleen het getal op.", answer: "95", hint: "Nul euro en 95 cent is 95 cent." },
+                { id: "n15", title: "Schrijf 'vierentwintig euro en negentig cent' in cijfers met een euroteken en een komma.", answer: "€24,90", hint: "Zet de euro's voor de komma en de centen achter de komma." },
+                { id: "n16", title: "Hoe noteer je 50 cent in euro's met een euroteken en een komma?", answer: "€0,50", hint: "Dit is een halve euro." },
+                { id: "n17", title: "Hoeveel cent is €1,25? Schrijf alleen het getal op.", answer: "125", hint: "Vermenigvuldig het bedrag met 100." },
+                { id: "n18", title: "Schrijf 'zeven euro en tachtig cent' in cijfers met een euroteken en een komma.", answer: "€7,80", hint: "Zet de euro's voor de komma en de centen achter de komma." },
+                { id: "n19", title: "Hoe noteer je 950 cent in euro's met een komma en een euroteken?", answer: "€9,50", hint: "Dit is 9 euro en 50 cent." },
+                { id: "n20", title: "Hoeveel cent is €0,05? Schrijf alleen het getal op.", answer: "5", hint: "Dit is slechts 5 cent." },
+                { id: "n21", title: "Schrijf 'vijftien euro en twee cent' in cijfers met een euroteken en een komma.", answer: "€15,02", hint: "Let op: schrijf de twee cent op als ,02." },
+                { id: "n22", title: "Hoe noteer je 75 cent in euro's met een euroteken en een komma?", answer: "€0,75", hint: "Dit is driekwart euro." },
+                { id: "n23", title: "Hoeveel cent is €35,00? Schrijf alleen het getal op.", answer: "3500", hint: "Vermenigvuldig met 100." },
+                { id: "n24", title: "Schrijf 'negen euro en negenennegentig cent' in cijfers met een euroteken en een komma.", answer: "€9,99", hint: "Zet de euro's voor de komma en de centen achter de komma." },
+                { id: "n25", title: "Hoe noteer je 200 cent in euro's met een komma en een euroteken?", answer: "€2,00", hint: "Dit zijn exact twee euro's." },
+                { id: "n26", title: "Hoeveel cent is €0,40? Schrijf alleen het getal op.", answer: "40", hint: "Nul euro en 40 cent." },
+                { id: "n27", title: "Schrijf 'honderd euro' in cijfers met een euroteken en een komma.", answer: "€100,00", hint: "Schrijf dit op als €100,00." },
+                { id: "n28", title: "Hoe noteer je 5 cent in euro's met een euroteken en een komma?", answer: "€0,05", hint: "Vergeet de nul na de komma niet: €0,05." },
+                { id: "n29", title: "Hoeveel cent is €7,30? Schrijf alleen het getal op.", answer: "730", hint: "Zeven euro en dertig cent." },
+                { id: "n30", title: "Schrijf 'twee euro en tachtig cent' in cijfers met een euroteken en een komma.", answer: "€2,80", hint: "Zet de euro's voor de komma." }
+            ],
+            rekenen: [
+                { id: "r1", title: "Noor koopt 3 ijsjes van €1,50 per stuk. Wat is de totale prijs?", answer: "€4,50", hint: "Vermenigvuldig de prijs per ijsje met 3: 3 x €1,50." },
+                { id: "r2", title: "Lars koopt een boek voor €8,50. Hij betaalt met een briefje van €10. Hoeveel wisselgeld krijgt hij terug?", answer: "€1,50", hint: "Trek de prijs van het boek af van het briefje van €10." },
+                { id: "r3", title: "Milan koopt een voetbal van €12,00 en een drinkbus van €6,20. Wat is de totale prijs?", answer: "€18,20", hint: "Tel de twee bedragen bij elkaar op." },
+                { id: "r4", title: "Sophie koopt een reep chocolade van €1,80. Ze betaalt met een munt van €2. Hoeveel wisselgeld krijgt zij terug?", answer: "€0,20", hint: "Trek de prijs af van de munt van €2." },
+                { id: "r5", title: "Daan koopt 4 pennen van €1,25 per stuk. Wat is de totale prijs?", answer: "€5,00", hint: "Vermenigvuldig de prijs per pen met 4: 4 x €1,25." },
+                { id: "r6", title: "Tess koopt een pluche beer van €9,95. Ze betaalt met een briefje van €10. Hoeveel wisselgeld krijgt zij terug?", answer: "€0,05", hint: "Trek de prijs af van het briefje van €10." },
+                { id: "r7", title: "Emma koopt een pak koekjes van €2,30 en een pak fruitsap van €1,50. Wat is de totale prijs?", answer: "€3,80", hint: "Tel de twee bedragen bij elkaar op." },
+                { id: "r8", title: "Sander koopt een skateboard van €45,00. Hij betaalt met een briefje van €50. Hoeveel wisselgeld krijgt hij terug?", answer: "€5,00", hint: "Trek de prijs af van het briefje van €50." },
+                { id: "r9", title: "Klaas koopt 2 zakken knikkers van €2,15 per stuk. Wat is de totale prijs?", answer: "€4,30", hint: "Vermenigvuldig de prijs met 2: 2 x €2,15." },
+                { id: "r10", title: "Anko koopt een rugzak van €24,50. Hij betaalt met een briefje van €50. Hoeveel wisselgeld krijgt hij terug?", answer: "€25,50", hint: "Trek de prijs af van het briefje van €50." },
+                { id: "r11", title: "Sander koopt 5 lolly's van €0,50 per stuk. Wat is de totale prijs?", answer: "€2,50", hint: "Vermenigvuldig de prijs met 5." },
+                { id: "r12", title: "Emma koopt een boek voor €14,00. Ze betaalt met een briefje van €20. Hoeveel wisselgeld krijgt zij terug?", answer: "€6,00", hint: "Trek de prijs af van het briefje van €20." },
+                { id: "r13", title: "Lars koopt een doosje aardbeien van €3,50 en een ijsje van €1,50. Wat is de totale prijs?", answer: "€5,00", hint: "Tel de twee bedragen samen op." },
+                { id: "r14", title: "Sophie koopt een springtouw van €3,80. Ze betaalt met een briefje van €5. Hoeveel wisselgeld krijgt zij terug?", answer: "€1,20", hint: "Trek €3,80 af van €5." },
+                { id: "r15", title: "Daan koopt 2 potloden van €1,20 per stuk. Wat is de totale prijs?", answer: "€2,40", hint: "Vermenigvuldig de prijs met 2." },
+                { id: "r16", title: "Tess koopt een gom voor €0,80. Ze betaalt met een munt van €1. Hoeveel wisselgeld krijgt zij terug?", answer: "€0,20", hint: "Trek €0,80 af van €1." },
+                { id: "r17", title: "Milan koopt een brik fruitsap van €1,60 en een pak koekjes van €2,40. Wat is de totale prijs?", answer: "€4,00", hint: "Tel de twee bedragen bij elkaar op." },
+                { id: "r18", title: "Lars koopt een spelletje van €15,50. Hij betaalt met een briefje van €20. Hoeveel wisselgeld krijgt hij terug?", answer: "€4,50", hint: "Trek €15,50 af van €20." },
+                { id: "r19", title: "Noor koopt 3 repen chocolade van €1,20 per stuk. Wat is de totale prijs?", answer: "€3,60", hint: "Vermenigvuldig de prijs met 3." },
+                { id: "r20", title: "Sophie koopt een pop van €18,50. Ze betaalt met een briefje van €20. Hoeveel wisselgeld krijgt zij terug?", answer: "€1,50", hint: "Trek €18,50 af van €20." },
+                { id: "r21", title: "Daan koopt een doosje stiften van €4,20 en een schrift van €1,80. Wat is de totale prijs?", answer: "€6,00", hint: "Tel de twee bedragen samen op." },
+                { id: "r22", title: "Lotte koopt een drinkbus van €7,50. Ze betaalt met een briefje van €10. Hoeveel wisselgeld krijgt zij terug?", answer: "€2,50", hint: "Trek €7,50 af van €10." },
+                { id: "r23", title: "Mats koopt 2 pakjes kaarten van €1,45 per stuk. Wat is de totale prijs?", answer: "€2,90", hint: "Vermenigvuldig de prijs met 2." },
+                { id: "r24", title: "Bente koopt een poster voor €6,30. Ze betaalt met een briefje van €10. Hoeveel wisselgeld krijgt zij terug?", answer: "€3,70", hint: "Trek €6,30 af van €10." },
+                { id: "r25", title: "Sven koopt een liniaal van €1,10 en een pen van €1,25. Wat is de totale prijs?", answer: "€2,35", hint: "Tel de twee bedragen bij elkaar op." },
+                { id: "r26", title: "Suze koopt een chocoladebroodje van €1,35. Ze betaalt met een munt van €2. Hoeveel wisselgeld krijgt zij terug?", answer: "€0,65", hint: "Trek €1,35 af van €2." },
+                { id: "r27", title: "Hugo koopt 4 muffins van €1,50 per stuk. Wat is de totale prijs?", answer: "€6,00", hint: "Vermenigvuldig de prijs met 4." },
+                { id: "r28", title: "Fleur koopt een knuffel voor €12,80. Ze betaalt met een briefje van €20. Hoeveel wisselgeld krijgt zij terug?", answer: "€7,20", hint: "Trek €12,80 af van €20." },
+                { id: "r29", title: "Ruben koopt een appel van €0,45 en een peer van €0,55. Wat is de totale prijs?", answer: "€1,00", hint: "Tel de twee bedragen samen op." },
+                { id: "r30", title: "Tess koopt een pakje kauwgom van €1,15. Ze betaalt met een munt van €2. Hoeveel wisselgeld krijgt zij terug?", answer: "€0,85", hint: "Trek €1,15 af van €2." }
+            ],
+            winstverlies: [
+                { id: "w1", title: "Een winkelier koopt een spel in voor €12,00 (inkoopprijs) en verkoopt het voor €15,00 (verkoopprijs). Maakt hij winst of verlies, en hoeveel?", answerType: "options", options: ["Winst van €3,00", "Verlies van €3,00", "Winst van €12,00"], answer: "Winst van €3,00", hint: "Omdat de verkoopprijs hoger is dan de inkoopprijs, maakt de winkelier winst. Reken uit: Verkoopprijs - Inkoopprijs." },
+                { id: "w2", title: "Een bakker verkoopt een taart voor €10,00 (verkoopprijs). De grondstoffen kostten hem €12,50 (inkoopprijs). Wat is het resultaat?", answerType: "options", options: ["Verlies van €2,50", "Winst van €2,50", "Verlies van €10,00"], answer: "Verlies van €2,50", hint: "Omdat de inkoopprijs hoger is dan de verkoopprijs, maakt de bakker verlies. Reken het verschil uit." },
+                { id: "w3", title: "Een winkelier koopt een boek in voor €8,00 en verkoopt het voor €12,00. Wat is het resultaat?", answerType: "options", options: ["Winst van €4,00", "Verlies van €4,00", "Winst van €8,00"], answer: "Winst van €4,00", hint: "Verkoopprijs is hoger dan inkoopprijs, dus winst!" },
+                { id: "w4", title: "Een groenteboer verkoopt een kist appels voor €15,00. Hij kocht ze in voor €18,00. Wat is het resultaat?", answerType: "options", options: ["Verlies van €3,00", "Winst van €3,00", "Verlies van €15,00"], answer: "Verlies van €3,00", hint: "De inkoopprijs was hoger dan wat de groenteboer kreeg, dus verlies." },
+                { id: "w5", title: "Een speelgoedwinkel koopt een pop in voor €14,00 en verkoopt deze voor €20,00. Wat is de winst of het verlies?", answerType: "options", options: ["Winst van €6,00", "Verlies van €6,00", "Winst van €14,00"], answer: "Winst van €6,00", hint: "Trek de inkoopprijs af van de verkoopprijs." },
+                { id: "w6", title: "Een kledingwinkel verkoopt een t-shirt voor €15,00. De inkoopprijs was €16,50. Wat is het resultaat?", answerType: "options", options: ["Verlies van €1,50", "Winst van €1,50", "Verlies van €15,00"], answer: "Verlies van €1,50", hint: "De inkoopprijs is hoger dan de verkoopprijs, dus verlies." },
+                { id: "w7", title: "Een fietsenmaker verkoopt een herstelde fiets voor €85,00. De inkoop en onderdelen kostten €60,00. Wat is het resultaat?", answerType: "options", options: ["Winst van €25,00", "Verlies van €25,00", "Winst van €60,00"], answer: "Winst van €25,00", hint: "Trek de kosten af van de verkoopprijs." },
+                { id: "w8", title: "Een winkelier koopt een pen in voor €1,20 en verkoopt deze voor €2,00. Wat is het resultaat?", answerType: "options", options: ["Winst van €0,80", "Verlies van €0,80", "Winst van €1,20"], answer: "Winst van €0,80", hint: "Trek de inkoopprijs af van de verkoopprijs." },
+                { id: "w9", title: "Een supermarkt verkoopt een melkbrik voor €1,10. De inkoopprijs was €1,25. Wat is het resultaat?", answerType: "options", options: ["Verlies van €0,15", "Winst van €0,15", "Verlies van €1,10"], answer: "Verlies van €0,15", hint: "Inkoopprijs is hoger dan de verkoopprijs." },
+                { id: "w10", title: "Een bloemist koopt rozen in voor €12,00 en verkoopt ze voor €18,50. Wat is het resultaat?", answerType: "options", options: ["Winst van €6,50", "Verlies van €6,50", "Winst van €12,00"], answer: "Winst van €6,50", hint: "Trek de inkoopprijs af van de verkoopprijs." },
+                { id: "w11", title: "Een winkelier koopt een rugzak in voor €18,00 en verkoopt deze voor €25,00. Wat is het resultaat?", answerType: "options", options: ["Winst van €7,00", "Verlies van €7,00", "Winst van €18,00"], answer: "Winst van €7,00", hint: "Trek de inkoopprijs af van de verkoopprijs." },
+                { id: "w12", title: "Een bakker verkoopt koekjes voor €4,50. De ingrediënten kostten hem €5,20. Wat is het resultaat?", answerType: "options", options: ["Verlies van €0,70", "Winst van €0,70", "Verlies van €4,50"], answer: "Verlies van €0,70", hint: "Inkoopprijs is hoger dan de verkoopprijs." },
+                { id: "w13", title: "Een slager koopt vlees in voor €8,50 en verkoopt het voor €11,00. Wat is het resultaat?", answerType: "options", options: ["Winst van €2,50", "Verlies van €2,50", "Winst van €8,50"], answer: "Winst van €2,50", hint: "Trek de inkoopprijs af van de verkoopprijs." },
+                { id: "w14", title: "Een groenteboer verkoopt meloenen voor €2,00 per stuk. Hij kocht ze in voor €2,50 per stuk. Wat is het resultaat?", answerType: "options", options: ["Verlies van €0,50", "Winst van €0,50", "Verlies van €2,00"], answer: "Verlies van €0,50", hint: "De inkoopprijs was hoger dan de verkoopprijs." },
+                { id: "w15", title: "Een winkelier koopt sjaals in voor €7,50 en verkoopt ze voor €10,00. Wat is het resultaat?", answerType: "options", options: ["Winst van €2,50", "Verlies van €2,50", "Winst van €7,50"], answer: "Winst van €2,50", hint: "Trek de inkoopprijs af van de verkoopprijs." },
+                { id: "w16", title: "Een winkelier verkoopt handschoenen voor €8,00. De inkoopprijs was €9,50. Wat is het resultaat?", answerType: "options", options: ["Verlies van €1,50", "Winst van €1,50", "Verlies van €8,00"], answer: "Verlies van €1,50", hint: "De inkoopprijs is hoger dan de verkoopprijs." },
+                { id: "w17", title: "Een boekenwinkel koopt strips in voor €3,80 en verkoopt ze voor €5,00. Wat is het resultaat?", answerType: "options", options: ["Winst van €1,20", "Verlies van €1,20", "Winst van €3,80"], answer: "Winst van €1,20", hint: "Trek de inkoopprijs af van de verkoopprijs." },
+                { id: "w18", title: "Een bakker verkoopt een taart voor €12,50. De grondstoffen kostten hem €14,00. Wat is het resultaat?", answerType: "options", options: ["Verlies van €1,50", "Winst van €1,50", "Verlies van €12,50"], answer: "Verlies van €1,50", hint: "Inkoopprijs is hoger dan de verkoopprijs." },
+                { id: "w19", title: "Een visboer koopt vis in voor €6,50 en verkoopt het voor €9,00. Wat is het resultaat?", answerType: "options", options: ["Winst van €2,50", "Verlies van €2,50", "Winst van €6,50"], answer: "Winst van €2,50", hint: "Trek de inkoopprijs af van de verkoopprijs." },
+                { id: "w20", title: "Een fruitboer verkoopt kersen voor €4,00. De inkoopprijs was €4,80. Wat is het resultaat?", answerType: "options", options: ["Verlies van €0,80", "Winst van €0,80", "Verlies van €4,00"], answer: "Verlies van €0,80", hint: "De inkoopprijs was hoger dan de verkoopprijs." },
+                { id: "w21", title: "Een winkelier koopt een puzzel in voor €9,50 en verkoopt deze voor €12,00. Wat is het resultaat?", answerType: "options", options: ["Winst van €2,50", "Verlies van €2,50", "Winst van €9,50"], answer: "Winst van €2,50", hint: "Trek de inkoopprijs af van de verkoopprijs." },
+                { id: "w22", title: "Een winkelier verkoopt een spel voor €16,00. De inkoopprijs was €18,50. Wat is het resultaat?", answerType: "options", options: ["Verlies van €2,50", "Winst van €2,50", "Verlies van €16,00"], answer: "Verlies van €2,50", hint: "De inkoopprijs is hoger dan de verkoopprijs." },
+                { id: "w23", title: "Een schoenwinkel koopt slippers in voor €11,00 en verkoopt ze voor €15,00. Wat is het resultaat?", answerType: "options", options: ["Winst van €4,00", "Verlies van €4,00", "Winst van €11,00"], answer: "Winst van €4,00", hint: "Trek de inkoopprijs af van de verkoopprijs." },
+                { id: "w24", title: "Een bakker verkoopt een cake voor €3,50. De ingrediënten kostten hem €4,20. Wat is het resultaat?", answerType: "options", options: ["Verlies van €0,70", "Winst van €0,70", "Verlies van €3,50"], answer: "Verlies van €0,70", hint: "Inkoopprijs is hoger dan de verkoopprijs." },
+                { id: "w25", title: "Een winkelier koopt sokken in voor €2,50 en verkoopt ze voor €4,00. Wat is het resultaat?", answerType: "options", options: ["Winst van €1,50", "Verlies van €1,50", "Winst van €2,50"], answer: "Winst van €1,50", hint: "Trek de inkoopprijs af van de verkoopprijs." },
+                { id: "w26", title: "Een winkelier verkoopt een muts voor €5,50. De inkoopprijs was €6,00. Wat is het resultaat?", answerType: "options", options: ["Verlies van €0,50", "Winst van €0,50", "Verlies van €5,50"], answer: "Verlies van €0,50", hint: "De inkoopprijs is hoger dan de verkoopprijs." },
+                { id: "w27", title: "Een boekenwinkel koopt agenda's in voor €4,80 en verkoopt ze voor €6,50. Wat is het resultaat?", answerType: "options", options: ["Winst van €1,70", "Verlies van €1,70", "Winst van €4,80"], answer: "Winst van €1,70", hint: "Trek de inkoopprijs af van de verkoopprijs." },
+                { id: "w28", title: "Een bakker verkoopt broodjes voor €1,15 per stuk. De ingrediënten kostten hem €1,30 per stuk. Wat is het resultaat?", answerType: "options", options: ["Verlies van €0,15", "Winst van €0,15", "Verlies van €1,15"], answer: "Verlies van €0,15", hint: "Inkoopprijs is hoger dan de verkoopprijs." },
+                { id: "w29", title: "Een visboer koopt zalm in voor €14,50 en verkoopt het voor €18,00. Wat is het resultaat?", answerType: "options", options: ["Winst van €3,50", "Verlies van €3,50", "Winst van €14,50"], answer: "Winst van €3,50", hint: "Trek de inkoopprijs af van de verkoopprijs." },
+                { id: "w30", title: "Een fruitboer verkoopt druiven voor €2,80. De inkoopprijs was €3,50. Wat is het resultaat?", answerType: "options", options: ["Verlies van €0,70", "Winst van €0,70", "Verlies van €2,80"], answer: "Verlies van €0,70", hint: "De inkoopprijs was hoger dan de verkoopprijs." }
+            ]
+        };
+
+        let state = {
+            currentMode: '',
+            questions: [],
+            currentIndex: 0,
+            score: 0.0,
+            hintsUsed: 0,
+            history: [],
+            currentHintUsedForQ: false,
+            totalQ: 10,
+            startTime: null,
+            endTime: null,
+            placedMoney: []
+        };
+
+        function shuffle(array) {
+            let arr = [...array];
+            for (let i = arr.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [arr[i], arr[j]] = [arr[j], arr[i]];
+            }
+            return arr;
+        }
+
+        function formatE(val) {
+            return "€" + val.toFixed(2).replace('.', ',');
+        }
+
+        function getOptimalPcs(target) {
+            const coins = [50.00, 20.00, 10.00, 5.00, 2.00, 1.00, 0.50, 0.20, 0.10, 0.05];
+            let remaining = Math.round(target * 100);
+            let count = 0;
+            for (let i = 0; i < coins.length; i++) {
+                const coinCents = Math.round(coins[i] * 100);
+                while (remaining >= coinCents) {
+                    remaining -= coinCents;
+                    count++;
+                }
+            }
+            return count;
+        }
+
+        // --- SCHONE SELECTIE ZONDER DUBBELE VRAGEN EN MET GELIJKMATIGE VERDELING ---
+        function generateQuestionsForCategory(mode) {
+            let selectedQuestions = [];
+            
+            if (mode === 'mix') {
+                state.totalQ = 20;
+                // Eerlijke verdeling: exact 4 unieke, willekeurige vragen uit elk van de 5 onderdelen
+                const categories = ['betalen', 'inwisselen', 'noteren', 'rekenen', 'winstverlies'];
+                categories.forEach(cat => {
+                    const shuffledCat = shuffle(MASTER_QUESTION_DATABASE[cat]);
+                    selectedQuestions = selectedQuestions.concat(shuffledCat.slice(0, 4));
+                });
+                return shuffle(selectedQuestions); // hussel de 20 geselecteerde vragen door elkaar
+            } else {
+                state.totalQ = 10;
+                // Selecteer 10 willekeurige, unieke vragen uit het gekozen onderdeel
+                const shuffledCat = shuffle(MASTER_QUESTION_DATABASE[mode]);
+                return shuffledCat.slice(0, 10);
+            }
+        }
+
+        // --- APP REGELING EN FLOW ---
+        function startMode(mode) {
+            state.currentMode = mode;
+            state.questions = generateQuestionsForCategory(mode);
+            state.currentIndex = 0;
+            state.score = 0.0;
+            state.hintsUsed = 0;
+            state.history = [];
+            
+            state.startTime = new Date();
+
+            showView('quiz-view');
+            renderQuestion();
+        }
+
+        function renderQuestion() {
+            state.currentHintUsedForQ = false;
+            state.placedMoney = []; // Toonbank leegmaken
+            
+            const q = state.questions[state.currentIndex];
+            
+            // Counters & Progressie
+            document.getElementById('counter').innerText = `Vraag ${state.currentIndex + 1} / ${state.totalQ}`;
+            document.getElementById('progress-bar').style.width = `${(state.currentIndex / state.totalQ) * 100}%`;
+            
+            // Categorie label
+            let categoryLabel = q.category;
+            if (!categoryLabel) {
+                if (q.id.startsWith("b")) categoryLabel = "GEPAST BETALEN";
+                else if (q.id.startsWith("i")) categoryLabel = "GELD INWISSELEN";
+                else if (q.id.startsWith("n")) categoryLabel = "BEDRAGEN NOTEREN";
+                else if (q.id.startsWith("r")) categoryLabel = "REKENEN MET GELD";
+                else if (q.id.startsWith("w")) categoryLabel = "WINST OF VERLIES";
+            }
+            document.getElementById('q-category').innerText = categoryLabel;
+            document.getElementById('q-title').innerHTML = q.title;
+
+            // Speciale strict-badge bij gepast betalen (zo weinig mogelijk)
+            const strictBadge = document.getElementById('q-special-badge');
+            if (q.strict) {
+                strictBadge.classList.remove('hidden');
+            } else {
+                strictBadge.classList.add('hidden');
+            }
+
+            // Reset invoervelden en interfaces
+            document.getElementById('payment-interface').classList.add('hidden');
+            document.getElementById('text-input-container').classList.add('hidden');
+            document.getElementById('options-container').classList.add('hidden');
+            document.getElementById('hint-box').classList.add('hidden');
+            document.getElementById('feedback').classList.add('hidden');
+            document.getElementById('next-btn').classList.add('hidden');
+            document.getElementById('helper-notation-label').classList.add('hidden');
+            
+            document.getElementById('submit-btn').classList.remove('hidden');
+            document.getElementById('hint-btn').classList.remove('hidden');
+
+            // Render de interface op basis van de vraag-type
+            if (q.answerType === "payment" || q.id.startsWith("b")) {
+                document.getElementById('payment-interface').classList.remove('hidden');
+                updatePlacedMoneyUI();
+            } 
+            else if (q.answerType === "options" || q.id.startsWith("w")) {
+                const optContainer = document.getElementById('options-container');
+                optContainer.classList.remove('hidden');
+                optContainer.innerHTML = '';
+                
+                shuffle(q.options).forEach(opt => {
+                    const btn = document.createElement('button');
+                    btn.className = "p-5 bg-white border-2 border-slate-100 hover:border-emerald-500 hover:bg-emerald-50 rounded-2xl font-bold text-slate-700 text-left transition-all shadow-sm";
+                    btn.innerText = opt;
+                    btn.onclick = () => selectOption(opt, btn);
+                    optContainer.appendChild(btn);
+                });
+            }
+            else {
+                document.getElementById('text-input-container').classList.remove('hidden');
+                
+                // Laat handige hulptekst zien bij reken- en noteervragen
+                if (q.id.startsWith("r") || q.id.startsWith("n")) {
+                    document.getElementById('helper-notation-label').classList.remove('hidden');
+                }
+
+                const inp = document.getElementById('user-input');
+                inp.value = '';
+                inp.disabled = false;
+                // Zet input terug naar de standaard grijze styling
+                inp.className = "w-full p-5 text-center text-2xl font-bold rounded-2xl border-4 border-slate-100 outline-none transition-all focus:border-indigo-500 focus:bg-indigo-50/30 text-slate-800 bg-white";
+                setTimeout(() => inp.focus(), 100);
+            }
+        }
+
+        // --- MUNTEN EN BILJETTEN OP TOONBANK LEGGEN ---
+        function addMoney(val) {
+            state.placedMoney.push(val);
+            updatePlacedMoneyUI();
+        }
+
+        function clearPlacedMoney() {
+            state.placedMoney = [];
+            updatePlacedMoneyUI();
+        }
+
+        function updatePlacedMoneyUI() {
+            const container = document.getElementById('placed-money-container');
+            const placeholder = document.getElementById('empty-counter-text');
+            const amountText = document.getElementById('current-placed-amount');
+            
+            container.innerHTML = '';
+            
+            if (state.placedMoney.length === 0) {
+                placeholder.classList.remove('hidden');
+            } else {
+                placeholder.classList.add('hidden');
+                
+                const sorted = [...state.placedMoney].sort((a,b) => b-a);
+                sorted.forEach((val) => {
+                    const el = document.createElement('div');
+                    
+                    if (val >= 5.00) {
+                        el.className = "px-3 py-1.5 text-white font-extrabold text-xs rounded-md shadow-sm border border-black/10 cursor-pointer hover:opacity-80 " + 
+                            (val === 50 ? "bg-amber-500" : val === 20 ? "bg-blue-500" : val === 10 ? "bg-red-500" : "bg-emerald-500");
+                        el.innerText = `€${val}`;
+                    } else {
+                        el.className = "w-9 h-9 rounded-full flex items-center justify-center font-black text-xs shadow-sm border-2 cursor-pointer hover:opacity-80 " + 
+                            (val >= 1.00 ? "bg-slate-100 border-slate-400 text-slate-700" : "bg-amber-100 border-amber-400 text-amber-800");
+                        el.innerText = val >= 1.00 ? `€${val}` : `${Math.round(val*100)}c`;
+                    }
+                    
+                    el.onclick = () => {
+                        state.placedMoney.splice(state.placedMoney.indexOf(val), 1);
+                        updatePlacedMoneyUI();
+                    };
+                    
+                    container.appendChild(el);
+                });
+            }
+
+            const sum = state.placedMoney.reduce((a,b) => a+b, 0);
+            amountText.innerText = formatE(sum);
+        }
+
+        // --- ROBUUSTE PARSER VOOR LAX NOTATION (Ondersteunt "7euro 50", "7 euro 50 cent", "7,50", etc.) ---
+        function parseLaxAmount(inputStr) {
+            if (typeof inputStr !== 'string') inputStr = String(inputStr);
+            let clean = inputStr.toLowerCase().trim();
+            if (!clean) return NaN;
+
+            // Verwijder eventuele eurotekens en spaties
+            clean = clean.replace('€', '').replace(/\s+/g, '');
+
+            // Verwijder het woord 'cent'
+            clean = clean.replace('cent', '');
+            
+            // Als er 'euro' in de string staat, splitsen we op dit woord
+            if (clean.includes('euro')) {
+                let parts = clean.split('euro');
+                let euro = parseFloat(parts[0].replace(',', '.')) || 0;
+                let cent = 0;
+                if (parts[1]) {
+                    cent = parseFloat(parts[1].replace(',', '.')) || 0;
+                }
+                return euro + (cent / 100);
+            }
+
+            // Normale numerieke fallback
+            clean = clean.replace(',', '.');
+            return parseFloat(clean);
+        }
+
+        // --- HINT ACTIVATIE ---
+        function showHint() {
+            if (!state.currentHintUsedForQ) {
+                state.currentHintUsedForQ = true;
+                state.hintsUsed++;
+            }
+            const q = state.questions[state.currentIndex];
+            document.getElementById('hint-text').innerHTML = q.hint;
+            document.getElementById('hint-box').classList.remove('hidden');
+        }
+
+        // --- ANTWOORD VALIDATIE ---
+        function checkAnswer() {
+            const q = state.questions[state.currentIndex];
+            let isCorrect = false;
+            let strictFail = false; // Wel juist bedrag, maar te veel munten
+            let userVal = "";
+            let correctVal = "";
+
+            if (q.id.startsWith("b")) {
+                const sum = parseFloat(state.placedMoney.reduce((a,b) => a+b, 0).toFixed(2));
+                const correctSum = q.answer;
+                
+                isCorrect = (Math.abs(sum - correctSum) < 0.01);
+                
+                if (isCorrect && q.strict) {
+                    const pcsUsed = state.placedMoney.length;
+                    if (pcsUsed > q.optimalPieces) {
+                        isCorrect = false;
+                        strictFail = true;
+                    }
+                }
+
+                userVal = `${formatE(sum)} (${state.placedMoney.length} stuks)`;
+                correctVal = q.strict 
+                    ? `${formatE(correctSum)} (in maximaal ${q.optimalPieces} stuks!)`
+                    : formatE(correctSum);
+            } 
+            else {
+                const inp = document.getElementById('user-input');
+                const rawUser = inp.value.trim();
+                
+                const userNum = parseLaxAmount(rawUser);
+                const correctNum = parseLaxAmount(q.answer);
+
+                isCorrect = (!isNaN(userNum) && !isNaN(correctNum) && Math.abs(userNum - correctNum) < 0.009);
+                userVal = rawUser;
+                correctVal = q.answer;
+            }
+
+            evaluateAnswer(isCorrect, userVal, correctVal, strictFail);
+        }
+
+        function selectOption(opt, btnElement) {
+            const q = state.questions[state.currentIndex];
+            const isCorrect = (opt === q.answer);
+            
+            document.querySelectorAll('#options-container button').forEach(btn => {
+                btn.disabled = true;
+                if (btn.innerText === q.answer) {
+                    btn.className = "p-5 bg-emerald-50 border-2 border-emerald-500 text-emerald-800 rounded-2xl font-bold text-left shadow-sm";
+                } else if (btn === btnElement) {
+                    btn.className = "p-5 bg-rose-50 border-2 border-rose-500 text-rose-800 rounded-2xl font-bold text-left shadow-sm";
+                } else {
+                    btn.className = "p-5 bg-slate-50 border-2 border-slate-100 rounded-2xl font-bold text-slate-300 text-left shadow-sm";
+                }
+            });
+
+            evaluateAnswer(isCorrect, opt, q.answer, false);
+        }
+
+        function evaluateAnswer(isCorrect, userVal, correctVal, strictFail) {
+            const q = state.questions[state.currentIndex];
+            
+            const inp = document.getElementById('user-input');
+            if (inp) inp.disabled = true;
+
+            const fb = document.getElementById('feedback');
+            fb.classList.remove('hidden');
+
+            let pointsEarned = 0;
+
+            if (isCorrect) {
+                pointsEarned = state.currentHintUsedForQ ? 0.5 : 1.0;
+                state.score += pointsEarned;
+                
+                let pointsMsg = pointsEarned === 0.5 ? "+0,5 punt (wegens tip)" : "+1,0 punt";
+                fb.innerHTML = `🎉 Super! Jouw antwoord of berekening klopt helemaal. <span class="block text-sm font-semibold mt-1 text-emerald-600">${pointsMsg}</span>`;
+                fb.className = "p-5 rounded-2xl font-bold text-center bg-emerald-50 text-emerald-700 border-2 border-emerald-100 shadow-sm";
+                
+                // Oplossing kleurstelling correctie: herstelt de gehele class van het invoerveld
+                if (inp) inp.className = "w-full p-5 text-center text-2xl font-bold rounded-2xl border-4 border-emerald-500 bg-emerald-50 text-emerald-800 outline-none transition-all shadow-inner";
+                
+                confetti({ particleCount: 35, spread: 60, origin: { y: 0.8 }, colors: ['#10b981', '#34d399'] });
+            } else {
+                pointsEarned = 0.0;
+                if (strictFail) {
+                    fb.innerHTML = `⚠️ Het bedrag (${correctVal}) is juist, maar je hebt <strong>te veel munten of briefjes</strong> gebruikt!<br>Je kunt dit bedrag slimmer leggen met grotere munten of biljetten. <span class="block text-sm font-semibold mt-1 text-rose-500">(0,0 punten)</span>`;
+                    fb.className = "p-5 rounded-2xl font-bold text-center bg-amber-50 text-amber-800 border-2 border-amber-200 shadow-sm";
+                } else {
+                    fb.innerHTML = `❌ Oeps! Dat klopt niet helemaal.<br>Het juiste antwoord is: <strong>${correctVal}</strong> <span class="block text-sm font-semibold mt-1 text-rose-500">(0,0 punten)</span>`;
+                    fb.className = "p-5 rounded-2xl font-bold text-center bg-rose-50 text-rose-700 border-2 border-rose-100 shadow-sm";
+                }
+                
+                // Oplossing kleurstelling correctie: herstelt de gehele class van het invoerveld
+                if (inp) inp.className = "w-full p-5 text-center text-2xl font-bold rounded-2xl border-4 border-rose-500 bg-rose-50 text-rose-800 outline-none transition-all shadow-inner";
+            }
+
+            state.history.push({
+                title: q.title,
+                category: q.category || (q.id.startsWith("b") ? "GEPAST BETALEN" : q.id.startsWith("i") ? "GELD INWISSELEN" : q.id.startsWith("n") ? "BEDRAGEN NOTEREN" : q.id.startsWith("r") ? "REKENEN MET GELD" : "WINST OF VERLIES"),
+                user: userVal || "(leeg)",
+                correct: correctVal,
+                points: pointsEarned,
+                isCorrect: isCorrect,
+                hintUsed: state.currentHintUsedForQ
+            });
+
+            document.getElementById('submit-btn').classList.add('hidden');
+            document.getElementById('hint-btn').classList.add('hidden');
+            document.getElementById('next-btn').classList.remove('hidden');
+        }
+
+        function nextQuestion() {
+            state.currentIndex++;
+            if (state.currentIndex < state.totalQ) {
+                renderQuestion();
+            } else {
+                state.endTime = new Date();
+                showResults();
+            }
+        }
+
+        // --- RESULTS & FOUTENANALYSIS (INCLUSIEF DUIDELIJKE HINT LABELS) ---
+        function showResults() {
+            showView('result-view');
+            const roundedScore = Math.round(state.score * 10) / 10;
+            const percent = Math.round((roundedScore / state.totalQ) * 100);
+
+            // Save to Firebase if this was the grote toets (mix) and user is logged in
+            if (state.currentMode === 'mix') {
+                saveToetsResultaat(roundedScore, state.totalQ, percent, state.hintsUsed, state.history);
+            }
+            
+            document.getElementById('score-val').innerText = `${roundedScore.toString().replace('.', ',')}/${state.totalQ}`;
+            document.getElementById('percent-val').innerText = `${percent}%`;
+            document.getElementById('hints-val').innerText = state.hintsUsed;
+
+            const emoji = document.getElementById('result-emoji');
+            if (percent === 100) emoji.innerText = "👑";
+            else if (percent >= 80) emoji.innerText = "🌟";
+            else if (percent >= 50) emoji.innerText = "👍";
+            else emoji.innerText = "📚";
+
+            const list = document.getElementById('mistake-list');
+            list.innerHTML = '';
+
+            state.history.forEach((h, idx) => {
+                const card = document.createElement('div');
+                // Extra opvallende oranje rand als er een hint is gebruikt
+                const borderClass = h.hintUsed 
+                    ? "border-amber-400 bg-amber-50/25 shadow-md shadow-amber-500/5"
+                    : (h.isCorrect ? "bg-emerald-50/30 border-emerald-100" : "bg-rose-50/30 border-rose-100");
+                
+                card.className = `p-5 rounded-2xl border flex flex-col gap-2 ${borderClass}`;
+                
+                card.innerHTML = `
+                    <div class="flex justify-between items-start flex-wrap gap-2">
+                        <span class="text-xs font-black uppercase tracking-wider ${h.isCorrect ? 'text-emerald-600' : 'text-rose-600'}">${h.category}</span>
+                        <span class="text-xs ${h.hintUsed ? 'bg-amber-100 text-amber-800 ring-2 ring-amber-300' : (h.isCorrect ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800')} px-2.5 py-1 rounded-md font-extrabold flex items-center gap-1">
+                            Score: ${h.points.toString().replace('.', ',')} pt ${h.hintUsed ? '(💡 TIP GEBRUIKT!)' : '(geen tip)'}
+                        </span>
+                    </div>
+                    <div class="text-slate-800 font-extrabold text-sm">${idx + 1}. ${h.title.replace(/<[^>]*>?/gm, '')}</div>
+                    
+                    <!-- Zeer opvallende hint-waarschuwing in de foutenanalyse -->
+                    ${h.hintUsed ? `
+                    <div class="text-[10px] font-black text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-2.5 py-1 flex items-center gap-1 w-fit">
+                        💡 OPGELOST MET BEHULP VAN EEN HINT (Maximale score: 0,5 punt)
+                    </div>` : ''}
+
+                    <div class="flex gap-4 text-xs mt-1 border-t border-dashed pt-2 ${h.isCorrect ? 'border-emerald-100' : 'border-rose-100'}">
+                        <div>Jouw antwoord: <span class="font-extrabold ${h.isCorrect ? 'text-emerald-700' : 'text-rose-700'}">${h.user}</span></div>
+                        ${!h.isCorrect ? `<div>Correct: <span class="font-extrabold text-slate-800">${h.correct}</span></div>` : ''}
+                    </div>
+                `;
+                list.appendChild(card);
+            });
+
+            if (percent === 100) {
+                confetti({ particleCount: 150, spread: 80, origin: { y: 0.6 } });
+            }
+        }
+
+        // --- GOOGLE SITES SPREAD CONTROL ---
+        function showView(id) {
+            document.getElementById('setup-view').classList.add('hidden');
+            document.getElementById('quiz-view').classList.add('hidden');
+            document.getElementById('result-view').classList.add('hidden');
+            
+            document.getElementById(id).classList.remove('hidden');
+            window.scrollTo(0,0);
+        }
+
+        function openExitModal() {
+            document.getElementById('exit-modal').classList.remove('hidden');
+        }
+
+        function closeExitModal() {
+            document.getElementById('exit-modal').classList.add('hidden');
+        }
+
+        function confirmExit() {
+            closeExitModal();
+            showView('setup-view');
+        }
+
+        // Enter toets ondersteuning
+        document.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                const nextVisible = !document.getElementById('next-btn').classList.contains('hidden');
+                if (nextVisible) {
+                    nextQuestion();
+                } else {
+                    const submitVisible = !document.getElementById('submit-btn').classList.contains('hidden');
+                    if (submitVisible) checkAnswer();
+                }
+            }
+        });
+    </script>
+
+    <!-- FIREBASE AUTH + OPSLAAN -->
+    <!-- FIREBASE: geladen als gewone scripts, geen module-scope problemen -->
+    <!-- FIREBASE -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    <script>
+        firebase.initializeApp({
+            apiKey:"AIzaSyCnQDVVAlK6jE-PPUUediRJMTbN0xqrLDE",
+            authDomain:"klaswebsite-database.firebaseapp.com",
+            projectId:"klaswebsite-database",
+            storageBucket:"klaswebsite-database.firebasestorage.app",
+            messagingSenderId:"42912327282",
+            appId:"1:42912327282:web:f13f2c706f6c42c115c4eb"
+        });
+        const fbDb = firebase.firestore();
+
+        // ── LOGIN (leest leerlingen uit Firestore) ────────────────────
+        async function loginMetCode() {
+            var naam = (document.getElementById('login-naam').value||'').trim().toLowerCase();
+            var code = (document.getElementById('login-code').value||'').trim();
+            var errEl = document.getElementById('login-error');
+            var btn = document.getElementById('btn-login');
+            errEl.textContent = '';
+            document.getElementById('login-naam').classList.remove('err');
+            document.getElementById('login-code').classList.remove('err');
+            if (!naam) { errEl.textContent='Vul je voornaam in.'; document.getElementById('login-naam').classList.add('err'); return; }
+            if (!code) { errEl.textContent='Vul je code in.'; document.getElementById('login-code').classList.add('err'); return; }
+            btn.disabled=true; btn.textContent='Controleren...';
+            try {
+                var doc = await fbDb.collection('leerlingen').doc(naam).get();
+                if (!doc.exists) {
+                    errEl.textContent='Naam niet gevonden.'; btn.disabled=false; btn.textContent='Inloggen';
+                    document.getElementById('login-naam').classList.add('err'); return;
+                }
+                var data = doc.data();
+                if (data.code !== code) {
+                    errEl.textContent='Verkeerde code.'; btn.disabled=false; btn.textContent='Inloggen';
+                    document.getElementById('login-code').classList.add('err'); return;
+                }
+                window._leerlingNaam = data.weergavenaam || naam;
+                window._leerlingId = naam;
+                window._isGuest = false;
+                afterLogin(window._leerlingNaam);
+            } catch(e) {
+                errEl.textContent='Fout: '+e.message; btn.disabled=false; btn.textContent='Inloggen';
+            }
+        }
+
+        function loginGuest() {
+            window._leerlingNaam='Gast'; window._leerlingId=null; window._isGuest=true;
+            afterLogin('Gast');
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            ['login-naam','login-code'].forEach(function(id) {
+                var el=document.getElementById(id);
+                if(el) {
+                    el.addEventListener('keypress',function(e){if(e.key==='Enter')loginMetCode();});
+                    el.addEventListener('focus',function(){el.classList.remove('err');document.getElementById('login-error').textContent='';});
+                }
+            });
+        });
+    </script>
+</body>
+</html>

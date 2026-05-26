@@ -1,0 +1,930 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Negatieve Getallen</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Fredoka:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;}
+body{font-family:'Nunito',sans-serif;background:#f0f4ff;margin:0;padding:0;min-height:100vh;}
+.ff{font-family:'Fredoka',sans-serif;}
+.hidden{display:none!important;}
+
+/* ── LOGIN ── */
+#login-screen{position:fixed;inset:0;z-index:9999;background:linear-gradient(135deg,#1e3a5f 0%,#2563eb 60%,#38bdf8 100%);display:flex;align-items:center;justify-content:center;padding:20px;}
+#login-screen.hidden{display:none!important;}
+.login-card{background:white;border-radius:2rem;padding:2.5rem 2rem;width:100%;max-width:380px;box-shadow:0 25px 50px rgba(0,0,0,0.25);text-align:center;}
+.login-logo{width:80px;height:80px;background:#dbeafe;border-radius:1.5rem;display:flex;align-items:center;justify-content:center;margin:0 auto 1.25rem;font-size:2.5rem;box-shadow:0 4px 16px rgba(37,99,235,0.25);}
+.btn-google{display:flex;align-items:center;justify-content:center;gap:12px;width:100%;background:white;border:2px solid #e5e7eb;border-radius:1rem;padding:14px 20px;font-family:'Nunito',sans-serif;font-size:1rem;font-weight:700;color:#374151;cursor:pointer;transition:all .2s;margin-bottom:12px;}
+.btn-google:hover{border-color:#2563eb;background:#eff6ff;transform:translateY(-1px);}
+.btn-google:disabled{opacity:.6;cursor:not-allowed;transform:none;}
+.btn-guest{width:100%;background:transparent;border:2px solid #d1d5db;border-radius:1rem;padding:12px;font-family:'Nunito',sans-serif;font-size:.9rem;font-weight:700;color:#6b7280;cursor:pointer;transition:all .2s;}
+.btn-guest:hover{border-color:#9ca3af;color:#374151;}
+
+/* ── USER BAR ── */
+#user-bar{display:none;align-items:center;justify-content:space-between;background:white;border-radius:16px;padding:10px 18px;margin-bottom:12px;box-shadow:0 2px 12px rgba(0,0,0,0.06);border:1px solid #bfdbfe;}
+#user-bar.show{display:flex;}
+.u-av{width:34px;height:34px;border-radius:50%;background:#dbeafe;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:.9rem;color:#1d4ed8;flex-shrink:0;}
+.u-nm{font-weight:800;color:#1f2937;font-size:.88rem;}
+.u-rl{font-size:.7rem;color:#6b7280;font-weight:600;}
+.btn-lo{background:none;border:1.5px solid #e5e7eb;border-radius:.65rem;padding:5px 12px;font-family:'Nunito',sans-serif;font-size:.78rem;font-weight:700;color:#9ca3af;cursor:pointer;transition:all .2s;}
+.btn-lo:hover{border-color:#dc2626;color:#dc2626;}
+
+/* ── SAVED BADGE ── */
+#saved-badge{display:none;align-items:center;justify-content:center;gap:8px;background:#dbeafe;border:1.5px solid #93c5fd;border-radius:1rem;padding:10px 16px;margin-top:12px;font-size:.85rem;font-weight:700;color:#1d4ed8;font-family:'Nunito',sans-serif;}
+#saved-badge.show{display:flex;}
+
+/* ── LAYOUT ── */
+.app{max-width:620px;margin:0 auto;padding:12px;}
+
+/* ── MENU ── */
+.menu-header{background:linear-gradient(135deg,#1e3a5f,#2563eb);border-radius:20px;padding:24px 20px;color:white;margin-bottom:16px;text-align:center;}
+.menu-card{background:white;border-radius:18px;padding:16px 18px;cursor:pointer;border:2.5px solid transparent;transition:all .2s;box-shadow:0 3px 14px rgba(0,0,0,0.07);display:flex;align-items:center;gap:14px;margin-bottom:10px;}
+.menu-card:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,0,0,0.12);border-color:#2563eb;}
+.menu-card:active{transform:scale(0.98);}
+.mico{width:48px;height:48px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:1.4rem;flex-shrink:0;}
+.mttl{font-weight:800;font-size:.95rem;color:#1e1b4b;}
+.msub{font-size:.75rem;color:#6b7280;font-weight:600;}
+.toets-card{background:linear-gradient(135deg,#1e3a5f,#1d4ed8);border-color:transparent!important;margin-top:6px;}
+.toets-card .mttl{color:white!important;}
+.toets-card .msub{color:rgba(255,255,255,0.7)!important;}
+.toets-card .mico{background:rgba(255,255,255,0.2);}
+
+/* ── MODULE HEADER ── */
+.mod-hdr{background:linear-gradient(135deg,var(--mc,#2563eb),color-mix(in srgb,var(--mc,#2563eb) 65%,black));border-radius:18px 18px 0 0;padding:16px 18px;color:white;display:flex;align-items:center;gap:12px;}
+.back-btn{background:rgba(255,255,255,0.2);border:none;border-radius:10px;color:white;padding:8px 12px;cursor:pointer;font-size:1.1rem;font-weight:800;transition:background .2s;font-family:'Nunito',sans-serif;}
+.back-btn:hover{background:rgba(255,255,255,0.35);}
+.prog-wrap{background:rgba(255,255,255,0.25);border-radius:99px;height:7px;overflow:hidden;flex:1;}
+.prog-fill{height:100%;background:white;border-radius:99px;transition:width .4s ease;}
+.mod-body{background:white;border-radius:0 0 18px 18px;padding:20px;box-shadow:0 8px 30px rgba(0,0,0,0.08);}
+
+/* ── QUESTION AREA ── */
+.qlabel{font-size:.72rem;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:#6b7280;margin-bottom:8px;}
+.vraag-box{background:#eff6ff;border-radius:14px;padding:16px;margin-bottom:16px;font-size:1.05rem;font-weight:700;color:#1e3a5f;line-height:1.5;text-align:center;}
+.vraag-box .num{font-size:1.8rem;font-weight:900;color:#1d4ed8;}
+.neg{color:#dc2626!important;}
+
+/* ── VISUAL SCENES ── */
+.scene-wrap{display:flex;justify-content:center;margin-bottom:16px;}
+
+/* Lift */
+.lift-scene{position:relative;width:180px;height:220px;display:flex;align-items:center;justify-content:center;}
+.lift-labels{position:absolute;left:20px;height:190px;display:flex;flex-direction:column-reverse;justify-content:space-between;font-weight:800;font-size:.8rem;width:28px;text-align:right;}
+.lift-shaft{width:56px;height:190px;background:#34495e;border-radius:6px;position:relative;border:3px solid #2c3e50;overflow:hidden;}
+.lift-car{width:46px;height:30px;background:#e8f4f8;position:absolute;left:5px;transition:bottom .9s ease-in-out;border:2px solid #bdc3c7;display:flex;justify-content:center;align-items:center;font-weight:800;color:#1e3a5f;font-size:.85rem;box-shadow:0 3px 6px rgba(0,0,0,0.2);border-radius:4px;}
+.ground-line{position:absolute;width:160px;height:3px;background:#16a34a;z-index:1;}
+
+/* Thermometer */
+.thermo-scene{position:relative;width:120px;height:220px;display:flex;align-items:center;justify-content:center;}
+.thermo-labels{position:absolute;left:0;height:180px;display:flex;flex-direction:column-reverse;justify-content:space-between;font-weight:800;font-size:.75rem;width:26px;text-align:right;}
+.thermo-tube{width:22px;height:180px;background:white;border:3px solid #94a3b8;border-radius:11px;position:relative;overflow:hidden;margin-left:32px;}
+.mercury{width:100%;background:#ef4444;position:absolute;bottom:0;transition:height .9s ease-in-out;}
+.thermo-zero{position:absolute;left:30px;width:36px;height:2px;background:#374151;}
+.thermo-zero-lbl{position:absolute;left:70px;font-size:.7rem;font-weight:800;color:#374151;}
+
+/* Getallenas */
+.nl-wrap{overflow-x:auto;padding:8px 0;margin-bottom:16px;}
+.nl-svg{display:block;margin:0 auto;}
+
+/* ── ANSWER INPUT ── */
+.ans-input{width:90px;height:60px;font-size:1.6rem;text-align:center;border:3px solid #d1d5db;border-radius:14px;font-family:'Nunito',sans-serif;font-weight:800;outline:none;transition:all .2s;}
+.ans-input:focus{border-color:var(--mc,#2563eb);}
+.ans-input.ok{border-color:#16a34a!important;background:#f0fdf4;color:#15803d;}
+.ans-input.err{border-color:#dc2626!important;background:#fef2f2;animation:shake .4s;}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
+
+/* Multiple choice */
+.mc-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;}
+.mc-btn{background:#f8fafc;border:3px solid #e2e8f0;border-radius:14px;padding:14px;font-size:1.1rem;font-weight:800;cursor:pointer;transition:all .15s;font-family:'Nunito',sans-serif;color:#1e293b;}
+.mc-btn:hover:not(:disabled){border-color:var(--mc,#2563eb);background:#eff6ff;}
+.mc-btn.correct{border-color:#16a34a!important;background:#f0fdf4!important;color:#15803d!important;}
+.mc-btn.wrong{border-color:#dc2626!important;background:#fef2f2!important;color:#991b1b!important;animation:shake .4s;}
+.mc-btn:disabled{cursor:default;}
+
+/* Feedback */
+.fb{min-height:28px;text-align:center;font-weight:700;font-size:.95rem;margin:10px 0;}
+
+/* Buttons */
+.btn-check{background:var(--mc,#2563eb);color:white;border:none;border-radius:12px;padding:12px 28px;font-family:'Nunito',sans-serif;font-size:1rem;font-weight:800;cursor:pointer;transition:all .2s;}
+.btn-check:hover{filter:brightness(.9);}
+.btn-next{background:var(--mc,#2563eb);color:white;border:none;border-radius:12px;padding:14px;width:100%;font-family:'Nunito',sans-serif;font-size:1rem;font-weight:800;cursor:pointer;transition:all .2s;margin-top:14px;display:none;}
+.btn-next.show{display:block;}
+.btn-next:hover{filter:brightness(.9);}
+
+/* Module start */
+.mod-start{background:white;border-radius:18px;padding:2rem;text-align:center;box-shadow:0 8px 30px rgba(0,0,0,0.08);}
+.mod-start h2{font-family:'Fredoka',sans-serif;font-size:1.8rem;margin:.75rem 0 .5rem;}
+.mod-start p{color:#6b7280;font-size:.9rem;margin-bottom:1.5rem;}
+.btn-start{background:var(--mc,#2563eb);color:white;border:none;border-radius:1.25rem;padding:14px 32px;font-family:'Nunito',sans-serif;font-size:1.1rem;font-weight:800;cursor:pointer;transition:all .2s;}
+.btn-start:hover{filter:brightness(.9);transform:translateY(-2px);}
+
+/* Result */
+.result-overlay{position:fixed;inset:0;z-index:100;background:#f0f4ff;display:none;flex-direction:column;align-items:center;justify-content:flex-start;padding:1.5rem 1.25rem;overflow-y:auto;}
+.result-overlay.show{display:flex;}
+.result-card{background:white;border-radius:2rem;padding:2rem 1.5rem;width:100%;max-width:440px;box-shadow:0 8px 40px rgba(37,99,235,.18);}
+.score-ring{width:120px;height:120px;border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;margin:0 auto 1.5rem;font-family:'Fredoka',sans-serif;border:5px solid var(--mc,#2563eb);background:color-mix(in srgb,var(--mc,#2563eb) 10%,white);color:var(--mc,#2563eb);}
+.stat-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;}
+.stat-box{border-radius:1rem;padding:14px 10px;text-align:center;}
+.snum{font-family:'Fredoka',sans-serif;font-size:1.8rem;font-weight:600;}
+.slbl{font-size:.7rem;font-weight:800;text-transform:uppercase;letter-spacing:.05em;margin-top:2px;}
+.analysis-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:.75rem;margin-bottom:6px;font-size:.88rem;font-weight:700;}
+.analysis-item.good{background:#f0fdf4;color:#166534;}
+.analysis-item.good .dot{background:#22c55e;}
+.analysis-item.bad{background:#fff1f2;color:#9f1239;}
+.analysis-item.bad .dot{background:#f43f5e;}
+.dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;}
+.btn-restart{width:100%;margin-top:1.25rem;background:var(--mc,#2563eb);color:white;border:none;border-radius:1rem;padding:14px;font-family:'Nunito',sans-serif;font-size:1rem;font-weight:800;cursor:pointer;}
+.btn-restart:hover{filter:brightness(.9);}
+
+/* Themes */
+.t-lift{--mc:#0369a1;}
+.t-thermo{--mc:#dc2626;}
+.t-woordenschat{--mc:#7c3aed;}
+.t-getallenas{--mc:#0891b2;}
+.t-optellen{--mc:#16a34a;}
+.t-aftrekken{--mc:#ea580c;}
+.t-ordenen{--mc:#9333ea;}
+.t-toets{--mc:#1e3a5f;}
+        /* ── LOGIN ── */
+        #login-screen {
+            position:fixed; inset:0; z-index:9999;
+            background:linear-gradient(135deg,#4338ca 0%,#6d28d9 60%,#7c3aed 100%);
+            display:flex; align-items:center; justify-content:center; padding:20px;
+        }
+        #login-screen.hidden { display:none!important; }
+        .login-card {
+            background:white; border-radius:2rem; padding:2.5rem 2rem;
+            width:100%; max-width:380px;
+            box-shadow:0 25px 50px rgba(0,0,0,0.25); text-align:center;
+        }
+        .login-logo {
+            width:80px; height:80px; background:#ede9fe; border-radius:1.5rem;
+            display:flex; align-items:center; justify-content:center;
+            margin:0 auto 1.25rem; font-size:2.5rem;
+        }
+        .login-input {
+            width:100%; padding:14px 16px; border:2px solid #e5e7eb; border-radius:1rem;
+            font-family:inherit; font-size:1rem; font-weight:600; color:#374151;
+            margin-bottom:10px; outline:none; transition:border-color .2s; text-align:center;
+        }
+        .login-input:focus { border-color:#6d28d9; }
+        .login-input.err { border-color:#dc2626; background:#fef2f2; animation:loginShake .4s; }
+        @keyframes loginShake{0%,100%{transform:translateX(0)}25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
+        .btn-login {
+            width:100%; background:#6d28d9; color:white; border:none; border-radius:1rem;
+            padding:14px; font-family:inherit; font-size:1rem; font-weight:700;
+            cursor:pointer; transition:all .2s; margin-bottom:10px;
+        }
+        .btn-login:hover { background:#5b21b6; }
+        .btn-login:disabled { opacity:.6; cursor:not-allowed; }
+        .login-error { color:#dc2626; font-size:.85rem; font-weight:700; min-height:20px; margin-bottom:8px; }
+        .btn-guest {
+            width:100%; background:transparent; border:2px solid #d1d5db; border-radius:1rem;
+            padding:12px; font-family:inherit; font-size:.9rem; font-weight:700;
+            color:#6b7280; cursor:pointer; transition:all .2s;
+        }
+        .btn-guest:hover { border-color:#9ca3af; color:#374151; }
+        .teacher-link { margin-top:14px; font-size:.75rem; color:#9ca3af; }
+        .teacher-link a { color:#6d28d9; text-decoration:none; font-weight:700; }
+    </style>
+</head>
+<body>
+    <!-- LOGIN SCREEN -->
+    <div id="login-screen">
+      <div class="login-card">
+        <div class="login-logo">🌡️</div>
+        <h1 style="font-size:1.6rem;font-weight:800;color:#1f2937;margin-bottom:6px;">Negatieve Getallen</h1>
+        <p style="font-size:.85rem;color:#6b7280;margin-bottom:1.25rem;">Voer je naam en code in</p>
+        <input class="login-input" id="login-naam" type="text" placeholder="Jouw voornaam" autocomplete="off" autocapitalize="words">
+        <input class="login-input" id="login-code" type="password" placeholder="Jouw code" autocomplete="off">
+        <div class="login-error" id="login-error"></div>
+        <button class="btn-login" id="btn-login" onclick="loginMetCode()">Inloggen</button>
+        <button class="btn-guest" onclick="loginGuest()">Doorgaan als gast (geen opslag)</button>
+        <div class="teacher-link"><a href="dashboard.html">Leerkracht? Klik hier</a></div>
+      </div>
+    </div>
+
+<!-- LOGIN -->
+<div id="login-screen">
+  <div class="login-card">
+    <div class="login-logo">🌡️</div>
+    <h1 style="font-size:1.6rem;font-weight:900;color:#1f2937;margin-bottom:6px;" class="ff">Negatieve Getallen</h1>
+    <p style="font-size:.85rem;color:#6b7280;margin-bottom:1.5rem;">Log in om je toetsresultaten bij te houden</p>
+    <button class="btn-google" id="btn-google-login" onclick="loginGoogle()">
+      <svg width="20" height="20" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9.1 3.5l6.8-6.8C35.8 2.4 30.3 0 24 0 14.7 0 6.7 5.4 2.6 13.3l7.9 6.1C12.4 13.1 17.7 9.5 24 9.5z"/><path fill="#4285F4" d="M46.5 24.5c0-1.6-.1-3.1-.4-4.5H24v8.5h12.7c-.5 2.9-2.2 5.4-4.7 7l7.4 5.7c4.3-4 6.8-9.9 7.1-16.7z"/><path fill="#FBBC05" d="M10.5 28.6A14.5 14.5 0 0 1 9.5 24c0-1.6.3-3.1.9-4.6l-7.9-6.1A24 24 0 0 0 0 24c0 3.9.9 7.5 2.6 10.7l7.9-6.1z"/><path fill="#34A853" d="M24 48c6.3 0 11.6-2.1 15.5-5.7l-7.4-5.7c-2.1 1.4-4.8 2.2-8.1 2.2-6.3 0-11.6-3.6-13.5-8.8l-7.9 6.1C6.7 42.6 14.7 48 24 48z"/></svg>
+      Inloggen met Google
+    </button>
+    <button class="btn-guest" onclick="loginGuest()">Doorgaan als gast (geen opslag)</button>
+  </div>
+</div>
+
+<div class="app">
+  <!-- USER BAR -->
+  <div id="user-bar">
+    <div style="display:flex;align-items:center;gap:10px;">
+      <div class="u-av" id="u-av">👤</div>
+      <div><div class="u-nm" id="u-nm">Gast</div><div class="u-rl" id="u-rl">Gast</div></div>
+    </div>
+    <button class="btn-lo" onclick="doLogout()">Uitloggen</button>
+  </div>
+
+  <!-- MENU -->
+  <div id="v-menu">
+    <div class="menu-header">
+      <div class="ff" style="font-size:2rem;font-weight:700;">Negatieve Getallen 🌡️</div>
+      <div style="font-size:.9rem;opacity:.85;margin-top:4px;">Kies een oefening</div>
+    </div>
+    <div class="menu-card" onclick="openMod('woordenschat')"><div class="mico" style="background:#ede9fe;">📖</div><div><div class="mttl">Woordenschat & symbolen</div><div class="msub">Groter dan, kleiner dan, tegengesteld getal</div></div></div>
+    <div class="menu-card" onclick="openMod('lift')"><div class="mico" style="background:#e0f2fe;">🛗</div><div><div class="mttl">De lift</div><div class="msub">Verdiepingen omhoog & omlaag tellen</div></div></div>
+    <div class="menu-card" onclick="openMod('thermo')"><div class="mico" style="background:#fee2e2;">🌡️</div><div><div class="mttl">De thermometer</div><div class="msub">Temperaturen stijgen & dalen</div></div></div>
+    <div class="menu-card" onclick="openMod('getallenas')"><div class="mico" style="background:#e0f2fe;">📏</div><div><div class="mttl">Getallenas</div><div class="msub">Negatieve getallen aanduiden op de as</div></div></div>
+    <div class="menu-card" onclick="openMod('optellen')"><div class="mico" style="background:#dcfce7;">➕</div><div><div class="mttl">Optellen met negatieve getallen</div><div class="msub">Rekenen met positieve en negatieve getallen</div></div></div>
+    <div class="menu-card" onclick="openMod('aftrekken')"><div class="mico" style="background:#fff7ed;">➖</div><div><div class="mttl">Aftrekken met negatieve getallen</div><div class="msub">Verschil berekenen</div></div></div>
+    <div class="menu-card" onclick="openMod('ordenen')"><div class="mico" style="background:#faf5ff;">🔢</div><div><div class="mttl">Ordenen & vergelijken</div><div class="msub">Van klein naar groot, teken kiezen</div></div></div>
+    <div class="menu-card toets-card" onclick="openMod('toets')"><div class="mico">🏆</div><div><div class="mttl">Toets — Alles door elkaar</div><div class="msub">40 vragen · score wordt opgeslagen</div></div></div>
+  </div>
+
+  <!-- MODULE -->
+  <div id="v-mod" class="hidden">
+    <div class="mod-hdr" id="mod-hdr">
+      <button class="back-btn" onclick="goMenu()">←</button>
+      <div style="flex:1;">
+        <div style="font-size:.7rem;font-weight:800;text-transform:uppercase;letter-spacing:.06em;opacity:.85;" id="mod-title">Module</div>
+        <div style="display:flex;align-items:center;gap:8px;margin-top:4px;">
+          <div class="prog-wrap"><div class="prog-fill" id="mod-prog"></div></div>
+          <span style="font-size:.78rem;font-weight:800;white-space:nowrap;" id="mod-qcnt">1/10</span>
+        </div>
+      </div>
+      <div style="background:rgba(255,255,255,0.2);border-radius:.75rem;padding:6px 12px;font-size:.8rem;font-weight:800;" id="mod-timer">00:00</div>
+    </div>
+    <div id="mod-start-box" class="mod-start">
+      <div style="font-size:3rem;" id="ms-icon">🌡️</div>
+      <h2 id="ms-title">Module</h2>
+      <p id="ms-desc">Beschrijving</p>
+      <button class="btn-start" onclick="startMod()">Start de oefening</button>
+    </div>
+    <div id="q-area" class="mod-body hidden"></div>
+  </div>
+</div>
+
+<!-- RESULT -->
+<div class="result-overlay" id="v-result">
+  <div class="result-card">
+    <div class="score-ring" id="res-ring">
+      <div style="font-size:2rem;font-weight:700;" id="res-score">0/0</div>
+      <div style="font-size:.7rem;font-weight:800;text-transform:uppercase;opacity:.7;">Score</div>
+    </div>
+    <div class="stat-row">
+      <div class="stat-box" style="background:#f0fdf4;"><div class="snum" style="color:#16a34a;" id="res-cor">0</div><div class="slbl" style="color:#16a34a;">Juist</div></div>
+      <div class="stat-box" style="background:#fff1f2;"><div class="snum" style="color:#e11d48;" id="res-wrg">0</div><div class="slbl" style="color:#e11d48;">Fouten</div></div>
+    </div>
+    <div class="stat-box" style="background:#eff6ff;text-align:center;margin-bottom:10px;"><div class="snum" style="color:#1d4ed8;" id="res-time">00:00</div><div class="slbl" style="color:#1d4ed8;">Tijd</div></div>
+    <div id="res-analysis"></div>
+    <div id="saved-badge">✓ Score opgeslagen in de database</div>
+    <button class="btn-restart" onclick="restartMod()">Opnieuw beginnen</button>
+    <button onclick="goMenu()" style="width:100%;margin-top:8px;background:none;border:2px solid #e5e7eb;border-radius:1rem;padding:12px;font-family:'Nunito',sans-serif;font-size:.9rem;font-weight:700;color:#6b7280;cursor:pointer;">← Terug naar menu</button>
+  </div>
+</div>
+
+<!-- FIREBASE -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script>
+firebase.initializeApp({
+  apiKey:"AIzaSyCnQDVVAlK6jE-PPUUediRJMTbN0xqrLDE",
+  authDomain:"klaswebsite-database.firebaseapp.com",
+  projectId:"klaswebsite-database",
+  storageBucket:"klaswebsite-database.firebasestorage.app",
+  messagingSenderId:"42912327282",
+  appId:"1:42912327282:web:f13f2c706f6c42c115c4eb"
+});
+const fbAuth=firebase.auth(),fbDb=firebase.firestore();
+const fbProv=new firebase.auth.GoogleAuthProvider();
+
+fbAuth.getRedirectResult().then(function(r){if(r&&r.user){window._fbUser=r.user;window._fbGuest=false;window._loginHandled=true;afterLogin(r.user);}}).catch(function(e){console.error(e);});
+fbAuth.onAuthStateChanged(function(u){if(u&&!window._loginHandled){window._loginHandled=true;window._fbUser=u;window._fbGuest=false;afterLogin(u);}});
+
+function loginGoogle(){var b=document.getElementById('btn-google-login');b.textContent='Doorverwijzen...';b.disabled=true;fbAuth.signInWithRedirect(fbProv);}
+function loginGuest(){window._fbUser=null;window._fbGuest=true;window._loginHandled=true;afterLogin(null);}
+function doLogout(){window._loginHandled=false;window._fbUser=null;window._fbGuest=false;fbAuth.signOut().then(function(){document.getElementById('login-screen').classList.remove('hidden');document.getElementById('user-bar').classList.remove('show');showV('v-menu');resetLoginBtn();});}
+function resetLoginBtn(){var b=document.getElementById('btn-google-login');b.innerHTML='<svg width="20" height="20" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9.1 3.5l6.8-6.8C35.8 2.4 30.3 0 24 0 14.7 0 6.7 5.4 2.6 13.3l7.9 6.1C12.4 13.1 17.7 9.5 24 9.5z"/><path fill="#4285F4" d="M46.5 24.5c0-1.6-.1-3.1-.4-4.5H24v8.5h12.7c-.5 2.9-2.2 5.4-4.7 7l7.4 5.7c4.3-4 6.8-9.9 7.1-16.7z"/><path fill="#FBBC05" d="M10.5 28.6A14.5 14.5 0 0 1 9.5 24c0-1.6.3-3.1.9-4.6l-7.9-6.1A24 24 0 0 0 0 24c0 3.9.9 7.5 2.6 10.7l7.9-6.1z"/><path fill="#34A853" d="M24 48c6.3 0 11.6-2.1 15.5-5.7l-7.4-5.7c-2.1 1.4-4.8 2.2-8.1 2.2-6.3 0-11.6-3.6-13.5-8.8l-7.9 6.1C6.7 42.6 14.7 48 24 48z"/></svg> Inloggen met Google';b.disabled=false;}
+function afterLogin(u){document.getElementById('login-screen').classList.add('hidden');document.getElementById('user-bar').classList.add('show');if(u){document.getElementById('u-av').textContent=u.displayName?u.displayName[0].toUpperCase():'?';document.getElementById('u-nm').textContent=u.displayName||u.email||'Leerling';document.getElementById('u-rl').textContent=u.email||'Ingelogd';}else{document.getElementById('u-av').textContent=String.fromCodePoint(0x1F464);document.getElementById('u-nm').textContent='Gast';document.getElementById('u-rl').textContent='Gast \u2014 scores worden niet opgeslagen';}}
+function saveToets(data){document.getElementById('saved-badge').classList.remove('show');if(window._fbGuest||!window._fbUser)return;fbDb.collection('negatieve_getallen_toets').add(Object.assign({userId:window._fbUser.uid,displayName:window._fbUser.displayName||'Leerling',email:window._fbUser.email||''},data,{timestamp:firebase.firestore.FieldValue.serverTimestamp()})).then(function(){document.getElementById('saved-badge').classList.add('show');}).catch(function(e){console.error(e);});}
+</script>
+
+<script>
+// ── UTILS ─────────────────────────────────────────────────────────────────
+function showV(id){['v-menu','v-mod','v-result'].forEach(function(v){document.getElementById(v).classList.add('hidden');});document.getElementById(id).classList.remove('hidden');}
+function rnd(a,b){return Math.floor(Math.random()*(b-a+1))+a;}
+function pick(arr){return arr[Math.floor(Math.random()*arr.length)];}
+function shuffle(a){var b=a.slice();for(var i=b.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=b[i];b[i]=b[j];b[j]=t;}return b;}
+function pickN(arr,n){return shuffle(arr).slice(0,n);}
+function fmt(s){return String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0');}
+function numHTML(n){return n<0?'<span class="neg">'+n+'</span>':String(n);}
+
+// ── MODULE CONFIG ─────────────────────────────────────────────────────────
+var MODS={
+  woordenschat:{title:'Woordenschat & symbolen',icon:'📖',theme:'t-woordenschat',desc:'Groter dan, kleiner dan, tegengesteld getal en symbolen.',count:10},
+  lift:        {title:'De lift',icon:'🛗',theme:'t-lift',desc:'Verdiepingen omhoog en omlaag — waar stopt de lift?',count:10},
+  thermo:      {title:'De thermometer',icon:'🌡️',theme:'t-thermo',desc:'Temperaturen stijgen en dalen.',count:10},
+  getallenas:  {title:'Getallenas',icon:'📏',theme:'t-getallenas',desc:'Welk getal hoort bij het pijltje op de getallenas?',count:10},
+  optellen:    {title:'Optellen',icon:'➕',theme:'t-optellen',desc:'Optellen met negatieve getallen.',count:10},
+  aftrekken:   {title:'Aftrekken',icon:'➖',theme:'t-aftrekken',desc:'Aftrekken met negatieve getallen.',count:10},
+  ordenen:     {title:'Ordenen & vergelijken',icon:'🔢',theme:'t-ordenen',desc:'Getallen van klein naar groot zetten of teken kiezen.',count:10},
+  toets:       {title:'Toets — Negatieve Getallen',icon:'🏆',theme:'t-toets',desc:'40 vragen over alles. Score wordt opgeslagen!',count:40},
+};
+
+// ── STATE ─────────────────────────────────────────────────────────────────
+var ST={mod:null,questions:[],idx:0,correct:0,wrong:0,mistake:false,timer:0,timerInt:null,themeErr:{}};
+
+// ── NAVIGATION ────────────────────────────────────────────────────────────
+function openMod(mod){
+  ST.mod=mod;
+  var cfg=MODS[mod];
+  var el=document.getElementById('v-mod');
+  el.className=cfg.theme;
+  document.getElementById('mod-title').textContent=cfg.title;
+  document.getElementById('ms-icon').textContent=cfg.icon;
+  document.getElementById('ms-title').textContent=cfg.title;
+  document.getElementById('ms-desc').textContent=cfg.desc;
+  document.getElementById('mod-start-box').classList.remove('hidden');
+  document.getElementById('q-area').classList.add('hidden');
+  clearTimer();
+  showV('v-mod');
+}
+window.openMod=openMod;
+function goMenu(){clearTimer();showV('v-menu');}
+window.goMenu=goMenu;
+function restartMod(){document.getElementById('v-result').className='result-overlay';openMod(ST.mod);}
+window.restartMod=restartMod;
+function startMod(){
+  document.getElementById('mod-start-box').classList.add('hidden');
+  document.getElementById('q-area').classList.remove('hidden');
+  ST.questions=buildQ(ST.mod);
+  ST.idx=0;ST.correct=0;ST.wrong=0;ST.themeErr={};
+  startTimer();renderQ();
+}
+window.startMod=startMod;
+
+// ── TIMER ─────────────────────────────────────────────────────────────────
+function startTimer(){ST.timer=0;ST.timerInt=setInterval(function(){ST.timer++;document.getElementById('mod-timer').textContent=fmt(ST.timer);},1000);}
+function clearTimer(){clearInterval(ST.timerInt);ST.timer=0;document.getElementById('mod-timer').textContent='00:00';}
+
+// ── QUESTION BUILDERS ─────────────────────────────────────────────────────
+
+function buildQ(mod){
+  if(mod==='toets')return buildToets();
+  var builders={
+    woordenschat:buildWoordenschat,
+    lift:buildLift,
+    thermo:buildThermo,
+    getallenas:buildGetallenas,
+    optellen:buildOptellen,
+    aftrekken:buildAftrekken,
+    ordenen:buildOrdenen,
+  };
+  return (builders[mod]||buildLift)().map(function(q){return Object.assign({},q,{module:mod});});
+}
+
+function buildToets(){
+  var per=5;
+  var all=[];
+  all=all.concat(pickN(buildWoordenschat(),per+1).map(function(q){return Object.assign({},q,{module:'woordenschat'});}));
+  all=all.concat(pickN(buildLift(),per+1).map(function(q){return Object.assign({},q,{module:'lift'});}));
+  all=all.concat(pickN(buildThermo(),per+1).map(function(q){return Object.assign({},q,{module:'thermo'});}));
+  all=all.concat(pickN(buildGetallenas(),per+1).map(function(q){return Object.assign({},q,{module:'getallenas'});}));
+  all=all.concat(pickN(buildOptellen(),per).map(function(q){return Object.assign({},q,{module:'optellen'});}));
+  all=all.concat(pickN(buildAftrekken(),per).map(function(q){return Object.assign({},q,{module:'aftrekken'});}));
+  all=all.concat(pickN(buildOrdenen(),per).map(function(q){return Object.assign({},q,{module:'ordenen'});}));
+  return shuffle(all).slice(0,40);
+}
+
+// WOORDENSCHAT
+function buildWoordenschat(){
+  var qs=[];
+  // Tegengesteld getal
+  for(var i=0;i<4;i++){
+    var n=rnd(1,12);
+    var startNeg=Math.random()>.5;
+    var val=startNeg?-n:n;
+    var ans=startNeg?n:-n;
+    qs.push({type:'woord_tegengesteld',val:val,answer:ans,
+      text:'Wat is het tegengestelde van '+val+'?'});
+  }
+  // Groter/kleiner dan teken
+  for(var i=0;i<4;i++){
+    var a=rnd(-10,10),b=rnd(-10,10);
+    while(a===b){b=rnd(-10,10);}
+    var teken=a<b?'<':'>';
+    qs.push({type:'woord_teken',a:a,b:b,teken:teken,
+      text:'Kies het juiste teken tussen '+a+' en '+b});
+  }
+  // Positief of negatief?
+  for(var i=0;i<4;i++){
+    var n=rnd(-12,12);
+    while(n===0)n=rnd(-12,12);
+    var ans2=n<0?'negatief':'positief';
+    qs.push({type:'woord_posneg',val:n,answer:ans2,
+      text:'Is '+n+' een positief of negatief getal?'});
+  }
+  return shuffle(qs).slice(0,10);
+}
+
+// LIFT
+function buildLift(){
+  var qs=[];
+  // verdieping start + beweging → uitkomst
+  var starts=[-3,-2,-1,0,1,2,3];
+  var changes=[-4,-3,-2,-1,1,2,3,4];
+  for(var i=0;i<14;i++){
+    var s=pick(starts);
+    var c=pick(changes);
+    var ans=s+c;
+    if(ans>4||ans<-4)continue;
+    qs.push({type:'lift',start:s,change:c,answer:ans,
+      text:'De lift staat op verdieping '+s+'. Hij gaat '+(c>0?c+' verdiepingen omhoog':Math.abs(c)+' verdiepingen omlaag')+'. Op welke verdieping staat de lift?'});
+  }
+  return shuffle(qs).slice(0,10);
+}
+
+// THERMOMETER
+function buildThermo(){
+  var qs=[];
+  var starts=[-8,-5,-3,0,2,5,8,10];
+  var changes=[-8,-6,-5,-4,-3,-2,-1,1,2,3,4,5,6,8];
+  for(var i=0;i<16;i++){
+    var s=pick(starts);
+    var c=pick(changes);
+    var ans=s+c;
+    if(ans>15||ans<-10)continue;
+    qs.push({type:'temp',start:s,change:c,answer:ans,
+      text:'Het is '+s+'°C. De temperatuur '+(c>0?'stijgt met '+c:'daalt met '+Math.abs(c))+' graden. Hoeveel graden is het nu?'});
+  }
+  return shuffle(qs).slice(0,10);
+}
+
+// GETALLENAS — pijltje op de as, welk getal?
+function buildGetallenas(){
+  var qs=[];
+  // Verdeling: mix van negatieve, nul en positieve getallen
+  var pool=[];
+  for(var v=-14;v<=14;v++){if(v!==0)pool.push(v);}
+  pool=shuffle(pool);
+  pool.slice(0,14).forEach(function(target){
+    // 3 wrong options: close neighbors
+    var wrongs=[];
+    [-2,-1,1,2,-3,3].forEach(function(d){
+      var w=target+d;
+      if(w!=target&&w>=-15&&w<=15&&wrongs.length<3)wrongs.push(w);
+    });
+    while(wrongs.length<3){
+      var w2=target+pick([-4,4,-5,5]);
+      if(w2!==target&&wrongs.indexOf(w2)===-1)wrongs.push(w2);
+    }
+    qs.push({type:'getallenas',target:target,wrongs:wrongs.slice(0,3)});
+  });
+  return shuffle(qs).slice(0,10);
+}
+
+// OPTELLEN
+function buildOptellen(){
+  var qs=[];
+  // positief + negatief
+  for(var i=0;i<6;i++){
+    var a=rnd(1,12),b=rnd(1,12);
+    qs.push({type:'rekenen',a:a,b:-b,answer:a+(-b),text:a+' + ('+(-b)+') = ?'});
+  }
+  // negatief + positief
+  for(var i=0;i<4;i++){
+    var a=rnd(1,12),b=rnd(1,12);
+    qs.push({type:'rekenen',a:-a,b:b,answer:(-a)+b,text:'('+(-a)+') + '+b+' = ?'});
+  }
+  // negatief + negatief
+  for(var i=0;i<4;i++){
+    var a=rnd(1,8),b=rnd(1,8);
+    if(a+b>15)continue;
+    qs.push({type:'rekenen',a:-a,b:-b,answer:(-a)+(-b),text:'('+(-a)+') + ('+(-b)+') = ?'});
+  }
+  return shuffle(qs).slice(0,10);
+}
+
+// AFTREKKEN
+function buildAftrekken(){
+  var qs=[];
+  // positief - groter positief → negatief resultaat
+  for(var i=0;i<5;i++){
+    var a=rnd(1,10),b=rnd(a+1,a+8);
+    if(b>15)continue;
+    qs.push({type:'rekenen',a:a,b:b,answer:a-b,text:a+' \u2212 '+b+' = ?'});
+  }
+  // getal - negatief getal
+  for(var i=0;i<5;i++){
+    var a=rnd(-6,8),b=rnd(1,8);
+    qs.push({type:'rekenen',a:a,b:-b,answer:a-(-b),text:(a<0?'('+a+')':a)+' \u2212 ('+((-b))+') = ?'});
+  }
+  // negatief - positief
+  for(var i=0;i<4;i++){
+    var a=rnd(1,8),b=rnd(1,8);
+    if(a+b>15)continue;
+    qs.push({type:'rekenen',a:-a,b:b,answer:(-a)-b,text:'('+(-a)+') \u2212 '+b+' = ?'});
+  }
+  return shuffle(qs).slice(0,10);
+}
+
+// ORDENEN
+function buildOrdenen(){
+  var qs=[];
+  // Kleiner/groter dan teken
+  for(var i=0;i<5;i++){
+    var a=rnd(-10,10),b=rnd(-10,10);
+    while(a===b)b=rnd(-10,10);
+    var teken=a<b?'<':'>';
+    qs.push({type:'ord_teken',a:a,b:b,teken:teken});
+  }
+  // Van klein naar groot (mc: kies juiste volgorde)
+  for(var i=0;i<5;i++){
+    var nums=[rnd(-12,-1),rnd(-8,0),rnd(0,8),rnd(1,12)];
+    // ensure unique
+    while(new Set(nums).size<4)nums=[rnd(-12,-1),rnd(-8,0),rnd(0,8),rnd(1,12)];
+    var sorted=nums.slice().sort(function(a,b){return a-b;});
+    qs.push({type:'ord_volgorde',nums:nums,sorted:sorted});
+  }
+  return shuffle(qs);
+}
+
+// ── RENDER ────────────────────────────────────────────────────────────────
+function renderQ(){
+  var q=ST.questions[ST.idx];
+  var total=ST.questions.length;
+  ST.mistake=false;
+  document.getElementById('mod-qcnt').textContent=(ST.idx+1)+'/'+total;
+  document.getElementById('mod-prog').style.width=((ST.idx/total)*100)+'%';
+  var area=document.getElementById('q-area');
+  area.innerHTML='';
+  var mod=q.module||ST.mod;
+  if(mod==='woordenschat')renderWoord(q,area);
+  else if(mod==='lift')renderLift(q,area);
+  else if(mod==='thermo')renderThermo(q,area);
+  else if(mod==='getallenas')renderGetallenas(q,area);
+  else if(mod==='optellen'||mod==='aftrekken')renderRekenen(q,area,mod);
+  else if(mod==='ordenen')renderOrdenen(q,area);
+}
+
+// ── WOORDENSCHAT ──────────────────────────────────────────────────────────
+function renderWoord(q,area){
+  if(q.type==='woord_tegengesteld'){
+    // MC: kies tegengesteld getal
+    var cor=q.answer;
+    var wrongs=shuffle([cor+pick([-2,-1,1,2]),cor+pick([-3,3]),-cor+pick([-1,1])]).slice(0,3);
+    var opts=shuffle([cor].concat(wrongs));
+    area.innerHTML='<div class="qlabel">Tegengesteld getal</div>'+
+      '<div class="vraag-box">Het tegengestelde van <span class="num">'+numHTML(q.val)+'</span> is:</div>'+
+      '<div class="mc-grid" id="opts"></div>'+
+      '<button class="btn-next" id="btn-next" onclick="nextQ()">Volgende \u2192</button>';
+    renderMC(area,opts,cor,q.module||ST.mod);
+  } else if(q.type==='woord_teken'){
+    area.innerHTML='<div class="qlabel">Kies het juiste teken</div>'+
+      '<div class="vraag-box" style="font-size:1.6rem;">'+numHTML(q.a)+' <span style="font-size:2rem;color:#94a3b8;">?</span> '+numHTML(q.b)+'</div>'+
+      '<div style="display:flex;gap:14px;justify-content:center;margin-bottom:12px;">'+
+        '<button class="mc-btn" style="width:80px;font-size:1.8rem;" id="btn-lt">&lt;</button>'+
+        '<button class="mc-btn" style="width:80px;font-size:1.8rem;" id="btn-gt">&gt;</button>'+
+      '</div>'+
+      '<div class="fb" id="fb"></div>'+
+      '<button class="btn-next" id="btn-next" onclick="nextQ()">Volgende \u2192</button>';
+    var teken=q.teken;
+    var mod=q.module||ST.mod;
+    area.querySelector('#btn-lt').onclick=function(){checkTeken('<',teken,mod,area);};
+    area.querySelector('#btn-gt').onclick=function(){checkTeken('>',teken,mod,area);};
+  } else {
+    // positief/negatief
+    var cor2=q.answer;
+    var other=cor2==='positief'?'negatief':'positief';
+    var opts2=shuffle([cor2,other]);
+    area.innerHTML='<div class="qlabel">Positief of negatief?</div>'+
+      '<div class="vraag-box">Is <span class="num">'+numHTML(q.val)+'</span> een positief of negatief getal?</div>'+
+      '<div class="mc-grid" id="opts"></div>'+
+      '<button class="btn-next" id="btn-next" onclick="nextQ()">Volgende \u2192</button>';
+    renderMC(area,opts2,cor2,q.module||ST.mod);
+  }
+}
+
+function checkTeken(chosen,correct,mod,area){
+  var bl=area.querySelector('#btn-lt'),bg=area.querySelector('#btn-gt');
+  bl.disabled=true;bg.disabled=true;
+  var fb=area.querySelector('#fb');
+  if(chosen===correct){
+    (chosen==='<'?bl:bg).classList.add('correct');
+    if(!ST.mistake){ST.correct++;confettiSmall();}
+    fb.innerHTML='<span style="color:#16a34a;">\u2713 Juist!</span>';
+    area.querySelector('#btn-next').classList.add('show');
+  } else {
+    if(!ST.mistake){ST.wrong++;ST.mistake=true;ST.themeErr[mod]=(ST.themeErr[mod]||0)+1;}
+    (chosen==='<'?bl:bg).classList.add('wrong');
+    setTimeout(function(){bl.classList.remove('wrong');bg.classList.remove('wrong');bl.disabled=false;bg.disabled=false;},700);
+    fb.innerHTML='<span style="color:#dc2626;">Probeer opnieuw!</span>';
+  }
+}
+window.checkTeken=checkTeken;
+
+// ── LIFT ──────────────────────────────────────────────────────────────────
+function renderLift(q,area){
+  var range=8; // -4 to 4
+  var liftH=190;
+  var perFloor=liftH/(range);
+  var groundPx=perFloor*4; // floor 0 = 4 floors from bottom
+  var startPx=groundPx+(q.start*perFloor)-15;
+  var endPx=groundPx+((q.start+q.change)*perFloor)-15;
+
+  // Build label list -4..4
+  var labels='';
+  for(var v=4;v>=-4;v--){
+    var col=v===0?'#16a34a':v<0?'#dc2626':'#1d4ed8';
+    labels+='<div style="font-weight:800;color:'+col+';font-size:.82rem;height:'+perFloor+'px;display:flex;align-items:center;justify-content:flex-end;">'+(v>0?'+':'')+v+'</div>';
+  }
+
+  area.innerHTML='<div class="qlabel">Op welke verdieping staat de lift?</div>'+
+    '<div class="vraag-box">'+q.text+'</div>'+
+    '<div class="scene-wrap">'+
+      '<div class="lift-scene">'+
+        '<div class="lift-labels" style="height:'+liftH+'px;width:28px;">'+labels+'</div>'+
+        '<div class="lift-shaft" style="height:'+liftH+'px;margin-left:34px;position:relative;">'+
+          '<div class="ground-line" style="position:absolute;width:100%;height:3px;background:#16a34a;bottom:'+groundPx+'px;left:0;z-index:2;"></div>'+
+          '<div class="lift-car" id="lc" style="bottom:'+startPx+'px;z-index:3;">'+q.start+'</div>'+
+        '</div>'+
+      '</div>'+
+    '</div>'+
+    '<div style="display:flex;justify-content:center;align-items:center;gap:10px;margin-bottom:12px;">'+
+      '<input type="number" class="ans-input" id="ans" placeholder="?" min="-4" max="4">'+
+      '<button class="btn-check" id="btn-ch">Controleer</button>'+
+    '</div>'+
+    '<div class="fb" id="fb"></div>'+
+    '<button class="btn-next" id="btn-next" onclick="nextQ()">Volgende \u2192</button>';
+
+  // Animate lift after short delay
+  setTimeout(function(){
+    var car=area.querySelector('#lc');
+    if(car){car.style.bottom=endPx+'px';car.textContent='?';}
+  },800);
+
+  area.querySelector('#btn-ch').onclick=function(){checkInput(q.answer,q.module||ST.mod,area);};
+  area.querySelector('#ans').addEventListener('keypress',function(e){if(e.key==='Enter')checkInput(q.answer,q.module||ST.mod,area);});
+}
+
+// ── THERMOMETER ───────────────────────────────────────────────────────────
+function renderThermo(q,area){
+  // Scale: -10 to 15, total 25 degrees, tube height 180px → 7.2px per degree
+  var min=-10,max=15,range=25,tubeH=180;
+  var pxPerDeg=tubeH/range;
+  var zeroPx=Math.round((0-min)*pxPerDeg); // px from bottom for 0°C
+  var startH=Math.max(0,Math.round((q.start-min)*pxPerDeg));
+  var endH=Math.max(0,Math.round(((q.start+q.change)-min)*pxPerDeg));
+
+  // Labels
+  var labelVals=[-10,-5,0,5,10,15];
+  var labels='';
+  labelVals.forEach(function(v){
+    var px=Math.round((v-min)*pxPerDeg);
+    var col=v<0?'#dc2626':v===0?'#16a34a':'#1d4ed8';
+    labels+='<div style="position:absolute;bottom:'+px+'px;right:28px;font-weight:800;font-size:.75rem;color:'+col+';transform:translateY(50%);">'+(v>0?'+':'')+v+'°</div>';
+  });
+
+  area.innerHTML='<div class="qlabel">Welke temperatuur wijst de thermometer aan?</div>'+
+    '<div class="vraag-box">'+q.text+'</div>'+
+    '<div class="scene-wrap">'+
+      '<div style="position:relative;height:'+(tubeH+20)+'px;width:120px;">'+
+        labels+
+        '<div style="position:absolute;right:0;bottom:10px;width:22px;height:'+tubeH+'px;background:white;border:3px solid #94a3b8;border-radius:11px;overflow:hidden;">'+
+          '<div id="merc" style="width:100%;background:#ef4444;position:absolute;bottom:0;height:'+startH+'px;transition:height .9s ease;"></div>'+
+        '</div>'+
+        '<div style="position:absolute;right:-2px;bottom:'+(10+zeroPx)+'px;width:28px;height:2px;background:#374151;"></div>'+
+      '</div>'+
+    '</div>'+
+    '<div style="display:flex;justify-content:center;align-items:center;gap:10px;margin-bottom:12px;">'+
+      '<input type="number" class="ans-input" id="ans" placeholder="?" min="-10" max="15">'+
+      '<button class="btn-check" id="btn-ch">Controleer</button>'+
+    '</div>'+
+    '<div class="fb" id="fb"></div>'+
+    '<button class="btn-next" id="btn-next" onclick="nextQ()">Volgende \u2192</button>';
+
+  setTimeout(function(){var m=area.querySelector('#merc');if(m)m.style.height=endH+'px';},800);
+
+  area.querySelector('#btn-ch').onclick=function(){checkInput(q.answer,q.module||ST.mod,area);};
+  area.querySelector('#ans').addEventListener('keypress',function(e){if(e.key==='Enter')checkInput(q.answer,q.module||ST.mod,area);});
+}
+
+// ── GETALLENAS ────────────────────────────────────────────────────────────
+function renderGetallenas(q,area){
+  var target=q.target;
+  var opts=shuffle([target].concat(q.wrongs));
+
+  // SVG: -15 to 15, W=340
+  var W=340,H=100,pad=24,lineY=62;
+  var min=-15,max=15,range2=30;
+  var xOf=function(v){return pad+(v-min)/range2*(W-2*pad);};
+  var targetX=xOf(target);
+
+  // Major ticks every 5, minor every 1
+  var ticks='';
+  for(var v=-15;v<=15;v++){
+    var cx=xOf(v);
+    var isMajor=v%5===0;
+    var tickH=isMajor?12:6;
+    ticks+='<line x1="'+cx+'" y1="'+(lineY-tickH)+'" x2="'+cx+'" y2="'+(lineY+tickH)+'" stroke="#374151" stroke-width="'+(isMajor?2:1)+'" />';
+    if(isMajor){
+      var col=v<0?'#dc2626':v===0?'#16a34a':'#374151';
+      ticks+='<text x="'+cx+'" y="'+(lineY+26)+'" text-anchor="middle" font-size="11" font-weight="800" fill="'+col+'" font-family="Nunito,sans-serif">'+v+'</text>';
+    }
+  }
+
+  // Arrow pointing DOWN to target
+  var arrow=
+    '<line x1="'+targetX+'" y1="'+(lineY-34)+'" x2="'+targetX+'" y2="'+(lineY-14)+'" stroke="#0891b2" stroke-width="3" stroke-linecap="round"/>'+
+    '<polygon points="'+(targetX-7)+','+(lineY-14)+' '+(targetX+7)+','+(lineY-14)+' '+targetX+','+(lineY-3)+'" fill="#0891b2"/>'+
+    '<rect x="'+(targetX-16)+'" y="'+(lineY-58)+'" width="32" height="26" rx="6" fill="#0891b2"/>'+
+    '<text x="'+targetX+'" y="'+(lineY-39)+'" text-anchor="middle" font-size="14" font-weight="900" fill="white" font-family="Nunito,sans-serif">?</text>';
+
+  area.innerHTML='<div class="qlabel">Welk getal hoort bij het pijltje?</div>'+
+    '<div class="nl-wrap">'+
+      '<svg class="nl-svg" width="'+W+'" height="'+H+'" viewBox="0 0 '+W+' '+H+'">'+
+        '<line x1="'+pad+'" y1="'+lineY+'" x2="'+(W-pad-4)+'" y2="'+lineY+'" stroke="#374151" stroke-width="2.5" stroke-linecap="round"/>'+
+        '<polygon points="'+(W-pad)+','+(lineY-5)+' '+(W-pad+10)+','+lineY+' '+(W-pad)+','+(lineY+5)+'" fill="#374151"/>'+
+        ticks+arrow+
+      '</svg>'+
+    '</div>'+
+    '<div class="mc-grid" id="opts"></div>'+
+    '<button class="btn-next" id="btn-next" onclick="nextQ()">Volgende \u2192</button>';
+
+  renderMC(area,opts,target,q.module||ST.mod);
+}
+
+// ── REKENEN (optellen/aftrekken) ──────────────────────────────────────────
+function renderRekenen(q,area,mod){
+  area.innerHTML='<div class="qlabel">Bereken</div>'+
+    '<div class="vraag-box" style="font-size:1.5rem;">'+q.text+'</div>'+
+    '<div style="display:flex;justify-content:center;align-items:center;gap:10px;margin-bottom:12px;">'+
+      '<input type="number" class="ans-input" id="ans" placeholder="?" style="width:100px;" min="-15" max="15">'+
+      '<button class="btn-check" id="btn-ch">Controleer</button>'+
+    '</div>'+
+    '<div class="fb" id="fb"></div>'+
+    '<button class="btn-next" id="btn-next" onclick="nextQ()">Volgende \u2192</button>';
+
+  area.querySelector('#btn-ch').onclick=function(){checkInput(q.answer,mod,area);};
+  area.querySelector('#ans').addEventListener('keypress',function(e){if(e.key==='Enter')checkInput(q.answer,mod,area);});
+  setTimeout(function(){var el=area.querySelector('#ans');if(el)el.focus();},100);
+}
+
+// ── ORDENEN ───────────────────────────────────────────────────────────────
+function renderOrdenen(q,area){
+  if(q.type==='ord_teken'){
+    area.innerHTML='<div class="qlabel">Kies het juiste teken</div>'+
+      '<div class="vraag-box" style="font-size:1.8rem;">'+numHTML(q.a)+' <span style="color:#94a3b8;">?</span> '+numHTML(q.b)+'</div>'+
+      '<div style="display:flex;gap:14px;justify-content:center;margin-bottom:12px;">'+
+        '<button class="mc-btn" style="width:80px;font-size:1.8rem;" id="btn-lt">&lt;</button>'+
+        '<button class="mc-btn" style="width:80px;font-size:1.8rem;" id="btn-gt">&gt;</button>'+
+      '</div>'+
+      '<div class="fb" id="fb"></div>'+
+      '<button class="btn-next" id="btn-next" onclick="nextQ()">Volgende \u2192</button>';
+    var teken=q.teken,mod=q.module||ST.mod;
+    area.querySelector('#btn-lt').onclick=function(){checkTeken('<',teken,mod,area);};
+    area.querySelector('#btn-gt').onclick=function(){checkTeken('>',teken,mod,area);};
+  } else {
+    // Van klein naar groot: 3 shuffled options (only 1 correct order)
+    var sorted=q.sorted;
+    // Make 3 wrong orderings
+    var wrongs2=[];
+    for(var attempt=0;attempt<20&&wrongs2.length<3;attempt++){
+      var w=shuffle(q.nums);
+      if(w.join(',')!==sorted.join(',')&&!wrongs2.some(function(x){return x.join(',')===w.join(',');}))wrongs2.push(w);
+    }
+    var allOpts=shuffle([sorted].concat(wrongs2.slice(0,3)));
+    var cor=sorted.join(',');
+    area.innerHTML='<div class="qlabel">Van klein naar groot</div>'+
+      '<div class="vraag-box">Rangschik van klein naar groot:<br>'+
+        q.nums.map(function(n){return '<span class="num" style="font-size:1.3rem;margin:0 6px;">'+numHTML(n)+'</span>';}).join('')+
+      '</div>'+
+      '<div style="display:flex;flex-direction:column;gap:8px;" id="opts"></div>'+
+      '<div class="fb" id="fb"></div>'+
+      '<button class="btn-next" id="btn-next" onclick="nextQ()">Volgende \u2192</button>';
+    var grid=area.querySelector('#opts');
+    var mod2=q.module||ST.mod;
+    allOpts.forEach(function(opt){
+      var b=document.createElement('button');
+      b.className='mc-btn';
+      b.style.width='100%';
+      b.innerHTML=opt.map(function(n){return numHTML(n);}).join(' &nbsp;&lt;&nbsp; ');
+      b.onclick=function(){
+        if(b.disabled)return;
+        var val=opt.join(',');
+        if(val===cor){
+          b.classList.add('correct');
+          grid.querySelectorAll('.mc-btn').forEach(function(x){x.disabled=true;});
+          if(!ST.mistake){ST.correct++;confettiSmall();}
+          area.querySelector('#fb').innerHTML='<span style="color:#16a34a;">\u2713 Correct!</span>';
+          area.querySelector('#btn-next').classList.add('show');
+        } else {
+          if(!ST.mistake){ST.wrong++;ST.mistake=true;ST.themeErr[mod2]=(ST.themeErr[mod2]||0)+1;}
+          b.classList.add('wrong');setTimeout(function(){b.classList.remove('wrong');},600);
+          area.querySelector('#fb').innerHTML='<span style="color:#dc2626;">Niet juist, probeer opnieuw!</span>';
+        }
+      };
+      grid.appendChild(b);
+    });
+  }
+}
+
+// ── HELPERS ───────────────────────────────────────────────────────────────
+function renderMC(area,opts,correct,mod){
+  var grid=area.querySelector('#opts');
+  opts.forEach(function(o){
+    var b=document.createElement('button');
+    b.className='mc-btn';
+    b.innerHTML=numHTML(o);
+    b.onclick=function(){
+      if(b.disabled)return;
+      if(String(o)===String(correct)){
+        b.classList.add('correct');
+        grid.querySelectorAll('.mc-btn').forEach(function(x){x.disabled=true;});
+        if(!ST.mistake){ST.correct++;confettiSmall();}
+        area.querySelector('#btn-next').classList.add('show');
+      } else {
+        if(!ST.mistake){ST.wrong++;ST.mistake=true;ST.themeErr[mod]=(ST.themeErr[mod]||0)+1;}
+        b.classList.add('wrong');setTimeout(function(){b.classList.remove('wrong');},600);
+        // Hint: toon juist antwoord met outline
+        grid.querySelectorAll('.mc-btn').forEach(function(x){if(String(x.textContent.trim())===String(correct)||x.innerHTML.includes('>'+correct+'<')||x.textContent.indexOf(correct)!==-1)x.style.outline='3px solid #22c55e';});
+      }
+    };
+    grid.appendChild(b);
+  });
+}
+
+function checkInput(correct,mod,area){
+  var inp=area.querySelector('#ans');
+  var val=parseInt(inp.value);
+  var fb=area.querySelector('#fb');
+  if(isNaN(val)){fb.innerHTML='<span style="color:#ea580c;">Vul een getal in!</span>';return;}
+  if(val===correct){
+    inp.classList.add('ok');
+    inp.disabled=true;
+    area.querySelector('#btn-ch').style.display='none';
+    if(!ST.mistake){ST.correct++;confettiSmall();}
+    fb.innerHTML='<span style="color:#16a34a;">\u2713 Juist! Het antwoord is '+numHTML(correct)+'</span>';
+    area.querySelector('#btn-next').classList.add('show');
+  } else {
+    if(!ST.mistake){ST.wrong++;ST.mistake=true;ST.themeErr[mod]=(ST.themeErr[mod]||0)+1;}
+    inp.classList.add('err');
+    setTimeout(function(){inp.classList.remove('err');},600);
+    fb.innerHTML='<span style="color:#dc2626;">Niet juist, probeer opnieuw!</span>';
+  }
+}
+window.checkInput=checkInput;
+
+// ── NEXT ──────────────────────────────────────────────────────────────────
+function nextQ(){ST.idx++;if(ST.idx>=ST.questions.length)showResults();else renderQ();}
+window.nextQ=nextQ;
+
+// ── RESULTS ───────────────────────────────────────────────────────────────
+function showResults(){
+  clearInterval(ST.timerInt);
+  var total=ST.questions.length;
+  var pct=Math.round((ST.correct/total)*100);
+  var cfg=MODS[ST.mod];
+  var ov=document.getElementById('v-result');
+  ov.className='result-overlay show '+cfg.theme;
+  document.getElementById('res-score').textContent=ST.correct+'/'+total;
+  document.getElementById('res-cor').textContent=ST.correct;
+  document.getElementById('res-wrg').textContent=ST.wrong;
+  document.getElementById('res-time').textContent=fmt(ST.timer);
+  var an=document.getElementById('res-analysis');
+  an.innerHTML='';
+  if(ST.mod==='toets'){
+    var names={woordenschat:'Woordenschat',lift:'De lift',thermo:'Thermometer',getallenas:'Getallenas',optellen:'Optellen',aftrekken:'Aftrekken',ordenen:'Ordenen'};
+    var counts={};
+    ST.questions.forEach(function(q){var m=q.module;if(!counts[m])counts[m]={total:0,errors:0};counts[m].total++;});
+    Object.keys(ST.themeErr).forEach(function(m){if(counts[m])counts[m].errors=ST.themeErr[m]||0;});
+    an.innerHTML='<div style="font-size:.72rem;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:#6b7280;margin-bottom:10px;padding-bottom:6px;border-bottom:2px solid #e5e7eb;">Foutenanalyse per onderdeel</div>';
+    Object.keys(counts).sort(function(a,b){return (counts[b].errors/counts[b].total)-(counts[a].errors/counts[a].total);}).forEach(function(m){
+      var d=counts[m];
+      var ok=d.errors<=d.total*.3;
+      an.innerHTML+='<div class="analysis-item '+(ok?'good':'bad')+'"><div class="dot"></div><div><div style="font-weight:800;">'+(names[m]||m)+'</div><div style="font-size:.78rem;opacity:.8;">'+(d.total-d.errors)+'/'+d.total+' juist'+((!ok)?' \u2014 Blijf dit oefenen!':'')+' </div></div></div>';
+    });
+    document.getElementById('saved-badge').classList.remove('show');
+    if(!window._fbGuest&&window._fbUser){
+      var thScores={};
+      Object.keys(counts).forEach(function(m){thScores[m]={correct:counts[m].total-counts[m].errors,total:counts[m].total};});
+      saveToets({score:ST.correct,total:total,percentage:pct,wrongAttempts:ST.wrong,timeSeconds:ST.timer,themeScores:thScores});
+    }
+  } else {
+    document.getElementById('saved-badge').classList.remove('show');
+    an.innerHTML='<div class="analysis-item '+(pct>=70?'good':'bad')+'"><div class="dot"></div><div>'+(pct>=70?'\uD83C\uDF89 Uitstekend! Ga zo door!':'\uD83D\uDCAA Blijf oefenen \u2014 je kan het!')+' </div></div>';
+  }
+  if(window.confetti)confetti({particleCount:120,spread:70,origin:{y:.5}});
+}
+
+function confettiSmall(){if(window.confetti)confetti({particleCount:40,spread:45,origin:{y:.8},scalar:.8});}
+</script>
+</body>
+</html>

@@ -7,82 +7,128 @@
 <script src="https://cdn.tailwindcss.com"></script>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
 <style>
-body { font-family: 'Plus Jakarta Sans', sans-serif; background: #f8fafc; }
-.hidden { display: none !important; }
-#login-screen {
-    position: fixed; inset: 0; z-index: 9999;
-    background: linear-gradient(135deg, #1e3a5f 0%, #1d4ed8 100%);
-    display: flex; align-items: center; justify-content: center; padding: 20px;
-}
-#login-screen.hidden { display: none !important; }
-.card { background: white; border-radius: 1.5rem; box-shadow: 0 4px 20px rgba(0,0,0,0.07); }
-.badge-goed { background: #dcfce7; color: #166534; padding: 3px 10px; border-radius: 99px; font-size: .78rem; font-weight: 700; }
-.badge-ok { background: #fef9c3; color: #713f12; padding: 3px 10px; border-radius: 99px; font-size: .78rem; font-weight: 700; }
-.badge-slecht { background: #fee2e2; color: #991b1b; padding: 3px 10px; border-radius: 99px; font-size: .78rem; font-weight: 700; }
-.tab-btn { padding: 8px 20px; border-radius: 99px; font-weight: 700; font-size: .88rem; cursor: pointer; border: 2px solid transparent; transition: all .2s; }
-.tab-btn.active { background: #1d4ed8; color: white; }
-.tab-btn:not(.active) { color: #6b7280; }
-.tab-btn:not(.active):hover { background: #f1f5f9; }
+*{box-sizing:border-box;}
+body{font-family:'Plus+Jakarta+Sans',sans-serif;background:#f8fafc;margin:0;}
+.hidden{display:none!important;}
+#login-screen{position:fixed;inset:0;z-index:9999;background:linear-gradient(135deg,#1e3a5f 0%,#1d4ed8 100%);display:flex;align-items:center;justify-content:center;padding:20px;}
+#login-screen.hidden{display:none!important;}
+.card{background:white;border-radius:1.5rem;box-shadow:0 4px 20px rgba(0,0,0,0.07);padding:1.5rem;}
+.badge-goed{background:#dcfce7;color:#166534;padding:3px 10px;border-radius:99px;font-size:.75rem;font-weight:700;}
+.badge-ok{background:#fef9c3;color:#713f12;padding:3px 10px;border-radius:99px;font-size:.75rem;font-weight:700;}
+.badge-slecht{background:#fee2e2;color:#991b1b;padding:3px 10px;border-radius:99px;font-size:.75rem;font-weight:700;}
+.tab-btn{padding:8px 18px;border-radius:99px;font-weight:700;font-size:.85rem;cursor:pointer;border:2px solid transparent;transition:all .2s;font-family:inherit;}
+.tab-btn.active{background:#1d4ed8;color:white;}
+.tab-btn:not(.active){color:#6b7280;border-color:#e5e7eb;}
+.tab-btn:not(.active):hover{background:#f1f5f9;}
+input,select{font-family:inherit;}
+.btn{padding:10px 20px;border-radius:1rem;font-weight:700;font-size:.9rem;cursor:pointer;border:none;transition:all .2s;font-family:inherit;}
+.btn-blue{background:#1d4ed8;color:white;}
+.btn-blue:hover{background:#1e40af;}
+.btn-red{background:#dc2626;color:white;}
+.btn-red:hover{background:#b91c1c;}
+.btn-green{background:#16a34a;color:white;}
+.btn-green:hover{background:#15803d;}
+.btn-outline{background:white;color:#374151;border:2px solid #e5e7eb;}
+.btn-outline:hover{border-color:#1d4ed8;color:#1d4ed8;}
+.leerling-row{display:flex;align-items:center;gap:12px;padding:12px 16px;border-radius:1rem;border:1px solid #e5e7eb;margin-bottom:8px;background:white;}
+.progress-bar{height:8px;background:#e5e7eb;border-radius:99px;overflow:hidden;}
+.progress-fill{height:100%;border-radius:99px;transition:width .5s;}
 </style>
 </head>
 <body>
 
-<!-- LEERKRACHT LOGIN -->
+<!-- LOGIN -->
 <div id="login-screen">
   <div style="background:white;border-radius:2rem;padding:2.5rem 2rem;width:100%;max-width:360px;box-shadow:0 25px 50px rgba(0,0,0,0.25);text-align:center;">
     <div style="font-size:2.5rem;margin-bottom:1rem;">👨‍🏫</div>
     <h1 style="font-size:1.5rem;font-weight:800;color:#1f2937;margin-bottom:6px;">Leerkracht Dashboard</h1>
     <p style="font-size:.85rem;color:#6b7280;margin-bottom:1.5rem;">Alleen voor de leerkracht</p>
-    <input type="password" id="teacher-pwd" placeholder="Leerkracht wachtwoord"
-      style="width:100%;padding:14px;border:2px solid #e5e7eb;border-radius:1rem;font-family:inherit;font-size:1rem;font-weight:600;text-align:center;outline:none;margin-bottom:12px;">
+    <input type="password" id="teacher-pwd" placeholder="Wachtwoord"
+      style="width:100%;padding:14px;border:2px solid #e5e7eb;border-radius:1rem;font-size:1rem;font-weight:600;text-align:center;outline:none;margin-bottom:12px;">
     <div id="pwd-error" style="color:#dc2626;font-size:.85rem;font-weight:700;min-height:20px;margin-bottom:8px;"></div>
-    <button onclick="checkPwd()" style="width:100%;background:#1d4ed8;color:white;border:none;border-radius:1rem;padding:14px;font-family:inherit;font-size:1rem;font-weight:700;cursor:pointer;">
-      Inloggen
-    </button>
+    <button class="btn btn-blue" style="width:100%;" onclick="checkPwd()">Inloggen</button>
   </div>
 </div>
 
-<!-- MAIN -->
-<div id="main-app" class="hidden max-w-5xl mx-auto px-4 py-8">
-  <!-- Header -->
-  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:2rem;flex-wrap:wrap;gap:12px;">
+<!-- MAIN APP -->
+<div id="main-app" class="hidden">
+  <nav style="background:white;border-bottom:1px solid #e5e7eb;padding:16px 24px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;position:sticky;top:0;z-index:40;">
     <div>
-      <h1 style="font-size:1.8rem;font-weight:800;color:#1e3a5f;">📊 Leerkracht Dashboard</h1>
-      <p style="color:#6b7280;font-size:.9rem;margin-top:2px;">Overzicht van alle leerlingresultaten</p>
+      <div style="font-size:1.3rem;font-weight:800;color:#1e3a5f;">📊 Leerkracht Dashboard</div>
+      <div style="font-size:.78rem;color:#6b7280;font-weight:600;" id="klas-naam-header">Klaswebsite meester Maarten</div>
     </div>
     <div style="display:flex;gap:8px;flex-wrap:wrap;">
-      <div class="tab-btn active" id="tab-overzicht" onclick="showTab('overzicht')">Klassenoverzicht</div>
-      <div class="tab-btn" id="tab-detail" onclick="showTab('detail')">Per leerling</div>
-      <button onclick="loadData()" style="padding:8px 18px;border-radius:99px;font-weight:700;font-size:.88rem;cursor:pointer;border:2px solid #1d4ed8;color:#1d4ed8;background:white;font-family:inherit;">🔄 Vernieuwen</button>
+      <button class="tab-btn active" id="tab-overzicht" onclick="showTab('overzicht')">📋 Klassenoverzicht</button>
+      <button class="tab-btn" id="tab-detail" onclick="showTab('detail')">👤 Per leerling</button>
+      <button class="tab-btn" id="tab-leerlingen" onclick="showTab('leerlingen')">⚙️ Leerlingen beheren</button>
+      <button class="btn btn-outline" onclick="loadAll()" style="padding:8px 16px;font-size:.82rem;">🔄 Vernieuwen</button>
     </div>
-  </div>
+  </nav>
 
-  <!-- KLASSEN OVERZICHT -->
-  <div id="tab-overzicht-content">
-    <div class="card p-6 mb-6">
-      <h2 style="font-size:1.1rem;font-weight:800;color:#1e3a5f;margin-bottom:16px;">Laatste toets per leerling</h2>
-      <div id="klas-tabel" style="overflow-x:auto;">
-        <div style="text-align:center;padding:2rem;color:#9ca3af;">Laden...</div>
+  <div style="max-width:1100px;margin:0 auto;padding:24px 16px;">
+
+    <!-- TAB: OVERZICHT -->
+    <div id="tab-overzicht-content">
+      <div class="card mb-4">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+          <h2 style="font-size:1rem;font-weight:800;color:#1e3a5f;">Laatste toets per leerling</h2>
+          <select id="filter-app" onchange="renderOverzicht()" style="padding:8px 12px;border:2px solid #e5e7eb;border-radius:.75rem;font-weight:700;font-size:.85rem;outline:none;">
+            <option value="">Alle apps</option>
+            <option value="getalbegrip">Getalbegrip</option>
+            <option value="breuken">Breuken</option>
+            <option value="geld">Geld rekenen</option>
+            <option value="inhoudsmaten">Inhoudsmaten</option>
+            <option value="negatieve_getallen">Negatieve getallen</option>
+            <option value="meetkunde">Meetkunde</option>
+            <option value="hoeken_meten">Hoeken meten</option>
+          </select>
+        </div>
+        <div id="klas-tabel" style="overflow-x:auto;"></div>
+      </div>
+      <div class="card">
+        <h2 style="font-size:1rem;font-weight:800;color:#1e3a5f;margin-bottom:16px;">⚠️ Aandachtspunten per leerling</h2>
+        <div id="zwakke-onderdelen"></div>
       </div>
     </div>
-    <div class="card p-6">
-      <h2 style="font-size:1.1rem;font-weight:800;color:#1e3a5f;margin-bottom:16px;">Zwakste onderdelen per leerling</h2>
-      <div id="zwakke-onderdelen">
-        <div style="text-align:center;padding:2rem;color:#9ca3af;">Laden...</div>
+
+    <!-- TAB: PER LEERLING -->
+    <div id="tab-detail-content" class="hidden">
+      <div class="card mb-4">
+        <label style="font-weight:700;color:#374151;margin-bottom:8px;display:block;">Selecteer leerling:</label>
+        <select id="leerling-select" onchange="loadLeerlingDetail()" style="width:100%;padding:12px;border:2px solid #e5e7eb;border-radius:1rem;font-size:1rem;font-weight:600;outline:none;">
+          <option value="">-- Kies een leerling --</option>
+        </select>
+      </div>
+      <div id="leerling-detail"></div>
+    </div>
+
+    <!-- TAB: LEERLINGEN BEHEREN -->
+    <div id="tab-leerlingen-content" class="hidden">
+      <div class="card mb-4">
+        <h2 style="font-size:1rem;font-weight:800;color:#1e3a5f;margin-bottom:16px;">➕ Nieuwe leerling toevoegen</h2>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;">
+          <div>
+            <label style="font-size:.78rem;font-weight:700;color:#6b7280;display:block;margin-bottom:4px;">Voornaam (kleine letters)</label>
+            <input type="text" id="nieuw-naam" placeholder="bv. emma" style="padding:11px 14px;border:2px solid #e5e7eb;border-radius:.75rem;font-size:.95rem;font-weight:600;outline:none;width:180px;">
+          </div>
+          <div>
+            <label style="font-size:.78rem;font-weight:700;color:#6b7280;display:block;margin-bottom:4px;">Weergavenaam</label>
+            <input type="text" id="nieuw-display" placeholder="bv. Emma" style="padding:11px 14px;border:2px solid #e5e7eb;border-radius:.75rem;font-size:.95rem;font-weight:600;outline:none;width:180px;">
+          </div>
+          <div>
+            <label style="font-size:.78rem;font-weight:700;color:#6b7280;display:block;margin-bottom:4px;">Code</label>
+            <input type="text" id="nieuw-code" placeholder="bv. emma2025" style="padding:11px 14px;border:2px solid #e5e7eb;border-radius:.75rem;font-size:.95rem;font-weight:600;outline:none;width:160px;">
+          </div>
+          <button class="btn btn-green" onclick="voegLeerlingToe()">+ Toevoegen</button>
+        </div>
+        <div id="add-feedback" style="margin-top:10px;font-weight:700;font-size:.88rem;min-height:20px;"></div>
+      </div>
+      <div class="card">
+        <h2 style="font-size:1rem;font-weight:800;color:#1e3a5f;margin-bottom:16px;">👥 Huidige leerlingen</h2>
+        <div id="leerlingen-lijst"></div>
       </div>
     </div>
-  </div>
 
-  <!-- PER LEERLING -->
-  <div id="tab-detail-content" class="hidden">
-    <div class="card p-6 mb-4">
-      <label style="font-weight:700;color:#374151;margin-bottom:8px;display:block;">Selecteer leerling:</label>
-      <select id="leerling-select" onchange="loadLeerlingDetail()"
-        style="width:100%;padding:12px;border:2px solid #e5e7eb;border-radius:1rem;font-family:inherit;font-size:1rem;font-weight:600;outline:none;">
-        <option value="">-- Kies een leerling --</option>
-      </select>
-    </div>
-    <div id="leerling-detail"></div>
   </div>
 </div>
 
@@ -91,229 +137,371 @@ body { font-family: 'Plus Jakarta Sans', sans-serif; background: #f8fafc; }
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 <script>
 firebase.initializeApp({
-    apiKey: "AIzaSyCnQDVVAlK6jE-PPUUediRJMTbN0xqrLDE",
-    authDomain: "klaswebsite-database.firebaseapp.com",
-    projectId: "klaswebsite-database",
-    storageBucket: "klaswebsite-database.firebasestorage.app",
-    messagingSenderId: "42912327282",
-    appId: "1:42912327282:web:f13f2c706f6c42c115c4eb"
+  apiKey:"AIzaSyCnQDVVAlK6jE-PPUUediRJMTbN0xqrLDE",
+  authDomain:"klaswebsite-database.firebaseapp.com",
+  projectId:"klaswebsite-database",
+  storageBucket:"klaswebsite-database.firebasestorage.app",
+  messagingSenderId:"42912327282",
+  appId:"1:42912327282:web:f13f2c706f6c42c115c4eb"
 });
-const fbDb = firebase.firestore();
+const db = firebase.firestore();
 
-// ── WACHTWOORD (pas aan naar jouw voorkeur) ───────────────────────────
+// ── WACHTWOORD ────────────────────────────────────────────────────────────
 const TEACHER_PWD = 'meester2025';
 
-// ── LEERLINGEN ────────────────────────────────────────────────────────
-const LEERLINGEN = ['ethanael','eulalie','gabriel','kobe','kriss','kylian','leila','stijn'];
-const NAMEN = {
-    ethanael:'Ethanael', eulalie:'Eulalie', gabriel:'Gabriel',
-    kobe:'Kobe', kriss:'Kriss', kylian:'Kylian', leila:'Leila', stijn:'Stijn'
-};
+// ── STATE ─────────────────────────────────────────────────────────────────
+var leerlingen = []; // [{id, naam, code}]
+var allScores = {};  // {leerlingId: [{app, score, ...}]}
 
+// CAT NAMEN
 const CAT_NAMEN = {
-    'LEESBAAR':'Leesbaarheid', 'WAARDE':'Getalwaarde', 'GETALBEELD':'Getalbeeld',
-    'INTERPRETEREN':'Interpreteren', 'ORDENEN':'Ordenen',
-    'GETALLENAS':'Getallenas', 'GETALLENRIJ':'Getallenrij', 'TOETS':'Toets'
+  'LEESBAAR':'Leesbaarheid','WAARDE':'Getalwaarde','GETALBEELD':'Getalbeeld',
+  'INTERPRETEREN':'Interpreteren','ORDENEN':'Ordenen','GETALLENAS':'Getallenas',
+  'GETALLENRIJ':'Getallenrij','TOETS':'Toets','getalbegrip':'Getalbegrip',
+  'breuken':'Breuken','geld':'Geld rekenen','inhoudsmaten':'Inhoudsmaten',
+  'negatieve_getallen':'Negatieve getallen','meetkunde':'Meetkunde','hoeken_meten':'Hoeken meten'
 };
 
-var allData = {};
+const APP_COLLECTIONS = [
+  {key:'getalbegrip', col:'getalbegrip_toets'},
+  {key:'breuken', col:'breuken_toets'},
+  {key:'geld', col:'geld_toets'},
+  {key:'inhoudsmaten', col:'inhoudsmaten_toets'},
+  {key:'negatieve_getallen', col:'negatieve_getallen_toets'},
+  {key:'meetkunde', col:'meetkunde_toets'},
+  {key:'hoeken_meten', col:'hoeken_meten_toets'},
+];
 
+// ── LOGIN ─────────────────────────────────────────────────────────────────
 function checkPwd() {
-    var pwd = document.getElementById('teacher-pwd').value;
-    if (pwd === TEACHER_PWD) {
-        document.getElementById('login-screen').classList.add('hidden');
-        document.getElementById('main-app').classList.remove('hidden');
-        loadData();
-        // Populate leerling select
-        var sel = document.getElementById('leerling-select');
-        LEERLINGEN.forEach(function(id) {
-            var opt = document.createElement('option');
-            opt.value = id; opt.textContent = NAMEN[id] || id;
-            sel.appendChild(opt);
-        });
-    } else {
-        document.getElementById('pwd-error').textContent = 'Verkeerd wachtwoord.';
-        document.getElementById('teacher-pwd').style.borderColor = '#dc2626';
-    }
+  var pwd = document.getElementById('teacher-pwd').value;
+  if (pwd === TEACHER_PWD) {
+    document.getElementById('login-screen').classList.add('hidden');
+    document.getElementById('main-app').classList.remove('hidden');
+    loadAll();
+  } else {
+    document.getElementById('pwd-error').textContent = 'Verkeerd wachtwoord.';
+  }
 }
 document.addEventListener('DOMContentLoaded', function() {
-    document.getElementById('teacher-pwd').addEventListener('keypress', function(e) {
-        if (e.key === 'Enter') checkPwd();
-    });
+  document.getElementById('teacher-pwd').addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') checkPwd();
+  });
 });
 
+// ── TABS ──────────────────────────────────────────────────────────────────
 function showTab(tab) {
-    ['overzicht','detail'].forEach(function(t) {
-        document.getElementById('tab-'+t+'-content').classList.toggle('hidden', t !== tab);
-        document.getElementById('tab-'+t).classList.toggle('active', t === tab);
-    });
+  ['overzicht','detail','leerlingen'].forEach(function(t) {
+    document.getElementById('tab-'+t+'-content').classList.toggle('hidden', t!==tab);
+    document.getElementById('tab-'+t).classList.toggle('active', t===tab);
+  });
 }
 
-async function loadData() {
-    try {
-        var snap = await fbDb.collection('getalbegrip_toets')
-            .orderBy('timestamp', 'desc')
-            .limit(200)
-            .get();
-        allData = {};
-        snap.forEach(function(doc) {
-            var d = doc.data();
-            var id = d.leerlingId;
-            if (!id) return;
-            if (!allData[id]) allData[id] = [];
-            allData[id].push(d);
-        });
-        renderKlasOverzicht();
-    } catch(e) {
-        console.error(e);
-        document.getElementById('klas-tabel').innerHTML = '<p style="color:#dc2626;">Fout bij laden: '+e.message+'</p>';
+// ── LOAD ALL DATA ─────────────────────────────────────────────────────────
+async function loadAll() {
+  await loadLeerlingen();
+  await loadScores();
+  renderOverzicht();
+  renderLeerlingenLijst();
+  populateLeerlingSelect();
+}
+
+async function loadLeerlingen() {
+  try {
+    var snap = await db.collection('leerlingen').orderBy('naam').get();
+    leerlingen = [];
+    snap.forEach(function(doc) {
+      leerlingen.push(Object.assign({id: doc.id}, doc.data()));
+    });
+    // Als nog geen leerlingen in DB → initialiseer standaard klas
+    if (leerlingen.length === 0) {
+      await initieelLeerlingenAanmaken();
     }
+  } catch(e) { console.error('Leerlingen laden:', e); }
 }
 
-function renderKlasOverzicht() {
-    // Tabel
-    var html = '<table style="width:100%;border-collapse:collapse;">';
-    html += '<tr style="border-bottom:2px solid #e5e7eb;">';
-    ['Leerling','Toetsen','Beste score','Laatste score','Gem. score','Status'].forEach(function(h) {
-        html += '<th style="text-align:left;padding:8px 12px;font-size:.8rem;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:#6b7280;">'+h+'</th>';
+async function initieelLeerlingenAanmaken() {
+  var standaard = [
+    {naam:'ethanael', weergavenaam:'Ethanael', code:'ethanael2025'},
+    {naam:'eulalie',  weergavenaam:'Eulalie',  code:'eulalie2025'},
+    {naam:'gabriel',  weergavenaam:'Gabriel',  code:'gabriel2025'},
+    {naam:'kobe',     weergavenaam:'Kobe',      code:'kobe2025'},
+    {naam:'kriss',    weergavenaam:'Kriss',     code:'kriss2025'},
+    {naam:'kylian',   weergavenaam:'Kylian',    code:'kylian2025'},
+    {naam:'leila',    weergavenaam:'Leila',     code:'leila2025'},
+    {naam:'stijn',    weergavenaam:'Stijn',     code:'stijn2025'},
+  ];
+  for (var l of standaard) {
+    await db.collection('leerlingen').doc(l.naam).set(l);
+  }
+  await loadLeerlingen();
+}
+
+async function loadScores() {
+  allScores = {};
+  for (var appDef of APP_COLLECTIONS) {
+    try {
+      var snap = await db.collection(appDef.col)
+        .orderBy('timestamp','desc').limit(300).get();
+      snap.forEach(function(doc) {
+        var d = doc.data();
+        var id = d.leerlingId;
+        if (!id) return;
+        if (!allScores[id]) allScores[id] = [];
+        allScores[id].push(Object.assign({}, d, {_app: appDef.key}));
+      });
+    } catch(e) { /* collection may not exist yet */ }
+  }
+}
+
+// ── RENDER OVERZICHT ──────────────────────────────────────────────────────
+function renderOverzicht() {
+  var filterApp = document.getElementById('filter-app').value;
+  var html = '<table style="width:100%;border-collapse:collapse;font-size:.88rem;">';
+  html += '<tr style="border-bottom:2px solid #e5e7eb;">';
+  ['Leerling','Toetsen','Beste','Laatste','Gemiddelde','Status'].forEach(function(h) {
+    html += '<th style="text-align:left;padding:10px 12px;font-size:.75rem;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:#9ca3af;">'+h+'</th>';
+  });
+  html += '</tr>';
+
+  leerlingen.forEach(function(l) {
+    var data = (allScores[l.naam] || []).filter(function(d) {
+      return !filterApp || d._app === filterApp;
     });
+    if (data.length === 0) {
+      html += '<tr style="border-bottom:1px solid #f1f5f9;">';
+      html += '<td style="padding:12px;font-weight:800;color:#1e3a5f;">'+l.weergavenaam+'</td>';
+      html += '<td colspan="5" style="padding:12px;color:#9ca3af;font-style:italic;">Nog geen toetsen</td></tr>';
+      return;
+    }
+    var scores = data.map(function(d){return d.percentage||0;});
+    var beste = Math.max.apply(null,scores);
+    var laatste = data[0].percentage||0;
+    var gem = Math.round(scores.reduce(function(a,b){return a+b;},0)/scores.length);
+    var badgeClass = gem>=70?'badge-goed':gem>=50?'badge-ok':'badge-slecht';
+    var status = gem>=70?'✓ Goed':gem>=50?'~ Oefenen':'✗ Extra hulp';
+    html += '<tr style="border-bottom:1px solid #f1f5f9;cursor:pointer;" onclick="showTab(\'detail\');document.getElementById(\'leerling-select\').value=\''+l.naam+'\';loadLeerlingDetail()" onmouseover="this.style.background=\'#f8fafc\'" onmouseout="this.style.background=\'#fff\'">';
+    html += '<td style="padding:12px;font-weight:800;color:#1e3a5f;">'+l.weergavenaam+'</td>';
+    html += '<td style="padding:12px;font-weight:700;">'+data.length+'</td>';
+    html += '<td style="padding:12px;font-weight:700;">'+beste+'%</td>';
+    html += '<td style="padding:12px;font-weight:700;">'+laatste+'%</td>';
+    html += '<td style="padding:12px;">'+
+      '<div style="display:flex;align-items:center;gap:8px;">'+
+        '<div class="progress-bar" style="width:80px;"><div class="progress-fill" style="width:'+gem+'%;background:'+(gem>=70?'#16a34a':gem>=50?'#d97706':'#dc2626')+'"></div></div>'+
+        '<span style="font-weight:800;">'+gem+'%</span>'+
+      '</div></td>';
+    html += '<td style="padding:12px;"><span class="'+badgeClass+'">'+status+'</span></td>';
     html += '</tr>';
+  });
+  html += '</table>';
+  document.getElementById('klas-tabel').innerHTML = html;
 
-    LEERLINGEN.forEach(function(id) {
-        var data = allData[id] || [];
-        var naam = NAMEN[id] || id;
-        if (data.length === 0) {
-            html += '<tr style="border-bottom:1px solid #f1f5f9;">';
-            html += '<td style="padding:12px;font-weight:700;">'+naam+'</td>';
-            html += '<td colspan="5" style="padding:12px;color:#9ca3af;font-size:.85rem;">Nog geen toetsen gemaakt</td>';
-            html += '</tr>';
-            return;
-        }
-        var scores = data.map(function(d) { return d.percentage || 0; });
-        var beste = Math.max.apply(null, scores);
-        var laatste = data[0].percentage || 0;
-        var gem = Math.round(scores.reduce(function(a,b){return a+b;},0) / scores.length);
-        var badge = gem >= 70 ? 'badge-goed' : gem >= 50 ? 'badge-ok' : 'badge-slecht';
-        var status = gem >= 70 ? '✓ Goed' : gem >= 50 ? '~ Oefenen' : '✗ Extra hulp';
-        html += '<tr style="border-bottom:1px solid #f1f5f9;" onmouseover="this.style.background=\'#f8fafc\'" onmouseout="this.style.background=\'\'">'; 
-        html += '<td style="padding:12px;font-weight:800;color:#1e3a5f;">'+naam+'</td>';
-        html += '<td style="padding:12px;font-weight:700;">'+data.length+'</td>';
-        html += '<td style="padding:12px;font-weight:700;">'+beste+'%</td>';
-        html += '<td style="padding:12px;font-weight:700;">'+laatste+'%</td>';
-        html += '<td style="padding:12px;font-weight:700;">'+gem+'%</td>';
-        html += '<td style="padding:12px;"><span class="'+badge+'">'+status+'</span></td>';
-        html += '</tr>';
+  // Aandachtspunten
+  var zwakHTML = '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px;">';
+  var heeftData = false;
+  leerlingen.forEach(function(l) {
+    var data = allScores[l.naam] || [];
+    if (data.length === 0) return;
+    heeftData = true;
+    var cats = {};
+    data.forEach(function(d) {
+      if (!d.categoryScores) return;
+      Object.entries(d.categoryScores).forEach(function(e) {
+        var cat=e[0],s=e[1];
+        if(!cats[cat])cats[cat]={correct:0,total:0};
+        cats[cat].correct+=s.correct||0;
+        cats[cat].total+=s.total||0;
+      });
     });
-    html += '</table>';
-    document.getElementById('klas-tabel').innerHTML = html;
-
-    // Zwakste onderdelen
-    var zwakHTML = '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;">';
-    LEERLINGEN.forEach(function(id) {
-        var data = allData[id] || [];
-        var naam = NAMEN[id] || id;
-        if (data.length === 0) return;
-        // Aggregate category scores
-        var cats = {};
-        data.forEach(function(d) {
-            if (!d.categoryScores) return;
-            Object.entries(d.categoryScores).forEach(function(e) {
-                var cat = e[0], scores = e[1];
-                if (!cats[cat]) cats[cat] = {correct:0,total:0};
-                cats[cat].correct += scores.correct || 0;
-                cats[cat].total += scores.total || 0;
-            });
-        });
-        var zwakste = Object.entries(cats)
-            .filter(function(e){return e[1].total>0;})
-            .map(function(e){return {cat:e[0],pct:Math.round(e[1].correct/e[1].total*100)};})
-            .sort(function(a,b){return a.pct-b.pct;})
-            .slice(0,2);
-        zwakHTML += '<div style="background:#f8fafc;border-radius:1rem;padding:14px;border:1px solid #e5e7eb;">';
-        zwakHTML += '<div style="font-weight:800;color:#1e3a5f;margin-bottom:8px;">'+naam+'</div>';
-        if (zwakste.length === 0) {
-            zwakHTML += '<div style="font-size:.8rem;color:#9ca3af;">Geen data</div>';
-        } else {
-            zwakste.forEach(function(z) {
-                var col = z.pct < 50 ? '#dc2626' : '#d97706';
-                zwakHTML += '<div style="font-size:.82rem;font-weight:700;color:'+col+';margin-bottom:4px;">⚠ '+(CAT_NAMEN[z.cat]||z.cat)+' ('+z.pct+'%)</div>';
-            });
-        }
-        zwakHTML += '</div>';
-    });
+    var zwakste = Object.entries(cats)
+      .filter(function(e){return e[1].total>2;})
+      .map(function(e){return {cat:e[0],pct:Math.round(e[1].correct/e[1].total*100)};})
+      .sort(function(a,b){return a.pct-b.pct;}).slice(0,3);
+    zwakHTML += '<div style="background:#f8fafc;border-radius:1rem;padding:14px;border:1px solid #e5e7eb;">';
+    zwakHTML += '<div style="font-weight:800;color:#1e3a5f;margin-bottom:8px;font-size:.9rem;">'+l.weergavenaam+'</div>';
+    if (zwakste.length === 0) {
+      zwakHTML += '<div style="font-size:.8rem;color:#9ca3af;">Onvoldoende data</div>';
+    } else {
+      zwakste.forEach(function(z) {
+        var col = z.pct<50?'#dc2626':'#d97706';
+        if(z.pct>=70) col='#16a34a';
+        zwakHTML += '<div style="font-size:.8rem;font-weight:700;color:'+col+';margin-bottom:4px;">'+(z.pct<70?'⚠ ':' ')+(CAT_NAMEN[z.cat]||z.cat)+' — '+z.pct+'%</div>';
+      });
+    }
     zwakHTML += '</div>';
-    document.getElementById('zwakke-onderdelen').innerHTML = zwakHTML;
+  });
+  zwakHTML += '</div>';
+  document.getElementById('zwakke-onderdelen').innerHTML = heeftData ? zwakHTML : '<p style="color:#9ca3af;font-style:italic;">Nog geen data beschikbaar.</p>';
+}
+
+// ── RENDER PER LEERLING ───────────────────────────────────────────────────
+function populateLeerlingSelect() {
+  var sel = document.getElementById('leerling-select');
+  sel.innerHTML = '<option value="">-- Kies een leerling --</option>';
+  leerlingen.forEach(function(l) {
+    var opt = document.createElement('option');
+    opt.value = l.naam; opt.textContent = l.weergavenaam;
+    sel.appendChild(opt);
+  });
 }
 
 function loadLeerlingDetail() {
-    var id = document.getElementById('leerling-select').value;
-    if (!id) { document.getElementById('leerling-detail').innerHTML = ''; return; }
-    var data = allData[id] || [];
-    var naam = NAMEN[id] || id;
-    var det = document.getElementById('leerling-detail');
-    if (data.length === 0) {
-        det.innerHTML = '<div class="card p-6" style="text-align:center;color:#9ca3af;">'+naam+' heeft nog geen toetsen gemaakt.</div>';
-        return;
-    }
+  var id = document.getElementById('leerling-select').value;
+  var det = document.getElementById('leerling-detail');
+  if (!id) { det.innerHTML = ''; return; }
+  var l = leerlingen.find(function(x){return x.naam===id;});
+  var naam = l ? l.weergavenaam : id;
+  var data = allScores[id] || [];
 
-    // Stats
-    var scores = data.map(function(d){return d.percentage||0;});
-    var beste = Math.max.apply(null,scores);
-    var gem = Math.round(scores.reduce(function(a,b){return a+b;},0)/scores.length);
-    var html = '<div class="card p-6 mb-4">';
-    html += '<h2 style="font-size:1.1rem;font-weight:800;color:#1e3a5f;margin-bottom:16px;">'+naam+' — Overzicht</h2>';
-    html += '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px;">';
-    [{l:'Toetsen gemaakt',v:data.length},{l:'Beste score',v:beste+'%'},{l:'Gemiddelde',v:gem+'%'}].forEach(function(s){
-        html += '<div style="background:#f8fafc;border-radius:1rem;padding:16px;text-align:center;">';
-        html += '<div style="font-size:1.6rem;font-weight:800;color:#1d4ed8;">'+s.v+'</div>';
-        html += '<div style="font-size:.75rem;font-weight:700;color:#6b7280;text-transform:uppercase;margin-top:4px;">'+s.l+'</div>';
-        html += '</div>';
+  if (data.length === 0) {
+    det.innerHTML = '<div class="card" style="text-align:center;color:#9ca3af;padding:2rem;">'+naam+' heeft nog geen toetsen gemaakt.</div>';
+    return;
+  }
+
+  var scores = data.map(function(d){return d.percentage||0;});
+  var beste = Math.max.apply(null,scores);
+  var gem = Math.round(scores.reduce(function(a,b){return a+b;},0)/scores.length);
+  var html = '<div class="card mb-4">';
+  html += '<h2 style="font-size:1rem;font-weight:800;color:#1e3a5f;margin-bottom:16px;">'+naam+' — Statistieken</h2>';
+  html += '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px;">';
+  [{l:'Toetsen gemaakt',v:data.length},{l:'Beste score',v:beste+'%'},{l:'Gemiddelde',v:gem+'%'}].forEach(function(s) {
+    html += '<div style="background:#f8fafc;border-radius:1rem;padding:16px;text-align:center;">';
+    html += '<div style="font-size:1.6rem;font-weight:800;color:#1d4ed8;">'+s.v+'</div>';
+    html += '<div style="font-size:.72rem;font-weight:700;color:#6b7280;text-transform:uppercase;margin-top:4px;">'+s.l+'</div></div>';
+  });
+  html += '</div>';
+
+  // Per app
+  var apps = {};
+  data.forEach(function(d) {
+    var a = d._app||'onbekend';
+    if(!apps[a])apps[a]=[];
+    apps[a].push(d);
+  });
+  if (Object.keys(apps).length > 1) {
+    html += '<h3 style="font-size:.88rem;font-weight:800;color:#374151;margin-bottom:10px;">Per app:</h3>';
+    html += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:8px;margin-bottom:16px;">';
+    Object.entries(apps).forEach(function(e) {
+      var appKey=e[0], appData=e[1];
+      var appScores=appData.map(function(d){return d.percentage||0;});
+      var appGem=Math.round(appScores.reduce(function(a,b){return a+b;},0)/appScores.length);
+      var col=appGem>=70?'#16a34a':appGem>=50?'#d97706':'#dc2626';
+      html += '<div style="background:#f8fafc;border-radius:.75rem;padding:12px;text-align:center;">';
+      html += '<div style="font-size:.78rem;font-weight:700;color:#6b7280;margin-bottom:4px;">'+(CAT_NAMEN[appKey]||appKey)+'</div>';
+      html += '<div style="font-size:1.3rem;font-weight:800;color:'+col+';">'+appGem+'%</div>';
+      html += '<div style="font-size:.72rem;color:#9ca3af;">'+appData.length+' toets(en)</div></div>';
     });
     html += '</div>';
+  }
 
-    // Per onderdeel
-    var cats = {};
-    data.forEach(function(d) {
-        if (!d.categoryScores) return;
-        Object.entries(d.categoryScores).forEach(function(e) {
-            var cat=e[0], s=e[1];
-            if(!cats[cat])cats[cat]={correct:0,total:0};
-            cats[cat].correct+=s.correct||0;
-            cats[cat].total+=s.total||0;
-        });
+  // Per categorie
+  var cats = {};
+  data.forEach(function(d) {
+    if (!d.categoryScores) return;
+    Object.entries(d.categoryScores).forEach(function(e) {
+      var cat=e[0],s=e[1];
+      if(!cats[cat])cats[cat]={correct:0,total:0};
+      cats[cat].correct+=s.correct||0;
+      cats[cat].total+=s.total||0;
     });
-    html += '<h3 style="font-size:.95rem;font-weight:800;color:#374151;margin-bottom:12px;">Resultaten per onderdeel:</h3>';
-    Object.entries(cats).forEach(function(e) {
-        var cat=e[0], d=e[1];
-        if(d.total===0)return;
-        var pct=Math.round(d.correct/d.total*100);
-        var col=pct>=70?'#16a34a':pct>=50?'#d97706':'#dc2626';
-        var bg=pct>=70?'#dcfce7':pct>=50?'#fef9c3':'#fee2e2';
-        html += '<div style="display:flex;align-items:center;gap:12px;margin-bottom:8px;background:'+bg+';border-radius:.75rem;padding:10px 14px;">';
-        html += '<div style="font-weight:800;font-size:.88rem;flex:1;">'+(CAT_NAMEN[cat]||cat)+'</div>';
-        html += '<div style="font-weight:800;color:'+col+';">'+d.correct+'/'+d.total+' ('+pct+'%)</div>';
-        html += '<div style="width:80px;height:8px;background:#e5e7eb;border-radius:99px;overflow:hidden;">';
-        html += '<div style="height:100%;width:'+pct+'%;background:'+col+';border-radius:99px;"></div></div>';
-        html += '</div>';
+  });
+  if (Object.keys(cats).length > 0) {
+    html += '<h3 style="font-size:.88rem;font-weight:800;color:#374151;margin-bottom:10px;">Per onderdeel:</h3>';
+    Object.entries(cats).sort(function(a,b){
+      var pa=a[1].total?a[1].correct/a[1].total:1;
+      var pb=b[1].total?b[1].correct/b[1].total:1;
+      return pa-pb;
+    }).forEach(function(e) {
+      var cat=e[0],d=e[1];
+      if(d.total===0)return;
+      var pct=Math.round(d.correct/d.total*100);
+      var col=pct>=70?'#16a34a':pct>=50?'#d97706':'#dc2626';
+      var bg=pct>=70?'#f0fdf4':pct>=50?'#fefce8':'#fff1f2';
+      html += '<div style="display:flex;align-items:center;gap:12px;margin-bottom:6px;background:'+bg+';border-radius:.75rem;padding:10px 14px;">';
+      html += '<div style="font-weight:700;font-size:.85rem;flex:1;min-width:100px;">'+(CAT_NAMEN[cat]||cat)+'</div>';
+      html += '<div style="font-weight:800;color:'+col+';min-width:80px;text-align:right;">'+d.correct+'/'+d.total+' ('+pct+'%)</div>';
+      html += '<div class="progress-bar" style="width:100px;"><div class="progress-fill" style="width:'+pct+'%;background:'+col+'"></div></div>';
+      html += '</div>';
     });
+  }
+  html += '</div>';
+
+  // Alle toetsen
+  html += '<div class="card"><h3 style="font-size:.88rem;font-weight:800;color:#374151;margin-bottom:12px;">Alle toetsen (nieuwste eerst):</h3>';
+  data.forEach(function(d) {
+    var ts = d.timestamp ? new Date(d.timestamp.seconds*1000).toLocaleString('nl-BE') : '?';
+    var pct = d.percentage||0;
+    var col = pct>=70?'#16a34a':pct>=50?'#d97706':'#dc2626';
+    var appNaam = CAT_NAMEN[d._app]||d._app||'';
+    html += '<div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid #f1f5f9;flex-wrap:wrap;">';
+    html += '<div style="font-size:.8rem;font-weight:600;color:#9ca3af;min-width:140px;">'+ts+'</div>';
+    if(appNaam) html += '<div style="font-size:.78rem;font-weight:700;color:#6b7280;background:#f1f5f9;padding:2px 8px;border-radius:99px;">'+appNaam+'</div>';
+    html += '<div style="font-weight:800;">'+d.score+'/'+d.total+'</div>';
+    html += '<div style="font-weight:800;color:'+col+';">'+pct+'%</div>';
+    if(d.hintsUsed) html += '<div style="font-size:.78rem;color:#d97706;">💡 '+d.hintsUsed+' hints</div>';
+    if(d.timeSeconds) html += '<div style="font-size:.78rem;color:#9ca3af;">⏱ '+Math.floor(d.timeSeconds/60)+'m'+d.timeSeconds%60+'s</div>';
     html += '</div>';
+  });
+  html += '</div>';
+  det.innerHTML = html;
+}
 
-    // Alle toetsen chronologisch
-    html += '<div class="card p-6"><h3 style="font-size:.95rem;font-weight:800;color:#374151;margin-bottom:12px;">Alle toetsen (nieuwste eerst):</h3>';
-    data.forEach(function(d, i) {
-        var ts = d.timestamp ? new Date(d.timestamp.seconds*1000).toLocaleDateString('nl-BE',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}) : 'onbekend';
-        var pct = d.percentage || 0;
-        var col = pct>=70?'#16a34a':pct>=50?'#d97706':'#dc2626';
-        html += '<div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid #f1f5f9;">';
-        html += '<div style="font-weight:800;font-size:.82rem;color:#6b7280;min-width:120px;">'+ts+'</div>';
-        html += '<div style="font-weight:800;">'+d.score+'/'+d.total+'</div>';
-        html += '<div style="font-weight:800;color:'+col+';">'+pct+'%</div>';
-        if(d.hintsUsed) html += '<div style="font-size:.78rem;color:#d97706;">💡 '+d.hintsUsed+' hints</div>';
-        html += '</div>';
+// ── LEERLINGEN BEHEREN ────────────────────────────────────────────────────
+function renderLeerlingenLijst() {
+  var html = '';
+  if (leerlingen.length === 0) {
+    html = '<p style="color:#9ca3af;font-style:italic;">Nog geen leerlingen toegevoegd.</p>';
+  } else {
+    leerlingen.forEach(function(l) {
+      html += '<div class="leerling-row">';
+      html += '<div style="width:36px;height:36px;border-radius:50%;background:#dbeafe;display:flex;align-items:center;justify-content:center;font-weight:900;color:#1d4ed8;font-size:.95rem;">'+l.weergavenaam[0]+'</div>';
+      html += '<div style="flex:1;">';
+      html += '<div style="font-weight:800;color:#1e3a5f;">'+l.weergavenaam+'</div>';
+      html += '<div style="font-size:.78rem;color:#6b7280;">Login: <b>'+l.naam+'</b> | Code: <b>'+l.code+'</b></div>';
+      html += '</div>';
+      html += '<button class="btn btn-outline" style="font-size:.78rem;padding:6px 12px;" onclick="wijzigCode(\''+l.naam+'\',\''+l.weergavenaam+'\')">🔑 Code wijzigen</button>';
+      html += '<button class="btn btn-red" style="font-size:.78rem;padding:6px 12px;" onclick="verwijderLeerling(\''+l.naam+'\',\''+l.weergavenaam+'\')">🗑 Verwijderen</button>';
+      html += '</div>';
     });
-    html += '</div>';
+  }
+  document.getElementById('leerlingen-lijst').innerHTML = html;
+}
 
-    det.innerHTML = html;
+async function voegLeerlingToe() {
+  var naam = document.getElementById('nieuw-naam').value.trim().toLowerCase();
+  var display = document.getElementById('nieuw-display').value.trim();
+  var code = document.getElementById('nieuw-code').value.trim();
+  var fb = document.getElementById('add-feedback');
+
+  if (!naam || !display || !code) { fb.innerHTML = '<span style="color:#dc2626;">Vul alle velden in.</span>'; return; }
+  if (leerlingen.find(function(l){return l.naam===naam;})) { fb.innerHTML = '<span style="color:#dc2626;">Deze naam bestaat al.</span>'; return; }
+
+  try {
+    await db.collection('leerlingen').doc(naam).set({naam:naam, weergavenaam:display, code:code});
+    fb.innerHTML = '<span style="color:#16a34a;">✓ '+display+' toegevoegd!</span>';
+    document.getElementById('nieuw-naam').value = '';
+    document.getElementById('nieuw-display').value = '';
+    document.getElementById('nieuw-code').value = '';
+    await loadAll();
+  } catch(e) { fb.innerHTML = '<span style="color:#dc2626;">Fout: '+e.message+'</span>'; }
+}
+
+async function verwijderLeerling(naam, display) {
+  if (!confirm('Ben je zeker dat je '+display+' wil verwijderen? Scores blijven bewaard.')) return;
+  try {
+    await db.collection('leerlingen').doc(naam).delete();
+    await loadAll();
+  } catch(e) { alert('Fout: '+e.message); }
+}
+
+async function wijzigCode(naam, display) {
+  var nieuweCode = prompt('Nieuwe code voor '+display+':', '');
+  if (!nieuweCode) return;
+  try {
+    await db.collection('leerlingen').doc(naam).update({code: nieuweCode});
+    alert('✓ Code gewijzigd voor '+display);
+    await loadAll();
+  } catch(e) { alert('Fout: '+e.message); }
 }
 </script>
 </body>

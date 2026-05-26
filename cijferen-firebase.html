@@ -1,0 +1,1434 @@
+<!DOCTYPE html>
+
+<html lang="nl">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Cijferend Optellen en Aftrekken</title>
+
+    <style>
+
+    :root {
+
+    --primary-color: #2196F3;
+
+    --secondary-color: #FFC107;
+
+    --success-color: #4CAF50;
+
+    --error-color: #F44336;
+
+    --bg-color: #f0f2f5;
+
+    --grid-border: #999;
+
+    
+
+    /* Kolom Kleuren */
+
+    --color-E: rgba(255, 235, 59, 0.2);    /* Geel */
+
+    --color-T: rgba(76, 175, 80, 0.2);     /* Groen */
+
+    --color-H: rgba(33, 150, 243, 0.2);    /* Blauw */
+
+    --color-D: rgba(244, 67, 54, 0.2);     /* Rood */
+
+    }
+
+
+
+    body {
+
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+
+    background-color: var(--bg-color);
+
+    display: flex;
+
+    justify-content: center;
+
+    align-items: center;
+
+    min-height: 100vh;
+
+    margin: 0;
+
+    padding: 20px;
+
+    }
+
+
+
+    .container {
+
+    background: white;
+
+    padding: 30px;
+
+    border-radius: 15px;
+
+    box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+
+    width: 100%;
+
+    max-width: 650px;
+
+    text-align: center;
+
+    }
+
+
+
+    h1 { color: #333; margin-bottom: 20px; font-size: 1.5rem; }
+
+
+
+    /* Hartjes & Niveau Progressie */
+
+    #progressContainer {
+
+    display: none;
+
+    flex-direction: column;
+
+    align-items: center;
+
+    margin-bottom: 20px;
+
+    gap: 5px;
+
+    }
+
+
+
+    #niveauLabel {
+
+    font-size: 0.9rem;
+
+    font-weight: bold;
+
+    color: #666;
+
+    background: #eee;
+
+    padding: 4px 12px;
+
+    border-radius: 20px;
+
+    text-transform: uppercase;
+
+    letter-spacing: 0.5px;
+
+    }
+
+
+
+    #progressSectie {
+
+    display: flex;
+
+    justify-content: center;
+
+    gap: 10px;
+
+    font-size: 2rem;
+
+    }
+
+    .heart { color: #ccc; transition: color 0.3s; }
+
+    .heart.filled { color: #e91e63; }
+
+
+
+    /* Menu Stijl */
+
+    #menuSectie, #eindSectie {
+
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 10px;
+
+    }
+
+
+
+    #eindSectie { display: none; }
+
+
+
+    .menu-btn {
+
+    padding: 15px;
+
+    font-size: 1rem;
+
+    background: white;
+
+    border: 2px solid var(--primary-color);
+
+    color: var(--primary-color);
+
+    border-radius: 10px;
+
+    cursor: pointer;
+
+    transition: all 0.2s;
+
+    text-align: left;
+
+    }
+
+
+
+    .menu-btn:hover {
+
+    background: var(--primary-color);
+
+    color: white;
+
+    }
+
+
+
+    /* Opgave Stijl */
+
+    #oefeningSectie { display: none; }
+
+
+
+    .opgave-box {
+
+    background: #e3f2fd;
+
+    padding: 20px;
+
+    border-radius: 10px;
+
+    margin-bottom: 25px;
+
+    border: 2px dashed var(--primary-color);
+
+    }
+
+
+
+    .instruction {
+
+    font-size: 1rem;
+
+    color: #555;
+
+    margin-bottom: 15px;
+
+    line-height: 1.4;
+
+    }
+
+
+
+    .opgave-display {
+
+    font-size: 2.2rem;
+
+    font-weight: bold;
+
+    letter-spacing: 2px;
+
+    user-select: none;
+
+    display: flex;
+
+    justify-content: center;
+
+    align-items: center;
+
+    gap: 10px;
+
+    flex-wrap: wrap;
+
+    }
+
+
+
+    .number-group { display: flex; }
+
+
+
+    .digit {
+
+    cursor: pointer;
+
+    padding: 2px 6px;
+
+    border-radius: 5px;
+
+    transition: all 0.2s;
+
+    border: 2px solid transparent;
+
+    display: inline-block;
+
+    }
+
+
+
+    .digit:hover {
+
+    background: #bbdefb;
+
+    border-color: #90caf9;
+
+    }
+
+
+
+    .digit.selected {
+
+    background: var(--secondary-color) !important;
+
+    border-color: #ffa000 !important;
+
+    }
+
+
+
+    /* Schema Stijl */
+
+    #cijferSectie {
+
+    display: none;
+
+    margin-top: 20px;
+
+    animation: slideDown 0.5s ease-out;
+
+    }
+
+
+
+    @keyframes slideDown {
+
+    from { opacity: 0; transform: translateY(-20px); }
+
+    to { opacity: 1; transform: translateY(0); }
+
+    }
+
+
+
+    .cijfer-table {
+
+    margin: 0 auto;
+
+    border-collapse: collapse;
+
+    }
+
+
+
+    .cijfer-table td {
+
+    width: 50px;
+
+    height: 50px;
+
+    border: 1px solid var(--grid-border);
+
+    position: relative;
+
+    padding: 0;
+
+    }
+
+
+
+    /* Kolom Specifieke Achtergronden */
+
+    .col-D { background-color: var(--color-D); }
+
+    .col-H { background-color: var(--color-H); }
+
+    .col-T { background-color: var(--color-T); }
+
+    .col-E { background-color: var(--color-E); }
+
+
+
+    /* Onthoudrij Stijl (Cirkels) */
+
+    .carry-row { height: 65px !important; }
+
+    .carry-row td {    
+
+    border: none !important;    
+
+    vertical-align: middle;
+
+    }
+
+    .carry-row input {    
+
+    width: 40px;    
+
+    height: 40px;    
+
+    border-radius: 50%;    
+
+    border: 2px solid var(--grid-border);
+
+    color: #e65100;    
+
+    font-weight: bold;    
+
+    font-size: 1rem;
+
+    background: white;
+
+    transition: border-color 0.2s;
+
+    text-align: center;
+
+    padding: 0;
+
+    display: inline-block;
+
+    }
+
+    .carry-row input:focus {
+
+    border-color: var(--primary-color);
+
+    background: white;
+
+    }
+
+
+
+    .input-cell {
+
+    width: 100%; height: 100%; border: none;
+
+    text-align: center; font-size: 1.3rem;
+
+    background: transparent; outline: none;
+
+    }
+
+
+
+    .input-cell:focus { background: rgba(255, 255, 255, 0.5); }
+
+    .result-row { border-top: 3px solid #333; }
+
+    .operator-cell { font-size: 1.5rem; font-weight: bold; border: none !important; width: 30px !important; }
+
+
+
+    .btn-group { margin-top: 30px; display: flex; gap: 10px; justify-content: center; }
+
+
+
+    button {
+
+    padding: 12px 25px; font-size: 1rem;
+
+    border: none; border-radius: 8px;
+
+    cursor: pointer; transition: background 0.2s;
+
+    }
+
+
+
+    .btn-check { background: var(--success-color); color: white; }
+
+    .btn-next { background: var(--primary-color); color: white; display: none; }
+
+
+
+    #feedback { margin-top: 20px; font-weight: bold; min-height: 24px; }
+
+
+
+    .stats-box {
+
+    background: #f8f9fa;
+
+    padding: 20px;
+
+    border-radius: 10px;
+
+    margin: 20px 0;
+
+    text-align: left;
+
+    font-size: 1.1rem;
+
+    }
+
+
+
+    .correct-answer {
+
+    color: var(--success-color);
+
+    font-size: 1.2rem;
+
+    margin-top: 5px;
+
+    }
+
+        /* ── LOGIN ── */
+        #login-screen {
+            position:fixed; inset:0; z-index:9999;
+            background:linear-gradient(135deg,#4338ca 0%,#6d28d9 60%,#7c3aed 100%);
+            display:flex; align-items:center; justify-content:center; padding:20px;
+        }
+        #login-screen.hidden { display:none!important; }
+        .login-card {
+            background:white; border-radius:2rem; padding:2.5rem 2rem;
+            width:100%; max-width:380px;
+            box-shadow:0 25px 50px rgba(0,0,0,0.25); text-align:center;
+        }
+        .login-logo {
+            width:80px; height:80px; background:#ede9fe; border-radius:1.5rem;
+            display:flex; align-items:center; justify-content:center;
+            margin:0 auto 1.25rem; font-size:2.5rem;
+            box-shadow:0 4px 16px rgba(99,102,241,0.2);
+        }
+        .login-input {
+            width:100%; padding:14px 16px; border:2px solid #e5e7eb; border-radius:1rem;
+            font-family:inherit; font-size:1rem; font-weight:600; color:#374151;
+            margin-bottom:10px; outline:none; transition:border-color .2s; text-align:center;
+        }
+        .login-input:focus { border-color:#6d28d9; }
+        .login-input.err { border-color:#dc2626; background:#fef2f2; animation:loginShake .4s; }
+        @keyframes loginShake{0%,100%{transform:translateX(0)}25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
+        .btn-login {
+            width:100%; background:#6d28d9; color:white; border:none; border-radius:1rem;
+            padding:14px; font-family:inherit; font-size:1rem; font-weight:700;
+            cursor:pointer; transition:all .2s; margin-bottom:10px;
+        }
+        .btn-login:hover { background:#5b21b6; }
+        .btn-login:disabled { opacity:.6; cursor:not-allowed; }
+        .login-error { color:#dc2626; font-size:.85rem; font-weight:700; min-height:20px; margin-bottom:8px; }
+        .btn-guest {
+            width:100%; background:transparent; border:2px solid #d1d5db; border-radius:1rem;
+            padding:12px; font-family:inherit; font-size:.9rem; font-weight:700;
+            color:#6b7280; cursor:pointer; transition:all .2s;
+        }
+        .btn-guest:hover { border-color:#9ca3af; color:#374151; }
+        .teacher-link { margin-top:14px; font-size:.75rem; color:#9ca3af; }
+        .teacher-link a { color:#6d28d9; text-decoration:none; font-weight:700; }
+    </style>
+
+</head>
+
+<body>
+    <!-- LOGIN SCREEN -->
+    <div id="login-screen">
+      <div class="login-card">
+        <div class="login-logo">🔢</div>
+        <h1 style="font-size:1.6rem;font-weight:800;color:#1f2937;margin-bottom:6px;">Cijferen</h1>
+        <p style="font-size:.85rem;color:#6b7280;margin-bottom:1.25rem;">Voer je naam en code in</p>
+        <input class="login-input" id="login-naam" type="text" placeholder="Jouw voornaam" autocomplete="off" autocapitalize="words">
+        <input class="login-input" id="login-code" type="password" placeholder="Jouw code" autocomplete="off">
+        <div class="login-error" id="login-error"></div>
+        <button class="btn-login" id="btn-login" onclick="loginMetCode()">Inloggen</button>
+        <button class="btn-guest" onclick="loginGuest()">Doorgaan als gast (geen opslag)</button>
+        <div class="teacher-link"><a href="dashboard.html">Leerkracht? Klik hier</a></div>
+      </div>
+    </div>
+    <!-- ── LOGIN VIEW ── -->
+    <div id="login-view" style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:50vh;gap:16px;padding:20px;max-width:400px;margin:0 auto;">
+        <div style="font-size:2.5rem;">🔐</div>
+        <h2 style="font-size:1.3rem;font-weight:800;color:#1e293b;text-align:center;margin:0;">Aanmelden</h2>
+        <p style="color:#64748b;font-size:0.85rem;text-align:center;margin:0;max-width:320px;">Log in met je schoolaccount om je score op te slaan, of speel als gast.</p>
+        <div id="login-error" style="display:none;background:#fee2e2;border:1px solid #fca5a5;color:#b91c1c;padding:10px 16px;border-radius:10px;font-size:0.82rem;font-weight:600;max-width:320px;text-align:center;width:100%;box-sizing:border-box;"></div>
+        <button id="fb-google-btn" style="display:flex;align-items:center;gap:10px;background:#1e293b;color:white;border:none;border-radius:12px;padding:13px 20px;font-size:0.9rem;font-weight:700;cursor:pointer;width:100%;max-width:320px;justify-content:center;">
+            <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.31-8.16 2.31-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
+            Inloggen met schoolaccount
+        </button>
+        <div style="display:flex;align-items:center;gap:8px;width:100%;max-width:320px;color:#94a3b8;font-size:0.75rem;"><div style="flex:1;height:1px;background:#e2e8f0;"></div>of<div style="flex:1;height:1px;background:#e2e8f0;"></div></div>
+        <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:12px;width:100%;max-width:320px;box-sizing:border-box;">
+            <label style="font-size:0.68rem;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:0.06em;display:block;margin-bottom:5px;">Naam (gast)</label>
+            <input type="text" id="fb-guest-name" placeholder="Bv. Milan" style="width:100%;padding:9px 11px;border:1px solid #e2e8f0;border-radius:7px;font-size:0.88rem;font-weight:600;box-sizing:border-box;outline:none;">
+        </div>
+        <button id="fb-guest-btn" style="background:#f1f5f9;color:#475569;border:none;border-radius:10px;padding:11px 20px;font-size:0.88rem;font-weight:600;cursor:pointer;width:100%;max-width:320px;">
+            👤 Spelen als gast (score niet bewaard)
+        </button>
+    </div>
+    <div id="fb-user-badge" style="display:none;align-items:center;gap:8px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:6px 12px;margin-bottom:10px;width:fit-content;">
+        <div id="fb-user-initials" style="width:26px;height:26px;background:#3b82f6;border-radius:6px;color:white;font-weight:700;font-size:0.75rem;display:flex;align-items:center;justify-content:center;">?</div>
+        <div><div id="fb-user-name" style="font-size:0.82rem;font-weight:700;color:#1e293b;"></div><div id="fb-user-email" style="font-size:0.68rem;color:#94a3b8;"></div></div>
+        <button id="fb-logout-btn" style="background:none;border:none;cursor:pointer;color:#94a3b8;font-size:0.75rem;padding:3px 8px;border-left:1px solid #e2e8f0;margin-left:4px;">↩ Uit</button>
+    </div>
+    <div id="fb-guest-badge" style="display:none;background:#fefce8;border:1px solid #fde68a;border-radius:8px;padding:4px 10px;font-size:0.72rem;font-weight:700;color:#d97706;margin-bottom:8px;">👤 Gast – score niet opgeslagen</div>
+
+
+
+
+<div id="mainContainer" style="display:none;">
+<div class="container">
+
+    <!-- Hartjes & Niveau Progressie -->
+
+    <div id="progressContainer">
+
+    <div id="niveauLabel">Gekozen niveau</div>
+
+    <div id="progressSectie">
+
+    <span class="heart" id="h1">♥</span>
+
+    <span class="heart" id="h2">♥</span>
+
+    <span class="heart" id="h3">♥</span>
+
+    <span class="heart" id="h4">♥</span>
+
+    <span class="heart" id="h5">♥</span>
+
+    </div>
+
+    </div>
+
+
+
+    <!-- Hoofdmenu -->
+
+    <div id="menuSectie">
+
+    <h1>Wat wil je oefenen?</h1>
+
+    <button class="menu-btn" onclick="stelModusIn(1, 'Optellen zonder overschrijding')">➕ Optellen zonder overschrijding</button>
+
+    <button class="menu-btn" onclick="stelModusIn(2, 'Optellen met overschrijding')">➕ Optellen met overschrijding</button>
+
+    <button class="menu-btn" onclick="stelModusIn(3, 'Aftrekken zonder ontlenen')">➖ Aftrekken zonder ontlenen</button>
+
+    <button class="menu-btn" onclick="stelModusIn(4, 'Aftrekken met ontlenen')">➖ Aftrekken met ontlenen</button>
+
+    <button class="menu-btn" onclick="stelModusIn(5, 'Aftrekken met ontlenen (met nullen)')">➖ Aftrekken met ontlenen (met nullen)</button>
+
+    <button class="menu-btn" onclick="stelModusIn(6, 'Alles door elkaar')">🔀 Alles door elkaar</button>
+
+    </div>
+
+
+
+    <!-- Oefenscherm -->
+
+    <div id="oefeningSectie">
+
+    <h1 id="oefeningTitel">Cijferen</h1>
+
+    <div class="opgave-box">
+
+    <div class="instruction" id="instructieTekst">
+
+    Klik op de <b>eenheden</b> van beide getallen.
+
+    </div>
+
+    <div class="opgave-display" id="opgaveDisplay"></div>
+
+    </div>
+
+
+
+    <div id="cijferSectie">
+
+    <table class="cijfer-table">
+
+    <!-- Onthoudrij (Cirkels voor Ijsbergrekenen) -->
+
+    <tr class="carry-row">
+
+    <td style="border:none"></td>
+
+    <td class="col-D"><input type="text" maxlength="2" class="carry-input" id="carryD"></td>
+
+    <td class="col-H"><input type="text" maxlength="2" class="carry-input" id="carryH"></td>
+
+    <td class="col-T"><input type="text" maxlength="2" class="carry-input" id="carryT"></td>
+
+    <td class="col-E"><input type="text" maxlength="2" class="carry-input" id="carryE"></td>
+
+    </tr>
+
+    <tr>
+
+    <td class="operator-cell"></td>
+
+    <td class="col-D"><input type="text" maxlength="1" class="input-cell" id="r1D"></td>
+
+    <td class="col-H"><input type="text" maxlength="1" class="input-cell" id="r1H"></td>
+
+    <td class="col-T"><input type="text" maxlength="1" class="input-cell" id="r1T"></td>
+
+    <td class="col-E"><input type="text" maxlength="1" class="input-cell" id="r1E"></td>
+
+    </tr>
+
+    <tr>
+
+    <td class="operator-cell" id="opTeken">+</td>
+
+    <td class="col-D"><input type="text" maxlength="1" class="input-cell" id="r2D"></td>
+
+    <td class="col-H"><input type="text" maxlength="1" class="input-cell" id="r2H"></td>
+
+    <td class="col-T"><input type="text" maxlength="1" class="input-cell" id="r2T"></td>
+
+    <td class="col-E"><input type="text" maxlength="1" class="input-cell" id="r2E"></td>
+
+    </tr>
+
+    <tr class="result-row">
+
+    <td style="border:none"></td>
+
+    <td class="col-D"><input type="text" maxlength="1" class="input-cell" id="ansD"></td>
+
+    <td class="col-H"><input type="text" maxlength="1" class="input-cell" id="ansH"></td>
+
+    <td class="col-T"><input type="text" maxlength="1" class="input-cell" id="ansT"></td>
+
+    <td class="col-E"><input type="text" maxlength="1" class="input-cell" id="ansE"></td>
+
+    </tr>
+
+    </table>
+
+
+
+    <div id="feedback"></div>
+
+
+
+    <div class="btn-group">
+
+    <button class="btn-check" id="btnCheck" onclick="valideerOplossing()">Nakijken</button>
+
+    <button class="btn-next" id="btnNext" onclick="volgendeOefening()">Volgende oefening</button>
+
+    </div>
+
+    </div>
+
+    </div>
+
+
+
+    <!-- Eindscherm -->
+
+    <div id="eindSectie">
+
+    <h1>Goed gewerkt! 🌟</h1>
+
+    <div class="stats-box" id="statsDisplay"></div>
+
+    <button class="menu-btn" style="text-align:center" onclick="stopOefening()">Terug naar menu</button>
+
+    </div>
+
+</div>
+
+
+
+<script>
+
+    let gekozenModus = 0;
+
+    let gekozenLabel = "";
+
+    let getal1, getal2, isPlus, eenheid1Gevonden, eenheid2Gevonden;
+
+    
+
+    // Statistieken
+
+    let juisteOefeningen = 0;
+
+    let fouteOefeningenInSessie = 0;
+
+    let huidigeOefeningFoutGeweest = false;
+
+    let startTime;
+
+
+
+    function stelModusIn(modus, label) {
+
+    gekozenModus = modus;
+
+    gekozenLabel = label;
+
+    juisteOefeningen = 0;
+
+    fouteOefeningenInSessie = 0;
+
+    startTime = new Date();
+
+    
+
+    document.getElementById('niveauLabel').innerText = label;
+
+    document.getElementById('menuSectie').style.display = 'none';
+
+    document.getElementById('eindSectie').style.display = 'none';
+
+    document.getElementById('oefeningSectie').style.display = 'block';
+
+    document.getElementById('progressContainer').style.display = 'flex';
+
+    
+
+    updateHearts();
+
+    genereerSom();
+
+    }
+
+
+
+    function updateHearts() {
+
+    for(let i=1; i<=5; i++) {
+
+    document.getElementById('h'+i).classList.remove('filled');
+
+    if(i <= juisteOefeningen) document.getElementById('h'+i).classList.add('filled');
+
+    }
+
+    }
+
+
+
+    function stopOefening() {
+
+    document.getElementById('menuSectie').style.display = 'flex';
+
+    document.getElementById('oefeningSectie').style.display = 'none';
+
+    document.getElementById('eindSectie').style.display = 'none';
+
+    document.getElementById('progressContainer').style.display = 'none';
+
+    }
+
+
+
+    function toonEindscherm() {
+
+    const endTime = new Date();
+
+    const timeDiff = Math.floor((endTime - startTime) / 1000);
+
+    const minuten = Math.floor(timeDiff / 60);
+
+    const seconden = timeDiff % 60;
+
+    
+
+    document.getElementById('oefeningSectie').style.display = 'none';
+
+    document.getElementById('eindSectie').style.display = 'flex';
+
+    document.getElementById('progressContainer').style.display = 'none';
+
+    
+
+    document.getElementById('statsDisplay').innerHTML = `
+
+    <p>📊 <b>Niveau:</b> ${gekozenLabel}</p>
+
+    <p>⏱ <b>Tijd:</b> ${minuten}m ${seconden}s</p>
+
+    <p>✅ <b>Juist:</b> ${juisteOefeningen}</p>
+
+    <p>❌ <b>Fouten gemaakt:</b> ${fouteOefeningenInSessie}</p>
+
+    `;
+
+    }
+
+
+
+    function genereerSom() {
+
+    eenheid1Gevonden = false;
+
+    eenheid2Gevonden = false;
+
+    huidigeOefeningFoutGeweest = false;
+
+    
+
+    let modus = gekozenModus === 6 ? Math.floor(Math.random() * 5) + 1 : gekozenModus;
+
+    
+
+    if (modus === 1) {
+
+    getal1 = genereerGetal(1111, 8888);
+
+    getal2 = genereerZonderOverschrijding(getal1);
+
+    isPlus = true;
+
+    } else if (modus === 2) {
+
+    getal1 = genereerGetal(1000, 8999);
+
+    getal2 = genereerMetOverschrijding(getal1);
+
+    isPlus = true;
+
+    } else if (modus === 3) {
+
+    getal1 = genereerGetalZonderNul(2222, 9999);
+
+    getal2 = genereerZonderOntlenen(getal1);
+
+    isPlus = false;
+
+    } else if (modus === 4) {
+
+    getal1 = genereerGetalZonderNul(2000, 9999);
+
+    getal2 = genereerMetOntlenen(getal1, false);
+
+    isPlus = false;
+
+    } else if (modus === 5) {
+
+    getal1 = genereerGetalMetNullen();
+
+    getal2 = genereerMetOntlenen(getal1, true);
+
+    isPlus = false;
+
+    }
+
+
+
+    document.getElementById('cijferSectie').style.display = 'none';
+
+    document.getElementById('btnCheck').style.display = 'inline-block';
+
+    document.getElementById('btnNext').style.display = 'none';
+
+    document.getElementById('instructieTekst').innerHTML = "Klik op de <b>eenheden</b> van beide getallen om te starten.";
+
+    document.getElementById('feedback').innerHTML = "";
+
+    document.getElementById('opTeken').innerText = isPlus ? "+" : "-";
+
+    
+
+    // Wis alle invoervelden
+
+    document.querySelectorAll('input').forEach(el => {
+
+    el.value = "";
+
+    el.disabled = false;
+
+    });
+
+
+
+    renderOpgave();
+
+    }
+
+
+
+    function genereerGetal(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; }
+
+
+
+    function genereerGetalZonderNul(min, max) {
+
+    let poging;
+
+    do {
+
+    poging = genereerGetal(min, max);
+
+    } while (poging.toString().includes('0'));
+
+    return poging;
+
+    }
+
+
+
+    function genereerZonderOverschrijding(g1) {
+
+    let s1 = g1.toString().padStart(4, '0');
+
+    let res = "";
+
+    for(let c of s1) res += Math.floor(Math.random() * (9 - parseInt(c)));
+
+    return parseInt(res) || 123;
+
+    }
+
+
+
+    function genereerMetOverschrijding(g1) {
+
+    return genereerGetal(500, 999);    
+
+    }
+
+
+
+    function genereerZonderOntlenen(g1) {
+
+    let s1 = g1.toString().padStart(4, '0');
+
+    let res = "";
+
+    for(let c of s1) res += Math.floor(Math.random() * (parseInt(c) + 1));
+
+    return parseInt(res) || 111;
+
+    }
+
+
+
+    function genereerMetOntlenen(g1, moetNullen) {
+
+    let g2;
+
+    g2 = Math.floor(g1 * 0.4);
+
+    if ((g2 % 10) <= (g1 % 10)) g2 += (9 - (g2 % 10));
+
+    if (g2 >= g1) g2 = Math.floor(g1 / 2);
+
+    return g2;
+
+    }
+
+
+
+    function genereerGetalMetNullen() {
+
+    const types = [1000, 2000, 3000, 4005, 5060];
+
+    return types[Math.floor(Math.random() * types.length)] + Math.floor(Math.random() * 9);
+
+    }
+
+
+
+    function renderOpgave() {
+
+    const display = document.getElementById('opgaveDisplay');
+
+    display.innerHTML = "";
+
+
+
+    const createGroup = (num, id) => {
+
+    const group = document.createElement('div');
+
+    group.className = 'number-group';
+
+    const s = num.toString();
+
+    s.split('').forEach((c, i) => {
+
+    const span = document.createElement('span');
+
+    span.innerText = c;
+
+    span.className = 'digit';
+
+    span.onclick = function() {
+
+    if (i === s.length - 1) {
+
+    this.classList.add('selected');
+
+    if (id === 1) eenheid1Gevonden = true; else eenheid2Gevonden = true;
+
+    if (eenheid1Gevonden && eenheid2Gevonden) activeerSchema();
+
+    } else {
+
+    this.style.borderColor = "var(--error-color)";
+
+    setTimeout(() => this.style.borderColor = "transparent", 500);
+
+    }
+
+    };
+
+    group.appendChild(span);
+
+    });
+
+    return group;
+
+    };
+
+
+
+    display.appendChild(createGroup(getal1, 1));
+
+    const op = document.createElement('span');
+
+    op.innerText = isPlus ? "+" : "-";
+
+    op.style.margin = "0 15px";
+
+    display.appendChild(op);
+
+    display.appendChild(createGroup(getal2, 2));
+
+    const eq = document.createElement('span');
+
+    eq.innerText = " = ?";
+
+    eq.style.marginLeft = "10px";
+
+    display.appendChild(eq);
+
+    }
+
+
+
+    function activeerSchema() {
+
+    document.getElementById('cijferSectie').style.display = 'block';
+
+    document.getElementById('instructieTekst').innerHTML = "<b>Goed zo!</b> Vul nu het schema in.";
+
+    }
+
+
+
+    function valideerOplossing() {
+
+    const d = document.getElementById('ansD').value || "";
+
+    const h = document.getElementById('ansH').value || "";
+
+    const t = document.getElementById('ansT').value || "";
+
+    const e = document.getElementById('ansE').value || "";
+
+    
+
+    if (e === "") {
+
+    document.getElementById('feedback').innerText = "Vul eerst het antwoord in!";
+
+    return;
+
+    }
+
+
+
+    const gok = parseInt(d + h + t + e);
+
+    const correct = isPlus ? (getal1 + getal2) : (getal1 - getal2);
+
+    const fb = document.getElementById('feedback');
+
+
+
+    if (gok === correct) {
+
+    juisteOefeningen++;
+
+    updateHearts();
+
+    fb.innerHTML = "<span style='color:var(--success-color)'>🎉 Helemaal juist!</span>";
+
+    
+
+    document.getElementById('btnCheck').style.display = 'none';
+
+    document.getElementById('btnNext').style.display = 'inline-block';
+
+
+
+    } else {
+
+    if(!huidigeOefeningFoutGeweest) {
+
+    fouteOefeningenInSessie++;
+
+    huidigeOefeningFoutGeweest = true;
+
+    }
+
+    
+
+    fb.innerHTML = `
+
+    <div style='color:var(--error-color)'>❌ Dat is niet juist.</div>
+
+    <div class='correct-answer'>De juiste oplossing is: <b>${correct}</b></div>
+
+    `;
+
+    
+
+    // Blokkeer input na fout om verwarring te voorkomen
+
+    document.querySelectorAll('.input-cell').forEach(el => el.disabled = true);
+
+    
+
+    document.getElementById('btnCheck').style.display = 'none';
+
+    document.getElementById('btnNext').style.display = 'inline-block';
+
+    }
+
+    }
+
+
+
+    function volgendeOefening() {
+
+    if (juisteOefeningen >= 5) {
+
+    toonEindscherm();
+
+    } else {
+
+    genereerSom();
+
+    }
+
+    }
+
+</script>
+
+
+
+</div><!-- /mainContainer -->
+
+<script type="module">
+    import { initializeApp }   from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+    import { getAuth, GoogleAuthProvider, signInWithRedirect, getRedirectResult, signOut, onAuthStateChanged }
+        from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+    import { getFirestore, collection, addDoc, serverTimestamp }
+        from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+    const firebaseConfig = {
+        apiKey:            "AIzaSyCnQDVVAlK6jE-PPUUediRJMTbN0xqrLDE",
+        authDomain:        "klaswebsite-database.firebaseapp.com",
+        projectId:         "klaswebsite-database",
+        storageBucket:     "klaswebsite-database.firebasestorage.app",
+        messagingSenderId: "42912327282",
+        appId:             "1:42912327282:web:f13f2c706f6c42c115c4eb",
+        measurementId:     "G-V5MC9BY19Q"
+    };
+    const ALLOWED_DOMAIN = "bsbodebrug.be";
+    const _fbApp  = initializeApp(firebaseConfig);
+    const _fbAuth = getAuth(_fbApp);
+    const _fbDb   = getFirestore(_fbApp);
+    // ── FIREBASE AUTH ─────────────────────────────────────────────────────────
+    let _fbCurrentUser = null, _fbIsGuest = false, _fbGuestName = "";
+
+    getRedirectResult(_fbAuth).catch(e => _fbShowLoginErr(e.message));
+
+    onAuthStateChanged(_fbAuth, user => {
+        if (user) {
+            if (!user.email.endsWith("@" + ALLOWED_DOMAIN)) {
+                signOut(_fbAuth);
+                _fbShowLoginErr("Enkel @" + ALLOWED_DOMAIN + " schoolaccounts worden opgeslagen.");
+                return;
+            }
+            _fbCurrentUser = user; _fbIsGuest = false;
+            document.getElementById("fb-user-initials").textContent = (user.displayName||"L").split(" ").map(n=>n[0]).join("").toUpperCase().substring(0,2);
+            document.getElementById("fb-user-name").textContent  = user.displayName || user.email;
+            document.getElementById("fb-user-email").textContent = user.email;
+            document.getElementById("login-view").style.display  = "none";
+            document.getElementById("fb-user-badge").style.display = "flex";
+            if (typeof _fbOnReady === "function") _fbOnReady();
+        } else {
+            if (!_fbIsGuest) { _fbCurrentUser = null; document.getElementById("login-view").style.display = "flex"; }
+        }
+    });
+
+    document.getElementById("fb-google-btn").addEventListener("click", async () => {
+        const p = new GoogleAuthProvider();
+        p.setCustomParameters({ hd: ALLOWED_DOMAIN });
+        try { await signInWithRedirect(_fbAuth, p); } catch(e) { _fbShowLoginErr(e.message); }
+    });
+
+    document.getElementById("fb-guest-btn").addEventListener("click", () => {
+        const n = document.getElementById("fb-guest-name").value.trim();
+        if (!n) { document.getElementById("fb-guest-name").style.borderColor="#f87171"; return; }
+        _fbIsGuest = true; _fbCurrentUser = null; _fbGuestName = n;
+        document.getElementById("login-view").style.display = "none";
+        const gb = document.getElementById("fb-guest-badge");
+        gb.style.display = "block"; gb.textContent = "👤 Gast: " + n + " – score niet opgeslagen";
+        if (typeof _fbOnReady === "function") _fbOnReady();
+    });
+    document.getElementById("fb-guest-name").addEventListener("input", function(){ this.style.borderColor=""; });
+
+    document.getElementById("fb-logout-btn").addEventListener("click", async () => {
+        _fbIsGuest = false; _fbCurrentUser = null;
+        await signOut(_fbAuth);
+        document.getElementById("fb-user-badge").style.display = "none";
+        document.getElementById("fb-guest-badge").style.display = "none";
+        document.getElementById("login-view").style.display = "flex";
+    });
+
+    function _fbShowLoginErr(msg) {
+        const el = document.getElementById("login-error");
+        el.textContent = msg; el.style.display = "block";
+    }
+
+    async function _fbSave(record) {
+        if (_fbIsGuest || !_fbCurrentUser) return false;
+        try {
+            await addDoc(collection(_fbDb, "resultaten"), {
+                uid: _fbCurrentUser.uid, email: _fbCurrentUser.email,
+                displayName: _fbCurrentUser.displayName || _fbCurrentUser.email,
+                photoURL: _fbCurrentUser.photoURL || null,
+                vak: "Wiskunde", timestamp: serverTimestamp(), ...record
+            });
+            return true;
+        } catch(e) { console.error("Firebase save:", e); return false; }
+    }
+
+    // ── CIJFEREN FIREBASE INTEGRATION ──────────────────────────────────────
+    let _fbVragenHistory = [];
+
+    function _fbOnReady() {
+        document.getElementById("mainContainer").style.display = "";
+    }
+
+    const MODUS_LABELS = {
+        1: "Wiskunde - Cijferen: Optellen zonder overschrijding",
+        2: "Wiskunde - Cijferen: Optellen met overschrijding",
+        3: "Wiskunde - Cijferen: Aftrekken zonder ontlenen",
+        4: "Wiskunde - Cijferen: Aftrekken met ontlenen",
+        5: "Wiskunde - Cijferen: Aftrekken met ontlenen (met nullen)",
+        6: "Wiskunde - Cijferen: Alles door elkaar"
+    };
+
+    // Patch stelModusIn
+    const _origStel = window.stelModusIn;
+    window.stelModusIn = function(modus, label) {
+        _fbVragenHistory = [];
+        if (_origStel) _origStel.apply(this, arguments);
+    };
+
+    // Patch volgendeOefening to track and save
+    const _origVolgende = window.volgendeOefening;
+    window.volgendeOefening = async function() {
+        // Before moving on, capture the last answer if not yet captured
+        if (_origVolgende) _origVolgende.apply(this, arguments);
+    };
+
+    // Patch checkAntwoord / valideerBerekening to capture history
+    const _origValideer = window.valideerBerekening || window.valideerStap;
+
+    // We hook into the end of the session by patching the end display
+    const _origShowEnd = window.toonEinde || window.showEinde;
+
+    // Safer: patch the endSectie display logic
+    // The app shows eindSectie and sets statsDisplay
+    // We override by observing DOM changes on eindSectie
+    const _eindObserver = new MutationObserver(function(mutations) {
+        mutations.forEach(m => {
+            if (m.type === "attributes" && m.attributeName === "style") {
+                const el = document.getElementById("eindSectie");
+                if (el && el.style.display !== "none" && el.style.display !== "") {
+                    _fbHandleEnd();
+                    _eindObserver.disconnect();
+                }
+            }
+        });
+    });
+
+    window.addEventListener("DOMContentLoaded", () => {
+        const el = document.getElementById("eindSectie");
+        if (el) _eindObserver.observe(el, { attributes: true });
+    });
+
+    async function _fbHandleEnd() {
+        const modus = window.gekozenModus || 0;
+        const label = MODUS_LABELS[modus] || ("Wiskunde - Cijferen: modus " + modus);
+        const totalQ = _fbVragenHistory.length;
+        const correctQ = _fbVragenHistory.filter(v=>v.isJuist).length;
+        const nw = totalQ > 0 ? Math.round((correctQ/totalQ)*100) : 0;
+
+        const record = {
+            oefening:    label,
+            score:       correctQ,
+            totaal:      totalQ || 5,
+            nauwkeurigheid: nw,
+            tijdsduur:   "–",
+            vragen:      _fbVragenHistory
+        };
+        const ok = await _fbSave(record);
+
+        // Show status
+        let box = document.getElementById("fb-cijfer-status");
+        if (!box) {
+            box = document.createElement("p");
+            box.id = "fb-cijfer-status";
+            box.style = "font-size:0.85rem;font-weight:700;margin:8px 0;text-align:center;";
+            const stats = document.getElementById("statsDisplay");
+            if (stats && stats.parentNode) stats.parentNode.insertBefore(box, stats.nextSibling);
+        }
+        box.style.color = ok ? "#16a34a" : (_fbIsGuest ? "#d97706" : "#dc2626");
+        box.textContent = ok ? "✅ Score opgeslagen!" : (_fbIsGuest ? "👤 Gast – score niet opgeslagen" : "❌ Opslaan mislukt");
+    }
+
+    // Hook valideerBerekening to track answers
+    document.addEventListener("DOMContentLoaded", () => {
+        // Patch by wrapping the global function
+        if (window.valideerBerekening) {
+            const orig = window.valideerBerekening;
+            window.valideerBerekening = function() {
+                const g1 = window.getal1, g2 = window.getal2, isPlus = window.isPlus;
+                orig.apply(this, arguments);
+                // Read feedback to determine correctness
+                const fb = document.getElementById("feedback");
+                const isJuist = fb && fb.innerHTML.includes("juist");
+                const correct = isPlus ? (parseFloat(g1)+parseFloat(g2)) : (parseFloat(g1)-parseFloat(g2));
+                _fbVragenHistory.push({
+                    vraagNr: _fbVragenHistory.length+1,
+                    formule: g1 + " " + (isPlus?"+":"-") + " " + g2,
+                    antwoordLeerling: "–",
+                    juistAntwoord: correct.toFixed(2),
+                    isJuist: isJuist,
+                    categorie: MODUS_LABELS[window.gekozenModus] || "Cijferen"
+                });
+            };
+        }
+    });
+</script>
+
+</body>
+
+</html>
+
+
+

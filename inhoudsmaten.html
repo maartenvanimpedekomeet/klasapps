@@ -1,0 +1,1152 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Inhoudsmaten Leerapp</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+* { box-sizing: border-box; }
+body { font-family: 'Nunito', sans-serif; background: #f0fdf4; margin: 0; padding: 0; }
+.hidden { display: none !important; }
+
+/* ── LOGIN ── */
+#login-screen {
+  position:fixed; inset:0; z-index:9999;
+  background:linear-gradient(135deg,#065f46 0%,#047857 50%,#10b981 100%);
+  display:flex; align-items:center; justify-content:center; padding:20px;
+}
+#login-screen.hidden { display:none !important; }
+.login-card {
+  background:white; border-radius:2rem; padding:2.5rem 2rem;
+  width:100%; max-width:380px;
+  box-shadow:0 25px 50px rgba(0,0,0,0.25); text-align:center;
+}
+.login-logo {
+  width:80px; height:80px; background:#d1fae5; border-radius:1.5rem;
+  display:flex; align-items:center; justify-content:center;
+  margin:0 auto 1.25rem; font-size:2.5rem;
+  box-shadow:0 4px 16px rgba(16,185,129,0.25);
+}
+.btn-google-login {
+  display:flex; align-items:center; justify-content:center; gap:12px;
+  width:100%; background:white; border:2px solid #e5e7eb; border-radius:1rem;
+  padding:14px 20px; font-family:'Nunito',sans-serif;
+  font-size:1rem; font-weight:700; color:#374151;
+  cursor:pointer; transition:all .2s; margin-bottom:12px;
+}
+.btn-google-login:hover { border-color:#10b981; background:#f0fdf4; transform:translateY(-1px); }
+.btn-google-login:disabled { opacity:.6; cursor:not-allowed; transform:none; }
+.btn-guest-login {
+  width:100%; background:transparent; border:2px solid #d1d5db;
+  border-radius:1rem; padding:12px; font-family:'Nunito',sans-serif;
+  font-size:.9rem; font-weight:700; color:#6b7280; cursor:pointer; transition:all .2s;
+}
+.btn-guest-login:hover { border-color:#9ca3af; color:#374151; }
+
+/* ── USER BADGE ── */
+#user-bar {
+  display:none; align-items:center; justify-content:space-between;
+  background:white; border-radius:16px; padding:10px 18px;
+  margin-bottom:12px; box-shadow:0 2px 12px rgba(0,0,0,0.06);
+  border:1px solid #d1fae5;
+}
+#user-bar.show { display:flex; }
+.u-avatar {
+  width:34px; height:34px; border-radius:50%;
+  background:#d1fae5; display:flex; align-items:center; justify-content:center;
+  font-weight:900; font-size:.9rem; color:#065f46; flex-shrink:0;
+}
+.u-name { font-weight:800; color:#1f2937; font-size:.88rem; }
+.u-role { font-size:.7rem; color:#6b7280; font-weight:600; }
+.btn-logout {
+  background:none; border:1.5px solid #e5e7eb; border-radius:.65rem;
+  padding:5px 12px; font-family:'Nunito',sans-serif;
+  font-size:.78rem; font-weight:700; color:#9ca3af; cursor:pointer; transition:all .2s;
+}
+.btn-logout:hover { border-color:#dc2626; color:#dc2626; }
+
+/* ── SAVED BADGE ── */
+#saved-badge {
+  display:none; align-items:center; justify-content:center; gap:8px;
+  background:#d1fae5; border:1.5px solid #6ee7b7; border-radius:1rem;
+  padding:10px 16px; margin-top:12px;
+  font-size:.85rem; font-weight:700; color:#065f46;
+  font-family:'Nunito',sans-serif;
+}
+#saved-badge.show { display:flex; }
+
+/* ── MENU ── */
+.menu-card { background:white; border-radius:20px; padding:18px 20px; cursor:pointer; border:3px solid transparent; transition:all .2s; box-shadow:0 4px 16px rgba(0,0,0,0.07); display:flex; align-items:center; gap:16px; }
+.menu-card:hover { transform:translateY(-3px); box-shadow:0 8px 24px rgba(0,0,0,0.12); }
+.menu-icon { width:52px; height:52px; border-radius:14px; display:flex; align-items:center; justify-content:center; font-size:1.5rem; flex-shrink:0; }
+
+/* ── QUIZ ── */
+.quiz-card { background:white; border-radius:24px; box-shadow:0 8px 32px rgba(16,185,129,0.10); }
+.opt-btn { background:#f8fafc; border:3px solid #e2e8f0; border-radius:14px; padding:14px 18px; font-size:1.05rem; font-weight:700; cursor:pointer; transition:all .15s; width:100%; text-align:left; font-family:'Nunito',sans-serif; color:#1e293b; }
+.opt-btn:hover:not(:disabled) { border-color:#10b981; background:#f0fdf4; }
+.opt-btn.correct { border-color:#16a34a !important; background:#f0fdf4 !important; color:#15803d !important; }
+.opt-btn.wrong   { border-color:#dc2626 !important; background:#fef2f2 !important; color:#b91c1c !important; }
+.opt-btn:disabled { cursor:default; }
+
+/* ── ANTWOORD INPUT ── */
+.ans-inp { border:3px solid #e2e8f0; border-radius:14px; font-size:1.3rem; font-weight:800; text-align:center; outline:none; font-family:'Nunito',sans-serif; transition:border-color .2s; padding:12px 10px; width:100%; }
+.ans-inp:focus { border-color:#10b981; background:#f8fafc; }
+.ans-inp.ok  { border-color:#16a34a; background:#f0fdf4; color:#15803d; }
+.ans-inp.err { border-color:#dc2626; background:#fef2f2; color:#b91c1c; }
+.ans-inp:disabled { opacity:.9; }
+
+/* ── DRAG TABEL ── */
+.drag-chip { background:#047857; color:white; border-radius:10px; padding:8px 14px; font-size:1rem; font-weight:800; cursor:grab; user-select:none; display:inline-block; transition:transform .1s,box-shadow .1s; touch-action:none; }
+.drag-chip:active { cursor:grabbing; transform:scale(1.06); box-shadow:0 6px 18px rgba(0,0,0,0.2); }
+.slot { width:65px; height:42px; border:3px dashed #94a3b8; border-radius:10px; display:inline-flex; align-items:center; justify-content:center; font-size:0.85rem; font-weight:800; color:#94a3b8; transition:all .2s; vertical-align:middle; margin:3px; }
+.slot.over  { border-color:#10b981; background:#f0fdf4; }
+.slot.filled { border-style:solid; border-color:#059669; color:#064e3b; background:#d1fae5; }
+.slot.ok-slot { border-color:#16a34a !important; background:#dcfce7 !important; color:#15803d !important; }
+.slot.err-slot { border-color:#dc2626 !important; background:#fee2e2 !important; color:#b91c1c !important; }
+.chip-pool { border:3px dashed #cbd5e1; border-radius:14px; background:#f8fafc; min-height:56px; padding:10px; display:flex; flex-wrap:wrap; gap:8px; align-items:center; justify-content:center; }
+.chip-pool.over { border-color:#10b981; background:#f0fdf4; }
+
+/* ── TABEL INHOUDSMATEN (herleiden) ── */
+.lt-table { width:100%; border-collapse:collapse; font-size:0.85rem; }
+.lt-table th, .lt-table td { border:2px solid #cbd5e1; padding:6px 4px; text-align:center; font-weight:800; }
+.lt-table th { background:#0f766e; color:white; }
+.lt-table .l1000-col { background:#fce7f3; }
+.lt-table .l100-col { background:#fef3c7; }
+.lt-table .l10-col { background:#dcfce7; }
+.lt-table .l-col  { background:#dbeafe; }
+.lt-table .dl-col { background:#ede9fe; }
+.lt-table .cl-col { background:#fef9c3; }
+.lt-table .ml-col { background:#fee2e2; }
+.lt-inp { border:2px solid #94a3b8; border-radius:6px; font-size:0.9rem; font-weight:800; text-align:center; width:42px; padding:4px 2px; font-family:'Nunito',sans-serif; outline:none; }
+.lt-inp:focus { border-color:#10b981; }
+.lt-inp.lt-ok  { border-color:#16a34a; background:#f0fdf4; color:#15803d; }
+.lt-inp.lt-err { border-color:#dc2626; background:#fef2f2; color:#b91c1c; }
+
+/* ── FEEDBACK ── */
+.fb-ok  { background:#f0fdf4; border:2px solid #86efac; color:#15803d; border-radius:14px; padding:12px 16px; font-weight:700; }
+.fb-err { background:#fef2f2; border:2px solid #fca5a5; color:#b91c1c; border-radius:14px; padding:12px 16px; font-weight:700; }
+.fb-tip { background:#fffbeb; border:2px solid #fcd34d; color:#92400e; border-radius:14px; padding:12px 16px; font-weight:700; }
+
+/* ── BULLETS ── */
+.bullet { width:13px; height:13px; border-radius:50%; background:#e2e8f0; transition:background .3s; flex-shrink:0; }
+.bullet.bOk  { background:#16a34a; }
+.bullet.bErr { background:#dc2626; }
+.bullet.bCur { background:#10b981; transform:scale(1.3); }
+
+/* ── STAT BOX ── */
+.stat-box { background:#f8fafc; border:2px solid #e2e8f0; border-radius:14px; padding:16px; text-align:center; }
+.stat-lbl { font-size:0.72rem; font-weight:800; color:#94a3b8; text-transform:uppercase; margin-bottom:4px; }
+
+/* ── ANIMATIES ── */
+@keyframes pop { 0%{transform:scale(.85);opacity:0} 60%{transform:scale(1.04)} 100%{transform:scale(1);opacity:1} }
+.pop { animation:pop .28s ease forwards; }
+@keyframes shake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-6px)} 75%{transform:translateX(6px)} }
+.shake { animation:shake .35s ease; }
+
+/* Actie-knoppen */
+.btn-check { flex:2; background:#10b981; color:white; border:none; border-radius:14px; padding:14px; font-size:1rem; font-weight:800; cursor:pointer; font-family:'Nunito',sans-serif; transition:background .2s; }
+.btn-check:hover { background:#059669; }
+.btn-next  { flex:2; background:#0f766e; color:white; border:none; border-radius:14px; padding:14px; font-size:1rem; font-weight:800; cursor:pointer; font-family:'Nunito',sans-serif; }
+.btn-next:hover { background:#0d5e58; }
+.btn-tip   { flex:1; background:#fef3c7; color:#92400e; border:2px solid #fcd34d; border-radius:14px; padding:14px; font-size:1rem; font-weight:800; cursor:pointer; font-family:'Nunito',sans-serif; }
+</style>
+</head>
+<body class="min-h-screen p-3">
+    <!-- LOGIN SCREEN -->
+    <div id="login-screen">
+      <div class="login-card">
+        <div class="login-logo">🧪</div>
+        <h1 style="font-size:1.6rem;font-weight:800;color:#1f2937;margin-bottom:6px;">Inhoudsmaten</h1>
+        <p style="font-size:.85rem;color:#6b7280;margin-bottom:1.25rem;">Voer je naam en code in</p>
+        <input class="login-input" id="login-naam" type="text" placeholder="Jouw voornaam" autocomplete="off" autocapitalize="words">
+        <input class="login-input" id="login-code" type="password" placeholder="Jouw code" autocomplete="off">
+        <div class="login-error" id="login-error"></div>
+        <button class="btn-login" id="btn-login" onclick="loginMetCode()">Inloggen</button>
+        <button class="btn-guest" onclick="loginGuest()">Doorgaan als gast (geen opslag)</button>
+        <div class="teacher-link"><a href="dashboard.html">Leerkracht? Klik hier</a></div>
+      </div>
+    </div>
+
+<!-- LOGIN SCREEN -->
+<div id="login-screen">
+  <div class="login-card">
+    <div class="login-logo">🧪</div>
+    <h1 style="font-size:1.6rem;font-weight:900;color:#1f2937;margin-bottom:6px;">Inhoudsmaten</h1>
+    <p style="font-size:.85rem;color:#6b7280;margin-bottom:1.5rem;">Log in om je toetsresultaten bij te houden</p>
+    <button class="btn-google-login" id="btn-google-login" onclick="loginGoogle()">
+      <svg width="20" height="20" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9.1 3.5l6.8-6.8C35.8 2.4 30.3 0 24 0 14.7 0 6.7 5.4 2.6 13.3l7.9 6.1C12.4 13.1 17.7 9.5 24 9.5z"/><path fill="#4285F4" d="M46.5 24.5c0-1.6-.1-3.1-.4-4.5H24v8.5h12.7c-.5 2.9-2.2 5.4-4.7 7l7.4 5.7c4.3-4 6.8-9.9 7.1-16.7z"/><path fill="#FBBC05" d="M10.5 28.6A14.5 14.5 0 0 1 9.5 24c0-1.6.3-3.1.9-4.6l-7.9-6.1A24 24 0 0 0 0 24c0 3.9.9 7.5 2.6 10.7l7.9-6.1z"/><path fill="#34A853" d="M24 48c6.3 0 11.6-2.1 15.5-5.7l-7.4-5.7c-2.1 1.4-4.8 2.2-8.1 2.2-6.3 0-11.6-3.6-13.5-8.8l-7.9 6.1C6.7 42.6 14.7 48 24 48z"/></svg>
+      Inloggen met Google
+    </button>
+    <button class="btn-guest-login" onclick="loginGuest()">Doorgaan als gast (geen opslag)</button>
+  </div>
+</div>
+
+<div class="max-w-2xl mx-auto">
+
+  <!-- USER BAR -->
+  <div id="user-bar">
+    <div style="display:flex;align-items:center;gap:10px;">
+      <div class="u-avatar" id="u-avatar">👤</div>
+      <div>
+        <div class="u-name" id="u-name">Gast</div>
+        <div class="u-role" id="u-role">Gast — scores worden niet opgeslagen</div>
+      </div>
+    </div>
+    <button class="btn-logout" onclick="doLogout()">Uitloggen</button>
+  </div>
+
+
+<!-- ══ HOOFDMENU ══ -->
+<div id="v-menu" class="space-y-3 mt-2 animate-in fade-in duration-300">
+  <div class="text-center py-3">
+    <h1 style="font-size:1.9rem;font-weight:900;color:#0f766e;margin:0">🧪 Inhoudsmaten Trainer</h1>
+    <p style="color:#64748b;font-weight:600;margin:4px 0 0">Kies een oefening om te starten:</p>
+  </div>
+  <div class="menu-card" onclick="startMode('meten')"><div class="menu-icon" style="background:#ccfbf1">🥛</div><div><div style="font-weight:900;color:#0f766e">Maatbeker aflezen & vullen</div><div style="font-size:.82rem;color:#64748b;font-weight:600">Sleep de vloeistof tot de gevraagde inhoud</div></div></div>
+  <div class="menu-card" onclick="startMode('kiezen')"><div class="menu-icon" style="background:#dcfce7">🤔</div><div><div style="font-weight:900;color:#0f766e">De juiste maat kiezen</div><div style="font-size:.82rem;color:#64748b;font-weight:600">Welke maateenheid past het beste bij de situatie?</div></div></div>
+  <div class="menu-card" onclick="startMode('tabel')"><div class="menu-icon" style="background:#fce7f3">📊</div><div><div style="font-weight:900;color:#0f766e">Inhoudsmaattabel ordenen</div><div style="font-size:.82rem;color:#64748b;font-weight:600">Sleep de maateenheden op de juiste volgorde</div></div></div>
+  <div class="menu-card" onclick="startMode('herleiden')"><div class="menu-icon" style="background:#ede9fe">🔄</div><div><div style="font-weight:900;color:#0f766e">Inhoudsmaten herleiden</div><div style="font-size:.82rem;color:#64748b;font-weight:600">Zet inhoudsmaten correct om met de tabel</div></div></div>
+  <div class="menu-card" onclick="startMode('rekenen')"><div class="menu-icon" style="background:#fee2e2">➕</div><div><div style="font-weight:900;color:#0f766e">Rekenen met inhoudsmaten</div><div style="font-size:.82rem;color:#64748b;font-weight:600">Optellen en aftrekken van gemengde maten</div></div></div>
+  <div class="menu-card" onclick="startMode('toets')" style="border:3px solid #0f766e;background:#f0fdf4"><div class="menu-icon" style="background:#0f766e;color:white">🏆</div><div><div style="font-weight:900;color:#0f766e">TOETS – alles door elkaar</div><div style="font-size:.82rem;color:#10b981;font-weight:700">20 vragen • de ultieme inhoudsmater-test</div></div></div>
+</div>
+
+<!-- ══ QUIZ SCHERM ══ -->
+<div id="v-quiz" class="hidden mt-2">
+  <div class="flex items-center justify-between py-2">
+    <button id="stop-btn" style="background:#e2e8f0;border:none;border-radius:10px;padding:8px 14px;font-weight:800;cursor:pointer;font-family:'Nunito',sans-serif;color:#475569;font-size:.85rem">← Menu</button>
+    <div id="q-mode-lbl" style="font-weight:900;color:#0f766e;font-size:.88rem"></div>
+    <div id="q-cnt" style="background:#0f766e;color:white;border-radius:10px;padding:6px 14px;font-weight:800;font-size:.85rem"></div>
+  </div>
+  <div id="bullets" class="flex gap-1.5 justify-center mb-3 flex-wrap"></div>
+  <div class="quiz-card p-5 md:p-7 space-y-4">
+    <div id="q-cat" style="font-size:.73rem;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:#94a3b8"></div>
+    <div id="q-txt" style="font-size:1.12rem;font-weight:800;color:#1e293b;line-height:1.5"></div>
+    
+    <!-- Interactieve Maatbeker -->
+    <div id="q-measuring" class="hidden">
+      <canvas id="ruler-canvas" height="240" class="mx-auto rounded-xl"></canvas>
+      <p style="font-size:.82rem;color:#64748b;font-weight:700;margin-top:6px;text-align:center">👆 Sleep je vinger of muis verticaal over de beker om te vullen</p>
+      <div id="ruler-reading" style="font-size:1.1rem;font-weight:900;color:#0f766e;text-align:center;margin-top:4px"></div>
+    </div>
+    
+    <!-- Meerkeuze opties -->
+    <div id="q-opts" class="hidden space-y-2"></div>
+    
+    <!-- Antwoordveld -->
+    <div id="q-inp-wrap" class="hidden">
+      <div class="flex items-center gap-2">
+        <input type="number" id="q-inp1" class="ans-inp" placeholder="?" style="max-width:120px">
+        <span id="q-unit1" style="font-size:1.1rem;font-weight:900;color:#0f766e"></span>
+        <span id="q-inp2-wrap" class="hidden items-center gap-2 flex">
+          <input type="number" id="q-inp2" class="ans-inp" placeholder="?" style="max-width:120px">
+          <span id="q-unit2" style="font-size:1.1rem;font-weight:900;color:#0f766e"></span>
+        </span>
+      </div>
+    </div>
+    
+    <!-- Drag tabel -->
+    <div id="q-drag" class="hidden"></div>
+    
+    <!-- Herleiden tabel -->
+    <div id="q-lt-tabel" class="hidden overflow-x-auto"></div>
+    
+    <!-- Verplichte tabel na fout (herleiden) -->
+    <div id="q-lt-tabel-force" class="hidden">
+      <p class="fb-err" style="margin-bottom:8px">❌ Fout! Vul nu eerst de tabel in en probeer opnieuw.</p>
+      <div id="q-lt-force-content" class="overflow-x-auto"></div>
+    </div>
+    
+    <!-- Feedback -->
+    <div id="q-fb" class="hidden"></div>
+    
+    <!-- Tip -->
+    <div id="q-tip" class="hidden fb-tip"></div>
+    
+    <!-- Knoppen -->
+    <div class="flex gap-3 pt-1">
+      <button id="check-btn" class="btn-check">Controleer</button>
+      <button id="next-btn" class="hidden btn-next">Volgende →</button>
+      <button id="tip-btn" class="hidden btn-tip">💡 Tip</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ EINDSCHERM ══ -->
+<div id="v-end" class="hidden mt-4">
+  <div class="quiz-card p-7 text-center space-y-4">
+    <div id="end-emoji" style="font-size:4rem"></div>
+    <h2 id="end-title" style="font-size:1.55rem;font-weight:900;color:#0f766e;margin:0"></h2>
+    <div class="grid grid-cols-2 gap-3">
+      <div class="stat-box"><div class="stat-lbl">Score</div><div id="end-score" style="font-size:1.9rem;font-weight:900;color:#10b981"></div></div>
+      <div class="stat-box"><div class="stat-lbl">Procent</div><div id="end-pct" style="font-size:1.9rem;font-weight:900"></div></div>
+    </div>
+    <div id="end-analyse" class="text-left space-y-2">
+      <h3 style="font-weight:900;color:#0f766e;font-size:1rem;margin:0">Foutenanalyse:</h3>
+      <div id="end-fouten" class="space-y-2 max-h-64 overflow-y-auto"></div>
+    </div>
+    <div id="saved-badge">
+      ✓ Score opgeslagen in de database
+    </div>
+    <div class="flex gap-3">
+      <button id="end-retry" class="btn-check" style="flex:1">Opnieuw</button>
+      <button id="end-menu" class="btn-secondary" style="flex:1">Menu</button>
+    </div>
+  </div>
+</div>
+
+</div>
+
+<script>
+// --- UTILS ---
+function $(id){return document.getElementById(id);}
+function s(id){const el=typeof id==="string"?$(id):id; if(el){el.classList.remove("hidden");} }
+function h(id){const el=typeof id==="string"?$(id):id; if(el){el.classList.add("hidden");} }
+function shuffle(a){let b=[...a];for(let i=b.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[b[i],b[j]]=[b[j],b[i]];}return b;}
+function rnd(a,b){return Math.floor(Math.random()*(b-a+1))+a;}
+function pick(arr,n){return shuffle(arr).slice(0,n);}
+
+// --- DATASET DEFINITIE ---
+const TABEL = ["1000l", "100l", "10l", "l", "dl", "cl", "ml"];
+const TABEL_KLEUREN = {
+    "1000l": "#fce7f3",
+    "100l": "#fef3c7",
+    "10l": "#dcfce7",
+    "l": "#dbeafe",
+    "dl": "#ede9fe",
+    "cl": "#fef9c3",
+    "ml": "#fee2e2"
+};
+
+// --- VRAGEN BANKEN ---
+
+// ── 1. METEN (Maatbeker aflezen & vullen) ──────────────────────────────
+// Waarden in ml, veelvouden van 50 tot 1000ml (1 liter)
+function genMeten() {
+  const lijst = [];
+  for(let ml=50; ml<=1000; ml+=50) {
+    let label = `${ml} ml`;
+    if (ml === 1000) label = "1 liter (l)";
+    else if (ml % 100 === 0) label = `${ml/100} dl`;
+    lijst.push({ ml, label });
+  }
+  return shuffle(lijst).slice(0,10);
+}
+
+// ── 2. JUISTE MAAT KIEZEN (50 kindvriendelijke vragen over inhoud) ──────
+function genKiezen() {
+  const items = [
+    {v:"Hoeveel water gaat er in een badkuip voor een volwassene?",a:"100 l",o:["100 l","1 l","1 ml","1000 l"],tip:"Een bad is onze referentiemaat voor 100 liter."},
+    {v:"De inhoud van een groot brik melk is ...",a:"1 l",o:["1 l","1 cl","1 dl","10 l"],tip:"Brik melk = onze referentiemaat voor 1 liter."},
+    {v:"In een grote dweilemmer met sop gaat ongeveer ... water.",a:"10 l",o:["10 l","100 l","10 ml","10 cl"],tip:"Een gewone emmer is onze referentiemaat voor 10 liter."},
+    {v:"Hoeveel water zit er in een kleine regendruppel?",a:"1 ml",o:["1 ml","1 cl","1 dl","1 l"],tip:"Een druppel water is heel klein en is onze referentiemaat voor 1 milliliter."},
+    {v:"In een klassieke soeplepel past ongeveer ...",a:"1 cl",o:["1 cl","1 ml","1 dl","1 l"],tip:"Een soeplepel is onze referentiemaat voor 1 centiliter (10 ml)."},
+    {v:"Een lekkere tas warme chocomel heeft een inhoud van ongeveer ...",a:"1 dl",o:["1 dl","1 cl","1 l","10 l"],tip:"Een tas warme chocomel is onze referentiemaat voor 1 deciliter (100 ml)."},
+    {v:"Hoeveel water past er in een klein zwembadje voor op het terras?",a:"1000 l",o:["1000 l","100 l","10 l","1 l"],tip:"Een terrasswembad is onze referentiemaat voor 1000 liter (1 kubieke meter)."},
+    {v:"Wat is de inhoud van een blikje frisdrank?",a:"33 cl",o:["33 cl","33 l","33 ml","3 dl"],tip:"Een blikje is ongeveer een derde van een liter, dus 33 cl."},
+    {v:"Hoeveel vloeibare hoestsiroop neem je in met een klein koffielepeltje?",a:"5 ml",o:["5 ml","5 cl","5 dl","5 l"],tip:"Een koffielepel is erg klein, dat meten we in milliliters."},
+    {v:"Een drinkbus voor mee naar school bevat meestal ...",a:"50 cl",o:["50 cl","50 l","50 ml","5 dl"],tip:"Een drinkbus is meestal een halve liter (50 cl of 5 dl)."},
+    {v:"In een groot aquarium thuis gaat ongeveer ...",a:"150 l",o:["150 l","150 ml","150 cl","15 l"],tip:"Een aquarium is groter dan een ligbad (100 l) dus we meten in liters."},
+    {v:"Een injectiespuit van de dokter bevat ongeveer ... vloeistof.",a:"2 ml",o:["2 ml","2 cl","2 dl","2 l"],tip:"Spuiten bevatten heel kleine hoeveelheden medicijn in milliliters."},
+    {v:"Een flesje bellenblaas bevat meestal ...",a:"50 ml",o:["50 ml","50 cl","5 l","5 dl"],tip:"Bellenblaas is een klein flesje, dus we meten in milliliters."},
+    {v:"Hoeveel water verbruikt een douchebeurt?",a:"60 l",o:["60 l","60 ml","600 l","6 l"],tip:"Dit is iets minder dan een vol ligbad (100 l) dus we meten in liters."},
+    {v:"In een glas water voor aan tafel past ongeveer ...",a:"25 cl",o:["25 cl","25 l","25 ml","2,5 l"],tip:"Een normaal drinkglas is een kwart liter (25 cl)."},
+    {v:"Hoeveel vloeibaar wasmiddel zit er in een dopje voor de wasmachine?",a:"4 cl",o:["4 cl","4 l","4 ml","4 dl"],tip:"Een dopje is iets groter dan een soeplepel (1 cl), dus 4 centiliter."},
+    {v:"Wat is de inhoud van een groot brik soep?",a:"1 l",o:["1 l","1 dl","1 cl","10 l"],tip:"Brikken soep en melk hebben meestal een inhoud van 1 liter."},
+    {v:"Een grote fles frisdrank bevat ...",a:"1,5 l",o:["1,5 l","1,5 cl","15 l","150 ml"],tip:"Grote flessen cola of water zijn anderhalve liter."},
+    {v:"In een klein medicijnbekertje voor hoestsiroop gaat ongeveer ...",a:"3 cl",o:["3 cl","3 l","3 ml","30 l"],tip:"Medicijnbekertjes zijn klein en bevatten enkele centiliters (30 ml)."},
+    {v:"Hoeveel brandstof past er in de tank van een gezinsauto?",a:"50 l",o:["50 l","5 l","500 l","50 ml"],tip:"De tank van een auto bevat ongeveer een halve emmer of bad, dus 50 liter."},
+    {v:"Een klein brikje fruitsap met een rietje bevat ...",a:"20 cl",o:["20 cl","20 l","2 ml","2 l"],tip:"Dit brikje is kleiner dan een drinkbus, dus 20 cl."},
+    {v:"Wat is de inhoud van een grote regenton in de tuin?",a:"200 l",o:["200 l","20 l","200 ml","2000 l"],tip:"Een grote ton kan ongeveer twee ligbaden (200 l) vullen."},
+    {v:"Hoeveel water gaat er in een grote opblaasbare jacuzzi?",a:"800 l",o:["800 l","80 l","8 l","8000 l"],tip:"Net iets minder dan een terrasswembad (1000 l)."},
+    {v:"Een tubes tandpasta bevat ongeveer ... tandpasta.",a:"75 ml",o:["75 ml","75 cl","75 l","7,5 l"],tip:"Tandpasta meten we in milliliters."},
+    {v:"In een klein flesje drinkyoghurt (zoals Yakult) past ongeveer ...",a:"6 cl",o:["6 cl","6 l","6 ml","6 dl"],tip:"Dit is een heel klein flesje, dus we meten in centiliters (60 ml)."},
+    {v:"Een grote gieter voor de planten bevat ongeveer ...",a:"10 l",o:["10 l","1 l","100 l","10 ml"],tip:"Een gieter is ongeveer even groot als een emmer (10 l)."},
+    {v:"Een klein flesje water voor onderweg bevat meestal ...",a:"25 cl",o:["25 cl","25 l","25 ml","2,5 l"],tip:"Dit is een kwart liter, dus 25 cl."},
+    {v:"In een potje yoghurt zit ongeveer ...",a:"125 ml",o:["125 ml","1,25 l","12,5 l","12 ml"],tip:"Yoghurtpotjes bevatten ongeveer 125 ml vloeistof."},
+    {v:"De inhoud van een klein flesje oogdruppels is ...",a:"10 ml",o:["10 ml","10 cl","10 dl","1 l"],tip:"Oogdruppels zijn heel klein en meten we in milliliters."},
+    {v:"Hoeveel water drinkt een paard gemiddeld per dag?",a:"40 l",o:["40 l","4 l","400 l","40 ml"],tip:"Paarden zijn grote dieren en drinken ongeveer 4 emmers (40 l) per dag."},
+    {v:"In een grote kookpot voor soep gaat ongeveer ...",a:"5 l",o:["5 l","5 ml","50 l","50 cl"],tip:"Een flinke kookpot is een halve emmer groot, dus 5 liter."},
+    {v:"Een fles limonadesiroop heeft een inhoud van ...",a:"75 cl",o:["75 cl","75 l","75 ml","7,5 l"],tip:"Limonadeflessen bevatten driekwart liter, dus 75 cl."},
+    {v:"Een grote drinkbeker met een rietje bevat meestal ...",a:"3 dl",o:["3 dl","3 l","3 ml","30 l"],tip:"Dit is ongeveer 3 tassen chocomel, dus 3 dl (300 ml)."},
+    {v:"Hoeveel water verbruikt een wasmachine per wasbeurt?",a:"50 l",o:["50 l","5 l","500 l","50 ml"],tip:"Wasmachines zijn redelijk zuinig en verbruiken een half bad (50 l)."},
+    {v:"In een klein sauskommetje voor mayonaise past ...",a:"1 dl",o:["1 dl","1 l","10 l","1 ml"],tip:"Dit is ongeveer evenveel als een tas chocomel, dus 1 dl."},
+    {v:"De inhoud van een grote jerrycan voor op de camping is ...",a:"50 l",o:["50 l","5 l","500 l","50 ml"],tip:"Een camping-jerrycan weegt zwaar en bevat 50 liter."},
+    {v:"Wat is de inhoud van een klein drinkbakje voor een hamster?",a:"50 ml",o:["50 ml","50 cl","50 dl","5 l"],tip:"Een hamster drinkt heel weinig, dus we meten in milliliters."},
+    {v:"Hoeveel water gaat er in een grote waterballon?",a:"2 dl",o:["2 dl","2 l","20 l","2 ml"],tip:"Een waterballon bevat ongeveer twee tassen chocomel (2 dl)."},
+    {v:"Een fles vloeibare zeep voor de handen bevat ...",a:"250 ml",o:["250 ml","250 l","25 l","2,5 l"],tip:"Zeepflesjes bevatten een kwart liter (250 ml)."},
+    {v:"De tank van een motorfiets bevat ongeveer ...",a:"15 l",o:["15 l","150 l","1,5 l","15 ml"],tip:"Iets groter dan een emmer water (10 l), dus 15 liter."},
+    {v:"Een grote pot mayonaise bevat ...",a:"8 dl",o:["8 dl","8 l","8 ml","80 l"],tip:"Bijna een liter, dus 8 deciliter."},
+    {v:"In een eierdopje gevuld met water past ongeveer ...",a:"3 cl",o:["3 cl","3 ml","3 l","3 dl"],tip:"Een eierdopje is heel klein, daar past ongeveer 3 centiliter (30 ml) in."},
+    {v:"Hoeveel water zit er in een kokosnoot?",a:"3 dl",o:["3 dl","3 l","3 ml","30 l"],tip:"Ongeveer 3 tassen chocomel (3 dl)."},
+    {v:"Een fles afwasmiddel bevat meestal ...",a:"5 dl",o:["5 dl","5 l","5 ml","50 l"],tip:"Een halve liter afwasmiddel, dus 5 deciliter (500 ml)."},
+    {v:"Wat is de inhoud van een grote soepterrine?",a:"3 l",o:["3 l","3 dl","3 cl","30 l"],tip:"Genoeg voor een heel gezin, dus 3 liter."},
+    {v:"In een pakje vloeibare slagroom zit ...",a:"20 cl",o:["20 cl","20 l","2 ml","2 dl"],tip:"Gelijk aan een klein fruitsapbrikje, dus 20 cl."},
+    {v:"Een drinkbak voor koeien op de weide bevat ...",a:"500 l",o:["500 l","50 l","5 l","5000 l"],tip:"Heel groot, ongeveer 5 ligbaden, dus 500 liter."},
+    {v:"De inhoud van een klein flesje nagellak is ...",a:"10 ml",o:["10 ml","10 cl","1 l","1 dl"],tip:"Nagellakflesjes zijn heel klein, dus 10 milliliter."},
+    {v:"Wat is de inhoud van een grote jerrycan benzine?",a:"20 l",o:["20 l","2 l","200 l","20 ml"],tip:"Gelijk aan twee volle emmers water, dus 20 liter."},
+    {v:"Hoeveel water verbruikt een wc bij één spoeling?",a:"6 l",o:["6 l","60 l","600 ml","6 ml"],tip:"Een moderne wc verbruikt iets minder dan een emmer, dus 6 liter."}
+  ];
+  return shuffle(items);
+}
+
+// ── 3. HERLEIDEN (50+ vragen, enkel gehele antwoorden) ───────────────────
+function genHerleiden() {
+  const items = [];
+  const conversies = [
+    // [van, naar, factor, regel, bronLijst]
+    ["ml","cl", 0.1,  "÷ 10",  [10,20,30,40,50,60,70,80,90,100,120,150,200,250,300]],
+    ["cl","ml", 10,   "× 10",  [1,2,3,4,5,6,7,8,9,10,12,15,20,25,30]],
+    ["cl","dl", 0.1,  "÷ 10",  [10,20,30,40,50,60,70,80,90,100,120,150]],
+    ["dl","cl", 10,   "× 10",  [1,2,3,4,5,6,7,8,9,10,12,15]],
+    ["dl","l",  0.1,  "÷ 10",  [10,20,30,40,50,60,70,80,90,100]],
+    ["l", "dl", 10,   "× 10",  [1,2,3,4,5,6,7,8,9,10,12,15]],
+    ["l", "cl", 100,  "× 100", [1,2,3,4,5,6,7,8,9,10]],
+    ["cl","l",  0.01, "÷ 100", [100,200,300,400,500,600,700,800,900,1000]],
+    ["1000l","l", 1000, "× 1000",[1,2,3,4,5]],
+    ["l", "1000l", 0.001,"÷ 1000",[1000,2000,3000,4000,5000]],
+    ["10l","l", 10,   "× 10",  [1,2,3,4,5,6,7,8,9,10]],
+    ["l","10l", 0.1,  "÷ 10",  [10,20,30,40,50,60,70,80,90,100]],
+    ["100l","l",  100,  "× 100", [1,2,3,4,5,6,7,8,9,10]],
+    ["l","100l",  0.01, "÷ 100", [100,200,300,400,500,600,700,800,900,1000]],
+  ];
+  conversies.forEach(([van,naar,factor,regel,bronLijst])=>{
+    shuffle(bronLijst).forEach(val=>{
+      const ans=val*factor;
+      if(ans!==Math.round(ans))return; 
+      items.push({
+        van, naar, waarde:val, ans,
+        v:`${val} ${van} = ... ${naar}`,
+        tip:`${val} ${van} ${regel} = ${ans} ${naar}`
+      });
+    });
+  });
+  return shuffle(items);
+}
+
+// ── 4. REKENEN (Gemengde sommen) ──────────────────────────────────────────
+function genRekenen() {
+  const items = [];
+
+  // cl + ml (25 paren)
+  const clMlPlus = [
+    [6,4,3,9],[8,5,2,7],[10,3,5,8],[12,6,4,7],[15,2,3,9],
+    [9,1,6,5],[7,8,2,4],[11,3,8,9],[14,5,6,8],[13,7,4,6],
+    [5,3,2,9],[8,2,5,6],[10,7,3,5],[12,1,7,9],[6,8,4,5],
+  ];
+  clMlPlus.forEach(([a,b,c,d])=>{
+    const totMl=(a*10+b)+(c*10+d);
+    const resCl=Math.floor(totMl/10),resMl=totMl%10;
+    items.push({type:"gemengd_plus",a,b,c,d,
+      v:`${a} cl ${b} ml + ${c} cl ${d} ml = ... cl ... ml`,
+      ans1:resCl,ans2:resMl,u1:"cl",u2:"ml",
+      tip:`${a} cl ${b} ml + ${c} cl ${d} ml = ${totMl} ml = ${resCl} cl ${resMl} ml`});
+  });
+
+  // cl - ml (15 paren)
+  const clMlMin = [
+    [12,5,4,8],[15,3,6,7],[10,2,3,9],[18,6,5,8],[20,4,7,9],
+    [14,7,3,8],[9,5,2,9],[16,3,5,6],[11,8,4,9],[13,4,6,7],
+  ];
+  clMlMin.forEach(([a,b,c,d])=>{
+    const totMl=(a*10+b)-(c*10+d);
+    if(totMl<0)return;
+    const resCl=Math.floor(totMl/10),resMl=totMl%10;
+    items.push({type:"gemengd_min",a,b,c,d,
+      v:`${a} cl ${b} ml − ${c} cl ${d} ml = ... cl ... ml`,
+      ans1:resCl,ans2:resMl,u1:"cl",u2:"ml",
+      tip:`${a} cl ${b} ml − ${c} cl ${d} ml = ${totMl} ml = ${resCl} cl ${resMl} ml`});
+  });
+
+  // l + cl (10 paren)
+  [[5,30,2,40],[8,20,1,50],[3,70,4,80],[6,10,2,90],[7,40,3,60],
+   [4,50,5,70],[9,20,1,80],[2,30,6,40],[1,60,3,90],[5,80,2,50]].forEach(([a,b,c,d])=>{
+    const totCl=(a*100+b)+(c*100+d);
+    const resL=Math.floor(totCl/100),resCl2=totCl%100;
+    items.push({type:"gemengd_plus_l",a,b,c,d,
+      v:`${a} l ${b} cl + ${c} l ${d} cl = ... l ... cl`,
+      ans1:resL,ans2:resCl2,u1:"l",u2:"cl",
+      tip:`${a} l ${b} cl + ${c} l ${d} cl = ${totCl} cl = ${resL} l ${resCl2} cl`});
+  });
+
+  return shuffle(items);
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+// QUIZ ENGINE LOGICA
+// ══════════════════════════════════════════════════════════════════════════
+const MODES = {
+  meten:    {lbl:"🥛 Maatbeker",  save:"Wiskunde - Inhoudsmaten: Maatbeker aflezen"},
+  kiezen:   {lbl:"🤔 Juiste maat",save:"Wiskunde - Inhoudsmaten: Juiste maat kiezen"},
+  tabel:    {lbl:"📊 Tabel",      save:"Wiskunde - Inhoudsmaten: Inhoudsmaattabel"},
+  herleiden:{lbl:"🔄 Herleiden",  save:"Wiskunde - Inhoudsmaten: Herleiden"},
+  rekenen:  {lbl:"➕ Rekenen",    save:"Wiskunde - Inhoudsmaten: Rekenen"},
+  toets:    {lbl:"🏆 TOETS",      save:"Wiskunde - Inhoudsmaten: Toets (alles door elkaar)"},
+};
+
+let QS = {}; // quiz status object
+
+$("stop-btn").onclick=()=>{stopQuiz();};
+$("end-retry").onclick=()=>startMode(QS.mode);
+$("end-menu").onclick=()=>{h("v-end");s("v-menu");};
+$("tip-btn").onclick=()=>{
+  const q=QS.questions[QS.idx];
+  if(q&&q.tip){$("q-tip").textContent="💡 "+q.tip;s("q-tip");}
+};
+$("check-btn").onclick=checkAnswer;
+$("next-btn").onclick=nextQ;
+$("q-inp1").addEventListener("keypress",e=>{if(e.key==="Enter")checkAnswer();});
+$("q-inp2").addEventListener("keypress",e=>{if(e.key==="Enter")checkAnswer();});
+
+function stopQuiz(){h("v-quiz");s("v-menu");}
+
+function startMode(mode){
+  const isToets = mode==="toets";
+  let questions;
+  if(mode==="meten"){
+    questions=genMeten();
+  } else if(mode==="kiezen"){
+    questions=genKiezen().slice(0,10);
+  } else if(mode==="tabel"){
+    questions=[{_tabel:true}]; 
+  } else if(mode==="herleiden"){
+    questions=genHerleiden().slice(0,10);
+  } else if(mode==="rekenen"){
+    questions=genRekenen().slice(0,10);
+  } else if(mode==="toets"){
+    questions=buildToets();
+  }
+
+  QS={ mode, questions, idx:0, score:0, history:[], isToets, startTime:new Date() };
+  h("v-menu"); h("v-end"); s("v-quiz");
+  $("q-mode-lbl").textContent=MODES[mode].lbl;
+  buildBullets();
+  renderQ();
+}
+
+function buildToets(){
+  const q=[];
+  q.push({_tabel:true});
+  q.push(...pick(genMeten(),4));
+  q.push(...pick(genKiezen(),5));
+  q.push(...pick(genHerleiden(),5));
+  q.push(...pick(genRekenen(),5));
+  return q.slice(0,20);
+}
+
+function buildBullets(){
+  const c=$("bullets"); c.innerHTML="";
+  const n=QS.questions.length;
+  for(let i=0;i<n;i++){
+    const b=document.createElement("div");
+    b.className="bullet"+(i===0?" bCur":"");
+    b.id="bl"+i; c.appendChild(b);
+  }
+}
+
+function updBullet(i,ok){
+  const b=$("bl"+i); if(!b)return;
+  b.classList.remove("bCur");
+  b.classList.add(ok?"bOk":"bErr");
+  const nb=$("bl"+(i+1)); if(nb)nb.classList.add("bCur");
+}
+
+// ── RENDER VRAAG ──────────────────────────────────────────────────────────
+function renderQ(){
+  const {idx,questions,isToets}=QS;
+  const q=questions[idx];
+  const total=questions.length;
+
+  $("q-cnt").textContent=`${idx+1} / ${total}`;
+  h("q-fb"); h("q-tip"); h("next-btn"); s("check-btn");
+  h("q-measuring"); h("q-opts"); h("q-inp-wrap"); h("q-drag"); h("q-lt-tabel"); h("q-lt-tabel-force");
+  $("q-inp1").value=""; $("q-inp1").className="ans-inp"; $("q-inp1").disabled=false;
+  $("q-inp2").value=""; $("q-inp2").className="ans-inp"; $("q-inp2").disabled=false;
+  h("q-inp2-wrap");
+  if(!isToets)s("tip-btn"); else h("tip-btn");
+
+  if(q._tabel){ renderTabel(); return; }
+  if(q.ml!==undefined){ renderMeten(q); return; }
+  if(q.o){ renderMC(q); return; }
+  if(q.van){ renderHerleiden(q); return; }
+  if(q.type){ renderRekenen(q); return; }
+}
+
+// ── MAATBEKER (Meten & Vullen) ─────────────────────────────────────────────
+let cupState={};
+function renderMeten(q){
+  $("q-cat").textContent="🥛 Maatbeker";
+  $("q-txt").innerHTML=`Vul de maatbeker tot exact: <strong class="text-indigo-600 text-2xl ml-1">${q.label}</strong>`;
+  s("q-measuring");
+  s("check-btn");
+
+  const canvas=$("ruler-canvas");
+  const W=300;
+  canvas.width=W; canvas.height=240;
+
+  // Bevat de vloeistofhoogte op basis van het gevraagde getal
+  // Max inhoud op schaal = 1000ml (10dl)
+  cupState={
+    q,
+    currentMl: rnd(1, 4) * 100, // beginniveau willekeurig gevuld
+    W,
+    H: 240,
+    dragging: false
+  };
+  
+  drawCup();
+  canvas.onpointerdown=cupPointerDown;
+  canvas.onpointermove=cupPointerMove;
+  canvas.onpointerup=cupPointerUp;
+  canvas.onpointercancel=cupPointerUp;
+}
+
+function drawCup(){
+  const {q, currentMl, W, H}=cupState;
+  const canvas=$("ruler-canvas");
+  const ctx=canvas.getContext("2d");
+  ctx.clearRect(0,0,W,H);
+
+  // Grijze achtergrond box
+  ctx.fillStyle="#f8fafc";
+  ctx.fillRect(0,0,W,H);
+
+  // Teken de maatbeker (glas)
+  const cupX=80, cupY=20, cupW=140, cupH=180;
+  
+  // Vloeistof tekenen
+  const pct = currentMl / 1000;
+  const fluidH = cupH * pct;
+  const fluidY = cupY + cupH - fluidH;
+  
+  if (currentMl > 0) {
+    ctx.fillStyle="#3b82f6"; // Blauw water
+    ctx.beginPath();
+    ctx.roundRect(cupX, fluidY, cupW, fluidH, [0, 0, 10, 10]);
+    ctx.fill();
+  }
+
+  // Beker rand
+  ctx.strokeStyle="#94a3b8";
+  ctx.lineWidth=4;
+  ctx.beginPath();
+  ctx.roundRect(cupX, cupY, cupW, cupH, [0, 0, 12, 12]);
+  ctx.stroke();
+
+  // Schaalstreepjes (per 100ml / 1dl)
+  ctx.fillStyle="#1e293b";
+  ctx.strokeStyle="#475569";
+  ctx.lineWidth=2;
+  ctx.font="bold 12px Nunito,sans-serif";
+  ctx.textAlign="right";
+
+  for(let i=1; i<=10; i++) {
+    const y = cupY + cupH - (cupH * (i / 10));
+    ctx.beginPath();
+    ctx.moveTo(cupX + cupW - 15, y);
+    ctx.lineTo(cupX + cupW, y);
+    ctx.stroke();
+
+    // Label schrijven
+    ctx.fillText(`${i} dl`, cupX + cupW - 22, y + 4);
+  }
+
+  // Toon huidige stand onder de maatbeker
+  const dlVal = (currentMl / 100).toFixed(1).replace('.', ',');
+  $("ruler-reading").innerHTML = `Gevuld tot: <span class="text-blue-600 font-extrabold text-xl">${dlVal} dl</span> (${currentMl} ml)`;
+}
+
+function cupPointerDown(e){
+  e.preventDefault();
+  cupState.dragging=true;
+  updateCupLevel(e);
+  $("ruler-canvas").setPointerCapture(e.pointerId);
+}
+function cupPointerMove(e){
+  if(!cupState.dragging)return;
+  e.preventDefault();
+  updateCupLevel(e);
+}
+function cupPointerUp(e){
+  cupState.dragging=false;
+}
+
+function updateCupLevel(e) {
+  const canvas=$("ruler-canvas");
+  const rect = canvas.getBoundingClientRect();
+  const clickY = e.clientY - rect.top;
+  
+  // Omrekenen van Y coordinaat naar ML
+  const cupY = 20, cupH = 180;
+  let pct = (cupY + cupH - clickY) / cupH;
+  if (pct < 0) pct = 0;
+  if (pct > 1) pct = 1;
+  
+  // Afronden op veelvouden van 50 ml
+  let ml = Math.round(pct * 1000);
+  ml = Math.round(ml / 50) * 50;
+  if (ml < 0) ml = 0;
+  if (ml > 1000) ml = 1000;
+  
+  cupState.currentMl = ml;
+  drawCup();
+}
+
+function checkMeten(){
+  const {q, currentMl} = cupState;
+  const ok = Math.abs(currentMl - q.ml) < 10; // Perfect of heel dichtbij
+
+  showFB(ok,
+    `✅ Correct! Je hebt de maatbeker gevuld tot exact ${q.label}.`,
+    `❌ Niet helemaal. Je moest vullen tot ${q.label}. Probeer de volgende vraag nog beter te mikken!`
+  );
+  record(ok, `Vul de maatbeker tot ${q.label}`, q.label, `${(currentMl/100).toString().replace('.',',')} dl`, "Maatbeker");
+  h("check-btn"); s("next-btn");
+}
+
+// ── JUISTE MAAT KIEZEN ──────────────────────────────────────────────────
+function renderMC(q){
+  $("q-cat").textContent="🤔 Juiste maat";
+  $("q-txt").textContent=q.v;
+  s("q-opts");
+  const cont=$("q-opts"); cont.innerHTML="";
+  shuffle(q.o).forEach(opt=>{
+    const btn=document.createElement("button");
+    btn.className="opt-btn pop";
+    btn.textContent=opt;
+    btn.onclick=()=>{
+      document.querySelectorAll(".opt-btn").forEach(b=>b.disabled=true);
+      const ok=opt===q.a;
+      btn.classList.add(ok?"correct":"wrong");
+      if(!ok) document.querySelectorAll(".opt-btn").forEach(b=>{if(b.textContent===q.a)b.classList.add("correct");});
+      showFB(ok,"✅ Correct!",`❌ Fout. Het juiste antwoord is: <b>${q.a}</b>`);
+      if(!ok&&!QS.isToets&&q.tip){$("q-tip").textContent="💡 "+q.tip;s("q-tip");}
+      record(ok,q.v,q.a,opt,"Juiste maat");
+      h("check-btn"); s("next-btn");
+    };
+    cont.appendChild(btn);
+  });
+  h("check-btn"); 
+}
+
+// ── DRAG TABEL INHOUDSMATEN ────────────────────────────────────────────────
+let tabState={};
+function renderTabel(){
+  $("q-cat").textContent="📊 Inhoudsmaattabel";
+  $("q-txt").innerHTML="Sleep de inhoudsmaten <b>van groot naar klein</b>: 1000l → ml";
+  s("q-drag");
+  const cont=$("q-drag");
+  cont.innerHTML="";
+  h("tip-btn");
+
+  const chips=shuffle([...TABEL]);
+  tabState={slots:Array(7).fill(null),dragging:null,done:false};
+
+  const sRow=document.createElement("div");
+  sRow.style.cssText="display:flex;flex-wrap:wrap;gap:4px;justify-content:center;margin-bottom:12px";
+  sRow.id="tab-slots";
+  TABEL.forEach((_,i)=>{
+    const s2=document.createElement("div");
+    s2.className="slot"; s2.dataset.idx=i; s2.id="slot-"+i;
+    s2.textContent="";
+    s2.addEventListener("dragover",e=>{e.preventDefault();s2.classList.add("over");});
+    s2.addEventListener("dragleave",()=>s2.classList.remove("over"));
+    s2.addEventListener("drop",e=>{e.preventDefault();s2.classList.remove("over");dropOnSlot(i);});
+    s2.addEventListener("touchend",e=>{e.preventDefault();dropOnSlot(i);},{passive:false});
+    sRow.appendChild(s2);
+  });
+  cont.appendChild(sRow);
+
+  const pool=document.createElement("div");
+  pool.className="chip-pool"; pool.id="tab-pool";
+  pool.addEventListener("dragover",e=>{e.preventDefault();pool.classList.add("over");});
+  pool.addEventListener("dragleave",()=>pool.classList.remove("over"));
+  pool.addEventListener("drop",e=>{e.preventDefault();pool.classList.remove("over");dropOnPool();});
+  pool.addEventListener("touchend",e=>{e.preventDefault();dropOnPool();},{passive:false});
+  chips.forEach(val=>pool.appendChild(makeChip(val)));
+  cont.appendChild(pool);
+
+  s("check-btn");
+  $("check-btn").onclick=checkTabel;
+}
+
+function makeChip(val){
+  const c=document.createElement("div");
+  c.className="drag-chip"; c.textContent=val; c.dataset.val=val; c.draggable=true;
+  c.style.background=TABEL_KLEUREN[val]||"#0f766e";
+  c.style.color="#1e293b";
+  c.addEventListener("dragstart",()=>{tabState.dragging=val;c.style.opacity=".5";});
+  c.addEventListener("dragend",()=>{c.style.opacity="1";});
+  c.addEventListener("touchstart",e=>{tabState.dragging=val;},{passive:true});
+  return c;
+}
+
+function dropOnSlot(idx){
+  if(!tabState.dragging)return;
+  const val=tabState.dragging;
+  tabState.slots.forEach((v,i)=>{if(v===val&&i!==idx){tabState.slots[i]=null;const s2=$("slot-"+i);if(s2){s2.textContent="";s2.classList.remove("filled");s2.style.background="";}}});
+  document.querySelectorAll(".drag-chip").forEach(c=>{if(c.dataset.val===val&&c.parentElement?.id==="tab-pool")c.remove();});
+  if(tabState.slots[idx]){
+    const old=tabState.slots[idx];
+    $("tab-pool")?.appendChild(makeChip(old));
+  }
+  tabState.slots[idx]=val;
+  const sl=$("slot-"+idx);
+  if(sl){sl.textContent=val;sl.classList.add("filled");sl.style.background=TABEL_KLEUREN[val]||"#dbeafe";}
+  tabState.dragging=null;
+}
+
+function dropOnPool(){
+  if(!tabState.dragging)return;
+  const val=tabState.dragging;
+  tabState.slots.forEach((v,i)=>{if(v===val){tabState.slots[i]=null;const s2=$("slot-"+i);if(s2){s2.textContent="";s2.classList.remove("filled");s2.style.background="";}}});
+  if(!document.querySelector(`#tab-pool [data-val="${val}"]`))
+    $("tab-pool")?.appendChild(makeChip(val));
+  tabState.dragging=null;
+}
+
+function checkTabel(){
+  if(tabState.done)return;
+  const ok=tabState.slots.every((v,i)=>v===TABEL[i]);
+  TABEL.forEach((_,i)=>{
+    const sl=$("slot-"+i);
+    if(!sl)return;
+    sl.classList.remove("filled");
+    if(tabState.slots[i]===TABEL[i]) sl.classList.add("ok-slot");
+    else { sl.classList.add("err-slot"); sl.textContent=TABEL[i]; }
+  });
+  showFB(ok,"✅ Fantastisch! Je kent de volgorde van de inhoudsmaten!",`❌ Niet helemaal. De volgorde is: ${TABEL.join(" → ")}`);
+
+  if(ok){
+    tabState.done=true;
+    record(ok,"Inhoudsmaattabel slepen",TABEL.join("→"),tabState.slots.join("→"),"Tabel");
+    h("check-btn"); s("next-btn");
+    if(QS.mode==="tabel"){
+      $("next-btn").textContent="Klaar! →";
+    }
+  } else {
+    setTimeout(()=>{
+      TABEL.forEach((_,i)=>{
+        const sl=$("slot-"+i);
+        if(sl){sl.className="slot";sl.textContent="";sl.style.background="";}
+      });
+      tabState.slots=Array(7).fill(null);
+      document.querySelectorAll(".drag-chip").forEach(c=>c.remove());
+      const pool=$("tab-pool");
+      if(pool){pool.innerHTML="";shuffle([...TABEL]).forEach(v=>pool.appendChild(makeChip(v)));}
+      h("q-fb");
+    },2500);
+  }
+}
+
+// ── HERLEIDEN ──────────────────────────────────────────────────────────────
+let herState={};
+function renderHerleiden(q){
+  $("q-cat").textContent="🔄 Herleiden";
+  $("q-txt").textContent=q.v;
+  s("q-lt-tabel");
+  $("q-lt-tabel").innerHTML=buildLtTabel(q.waarde,q.van);
+  s("q-inp-wrap");
+  $("q-unit1").textContent=q.naar;
+  h("q-inp2-wrap");
+  herState={q,pogingen:0,tabelVerplicht:false};
+  setTimeout(()=>$("q-inp1").focus(),80);
+}
+
+function getKolomCijfers(waarde, eenheid) {
+  const mmPerUnit = {"1000l":1e6,"100l":1e5,"10l":1e4,l:1e3,dl:100,cl:10,ml:1};
+  const totalMl = waarde * mmPerUnit[eenheid];
+  const units = TABEL;
+  const rest_vals = [1e6,1e5,1e4,1e3,100,10,1];
+  const result = {};
+  let remaining = totalMl;
+  units.forEach((u,i)=>{
+    const digit = Math.floor(remaining / rest_vals[i]);
+    remaining = remaining % rest_vals[i];
+    result[u] = digit;
+  });
+  return result;
+}
+
+function buildLtTabel(waarde, eenheid) {
+  const cijfers = getKolomCijfers(waarde, eenheid);
+  const cols = TABEL;
+  const idx = {"1000l":0,"100l":1,"10l":2,l:3,dl:4,cl:5,ml:6};
+  const eenheidIdx = idx[eenheid];
+  let startIdx = 0;
+  for(let i=0;i<cols.length;i++){ if(cijfers[cols[i]]>0){ startIdx=i; break; } }
+
+  let html=`<table class="lt-table"><tr>`;
+  cols.forEach(c=>html+=`<th class="l${c}-col">${c}</th>`);
+  html+=`</tr><tr>`;
+  cols.forEach((c,i)=>{
+    const dig = cijfers[c];
+    if(i>=startIdx && i<=eenheidIdx && dig!==undefined){
+      html+=`<td class="l${c}-col"><b style="font-size:1rem;color:#0f766e">${dig}</b></td>`;
+    } else {
+      html+=`<td class="l${c}-col">&nbsp;</td>`;
+    }
+  });
+  html+=`</tr></table>`;
+  return html;
+}
+
+function buildLtTabelForce(q) {
+  const cijfers = getKolomCijfers(q.waarde, q.van);
+  const cols = TABEL;
+  const idx = {"1000l":0,"100l":1,"10l":2,l:3,dl:4,cl:5,ml:6};
+  const vanIdx = idx[q.van];
+  const naarIdx = idx[q.naar];
+  const startIdx = Math.min(vanIdx, naarIdx);
+  const endIdx   = Math.max(vanIdx, naarIdx);
+
+  let html=`<table class="lt-table"><tr>`;
+  cols.forEach(c=>html+=`<th class="l${c}-col">${c}</th>`);
+  html+=`</tr><tr>`;
+  cols.forEach((c,i)=>{
+    if(i===vanIdx){
+      const dig=cijfers[c]; 
+      html+=`<td class="l${c}-col"><b style="font-size:1rem;color:#0f766e">${dig!==undefined?dig:q.waarde}</b></td>`;
+    } else if(i===naarIdx){
+      html+=`<td class="l${c}-col"><input type="number" class="lt-inp" id="lt-force-inp" placeholder="?" style="width:38px"></td>`;
+    } else if(i>startIdx && i<endIdx){
+      html+=`<td class="l${c}-col"><b style="font-size:0.95rem;color:#94a3b8">0</b></td>`;
+    } else {
+      html+=`<td class="l${c}-col">&nbsp;</td>`;
+    }
+  });
+  html+=`</tr></table>`;
+  return html;
+}
+
+function checkHerleiden(){
+  const q=herState.q;
+  if(herState.tabelVerplicht){
+    const ltInp=$("lt-force-inp");
+    if(!ltInp)return;
+    const val=parseFloat(ltInp.value.trim());
+    if(isNaN(val)){ltInp.classList.add("shake");return;}
+    const ok=Math.abs(val-q.ans)<0.05;
+    ltInp.className="lt-inp "+(ok?"lt-ok":"lt-err");
+    ltInp.disabled=true;
+    if(ok){
+      $("q-inp1").value=q.ans;
+      $("q-inp1").className="ans-inp ok";
+      showFB(true,"✅ Correct via de tabel! Prima gedaan!");
+    } else {
+      ltInp.value=q.ans; 
+      showFB(false,`❌ Het juiste antwoord is <b>${q.ans} ${q.naar}</b>. Je ziet de uitwerking nu in de tabel.`);
+    }
+    record(ok,q.v,String(q.ans),String(val),"Herleiden");
+    h("check-btn"); s("next-btn"); herState.tabelVerplicht=false;
+    return;
+  }
+
+  const val=parseFloat($("q-inp1").value.trim());
+  if(isNaN(val)){$("q-inp1").classList.add("shake");return;}
+  const ok=Math.abs(val-q.ans)<0.05;
+
+  if(ok){
+    $("q-inp1").className="ans-inp ok"; $("q-inp1").disabled=true;
+    showFB(true,"✅ Correct!",null);
+    record(true,q.v,String(q.ans),String(val),"Herleiden");
+    h("check-btn"); s("next-btn");
+  } else {
+    herState.pogingen++;
+    $("q-inp1").className="ans-inp err";
+    if(herState.pogingen>=1){
+      herState.tabelVerplicht=true;
+      $("q-inp1").disabled=true;
+      s("q-lt-tabel-force");
+      $("q-lt-force-content").innerHTML=buildLtTabelForce(q);
+      $("check-btn").textContent="Controleer tabel";
+      showFB(false,"❌ Fout! Vul nu de hulpschema-tabel hieronder in om het antwoord te vinden.",null);
+      record(false,q.v,String(q.ans),String(val),"Herleiden");
+    } else {
+      showFB(false,"❌ Fout. Probeer het nog een keer!",null);
+    }
+  }
+}
+
+// ── REKENEN ────────────────────────────────────────────────────────────────
+function renderRekenen(q){
+  $("q-cat").textContent="➕ Rekenen";
+  $("q-txt").textContent=q.v;
+  s("q-inp-wrap");
+  $("q-unit1").textContent=q.u1;
+  if(q.ans2!==null&&q.ans2!==undefined){
+    s("q-inp2-wrap");
+    $("q-unit2").textContent=q.u2;
+  } else {
+    h("q-inp2-wrap");
+  }
+  setTimeout(()=>$("q-inp1").focus(),80);
+}
+
+function checkRekenen(){
+  const q=QS.questions[QS.idx];
+  const v1=parseFloat($("q-inp1").value.trim());
+  if(isNaN(v1)){$("q-inp1").classList.add("shake");return;}
+
+  let ok=false;
+  if(q.ans2!==null&&q.ans2!==undefined){
+    const v2=parseFloat($("q-inp2").value.trim());
+    if(isNaN(v2)){$("q-inp2").classList.add("shake");return;}
+    ok=Math.abs(v1-q.ans1)<0.05&&Math.abs(v2-q.ans2)<0.05;
+    $("q-inp2").className="ans-inp "+(ok?"ok":"err");
+    $("q-inp2").disabled=true;
+    if(!ok){$("q-inp2").value=q.ans2;}
+  } else {
+    ok=Math.abs(v1-q.ans1)<0.05;
+  }
+  $("q-inp1").className="ans-inp "+(ok?"ok":"err");
+  $("q-inp1").disabled=true;
+  if(!ok){$("q-inp1").value=q.ans1;}
+
+  const corrTxt=q.ans2!==null&&q.ans2!==undefined?`${q.ans1} ${q.u1} en ${q.ans2} ${q.u2}`:`${q.ans1} ${q.u1}`;
+  showFB(ok,"✅ Correct! Handig opgelost!",`❌ Fout. Het juiste antwoord is: <b>${corrTxt}</b>`);
+  if(!ok&&!QS.isToets&&q.tip){$("q-tip").textContent="💡 "+q.tip;s("q-tip");}
+  record(ok,q.v,corrTxt,String(v1),"Rekenen");
+  h("check-btn"); s("next-btn");
+}
+
+// ── ALGEMENE CONTROLE ──────────────────────────────────────────────────────
+function checkAnswer(){
+  const q=QS.questions[QS.idx];
+  if(q._tabel)   { checkTabel(); return; }
+  if(q.ml!==undefined){ checkMeten(); return; }
+  if(q.o)        { return; } 
+  if(q.van)      { checkHerleiden(); return; }
+  if(q.type)     { checkRekenen(); return; }
+}
+
+// ── FEEDBACK & GEGEVENS REGISTREREN ────────────────────────────────────────
+function showFB(ok,okMsg,errMsg){
+  const el=$("q-fb");
+  el.innerHTML=ok?okMsg:errMsg;
+  el.className=(ok?"fb-ok pop":"fb-err pop shake");
+  s(el);
+}
+
+function record(ok,vraag,juist,leerling,cat){
+  QS.history.push({vraagNr:QS.idx+1,formule:vraag,juistAntwoord:juist,antwoordLeerling:leerling,isJuist:ok,categorie:cat});
+  if(ok)QS.score++;
+  updBullet(QS.idx,ok);
+}
+
+function nextQ(){
+  $("check-btn").textContent="Controleer";
+  $("check-btn").onclick=checkAnswer;
+
+  QS.idx++;
+  if(QS.idx>=QS.questions.length) showEnd();
+  else renderQ();
+}
+
+// ── EINDSCHERM ─────────────────────────────────────────────────────────────
+function showEnd(){
+  h("v-quiz"); s("v-end");
+  const {score,questions,history,mode}=QS;
+  const total=questions.length;
+  const pct=Math.round((score/total)*100);
+
+  // Sla op in Firebase als dit de toets was
+  if(mode==="toets"){
+    saveToetsResultaat(score, total, pct, history);
+  }
+
+  $("end-score").textContent=`${score}/${total}`;
+  $("end-pct").textContent=pct+"%";
+  $("end-pct").style.color=pct>=75?"#16a34a":pct>=50?"#d97706":"#dc2626";
+  $("end-emoji").textContent=pct===100?"🏆":pct>=75?"🌟":pct>=50?"👍":"📚";
+  $("end-title").textContent=pct===100?"Perfect!":pct>=75?"Heel goed gedaan!":pct>=50?"Mooi geprobeerd!":"Blijf oefenen!";
+
+  if(window.confetti&&pct>=75)window.confetti({particleCount:80,spread:70,origin:{y:.7}});
+
+  const fouten=history.filter(h2=>!h2.isJuist);
+  if(fouten.length>0){
+    s("end-analyse");
+    const list=$("end-fouten"); list.innerHTML="";
+    fouten.forEach(f=>{
+      const d=document.createElement("div");
+      d.style="background:#fef2f2;border:2px solid #fca5a5;border-radius:10px;padding:10px 12px;font-size:.88rem;";
+      d.innerHTML=`<b style="color:#b91c1c">Vraag ${f.vraagNr}:</b> ${f.formule}<br><span style="color:#64748b">Jouw antwoord: <b>${f.antwoordLeerling}</b> — Juist: <b style="color:#15803d">${f.juistAntwoord}</b></span>`;
+      list.appendChild(d);
+    });
+  } else h("end-analyse");
+}
+
+// --- APP OPSTART MENU ENIGE VIEW ---
+window.onload = function() {
+  s("v-menu");
+}
+</script>
+
+<!-- FIREBASE compat scripts (geen module-scope, onclick werkt altijd) -->
+<!-- FIREBASE -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    <script>
+        firebase.initializeApp({
+            apiKey:"AIzaSyCnQDVVAlK6jE-PPUUediRJMTbN0xqrLDE",
+            authDomain:"klaswebsite-database.firebaseapp.com",
+            projectId:"klaswebsite-database",
+            storageBucket:"klaswebsite-database.firebasestorage.app",
+            messagingSenderId:"42912327282",
+            appId:"1:42912327282:web:f13f2c706f6c42c115c4eb"
+        });
+        const fbDb = firebase.firestore();
+
+        // ── LOGIN (leest leerlingen uit Firestore) ────────────────────
+        async function loginMetCode() {
+            var naam = (document.getElementById('login-naam').value||'').trim().toLowerCase();
+            var code = (document.getElementById('login-code').value||'').trim();
+            var errEl = document.getElementById('login-error');
+            var btn = document.getElementById('btn-login');
+            errEl.textContent = '';
+            document.getElementById('login-naam').classList.remove('err');
+            document.getElementById('login-code').classList.remove('err');
+            if (!naam) { errEl.textContent='Vul je voornaam in.'; document.getElementById('login-naam').classList.add('err'); return; }
+            if (!code) { errEl.textContent='Vul je code in.'; document.getElementById('login-code').classList.add('err'); return; }
+            btn.disabled=true; btn.textContent='Controleren...';
+            try {
+                var doc = await fbDb.collection('leerlingen').doc(naam).get();
+                if (!doc.exists) {
+                    errEl.textContent='Naam niet gevonden.'; btn.disabled=false; btn.textContent='Inloggen';
+                    document.getElementById('login-naam').classList.add('err'); return;
+                }
+                var data = doc.data();
+                if (data.code !== code) {
+                    errEl.textContent='Verkeerde code.'; btn.disabled=false; btn.textContent='Inloggen';
+                    document.getElementById('login-code').classList.add('err'); return;
+                }
+                window._leerlingNaam = data.weergavenaam || naam;
+                window._leerlingId = naam;
+                window._isGuest = false;
+                afterLogin(window._leerlingNaam);
+            } catch(e) {
+                errEl.textContent='Fout: '+e.message; btn.disabled=false; btn.textContent='Inloggen';
+            }
+        }
+
+        function loginGuest() {
+            window._leerlingNaam='Gast'; window._leerlingId=null; window._isGuest=true;
+            afterLogin('Gast');
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            ['login-naam','login-code'].forEach(function(id) {
+                var el=document.getElementById(id);
+                if(el) {
+                    el.addEventListener('keypress',function(e){if(e.key==='Enter')loginMetCode();});
+                    el.addEventListener('focus',function(){el.classList.remove('err');document.getElementById('login-error').textContent='';});
+                }
+            });
+        });
+    </script>
+</body>
+</html>

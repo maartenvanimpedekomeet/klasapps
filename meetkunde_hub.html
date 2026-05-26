@@ -1,0 +1,1412 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Meetkunde — Leeromgeving</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Fredoka:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --c-bg: #f0f4ff;
+  --c-primary: #4f46e5;
+  --c-primary-light: #ede9fe;
+  --c-green: #10b981;
+  --c-red: #ef4444;
+  --c-text: #1e1b4b;
+  --c-muted: #6b7280;
+  --c-border: #e5e7eb;
+  --shadow: 0 4px 24px rgba(79,70,229,0.10);
+  --shadow-lg: 0 8px 40px rgba(79,70,229,0.18);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Nunito', sans-serif; background: var(--c-bg); min-height: 100vh; color: var(--c-text); }
+.title-font { font-family: 'Fredoka', sans-serif; }
+
+.screen { display: none; min-height: 100vh; }
+.screen.active { display: flex; flex-direction: column; }
+
+/* LOGIN */
+#screen-login {
+  align-items: center; justify-content: center;
+  background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 50%, #a855f7 100%);
+  padding: 20px; position: relative; overflow: hidden;
+}
+#screen-login::before {
+  content: ''; position: absolute; inset: 0;
+  background-image: radial-gradient(circle at 20% 80%, rgba(255,255,255,0.08) 0%, transparent 50%),
+                    radial-gradient(circle at 80% 20%, rgba(255,255,255,0.06) 0%, transparent 50%);
+}
+.login-card {
+  background: rgba(255,255,255,0.97); border-radius: 2rem;
+  padding: 2.5rem 2rem; width: 100%; max-width: 380px;
+  box-shadow: var(--shadow-lg); text-align: center; position: relative; z-index: 1;
+}
+.login-logo {
+  width: 80px; height: 80px;
+  background: linear-gradient(135deg, #4f46e5, #a855f7);
+  border-radius: 1.5rem; display: flex; align-items: center; justify-content: center;
+  margin: 0 auto 1.5rem; font-size: 2.5rem;
+  box-shadow: 0 8px 24px rgba(79,70,229,0.35);
+}
+.btn-google {
+  display: flex; align-items: center; justify-content: center; gap: 12px;
+  width: 100%; background: white; border: 2px solid #e5e7eb; border-radius: 1rem;
+  padding: 14px 20px; font-family: 'Nunito', sans-serif; font-size: 1rem; font-weight: 700;
+  color: #374151; cursor: pointer; transition: all 0.2s; margin-bottom: 12px;
+}
+.btn-google:hover { border-color: #4f46e5; background: #f5f3ff; transform: translateY(-1px); }
+.btn-guest {
+  width: 100%; background: transparent; border: 2px solid #d1d5db; border-radius: 1rem;
+  padding: 12px; font-family: 'Nunito', sans-serif; font-size: 0.9rem; font-weight: 700;
+  color: #6b7280; cursor: pointer; transition: all 0.2s;
+}
+.btn-guest:hover { border-color: #9ca3af; color: #374151; }
+
+/* HOME */
+#screen-home { background: var(--c-bg); }
+.home-header {
+  background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+  padding: 1.5rem 1.25rem 2.5rem; color: white; position: relative; overflow: hidden;
+}
+.home-header::after {
+  content: ''; position: absolute; bottom: -30px; left: -20px; right: -20px;
+  height: 60px; background: var(--c-bg); border-radius: 50% 50% 0 0 / 100%;
+}
+.user-badge {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: rgba(255,255,255,0.2); border-radius: 2rem; padding: 6px 14px;
+  font-size: 0.8rem; font-weight: 700; margin-bottom: 1rem;
+}
+.menu-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; padding: 1rem 1.25rem 1.5rem; }
+.menu-card {
+  background: white; border-radius: 1.5rem; padding: 1.25rem 1rem;
+  box-shadow: var(--shadow); cursor: pointer; transition: all 0.22s;
+  border: 2.5px solid transparent; text-align: center;
+}
+.menu-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-lg); }
+.menu-card:active { transform: scale(0.97); }
+.menu-card .icon {
+  width: 52px; height: 52px; border-radius: 1rem;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.6rem; margin: 0 auto 0.75rem;
+}
+.menu-card h3 { font-family: 'Fredoka', sans-serif; font-size: 1rem; font-weight: 600; line-height: 1.2; }
+.menu-card p { font-size: 0.72rem; color: var(--c-muted); margin-top: 3px; }
+.menu-card.toets-card {
+  grid-column: 1 / -1; display: flex; align-items: center; gap: 1rem;
+  text-align: left; padding: 1.25rem 1.5rem;
+  background: linear-gradient(135deg, #1e1b4b 0%, #4f46e5 100%); color: white;
+}
+.menu-card.toets-card h3 { font-size: 1.15rem; color: white; }
+.menu-card.toets-card p { color: rgba(255,255,255,0.7); }
+.menu-card.toets-card .icon { background: rgba(255,255,255,0.2); flex-shrink: 0; }
+
+/* MODULE */
+#screen-module { background: var(--c-bg); }
+.mod-header {
+  padding: 1rem 1.25rem; display: flex; align-items: center; gap: 12px;
+  color: white; position: relative; overflow: hidden;
+}
+.mod-header::after {
+  content: ''; position: absolute; bottom: -20px; left: -20px; right: -20px;
+  height: 40px; background: var(--c-bg); border-radius: 50% 50% 0 0 / 100%;
+}
+.back-btn {
+  background: rgba(255,255,255,0.2); border: none; border-radius: 0.75rem;
+  color: white; padding: 8px 12px; cursor: pointer; font-size: 1.1rem;
+  transition: background 0.2s; flex-shrink: 0; font-family: 'Nunito', sans-serif; font-weight: 800;
+}
+.back-btn:hover { background: rgba(255,255,255,0.35); }
+.progress-wrap { background: rgba(255,255,255,0.25); border-radius: 99px; height: 8px; overflow: hidden; flex: 1; }
+.progress-fill { height: 100%; background: white; border-radius: 99px; transition: width 0.4s ease; }
+
+.quiz-body { padding: 1rem 1.25rem 1.5rem; flex: 1; overflow-y: auto; }
+
+/* Shape & image boxes */
+.shape-box {
+  background: white; border-radius: 1.25rem; padding: 0.75rem;
+  box-shadow: var(--shadow); display: flex; align-items: center; justify-content: center;
+  margin-bottom: 1.25rem; min-height: 190px;
+}
+.img-box {
+  background: white; border-radius: 1.25rem; box-shadow: var(--shadow);
+  display: flex; align-items: center; justify-content: center;
+  margin-bottom: 1.25rem; height: 210px; overflow: hidden;
+}
+.img-box img { max-width: 95%; max-height: 95%; object-fit: contain; }
+
+/* Answer buttons */
+.ans-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.ans-grid.cols1 { grid-template-columns: 1fr; }
+.ans-btn {
+  background: white; border: 2.5px solid var(--c-border); border-radius: 1rem;
+  padding: 12px 10px; font-family: 'Nunito', sans-serif; font-size: 0.9rem; font-weight: 700;
+  cursor: pointer; transition: all 0.2s; text-align: center; color: var(--c-text);
+}
+.ans-btn:hover:not(:disabled) { border-color: var(--mod-color,var(--c-primary)); background: color-mix(in srgb, var(--mod-color,var(--c-primary)) 8%, white); }
+.ans-btn.correct { background: #dcfce7 !important; border-color: #22c55e !important; color: #166534 !important; }
+.ans-btn.wrong { background: #fee2e2 !important; border-color: var(--c-red) !important; color: #991b1b !important; animation: shake 0.4s; }
+.ans-btn:disabled { cursor: default; }
+
+/* Image-choice grid */
+.img-choice-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+.img-choice-btn {
+  background: white; border: 2.5px solid var(--c-border); border-radius: 1rem;
+  padding: 8px 4px; cursor: pointer; transition: all 0.2s; text-align: center;
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+}
+.img-choice-btn:hover:not(:disabled) { border-color: var(--mod-color,var(--c-primary)); transform: translateY(-2px); }
+.img-choice-btn.correct { background: #dcfce7 !important; border-color: #22c55e !important; }
+.img-choice-btn.wrong { background: #fee2e2 !important; border-color: var(--c-red) !important; animation: shake 0.4s; }
+.img-choice-btn span { font-size: 0.7rem; font-weight: 700; color: var(--c-muted); }
+
+/* Loader */
+.loader {
+  width: 36px; height: 36px; border: 4px solid #e5e7eb;
+  border-top-color: var(--mod-color,var(--c-primary));
+  border-radius: 50%; animation: spin 0.8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+@keyframes shake { 0%,100%{transform:translateX(0)}25%{transform:translateX(-5px)}75%{transform:translateX(5px)} }
+
+.btn-next {
+  width: 100%; margin-top: 14px; background: var(--mod-color,var(--c-primary)); color: white;
+  border: none; border-radius: 1rem; padding: 14px;
+  font-family: 'Nunito', sans-serif; font-size: 1rem; font-weight: 800;
+  cursor: pointer; transition: all 0.2s; display: none;
+}
+.btn-next:hover { filter: brightness(0.9); transform: translateY(-1px); }
+.btn-next.show { display: block; }
+
+/* RESULT OVERLAY */
+.result-overlay {
+  position: fixed; inset: 0; z-index: 100; background: var(--c-bg);
+  display: none; flex-direction: column; align-items: center; justify-content: flex-start;
+  padding: 1.5rem 1.25rem; overflow-y: auto;
+}
+.result-overlay.show { display: flex; }
+.result-card {
+  background: white; border-radius: 2rem; padding: 2rem 1.5rem; width: 100%;
+  max-width: 440px; box-shadow: var(--shadow-lg);
+}
+.score-ring {
+  width: 120px; height: 120px; border-radius: 50%;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  margin: 0 auto 1.5rem; font-family: 'Fredoka', sans-serif;
+  border: 5px solid var(--mod-color,var(--c-primary));
+  background: color-mix(in srgb, var(--mod-color,var(--c-primary)) 10%, white);
+  color: var(--mod-color,var(--c-primary));
+}
+.stat-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
+.stat-box { border-radius: 1rem; padding: 14px 10px; text-align: center; }
+.stat-box .num { font-family: 'Fredoka', sans-serif; font-size: 1.8rem; font-weight: 600; }
+.stat-box .lbl { font-size: 0.7rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; margin-top: 2px; }
+.analysis-section { margin-top: 1.25rem; }
+.analysis-title {
+  font-size: 0.72rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em;
+  color: var(--c-muted); margin-bottom: 10px; padding-bottom: 6px; border-bottom: 2px solid var(--c-border);
+}
+.analysis-item {
+  display: flex; align-items: center; gap: 10px; padding: 10px 12px;
+  border-radius: 0.75rem; margin-bottom: 6px; font-size: 0.88rem; font-weight: 700;
+}
+.analysis-item .dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+.analysis-item.good { background: #f0fdf4; color: #166534; }
+.analysis-item.good .dot { background: #22c55e; }
+.analysis-item.bad { background: #fff1f2; color: #9f1239; }
+.analysis-item.bad .dot { background: #f43f5e; }
+.btn-restart {
+  width: 100%; margin-top: 1.25rem; background: var(--mod-color,var(--c-primary)); color: white;
+  border: none; border-radius: 1rem; padding: 14px;
+  font-family: 'Nunito', sans-serif; font-size: 1rem; font-weight: 800; cursor: pointer;
+}
+.btn-restart:hover { filter: brightness(0.9); }
+
+/* Module start overlay */
+.mod-start {
+  position: absolute; inset: 0; z-index: 10; background: white;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  padding: 2rem; text-align: center;
+}
+.mod-start h2 { font-family: 'Fredoka', sans-serif; font-size: 1.8rem; margin: 1rem 0 0.5rem; }
+.mod-start p { color: var(--c-muted); font-size: 0.9rem; margin-bottom: 2rem; max-width: 300px; }
+.btn-start {
+  background: var(--mod-color,var(--c-primary)); color: white; border: none;
+  border-radius: 1.25rem; padding: 16px 32px;
+  font-family: 'Nunito', sans-serif; font-size: 1.1rem; font-weight: 800;
+  cursor: pointer; transition: all 0.2s;
+  box-shadow: 0 6px 20px color-mix(in srgb, var(--mod-color,var(--c-primary)) 35%, transparent);
+}
+.btn-start:hover { filter: brightness(0.9); transform: translateY(-2px); }
+
+.q-label { font-size: 0.72rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em; color: var(--c-muted); margin-bottom: 8px; }
+.q-text { font-family: 'Fredoka', sans-serif; font-size: 1.05rem; color: var(--c-text); margin-bottom: 1rem; }
+
+/* ── VLAKKE FIGUREN (original style) ── */
+.option-group { margin-bottom: 1rem; transition: opacity 0.3s ease; }
+.option-group.disabled { opacity: 0.3; pointer-events: none; }
+.option-label-vlak {
+  font-size: 0.72rem; font-weight: 800; color: #94a3b8;
+  text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.5rem; display: block;
+}
+.choice-pill {
+  display: inline-flex; align-items: center; padding: 0.55rem 1rem;
+  background: white; border: 2px solid #e2e8f0; border-radius: 1rem;
+  cursor: pointer; transition: all 0.2s; font-weight: 600; color: #475569; user-select: none;
+  font-size: 0.88rem; font-family: 'Nunito', sans-serif;
+}
+.choice-pill:hover:not(.locked) { border-color: #a855f7; background: #fdf4ff; transform: translateY(-1px); }
+.choice-pill.selected { background: #a855f7; border-color: #a855f7; color: white; }
+.choice-pill.correct-reveal { border: 3px solid #22c55e !important; background: #f0fdf4 !important; color: #166534 !important; }
+.choice-pill.locked { cursor: default; }
+.pill-wrap { display: flex; flex-wrap: wrap; gap: 6px; }
+.vlak-img-box {
+  background: #f1f5f9; border-radius: 1.25rem; height: 200px;
+  display: flex; justify-content: center; align-items: center;
+  margin-bottom: 1.25rem; overflow: hidden; position: relative;
+}
+.vlak-img-box img { max-width: 95%; max-height: 95%; object-fit: contain; display: none; }
+.vlak-loader { width: 44px; height: 44px; border: 5px solid #e2e8f0; border-bottom-color: #a855f7; border-radius: 50%; animation: spin 1s linear infinite; }
+.btn-vlak {
+  flex: 1; padding: 14px; border: none; border-radius: 1.25rem; font-family: 'Nunito', sans-serif;
+  font-size: 0.95rem; font-weight: 700; cursor: pointer; transition: all 0.2s;
+}
+.btn-vlak-check { background: #7c3aed; color: white; }
+.btn-vlak-check:hover { background: #6d28d9; }
+.btn-vlak-reveal { background: #f59e0b; color: white; display: none; }
+.btn-vlak-reveal:hover { background: #d97706; }
+.btn-vlak-next { background: #1e293b; color: white; display: none; }
+.btn-vlak-next:hover { background: #0f172a; }
+.feedback-vlak { min-height: 40px; text-align: center; font-weight: 700; font-size: 1rem; margin: 0.75rem 0; }
+
+/* ── RUIMTEFIGUREN (original 2-step style) ── */
+.step-label {
+  font-size: 0.7rem; font-weight: 800; color: #9d174d;
+  text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.5rem;
+}
+.step-label.ruimte { color: var(--mod-color,#be185d); }
+.property-btn {
+  display: flex; align-items: center; padding: 10px 14px;
+  border: 2px solid #ffe4e6; border-radius: 0.75rem; cursor: pointer;
+  transition: all 0.2s; background: white; font-weight: 600; font-size: 0.85rem;
+  color: #831843; text-align: left; font-family: 'Nunito', sans-serif;
+}
+.property-btn.selected { border-color: var(--mod-color,#ec4899); background-color: #fce7f3; }
+.checkbox-box {
+  min-width: 20px; height: 20px; border: 2px solid var(--mod-color,#ec4899);
+  border-radius: 4px; margin-right: 12px; display: flex; align-items: center;
+  justify-content: center; transition: all 0.2s; flex-shrink: 0;
+}
+.property-btn.selected .checkbox-box { background-color: var(--mod-color,#ec4899); }
+.property-btn.selected .checkbox-box::after { content: '✓'; color: white; font-size: 13px; font-weight: bold; }
+.name-btn {
+  padding: 10px; border: 2px solid #fbcfe8; border-radius: 0.75rem;
+  cursor: pointer; font-weight: 700; transition: all 0.2s;
+  background: #fffcf9; color: #831843; font-family: 'Nunito', sans-serif; font-size: 0.9rem;
+}
+.name-btn:hover { background: #fdf2f8; border-color: var(--mod-color,#ec4899); }
+.name-btn.active { background: var(--mod-color,#ec4899); color: white; border-color: color-mix(in srgb, var(--mod-color,#ec4899) 80%, black); }
+.btn-ruimte-action {
+  width: 100%; margin-top: 12px; padding: 13px; border: none; border-radius: 1rem;
+  font-family: 'Nunito', sans-serif; font-size: 0.95rem; font-weight: 800;
+  cursor: pointer; transition: all 0.2s; color: white;
+  background: var(--mod-color,#be185d);
+}
+.btn-ruimte-action:hover { filter: brightness(0.9); }
+.feedback-ruimte { min-height: 44px; text-align: center; font-size: 0.9rem; font-weight: 700; margin: 0.75rem 0; }
+.step-badge {
+  font-size: 0.72rem; background: color-mix(in srgb, var(--mod-color,#be185d) 80%, black);
+  color: white; padding: 4px 10px; border-radius: 99px; font-weight: 800;
+}
+
+/* Toast */
+.toast {
+  position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+  background: #1e1b4b; color: white; padding: 10px 20px; border-radius: 1rem;
+  font-weight: 700; font-size: 0.9rem; z-index: 999; opacity: 0; transition: opacity 0.3s; pointer-events: none;
+}
+.toast.show { opacity: 1; }
+
+/* Color themes */
+.theme-lijnen    { --mod-color: #0284c7; }
+.theme-hoeken    { --mod-color: #10b981; }
+.theme-vlak      { --mod-color: #7c3aed; }
+.theme-driehoek  { --mod-color: #dc2626; }
+.theme-vierhoek  { --mod-color: #ea580c; }
+.theme-cirkel    { --mod-color: #92400e; }
+.theme-ruimte    { --mod-color: #be185d; }
+.theme-toets     { --mod-color: #1e1b4b; }
+
+[class*="theme-"] .mod-header {
+  background: linear-gradient(135deg, var(--mod-color), color-mix(in srgb, var(--mod-color) 65%, black));
+}
+        /* ── LOGIN ── */
+        #login-screen {
+            position:fixed; inset:0; z-index:9999;
+            background:linear-gradient(135deg,#4338ca 0%,#6d28d9 60%,#7c3aed 100%);
+            display:flex; align-items:center; justify-content:center; padding:20px;
+        }
+        #login-screen.hidden { display:none!important; }
+        .login-card {
+            background:white; border-radius:2rem; padding:2.5rem 2rem;
+            width:100%; max-width:380px;
+            box-shadow:0 25px 50px rgba(0,0,0,0.25); text-align:center;
+        }
+        .login-logo {
+            width:80px; height:80px; background:#ede9fe; border-radius:1.5rem;
+            display:flex; align-items:center; justify-content:center;
+            margin:0 auto 1.25rem; font-size:2.5rem;
+        }
+        .login-input {
+            width:100%; padding:14px 16px; border:2px solid #e5e7eb; border-radius:1rem;
+            font-family:inherit; font-size:1rem; font-weight:600; color:#374151;
+            margin-bottom:10px; outline:none; transition:border-color .2s; text-align:center;
+        }
+        .login-input:focus { border-color:#6d28d9; }
+        .login-input.err { border-color:#dc2626; background:#fef2f2; animation:loginShake .4s; }
+        @keyframes loginShake{0%,100%{transform:translateX(0)}25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
+        .btn-login {
+            width:100%; background:#6d28d9; color:white; border:none; border-radius:1rem;
+            padding:14px; font-family:inherit; font-size:1rem; font-weight:700;
+            cursor:pointer; transition:all .2s; margin-bottom:10px;
+        }
+        .btn-login:hover { background:#5b21b6; }
+        .btn-login:disabled { opacity:.6; cursor:not-allowed; }
+        .login-error { color:#dc2626; font-size:.85rem; font-weight:700; min-height:20px; margin-bottom:8px; }
+        .btn-guest {
+            width:100%; background:transparent; border:2px solid #d1d5db; border-radius:1rem;
+            padding:12px; font-family:inherit; font-size:.9rem; font-weight:700;
+            color:#6b7280; cursor:pointer; transition:all .2s;
+        }
+        .btn-guest:hover { border-color:#9ca3af; color:#374151; }
+        .teacher-link { margin-top:14px; font-size:.75rem; color:#9ca3af; }
+        .teacher-link a { color:#6d28d9; text-decoration:none; font-weight:700; }
+    </style>
+</head>
+<body>
+    <!-- LOGIN SCREEN -->
+    <div id="login-screen">
+      <div class="login-card">
+        <div class="login-logo">📐</div>
+        <h1 style="font-size:1.6rem;font-weight:800;color:#1f2937;margin-bottom:6px;">Meetkunde</h1>
+        <p style="font-size:.85rem;color:#6b7280;margin-bottom:1.25rem;">Voer je naam en code in</p>
+        <input class="login-input" id="login-naam" type="text" placeholder="Jouw voornaam" autocomplete="off" autocapitalize="words">
+        <input class="login-input" id="login-code" type="password" placeholder="Jouw code" autocomplete="off">
+        <div class="login-error" id="login-error"></div>
+        <button class="btn-login" id="btn-login" onclick="loginMetCode()">Inloggen</button>
+        <button class="btn-guest" onclick="loginGuest()">Doorgaan als gast (geen opslag)</button>
+        <div class="teacher-link"><a href="dashboard.html">Leerkracht? Klik hier</a></div>
+      </div>
+    </div>
+
+<!-- LOGIN -->
+<div id="screen-login" class="screen active">
+  <div class="login-card">
+    <div class="login-logo">📐</div>
+    <h1 class="title-font" style="font-size:1.8rem;color:#1e1b4b;margin-bottom:6px;">Meetkunde</h1>
+    <p style="font-size:0.85rem;color:#6b7280;margin-bottom:2rem;">Log in om je voortgang bij te houden</p>
+    <button class="btn-google" onclick="loginGoogle()">
+      <svg width="20" height="20" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9.1 3.5l6.8-6.8C35.8 2.4 30.3 0 24 0 14.7 0 6.7 5.4 2.6 13.3l7.9 6.1C12.4 13.1 17.7 9.5 24 9.5z"/><path fill="#4285F4" d="M46.5 24.5c0-1.6-.1-3.1-.4-4.5H24v8.5h12.7c-.5 2.9-2.2 5.4-4.7 7l7.4 5.7c4.3-4 6.8-9.9 7.1-16.7z"/><path fill="#FBBC05" d="M10.5 28.6A14.5 14.5 0 0 1 9.5 24c0-1.6.3-3.1.9-4.6l-7.9-6.1A24 24 0 0 0 0 24c0 3.9.9 7.5 2.6 10.7l7.9-6.1z"/><path fill="#34A853" d="M24 48c6.3 0 11.6-2.1 15.5-5.7l-7.4-5.7c-2.1 1.4-4.8 2.2-8.1 2.2-6.3 0-11.6-3.6-13.5-8.8l-7.9 6.1C6.7 42.6 14.7 48 24 48z"/></svg>
+      Inloggen met Google
+    </button>
+    <button class="btn-guest" onclick="loginGuest()">Doorgaan als gast (geen opslag)</button>
+  </div>
+</div>
+
+<!-- HOME -->
+<div id="screen-home" class="screen">
+  <div class="home-header">
+    <div class="user-badge"><span id="user-avatar">👤</span><span id="user-name">Gast</span></div>
+    <h1 class="title-font" style="font-size:1.9rem;line-height:1.1;">Meetkunde<br><span style="font-size:1.2rem;opacity:0.85;">Kies een onderwerp</span></h1>
+  </div>
+  <div class="menu-grid" style="margin-top:1.5rem;">
+    <div class="menu-card" onclick="openModule('lijnen')">
+      <div class="icon" style="background:#e0f2fe;">📏</div>
+      <h3>Soorten lijnen</h3><p>Horizontaal, verticaal…</p>
+    </div>
+    <div class="menu-card" onclick="openModule('hoeken')">
+      <div class="icon" style="background:#d1fae5;">📐</div>
+      <h3>Soorten hoeken</h3><p>Scherp, recht, stomp</p>
+    </div>
+    <div class="menu-card" onclick="openModule('vlak')">
+      <div class="icon" style="background:#ede9fe;">🔷</div>
+      <h3>Vlakke figuren</h3><p>Benoemen & herkennen</p>
+    </div>
+    <div class="menu-card" onclick="openModule('driehoek')">
+      <div class="icon" style="background:#fee2e2;">🔺</div>
+      <h3>Driehoeken</h3><p>Zijden & hoeken</p>
+    </div>
+    <div class="menu-card" onclick="openModule('vierhoek')">
+      <div class="icon" style="background:#ffedd5;">⬜</div>
+      <h3>Vierhoeken</h3><p>Herkennen & benoemen</p>
+    </div>
+    <div class="menu-card" onclick="openModule('cirkel')">
+      <div class="icon" style="background:#fef3c7;">⭕</div>
+      <h3>Cirkel & ovaal</h3><p>Onderdelen herkennen</p>
+    </div>
+    <div class="menu-card" onclick="openModule('ruimte')">
+      <div class="icon" style="background:#fce7f3;">📦</div>
+      <h3>Ruimtefiguren</h3><p>Kenmerken & namen</p>
+    </div>
+    <div class="menu-card toets-card" onclick="openModule('toets')">
+      <div class="icon">🏆</div>
+      <div><h3>Toets — Mix alles!</h3><p>50 vragen · Score wordt opgeslagen</p></div>
+    </div>
+  </div>
+  <div style="text-align:center;padding-bottom:1.5rem;">
+    <button onclick="logout()" style="background:none;border:none;color:#9ca3af;font-size:0.82rem;font-weight:700;cursor:pointer;font-family:'Nunito',sans-serif;">Uitloggen</button>
+  </div>
+</div>
+
+<!-- MODULE -->
+<div id="screen-module" class="screen">
+  <div class="mod-header" id="mod-header">
+    <button class="back-btn" onclick="goHome()">←</button>
+    <div style="flex:1;">
+      <div style="font-size:0.72rem;font-weight:800;text-transform:uppercase;letter-spacing:0.06em;opacity:0.85;" id="mod-title">Module</div>
+      <div style="display:flex;align-items:center;gap:8px;margin-top:4px;">
+        <div class="progress-wrap"><div class="progress-fill" id="mod-progress"></div></div>
+        <span style="font-size:0.78rem;font-weight:800;white-space:nowrap;" id="mod-qcount">1/9</span>
+      </div>
+    </div>
+    <div style="background:rgba(255,255,255,0.2);border-radius:0.75rem;padding:6px 12px;font-size:0.8rem;font-weight:800;" id="mod-timer">00:00</div>
+  </div>
+  <div class="quiz-body" id="quiz-body" style="position:relative;">
+    <div id="mod-start-overlay" class="mod-start">
+      <div style="font-size:3rem;" id="mod-start-icon">📏</div>
+      <h2 id="mod-start-title">Soorten lijnen</h2>
+      <p id="mod-start-desc">Bekijk de lijn en kies de juiste naam.</p>
+      <button class="btn-start" onclick="startCurrentModule()">Start de oefening</button>
+    </div>
+    <div id="question-area" style="display:none;"></div>
+  </div>
+</div>
+
+<!-- RESULT -->
+<div class="result-overlay" id="result-overlay">
+  <div class="result-card">
+    <div class="score-ring" id="res-ring">
+      <div style="font-size:2rem;font-weight:700;" id="res-score">0/0</div>
+      <div style="font-size:0.7rem;font-weight:800;text-transform:uppercase;opacity:0.7;">Score</div>
+    </div>
+    <div class="stat-row">
+      <div class="stat-box" style="background:#f0fdf4;">
+        <div class="num" style="color:#16a34a;" id="res-correct">0</div>
+        <div class="lbl" style="color:#16a34a;">Juist</div>
+      </div>
+      <div class="stat-box" style="background:#fff1f2;">
+        <div class="num" style="color:#e11d48;" id="res-wrong">0</div>
+        <div class="lbl" style="color:#e11d48;">Fouten</div>
+      </div>
+    </div>
+    <div class="stat-box" style="background:#eff6ff;text-align:center;margin-bottom:6px;">
+      <div class="num" style="color:#1d4ed8;" id="res-time">00:00</div>
+      <div class="lbl" style="color:#1d4ed8;">Tijd</div>
+    </div>
+    <div class="analysis-section" id="analysis-section"></div>
+    <div id="firebase-saved-msg" style="display:none;text-align:center;font-size:0.82rem;color:#10b981;font-weight:700;margin-top:10px;">✓ Score opgeslagen</div>
+    <button class="btn-restart" onclick="restartOrHome()">Opnieuw beginnen</button>
+    <button onclick="goHome()" style="width:100%;margin-top:8px;background:none;border:2px solid var(--c-border);border-radius:1rem;padding:12px;font-family:'Nunito',sans-serif;font-size:0.9rem;font-weight:700;color:var(--c-muted);cursor:pointer;">← Terug naar menu</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- FIREBASE -->
+<!-- FIREBASE compat scripts -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script>
+firebase.initializeApp({
+  apiKey: "AIzaSyCnQDVVAlK6jE-PPUUediRJMTbN0xqrLDE",
+  authDomain: "klaswebsite-database.firebaseapp.com",
+  projectId: "klaswebsite-database",
+  storageBucket: "klaswebsite-database.firebasestorage.app",
+  messagingSenderId: "42912327282",
+  appId: "1:42912327282:web:f13f2c706f6c42c115c4eb"
+});
+const _auth = firebase.auth();
+const _db   = firebase.firestore();
+const _prov = new firebase.auth.GoogleAuthProvider();
+
+// Redirect fallback (voor browsers die popup niet ondersteunen)
+_auth.getRedirectResult().then(function(r) {
+  if (r && r.user) {
+    window._currentUser = r.user;
+    window._isGuest = false;
+    window._loginHandled = true;
+    afterLogin();
+  }
+}).catch(function(e) { console.error('Redirect fout:', e); });
+
+// Sessie bewaard
+_auth.onAuthStateChanged(function(user) {
+  if (user && !window._loginHandled) {
+    window._loginHandled = true;
+    window._currentUser = user;
+    window._isGuest = false;
+    afterLogin();
+  }
+});
+
+function loginGoogle() {
+  var btn = document.querySelector('.btn-google');
+  if (btn) { btn.textContent = 'Bezig...'; btn.disabled = true; }
+  // Popup eerst — werkt op alle browsers incl. Windows Chrome/Edge
+  _auth.signInWithPopup(_prov).then(function(r) {
+    window._currentUser = r.user;
+    window._isGuest = false;
+    window._loginHandled = true;
+    afterLogin();
+  }).catch(function(err) {
+    // Popup geblokkeerd → redirect als fallback
+    if (err.code === 'auth/popup-blocked' ||
+        err.code === 'auth/popup-closed-by-user' ||
+        err.code === 'auth/cancelled-popup-request') {
+      if (btn) btn.textContent = 'Doorverwijzen...';
+      _auth.signInWithRedirect(_prov);
+    } else {
+      console.error('Login fout:', err);
+      if (btn) { btn.innerHTML = '<svg width="20" height="20" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9.1 3.5l6.8-6.8C35.8 2.4 30.3 0 24 0 14.7 0 6.7 5.4 2.6 13.3l7.9 6.1C12.4 13.1 17.7 9.5 24 9.5z"/><path fill="#4285F4" d="M46.5 24.5c0-1.6-.1-3.1-.4-4.5H24v8.5h12.7c-.5 2.9-2.2 5.4-4.7 7l7.4 5.7c4.3-4 6.8-9.9 7.1-16.7z"/><path fill="#FBBC05" d="M10.5 28.6A14.5 14.5 0 0 1 9.5 24c0-1.6.3-3.1.9-4.6l-7.9-6.1A24 24 0 0 0 0 24c0 3.9.9 7.5 2.6 10.7l7.9-6.1z"/><path fill="#34A853" d="M24 48c6.3 0 11.6-2.1 15.5-5.7l-7.4-5.7c-2.1 1.4-4.8 2.2-8.1 2.2-6.3 0-11.6-3.6-13.5-8.8l-7.9 6.1C6.7 42.6 14.7 48 24 48z"/></svg> Inloggen met Google'; btn.disabled = false; }
+    }
+  });
+}
+
+function loginGuest() {
+  window._currentUser = null;
+  window._isGuest = true;
+  window._loginHandled = true;
+  afterLogin();
+}
+
+function logout() {
+  window._loginHandled = false;
+  window._currentUser = null;
+  window._isGuest = false;
+  _auth.signOut().then(function() { showScreen('screen-login'); });
+}
+
+function saveToetsScore(data) {
+  if (window._isGuest || !window._currentUser) return Promise.resolve(false);
+  return _db.collection('meetkunde_toets').add(Object.assign({
+    userId: window._currentUser.uid,
+    displayName: window._currentUser.displayName || 'Leerling',
+    email: window._currentUser.email || ''
+  }, data, { timestamp: firebase.firestore.FieldValue.serverTimestamp() }))
+  .then(function() { return true; })
+  .catch(function(e) { console.error(e); return false; });
+}
+
+function afterLogin() {
+  var u = window._currentUser;
+  document.getElementById('user-name').textContent = window._isGuest ? 'Gast' : (u.displayName || u.email || 'Leerling');
+  document.getElementById('user-avatar').textContent = window._isGuest ? '👤' : (u.displayName ? u.displayName[0].toUpperCase() : '👤');
+  showScreen('screen-home');
+}
+</script>
+
+<script>
+// ── UTILS ──────────────────────────────────────────────────────────────────
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+function showToast(msg, dur=2500) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), dur);
+}
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i=a.length-1;i>0;i--) { const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; }
+  return a;
+}
+function pickN(arr,n) { return shuffle(arr).slice(0,n); }
+function fmt(s) { return `${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`; }
+
+// ── DATABASES ──────────────────────────────────────────────────────────────
+
+/* LIJNEN */
+const DB_LIJNEN = [
+  { id:"1rv1kKQkTssVK3kV5dgby2G8pDLU0Bdlp", answer:"diagonaal" },
+  { id:"18uIKGR8u9GK0ki7qK9DHZV4VI6EGLzB9", answer:"evenwijdig" },
+  { id:"1pxNmTc4TfwqjgS-drW4FabFMMBKm4Zdy", answer:"gebogen lijn" },
+  { id:"1CZwrzy1_8HOMAEd3Oa3GwJ_MbzlR5sOv", answer:"gebroken lijn" },
+  { id:"1VnQ9xzYLiuYiRXYolz7EKnvU_Ej8U9q6", answer:"horizontaal" },
+  { id:"1dizmJngwOXw4Z2yqOSIWXGd3eCBVGQHc", answer:"kruisende rechten" },
+  { id:"1gCAqqB7HVrV_qVJ85RZrVMhCGBkM9aVH", answer:"lijnstuk" },
+  { id:"1iKiZGoc0KjwDoQQ0snHfFUF_c-_Aq7to", answer:"loodrecht snijdende rechten" },
+  { id:"1Nxb-w1HX7GA-f-5zpySdcsgpPaJk7t6L", answer:"verticaal" }
+];
+// For "show term, pick image" mode: group by answer
+const LIJNEN_ALL_ANSWERS = DB_LIJNEN.map(x=>x.answer);
+
+/* HOEKEN — geen gradenwaarde tonen, geen stippellijn, max 175° */
+function hoekSVG(deg, showDeg) {
+  const cx=150, cy=185, len=120;
+  const rad = deg * Math.PI/180;
+  const x2 = cx+len, y2 = cy;
+  const x3 = cx + len*Math.cos(rad), y3 = cy - len*Math.sin(rad);
+  // Right angle marker
+  let extra = '';
+  if (deg===90) {
+    extra = `<path d="M ${cx+22} ${cy} L ${cx+22} ${cy-22} L ${cx} ${cy-22}" fill="none" stroke="#10b981" stroke-width="2.5"/>`;
+  }
+  const degLabel = showDeg ? `<text x="${cx+len/2+10}" y="${cy+22}" font-family="Nunito,sans-serif" font-size="13" fill="#6b7280" font-weight="700">${deg}°</text>` : '';
+  return `<svg width="300" height="220" viewBox="0 0 300 220">
+    <line x1="${cx}" y1="${cy}" x2="${x2}" y2="${y2}" stroke="#1e1b4b" stroke-width="3" stroke-linecap="round"/>
+    <line x1="${cx}" y1="${cy}" x2="${x3.toFixed(1)}" y2="${y3.toFixed(1)}" stroke="#1e1b4b" stroke-width="3" stroke-linecap="round"/>
+    ${extra}${degLabel}
+  </svg>`;
+}
+
+const HOEK_ITEMS = [
+  // scherp (< 90)
+  ...[28,42,55,68,35,50,75,20,60,80].map(d=>({type:'scherpe hoek',deg:d})),
+  // recht
+  ...[90,90].map(d=>({type:'rechte hoek',deg:d})),
+  // stomp (90–175)
+  ...[100,115,128,142,155,165,95,110,135,170,175].map(d=>({type:'stompe hoek',deg:d})),
+];
+
+/* VLAKKE FIGUREN — exact from original */
+const DB_VLAK = [
+  { id:"1VaDv_Q5ncuGKaM-8c7hj-RIRK80XUaaJ", name:"regelmatige zeshoek",     correct:["vlakke figuur","veelhoek","zeshoek","regelmatige veelhoek"] },
+  { id:"1ZCNsujzQPubibhRtAt6Wi4N-ibv-hjg_", name:"regelmatige vijfhoek",     correct:["vlakke figuur","veelhoek","vijfhoek","regelmatige veelhoek"] },
+  { id:"1uZyDsLRZSHu0W1Wc0QRUvivJf0C0ybnG", name:"vierkant",                correct:["vlakke figuur","veelhoek","vierhoek","regelmatige veelhoek"] },
+  { id:"1MH3kx0e-41I-kKLIuOM36Owd_DIKissB", name:"rechthoek",                correct:["vlakke figuur","veelhoek","vierhoek","gelijke hoeken"] },
+  { id:"1HcsY_xomQC5X7DFJ6YjLM5ZCo_TtQ3Cy", name:"halve cirkel",            correct:["vlakke figuur","geen veelhoek"] },
+  { id:"1PTOibPW6eOjEEsuxiJnm9AAKt-WH8WD_", name:"hart",                    correct:["vlakke figuur","geen veelhoek"] },
+  { id:"1bLDy8rzj7dElEv-1HZZukEExPESHYRoA", name:"piramide",                correct:["ruimtefiguur"] },
+  { id:"1Kx9LJOlp01xmNzaJp_s8UgAg0XsCPQRO", name:"kruis",                   correct:["vlakke figuur","veelhoek","twaalfhoek","geen regelmaat"] },
+  { id:"1GNndRyC5wA-aubfJoSVP1QEqDZVbZYEd", name:"kubus",                   correct:["ruimtefiguur"] },
+  { id:"1BMbfYWm_RYlT-DKJHmUp4v1321I5fq7E", name:"regelmatige driehoek",    correct:["vlakke figuur","veelhoek","driehoek","regelmatige veelhoek"] },
+  { id:"1t_u2XhW3R9Q2jhK_J70oC7S2yVei2geJ", name:"balk",                    correct:["ruimtefiguur"] },
+  { id:"121LPEpd-j9_pWHQajzQH1ygawmqDHhwt", name:"wolk",                    correct:["vlakke figuur","geen veelhoek"] },
+  { id:"1Agth1Rhq8BBs-WrW1lVysQGTCEfcdJpW", name:"maan",                    correct:["vlakke figuur","geen veelhoek"] },
+  { id:"1jNsca-TlryOVn6wpu4RboNHL6iVbk0FA", name:"ongelijkzijdige driehoek",correct:["vlakke figuur","veelhoek","driehoek","geen regelmaat"] }
+];
+
+/* DRIEHOEKEN — SVG gegenereerd */
+function driehoekSVG(pts, kleur) {
+  const p = pts.map(([x,y])=>`${x},${y}`).join(' ');
+  return `<svg width="280" height="220" viewBox="0 0 280 220">
+    <polygon points="${p}" fill="${kleur}22" stroke="${kleur}" stroke-width="3" stroke-linejoin="round"/>
+  </svg>`;
+}
+const DB_DRIEHOEKEN = [
+  // scherphoekig
+  {pts:[[140,20],[240,200],[40,200]], hoek:'scherphoekige driehoek', zijde:'gelijkbenige driehoek',  qType:'hoeken', svg:driehoekSVG([[140,20],[240,200],[40,200]],'#dc2626')},
+  {pts:[[40,20],[240,20],[140,200]], hoek:'scherphoekige driehoek', zijde:'gelijkzijdige driehoek', qType:'hoeken', svg:driehoekSVG([[40,20],[240,20],[140,200]],'#dc2626')},
+  {pts:[[60,20],[240,180],[20,180]], hoek:'scherphoekige driehoek', zijde:'ongelijkzijdige driehoek',qType:'hoeken', svg:driehoekSVG([[60,20],[240,180],[20,180]],'#dc2626')},
+  // rechthoekig
+  {pts:[[20,200],[260,200],[20,40]], hoek:'rechthoekige driehoek',  zijde:'ongelijkzijdige driehoek',qType:'hoeken', svg:driehoekSVG([[20,200],[260,200],[20,40]],'#1d4ed8')},
+  {pts:[[140,20],[260,200],[20,200]],hoek:'rechthoekige driehoek',  zijde:'gelijkbenige driehoek',  qType:'hoeken', svg:driehoekSVG([[140,20],[260,200],[20,200]],'#1d4ed8')},
+  // stomphoekig
+  {pts:[[20,200],[260,200],[60,40]], hoek:'stomphoekige driehoek',  zijde:'ongelijkzijdige driehoek',qType:'hoeken', svg:driehoekSVG([[20,200],[260,200],[60,40]],'#7c3aed')},
+  {pts:[[20,200],[260,200],[80,70]], hoek:'stomphoekige driehoek',  zijde:'gelijkbenige driehoek',  qType:'hoeken', svg:driehoekSVG([[20,200],[260,200],[80,70]],'#7c3aed')},
+  // zijden
+  {pts:[[140,20],[240,200],[40,200]], hoek:'scherphoekige driehoek', zijde:'gelijkbenige driehoek',  qType:'zijden', svg:driehoekSVG([[140,20],[240,200],[40,200]],'#ea580c')},
+  {pts:[[40,20],[240,20],[140,200]], hoek:'scherphoekige driehoek', zijde:'gelijkzijdige driehoek', qType:'zijden', svg:driehoekSVG([[40,20],[240,20],[140,200]],'#ea580c')},
+  {pts:[[60,20],[240,180],[20,180]], hoek:'scherphoekige driehoek', zijde:'ongelijkzijdige driehoek',qType:'zijden', svg:driehoekSVG([[60,20],[240,180],[20,180]],'#ea580c')},
+  {pts:[[20,200],[260,200],[20,40]], hoek:'rechthoekige driehoek',  zijde:'ongelijkzijdige driehoek',qType:'zijden', svg:driehoekSVG([[20,200],[260,200],[20,40]],'#0891b2')},
+  {pts:[[20,200],[260,200],[80,70]], hoek:'stomphoekige driehoek',  zijde:'gelijkbenige driehoek',  qType:'zijden', svg:driehoekSVG([[20,200],[260,200],[80,70]],'#0891b2')},
+];
+
+/* VIERHOEKEN — geen vlieger */
+function vierhoekSVG(pts, kleur) {
+  const p = pts.map(([x,y])=>`${x},${y}`).join(' ');
+  return `<svg width="280" height="220" viewBox="0 0 280 220">
+    <polygon points="${p}" fill="${kleur}18" stroke="${kleur}" stroke-width="3" stroke-linejoin="round"/>
+  </svg>`;
+}
+const DB_VIERHOEKEN = [
+  {name:'vierkant',              svg:vierhoekSVG([[90,50],[190,50],[190,170],[90,170]],'#ea580c')},
+  {name:'vierkant',              svg:vierhoekSVG([[80,40],[180,40],[180,180],[80,180]],'#ea580c')},
+  {name:'rechthoek',             svg:vierhoekSVG([[40,70],[240,70],[240,160],[40,160]],'#ea580c')},
+  {name:'rechthoek',             svg:vierhoekSVG([[30,80],[250,80],[250,150],[30,150]],'#ea580c')},
+  {name:'parallellogram',        svg:vierhoekSVG([[60,170],[160,50],[220,50],[120,170]],'#ea580c')},
+  {name:'parallellogram',        svg:vierhoekSVG([[50,180],[170,60],[230,60],[110,180]],'#ea580c')},
+  {name:'ruit',                  svg:vierhoekSVG([[140,20],[240,110],[140,200],[40,110]],'#ea580c')},
+  {name:'ruit',                  svg:vierhoekSVG([[140,30],[230,110],[140,195],[50,110]],'#ea580c')},
+  {name:'trapezium',             svg:vierhoekSVG([[80,60],[200,60],[240,180],[40,180]],'#ea580c')},
+  {name:'trapezium',             svg:vierhoekSVG([[70,70],[210,70],[250,185],[30,185]],'#ea580c')},
+  {name:'onregelmatige vierhoek',svg:vierhoekSVG([[50,40],[230,70],[200,190],[60,160]],'#ea580c')},
+  {name:'onregelmatige vierhoek',svg:vierhoekSVG([[40,50],[220,80],[200,180],[70,170]],'#ea580c')},
+];
+const VIERHOEK_NAMEN = ['vierkant','rechthoek','parallellogram','ruit','trapezium','onregelmatige vierhoek'];
+
+/* CIRKEL — middellijn/diameter = 1 term, geen koorde */
+function cirkelSVG(type) {
+  const base = `<circle cx="150" cy="125" r="85" fill="#fef3c7" stroke="#92400e" stroke-width="2.5"/>`;
+  let extra = '';
+  if (type==='middelpunt') {
+    extra = `<circle cx="150" cy="125" r="7" fill="#92400e"/>
+      <text x="162" y="116" font-family="Nunito" font-size="13" fill="#92400e" font-weight="800">M</text>`;
+  } else if (type==='straal') {
+    extra = `<line x1="150" y1="125" x2="235" y2="125" stroke="#dc2626" stroke-width="4" stroke-linecap="round"/>
+      <circle cx="150" cy="125" r="5" fill="#92400e"/>`;
+  } else if (type==='diameter/middellijn') {
+    extra = `<line x1="65" y1="125" x2="235" y2="125" stroke="#1d4ed8" stroke-width="4" stroke-linecap="round"/>
+      <circle cx="150" cy="125" r="5" fill="#92400e"/>`;
+  } else if (type==='omtrek') {
+    extra = `<circle cx="150" cy="125" r="85" fill="none" stroke="#10b981" stroke-width="6"/>`;
+  } else if (type==='halve cirkel') {
+    extra = `<path d="M 65 125 A 85 85 0 0 1 235 125 Z" fill="#fbbf2433" stroke="#f59e0b" stroke-width="3"/>`;
+  } else if (type==='ovaal') {
+    return `<svg width="300" height="250" viewBox="0 0 300 250">
+      <ellipse cx="150" cy="125" rx="120" ry="75" fill="#fef3c722" stroke="#92400e" stroke-width="2.5"/>
+      <line x1="30" y1="125" x2="270" y2="125" stroke="#1d4ed8" stroke-width="3" stroke-dasharray="5,4"/>
+      <line x1="150" y1="50" x2="150" y2="200" stroke="#dc2626" stroke-width="3" stroke-dasharray="5,4"/>
+      <circle cx="150" cy="125" r="5" fill="#92400e"/>
+    </svg>`;
+  }
+  return `<svg width="300" height="250" viewBox="0 0 300 250">${base}${extra}</svg>`;
+}
+const DB_CIRKEL = [
+  {type:'middelpunt',         label:'het middelpunt',         vraag:'Welk onderdeel is aangeduid?'},
+  {type:'straal',             label:'de straal',              vraag:'Welk rood lijnstuk zie je?'},
+  {type:'diameter/middellijn',label:'de diameter/middellijn', vraag:'Welk blauw lijnstuk zie je?'},
+  {type:'omtrek',             label:'de omtrek',              vraag:'Welk groen onderdeel is aangeduid?'},
+  {type:'halve cirkel',       label:'de halve cirkel',        vraag:'Welk geel deel is aangeduid?'},
+  {type:'ovaal',              label:'de ovaal',               vraag:'Welke figuur zie je hier?'},
+  // extra varianten
+  {type:'middelpunt',         label:'het middelpunt',         vraag:'Hoe heet punt M?'},
+  {type:'straal',             label:'de straal',              vraag:'Hoe noem je dit lijnstuk?'},
+  {type:'diameter/middellijn',label:'de diameter/middellijn', vraag:'Hoe heet het langste lijnstuk door M?'},
+  {type:'omtrek',             label:'de omtrek',              vraag:'Hoe heet de rand van de cirkel?'},
+];
+const CIRKEL_LABELS = ['het middelpunt','de straal','de diameter/middellijn','de omtrek','de halve cirkel','de ovaal'];
+
+/* RUIMTEFIGUREN — exact original SVG-drawing logic */
+function ruimteSVG(name) {
+  const stroke="#be185d", fill="#fdf2f8";
+  const cx=140, cy=110;
+  function mkPath(d, op=1) {
+    return `<path d="${d}" fill="${fill}" stroke="${stroke}" stroke-width="2" opacity="${op}" stroke-linejoin="round"/>`;
+  }
+  if (name==='kubus'||name==='balk') {
+    const w=name==='kubus'?50:70, h=50, d=30;
+    return `<svg width="280" height="220" viewBox="0 0 280 220">
+      ${mkPath(`M ${cx-w+d} ${cy-h-d} L ${cx+w+d} ${cy-h-d} L ${cx+w+d} ${cy+h-d} L ${cx-w+d} ${cy+h-d} Z`,0.5)}
+      ${mkPath(`M ${cx-w} ${cy-h} L ${cx-w+d} ${cy-h-d}`)}
+      ${mkPath(`M ${cx+w} ${cy-h} L ${cx+w+d} ${cy-h-d}`)}
+      ${mkPath(`M ${cx+w} ${cy+h} L ${cx+w+d} ${cy+h-d}`)}
+      ${mkPath(`M ${cx-w} ${cy+h} L ${cx-w+d} ${cy+h-d}`)}
+      ${mkPath(`M ${cx-w} ${cy-h} L ${cx+w} ${cy-h} L ${cx+w} ${cy+h} L ${cx-w} ${cy+h} Z`)}
+    </svg>`;
+  }
+  if (name==='piramide') {
+    return `<svg width="280" height="220" viewBox="0 0 280 220">
+      ${mkPath(`M ${cx} ${cy-70} L ${cx-60} ${cy+40} L ${cx+20} ${cy+40} Z`)}
+      ${mkPath(`M ${cx} ${cy-70} L ${cx+20} ${cy+40} L ${cx+70} ${cy+20} Z`)}
+      ${mkPath(`M ${cx-60} ${cy+40} L ${cx+20} ${cy+40} L ${cx+70} ${cy+20} L ${cx-10} ${cy+20} Z`,0.3)}
+    </svg>`;
+  }
+  if (name==='cilinder') {
+    return `<svg width="280" height="220" viewBox="0 0 280 220">
+      ${mkPath(`M ${cx-50} ${cy-60} A 50 20 0 1 1 ${cx+50} ${cy-60} A 50 20 0 1 1 ${cx-50} ${cy-60}`)}
+      ${mkPath(`M ${cx-50} ${cy-60} L ${cx-50} ${cy+60} A 50 20 0 0 0 ${cx+50} ${cy+60} L ${cx+50} ${cy-60}`)}
+      ${mkPath(`M ${cx-50} ${cy+60} A 50 20 0 0 1 ${cx+50} ${cy+60}`,0.5)}
+    </svg>`;
+  }
+  if (name==='kegel') {
+    return `<svg width="280" height="220" viewBox="0 0 280 220">
+      ${mkPath(`M ${cx} ${cy-70} L ${cx-50} ${cy+40} A 50 20 0 0 0 ${cx+50} ${cy+40} Z`)}
+      ${mkPath(`M ${cx-50} ${cy+40} A 50 20 0 0 1 ${cx+50} ${cy+40}`,0.5)}
+    </svg>`;
+  }
+  if (name==='bol') {
+    return `<svg width="280" height="220" viewBox="0 0 280 220">
+      <circle cx="${cx}" cy="${cy}" r="65" fill="${fill}" stroke="${stroke}" stroke-width="2"/>
+      <ellipse cx="${cx}" cy="${cy}" rx="65" ry="20" fill="none" stroke="${stroke}" stroke-dasharray="4" opacity="0.4"/>
+    </svg>`;
+  }
+  return '';
+}
+
+const RUIMTE_NAMEN = ['kubus','balk','cilinder','kegel','piramide','bol'];
+// ribben/hoekpunten exact as in original
+const RUIMTE_DATA = {
+  kubus:    {props:[0,1], ribben:12, hoekpunten:8},
+  balk:     {props:[0,1], ribben:12, hoekpunten:8},
+  piramide: {props:[0,1], ribben:8,  hoekpunten:5},
+  cilinder: {props:[0,2], ribben:0,  hoekpunten:0},
+  kegel:    {props:[0,2], ribben:0,  hoekpunten:1},
+  bol:      {props:[0,2], ribben:0,  hoekpunten:0},
+};
+
+// ── STATE ─────────────────────────────────────────────────────────────────
+let ST = {
+  module:null, questions:[], idx:0,
+  correctFirst:0, wrongAttempts:0, hasMistake:false,
+  timer:0, timerInterval:null, themeErrors:{},
+  // ruimte
+  ruimteSelectedProps: new Set(), ruimteSelectedName: null, ruimteStep: 1, ruimteScore:0,
+  // vlak
+  vlakSelections:{}, vlakAttempts:0
+};
+
+const MOD_CFG = {
+  lijnen:   {title:'Soorten lijnen',    icon:'📏', theme:'theme-lijnen',   desc:'Kies de naam van de lijn of de bijhorende afbeelding.'},
+  hoeken:   {title:'Soorten hoeken',    icon:'📐', theme:'theme-hoeken',   desc:'Bekijk de hoek en benoem het type. Na je antwoord zie je de grootte!'},
+  vlak:     {title:'Vlakke figuren',    icon:'🔷', theme:'theme-vlak',     desc:'Onderzoek de figuur en selecteer de juiste eigenschappen.'},
+  driehoek: {title:'Driehoeken',        icon:'🔺', theme:'theme-driehoek', desc:'Benoem de driehoek naar hoeken of zijden.'},
+  vierhoek: {title:'Vierhoeken',        icon:'⬜', theme:'theme-vierhoek', desc:'Herken en benoem de vierhoek.'},
+  cirkel:   {title:'Cirkel & ovaal',    icon:'⭕', theme:'theme-cirkel',   desc:'Welk onderdeel van de cirkel zie je?'},
+  ruimte:   {title:'Ruimtefiguren',     icon:'📦', theme:'theme-ruimte',   desc:'Stap 1: eigenschappen. Stap 2: naam.'},
+  toets:    {title:'Toets — Meetkunde', icon:'🏆', theme:'theme-toets',    desc:'50 vragen over alle onderwerpen. Succes!'},
+};
+
+// ── OPEN MODULE ────────────────────────────────────────────────────────────
+function openModule(mod) {
+  ST.module = mod;
+  const cfg = MOD_CFG[mod];
+  const el = document.getElementById('screen-module');
+  el.className = 'screen active ' + cfg.theme;
+  document.getElementById('mod-title').textContent = cfg.title;
+  document.getElementById('mod-start-icon').textContent = cfg.icon;
+  document.getElementById('mod-start-title').textContent = cfg.title;
+  document.getElementById('mod-start-desc').textContent = cfg.desc;
+  document.getElementById('mod-start-overlay').style.display = 'flex';
+  document.getElementById('question-area').style.display = 'none';
+  showScreen('screen-module');
+  resetTimer();
+}
+window.openModule = openModule;
+
+function startCurrentModule() {
+  document.getElementById('mod-start-overlay').style.display = 'none';
+  document.getElementById('question-area').style.display = 'block';
+  ST.questions = buildQuestions(ST.module);
+  ST.idx = 0; ST.correctFirst = 0; ST.wrongAttempts = 0;
+  ST.themeErrors = {}; ST.ruimteScore = 0;
+  startTimer();
+  renderQ();
+}
+window.startCurrentModule = startCurrentModule;
+
+function buildQuestions(mod) {
+  if (mod==='toets') return buildToets();
+  const b = {
+    lijnen:   ()=>shuffle(DB_LIJNEN).map(q=>({...q,module:'lijnen'})),
+    hoeken:   ()=>pickN(HOEK_ITEMS,10).map(q=>({...q,module:'hoeken'})),
+    vlak:     ()=>shuffle(DB_VLAK).map(q=>({...q,module:'vlak'})),
+    driehoek: ()=>pickN(DB_DRIEHOEKEN,12).map(q=>({...q,module:'driehoek'})),
+    vierhoek: ()=>pickN(DB_VIERHOEKEN,10).map(q=>({...q,module:'vierhoek'})),
+    cirkel:   ()=>pickN(DB_CIRKEL,8).map(q=>({...q,module:'cirkel'})),
+    ruimte:   ()=>shuffle([...RUIMTE_NAMEN,...RUIMTE_NAMEN]).slice(0,6).map(n=>({name:n,module:'ruimte'})),
+  };
+  return (b[mod]||b.lijnen)();
+}
+
+function buildToets() {
+  const counts = {lijnen:7,hoeken:7,vlak:7,driehoek:7,vierhoek:7,cirkel:7,ruimte:8};
+  let all = [];
+  all.push(...pickN(DB_LIJNEN,counts.lijnen).map(q=>({...q,module:'lijnen'})));
+  all.push(...pickN(HOEK_ITEMS,counts.hoeken).map(q=>({...q,module:'hoeken'})));
+  all.push(...pickN(DB_VLAK,counts.vlak).map(q=>({...q,module:'vlak'})));
+  all.push(...pickN(DB_DRIEHOEKEN,counts.driehoek).map(q=>({...q,module:'driehoek'})));
+  all.push(...pickN(DB_VIERHOEKEN,counts.vierhoek).map(q=>({...q,module:'vierhoek'})));
+  all.push(...pickN(DB_CIRKEL,counts.cirkel).map(q=>({...q,module:'cirkel'})));
+  all.push(...pickN(shuffle([...RUIMTE_NAMEN,...RUIMTE_NAMEN]),counts.ruimte).map(n=>({name:n,module:'ruimte'})));
+  return shuffle(all);
+}
+
+// ── RENDER ────────────────────────────────────────────────────────────────
+function renderQ() {
+  const q = ST.questions[ST.idx];
+  const total = ST.questions.length;
+  ST.hasMistake = false;
+  document.getElementById('mod-qcount').textContent = `${ST.idx+1}/${total}`;
+  document.getElementById('mod-progress').style.width = `${(ST.idx/total)*100}%`;
+
+  const mod = q.module || ST.module;
+  const area = document.getElementById('question-area');
+  area.innerHTML = '';
+
+  if (mod==='lijnen') renderLijnen(q, area);
+  else if (mod==='hoeken') renderHoeken(q, area);
+  else if (mod==='vlak') renderVlak(q, area);
+  else if (mod==='driehoek') renderDriehoek(q, area);
+  else if (mod==='vierhoek') renderVierhoek(q, area);
+  else if (mod==='cirkel') renderCirkel(q, area);
+  else if (mod==='ruimte') renderRuimte(q, area);
+}
+
+// ── LIJNEN ────────────────────────────────────────────────────────────────
+function renderLijnen(q, area) {
+  // Alterneer: even idx = toon afbeelding → kies naam; oneven idx = toon naam → kies afbeelding
+  const showImagePickName = (ST.idx % 3 !== 2); // 2/3 normal, 1/3 reversed
+  if (showImagePickName) {
+    // Toon afbeelding, kies naam
+    area.innerHTML = `
+      <div class="q-label">Welk soort lijn is dit?</div>
+      <div class="img-box" id="lijn-img-wrap">
+        <div class="loader" id="lijn-loader"></div>
+        <img id="lijn-img" src="https://lh3.googleusercontent.com/d/${q.id}" style="display:none;max-width:95%;max-height:95%;object-fit:contain;"
+          onload="document.getElementById('lijn-loader').style.display='none';this.style.display='block';"
+          onerror="document.getElementById('lijn-loader').style.display='none';document.getElementById('lijn-img-wrap').innerHTML='<span style=color:#ef4444;font-size:0.8rem>Afbeelding niet gevonden</span>'">
+      </div>
+      <div class="ans-grid" id="lijn-opts"></div>
+      <button class="btn-next" id="btn-next" onclick="nextQ()">Volgende vraag →</button>`;
+    const grid = area.querySelector('#lijn-opts');
+    shuffle(LIJNEN_ALL_ANSWERS).forEach(a => {
+      const b = document.createElement('button');
+      b.className = 'ans-btn';
+      b.textContent = a;
+      b.onclick = () => checkSimple(b, a, q.answer, 'lijnen', area);
+      grid.appendChild(b);
+    });
+  } else {
+    // Toon naam, kies afbeelding
+    area.innerHTML = `
+      <div class="q-label" style="text-align:center;">Welke afbeelding hoort bij:</div>
+      <div style="text-align:center;font-family:'Fredoka',sans-serif;font-size:1.5rem;color:var(--c-text);margin-bottom:1rem;font-weight:600;">"${q.answer}"</div>
+      <div class="img-choice-grid" id="lijn-img-choices"></div>
+      <button class="btn-next" id="btn-next" onclick="nextQ()">Volgende vraag →</button>`;
+    // Pick 2 wrong + 1 correct
+    const others = shuffle(DB_LIJNEN.filter(x=>x.id!==q.id)).slice(0,2);
+    const options = shuffle([q, ...others]);
+    const grid = area.querySelector('#lijn-img-choices');
+    options.forEach(opt => {
+      const btn = document.createElement('div');
+      btn.className = 'img-choice-btn';
+      btn.innerHTML = `
+        <div style="width:100%;height:90px;display:flex;align-items:center;justify-content:center;position:relative;">
+          <div class="loader" style="width:24px;height:24px;border-width:3px;" id="loader-${opt.id}"></div>
+          <img src="https://lh3.googleusercontent.com/d/${opt.id}" style="display:none;max-width:95%;max-height:85px;object-fit:contain;"
+            onload="document.getElementById('loader-${opt.id}').style.display='none';this.style.display='block';"
+            onerror="document.getElementById('loader-${opt.id}').style.display='none';">
+        </div>`;
+      btn.onclick = () => {
+        if (btn.style.pointerEvents==='none') return;
+        const correct = opt.id === q.id;
+        if (correct) {
+          btn.classList.add('correct');
+          grid.querySelectorAll('.img-choice-btn').forEach(b=>b.style.pointerEvents='none');
+          if (!ST.hasMistake) { ST.correctFirst++; confettiSmall(); }
+          area.querySelector('#btn-next').classList.add('show');
+        } else {
+          if (!ST.hasMistake) { ST.wrongAttempts++; ST.hasMistake=true; ST.themeErrors['lijnen']=(ST.themeErrors['lijnen']||0)+1; }
+          btn.classList.add('wrong');
+          setTimeout(()=>btn.classList.remove('wrong'),600);
+        }
+      };
+      grid.appendChild(btn);
+    });
+  }
+}
+
+// ── HOEKEN ────────────────────────────────────────────────────────────────
+function renderHoeken(q, area) {
+  area.innerHTML = `
+    <div class="q-label">Wat voor soort hoek is dit?</div>
+    <div class="shape-box">${hoekSVG(q.deg, false)}</div>
+    <div class="ans-grid cols1" id="hoek-opts"></div>
+    <button class="btn-next" id="btn-next" onclick="nextQ()">Volgende vraag →</button>`;
+  const grid = area.querySelector('#hoek-opts');
+  ['scherpe hoek','rechte hoek','stompe hoek'].forEach(a => {
+    const b = document.createElement('button');
+    b.className = 'ans-btn';
+    b.textContent = a;
+    b.onclick = () => {
+      if (b.disabled) return;
+      const allBtns = grid.querySelectorAll('.ans-btn');
+      if (a === q.type) {
+        b.classList.add('correct');
+        allBtns.forEach(x=>x.disabled=true);
+        if (!ST.hasMistake) { ST.correctFirst++; confettiSmall(); }
+        // Toon gradenwaarde
+        area.querySelector('.shape-box').innerHTML = hoekSVG(q.deg, true);
+        area.querySelector('#btn-next').classList.add('show');
+      } else {
+        if (!ST.hasMistake) {
+          ST.wrongAttempts++; ST.hasMistake=true;
+          ST.themeErrors['hoeken']=(ST.themeErrors['hoeken']||0)+1;
+        }
+        b.classList.add('wrong');
+        setTimeout(()=>b.classList.remove('wrong'),600);
+      }
+    };
+    grid.appendChild(b);
+  });
+}
+
+// ── VLAKKE FIGUREN (exact original layout) ────────────────────────────────
+function renderVlak(q, area) {
+  ST.vlakSelections = {}; ST.vlakAttempts = 0;
+  area.innerHTML = `
+    <div class="vlak-img-box" id="vlak-imgbox">
+      <div class="vlak-loader" id="vlak-loader"></div>
+      <img id="vlak-img" src="https://lh3.googleusercontent.com/u/0/d/${q.id}=w1000-h1000-iv1"
+        onload="document.getElementById('vlak-loader').style.display='none';this.style.display='block';"
+        onerror="document.getElementById('vlak-loader').style.display='none';document.getElementById('vlak-imgbox').innerHTML='<span style=color:#ef4444;font-size:0.8rem>Laden mislukt</span>'">
+    </div>
+
+    <div id="vlak-controls">
+      <div class="option-group" id="vg-type">
+        <span class="option-label-vlak">Is dit een...</span>
+        <div class="pill-wrap">
+          <span class="choice-pill" data-tag="vlakke figuur" data-group="type" onclick="vlakToggle(this)">vlakke figuur</span>
+          <span class="choice-pill" data-tag="ruimtefiguur" data-group="type" onclick="vlakToggle(this)">ruimtefiguur</span>
+        </div>
+      </div>
+      <div class="option-group" id="vg-poly">
+        <span class="option-label-vlak">Is het een veelhoek?</span>
+        <div class="pill-wrap">
+          <span class="choice-pill" data-tag="veelhoek" data-group="poly" onclick="vlakToggle(this)">veelhoek</span>
+          <span class="choice-pill" data-tag="geen veelhoek" data-group="poly" onclick="vlakToggle(this)">geen veelhoek</span>
+        </div>
+      </div>
+      <div class="option-group" id="vg-corners">
+        <span class="option-label-vlak">Aantal hoeken / Naam</span>
+        <div class="pill-wrap">
+          <span class="choice-pill" data-tag="driehoek" data-group="corners" onclick="vlakToggle(this)">driehoek</span>
+          <span class="choice-pill" data-tag="vierhoek" data-group="corners" onclick="vlakToggle(this)">vierhoek</span>
+          <span class="choice-pill" data-tag="vijfhoek" data-group="corners" onclick="vlakToggle(this)">vijfhoek</span>
+          <span class="choice-pill" data-tag="zeshoek" data-group="corners" onclick="vlakToggle(this)">zeshoek</span>
+          <span class="choice-pill" data-tag="twaalfhoek" data-group="corners" onclick="vlakToggle(this)">twaalfhoek</span>
+        </div>
+      </div>
+      <div class="option-group" id="vg-props">
+        <span class="option-label-vlak">Kenmerken</span>
+        <div class="pill-wrap">
+          <span class="choice-pill" data-tag="gelijke hoeken" data-group="props" onclick="vlakToggle(this)">alleen gelijke hoeken</span>
+          <span class="choice-pill" data-tag="regelmatige veelhoek" data-group="props" onclick="vlakToggle(this)">regelmatige veelhoek (gelijk)</span>
+          <span class="choice-pill" data-tag="geen regelmaat" data-group="props" onclick="vlakToggle(this)">geen gelijke zijden/hoeken</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="feedback-vlak" id="vlak-fb"></div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;">
+      <button class="btn-vlak btn-vlak-check" id="vlak-btn-check" onclick="vlakCheck('${q.id}')">Controleer mijn antwoord</button>
+      <button class="btn-vlak btn-vlak-reveal" id="vlak-btn-reveal" onclick="vlakReveal('${q.id}')">Toon juist antwoord</button>
+      <button class="btn-vlak btn-vlak-next" id="vlak-btn-next" onclick="nextQ()">Volgende figuur →</button>
+    </div>`;
+  vlakUpdateVisibility();
+}
+
+function vlakToggle(el) {
+  if (el.classList.contains('locked')) return;
+  const group = el.dataset.group, tag = el.dataset.tag;
+  const cur = ST.vlakSelections[group];
+  document.querySelectorAll(`[data-group="${group}"]`).forEach(p=>p.classList.remove('selected'));
+  if (cur===tag) { delete ST.vlakSelections[group]; }
+  else { ST.vlakSelections[group]=tag; el.classList.add('selected'); }
+  vlakUpdateVisibility();
+}
+window.vlakToggle = vlakToggle;
+
+function vlakUpdateVisibility() {
+  const isRuimte = ST.vlakSelections['type']==='ruimtefiguur';
+  const isGeenVeelhoek = ST.vlakSelections['poly']==='geen veelhoek';
+  const gPoly = document.getElementById('vg-poly');
+  const gCorners = document.getElementById('vg-corners');
+  const gProps = document.getElementById('vg-props');
+  if (!gPoly) return;
+  if (isRuimte) {
+    [gPoly,gCorners,gProps].forEach(g=>{g.classList.add('disabled');});
+    delete ST.vlakSelections['poly']; delete ST.vlakSelections['corners']; delete ST.vlakSelections['props'];
+    document.querySelectorAll('[data-group="poly"],[data-group="corners"],[data-group="props"]').forEach(p=>p.classList.remove('selected'));
+  } else {
+    gPoly.classList.remove('disabled');
+    if (isGeenVeelhoek) {
+      gCorners.classList.add('disabled'); gProps.classList.add('disabled');
+      delete ST.vlakSelections['corners']; delete ST.vlakSelections['props'];
+      document.querySelectorAll('[data-group="corners"],[data-group="props"]').forEach(p=>p.classList.remove('selected'));
+    } else {
+      gCorners.classList.remove('disabled'); gProps.classList.remove('disabled');
+    }
+  }
+}
+
+function vlakCheck(id) {
+  ST.vlakAttempts++;
+  const q = DB_VLAK.find(x=>x.id===id);
+  const userTags = Object.values(ST.vlakSelections);
+  const correct = q.correct;
+  const isOk = userTags.length===correct.length && correct.every(t=>userTags.includes(t));
+  const fb = document.getElementById('vlak-fb');
+  if (isOk) {
+    if (ST.vlakAttempts===1) { ST.correctFirst++; confettiSmall(); }
+    fb.innerHTML = '<span style="color:#16a34a;">✨ Correct! Goed gezien.</span>';
+    vlakFinalize();
+  } else {
+    fb.innerHTML = '<span style="color:#dc2626;">Nog niet helemaal juist. Kijk nog eens goed!</span>';
+    document.getElementById('vlak-btn-reveal').style.display='block';
+    if (ST.vlakAttempts===1) {
+      ST.wrongAttempts++;
+      ST.themeErrors['vlak']=(ST.themeErrors['vlak']||0)+1;
+    }
+  }
+}
+window.vlakCheck = vlakCheck;
+
+function vlakReveal(id) {
+  const q = DB_VLAK.find(x=>x.id===id);
+  document.querySelectorAll('.option-group').forEach(g=>g.classList.remove('disabled'));
+  document.querySelectorAll('.choice-pill').forEach(p=>{
+    p.classList.remove('selected');
+    if (q.correct.includes(p.dataset.tag)) p.classList.add('correct-reveal');
+  });
+  document.getElementById('vlak-fb').innerHTML='<span style="color:#d97706;">Dit waren de juiste kenmerken.</span>';
+  vlakFinalize();
+}
+window.vlakReveal = vlakReveal;
+
+function vlakFinalize() {
+  document.getElementById('vlak-btn-check').style.display='none';
+  document.getElementById('vlak-btn-reveal').style.display='none';
+  document.getElementById('vlak-btn-next').style.display='block';
+  document.querySelectorAll('.choice-pill').forEach(p=>p.classList.add('locked'));
+  if (!ST.hasMistake && document.getElementById('vlak-fb').innerText.includes('Correct')) {
+    ST.hasMistake = false;
+  } else {
+    ST.hasMistake = true;
+  }
+}
+
+// ── DRIEHOEKEN ────────────────────────────────────────────────────────────
+function renderDriehoek(q, area) {
+  const isHoeken = q.qType==='hoeken';
+  const label = isHoeken ? 'Hoe zijn de hoeken van deze driehoek?' : 'Hoe zijn de zijden van deze driehoek?';
+  area.innerHTML = `
+    <div class="q-label">${label}</div>
+    <div class="shape-box">${q.svg}</div>
+    <div class="ans-grid cols1" id="drie-opts"></div>
+    <button class="btn-next" id="btn-next" onclick="nextQ()">Volgende vraag →</button>`;
+  const opties = isHoeken
+    ? ['scherphoekige driehoek','rechthoekige driehoek','stomphoekige driehoek']
+    : ['gelijkzijdige driehoek','gelijkbenige driehoek','ongelijkzijdige driehoek'];
+  const correct = isHoeken ? q.hoek : q.zijde;
+  const grid = area.querySelector('#drie-opts');
+  opties.forEach(a => {
+    const b = document.createElement('button');
+    b.className = 'ans-btn'; b.textContent = a;
+    b.onclick = () => checkSimple(b, a, correct, 'driehoek', area);
+    grid.appendChild(b);
+  });
+}
+
+// ── VIERHOEKEN ────────────────────────────────────────────────────────────
+function renderVierhoek(q, area) {
+  area.innerHTML = `
+    <div class="q-label">Hoe heet deze vierhoek?</div>
+    <div class="shape-box">${q.svg}</div>
+    <div class="ans-grid" id="vier-opts"></div>
+    <button class="btn-next" id="btn-next" onclick="nextQ()">Volgende vraag →</button>`;
+  const grid = area.querySelector('#vier-opts');
+  shuffle(VIERHOEK_NAMEN).forEach(a => {
+    const b = document.createElement('button');
+    b.className = 'ans-btn'; b.textContent = a;
+    b.onclick = () => checkSimple(b, a, q.name, 'vierhoek', area);
+    grid.appendChild(b);
+  });
+}
+
+// ── CIRKEL ────────────────────────────────────────────────────────────────
+function renderCirkel(q, area) {
+  area.innerHTML = `
+    <div class="q-label">${q.vraag}</div>
+    <div class="shape-box">${cirkelSVG(q.type)}</div>
+    <div class="ans-grid" id="cirkel-opts"></div>
+    <button class="btn-next" id="btn-next" onclick="nextQ()">Volgende vraag →</button>`;
+  const grid = area.querySelector('#cirkel-opts');
+  shuffle(CIRKEL_LABELS).forEach(a => {
+    const b = document.createElement('button');
+    b.className = 'ans-btn'; b.textContent = a;
+    b.onclick = () => checkSimple(b, a, q.label, 'cirkel', area);
+    grid.appendChild(b);
+  });
+}
+
+// ── RUIMTEFIGUREN (exact 2-step flow from original) ────────────────────────
+let _ruimteState = {};
+
+function renderRuimte(q, area) {
+  const name = q.name;
+  const data = RUIMTE_DATA[name];
+  _ruimteState = { name, data, step:1, selectedProps:new Set(), selectedName:null, propScore:false };
+
+  area.innerHTML = `
+    <div class="shape-box" id="ruimte-svgbox">${ruimteSVG(name)}</div>
+    <div id="ruimte-step1">
+      <p class="step-label ruimte">Stap 1: Wat zijn de kenmerken van dit lichaam?</p>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;" id="ruimte-props">
+        <div class="property-btn" onclick="ruimteToggleProp(0,this)"><div class="checkbox-box"></div>Het is een ruimtefiguur</div>
+        <div class="property-btn" onclick="ruimteToggleProp(1,this)"><div class="checkbox-box"></div>Alleen rechte vlakken</div>
+        <div class="property-btn" onclick="ruimteToggleProp(2,this)"><div class="checkbox-box"></div>Het heeft gebogen vlakken</div>
+        <div class="property-btn" id="rp-ribben" onclick="ruimteToggleProp(3,this)"><div class="checkbox-box"></div>${data.ribben} ribben</div>
+        <div class="property-btn" id="rp-hoekpunten" onclick="ruimteToggleProp(4,this)"><div class="checkbox-box"></div>${data.hoekpunten} hoekpunten</div>
+        <div class="property-btn" style="grid-column:1/-1;" onclick="ruimteToggleProp(5,this)"><div class="checkbox-box"></div>Dit is een vlakke figuur</div>
+      </div>
+      <button class="btn-ruimte-action" onclick="ruimteCheckProps()">Eigenschappen controleren</button>
+    </div>
+    <div id="ruimte-step2" style="display:none;">
+      <p class="step-label ruimte">Stap 2: Hoe noemen we dit lichaam?</p>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:10px;" id="ruimte-names">
+        ${RUIMTE_NAMEN.map(n=>`<button class="name-btn" onclick="ruimteSelectName('${n}',this)">${n.charAt(0).toUpperCase()+n.slice(1)}</button>`).join('')}
+      </div>
+      <button class="btn-ruimte-action" onclick="ruimteCheckName()">Bevestig naam</button>
+    </div>
+    <div class="feedback-ruimte" id="ruimte-fb"></div>
+    <button class="btn-next" id="btn-next" onclick="nextQ()">Volgende vraag →</button>`;
+}
+
+function ruimteToggleProp(id, el) {
+  if (_ruimteState.selectedProps.has(id)) { _ruimteState.selectedProps.delete(id); el.classList.remove('selected'); }
+  else { _ruimteState.selectedProps.add(id); el.classList.add('selected'); }
+}
+window.ruimteToggleProp = ruimteToggleProp;
+
+function ruimteCheckProps() {
+  const {name, data} = _ruimteState;
+  const correctIds = [0, ...data.props, 3, 4]; // ruimtefiguur + vlaktype + ribben + hoekpunten
+  let mistakes = 0;
+  for (let i=0;i<=5;i++) {
+    const should = correctIds.includes(i);
+    const has = _ruimteState.selectedProps.has(i);
+    if (should!==has) mistakes++;
+  }
+  const fb = document.getElementById('ruimte-fb');
+  if (mistakes===0) {
+    ST.correctFirst++;
+    _ruimteState.propScore = true;
+    fb.innerHTML = '<span style="color:var(--mod-color,#be185d)">✓ Goed onderzocht! Kies nu de juiste naam.</span>';
+    document.getElementById('ruimte-step1').style.display='none';
+    document.getElementById('ruimte-step2').style.display='block';
+  } else {
+    if (!ST.hasMistake) { ST.wrongAttempts++; ST.hasMistake=true; ST.themeErrors['ruimte']=(ST.themeErrors['ruimte']||0)+1; }
+    fb.innerHTML = '<span style="color:#dc2626;">❌ Kijk nog eens naar de vlakken, ribben of hoekpunten.</span>';
+  }
+}
+window.ruimteCheckProps = ruimteCheckProps;
+
+function ruimteSelectName(name, el) {
+  document.querySelectorAll('.name-btn').forEach(b=>b.classList.remove('active'));
+  el.classList.add('active');
+  _ruimteState.selectedName = name;
+}
+window.ruimteSelectName = ruimteSelectName;
+
+function ruimteCheckName() {
+  const fb = document.getElementById('ruimte-fb');
+  if (!_ruimteState.selectedName) { fb.innerHTML='<span style="color:#dc2626;">Selecteer een naam!</span>'; return; }
+  if (_ruimteState.selectedName===_ruimteState.name) {
+    ST.correctFirst++;
+    const n = _ruimteState.name;
+    fb.innerHTML = `<span style="color:var(--mod-color,#be185d)">✓ Uitstekend! Dit is een <b>${n.charAt(0).toUpperCase()+n.slice(1)}</b>.</span>`;
+    document.getElementById('ruimte-step2').style.display='none';
+    document.getElementById('btn-next').classList.add('show');
+    confettiSmall();
+  } else {
+    if (!ST.hasMistake) { ST.wrongAttempts++; ST.hasMistake=true; }
+    fb.innerHTML='<span style="color:#dc2626;">❌ Dat is niet de juiste naam. Probeer nog eens!</span>';
+  }
+}
+window.ruimteCheckName = ruimteCheckName;
+
+// ── CHECK SIMPLE ──────────────────────────────────────────────────────────
+function checkSimple(btn, selected, correct, mod, area) {
+  if (btn.disabled) return;
+  const allBtns = (area||document).querySelectorAll('.ans-btn');
+  if (selected===correct) {
+    btn.classList.add('correct');
+    allBtns.forEach(b=>b.disabled=true);
+    if (!ST.hasMistake) { ST.correctFirst++; confettiSmall(); }
+    const nxt = (area||document).querySelector('#btn-next');
+    if (nxt) nxt.classList.add('show');
+  } else {
+    if (!ST.hasMistake) {
+      ST.wrongAttempts++; ST.hasMistake=true;
+      ST.themeErrors[mod]=(ST.themeErrors[mod]||0)+1;
+    }
+    btn.classList.add('wrong');
+    setTimeout(()=>btn.classList.remove('wrong'),600);
+    allBtns.forEach(b=>{ if (b.textContent.trim()===correct) b.style.outline='3px solid #22c55e'; });
+  }
+}
+window.checkSimple = checkSimple;
+
+// ── NEXT ──────────────────────────────────────────────────────────────────
+function nextQ() {
+  ST.idx++;
+  if (ST.idx>=ST.questions.length) showResults();
+  else renderQ();
+}
+window.nextQ = nextQ;
+
+// ── TIMER ─────────────────────────────────────────────────────────────────
+function startTimer() {
+  ST.timer=0; ST.timerInterval=setInterval(()=>{ ST.timer++; document.getElementById('mod-timer').textContent=fmt(ST.timer); },1000);
+}
+function resetTimer() { clearInterval(ST.timerInterval); ST.timer=0; document.getElementById('mod-timer').textContent='00:00'; }
+
+// ── RESULTS ───────────────────────────────────────────────────────────────
+async function showResults() {
+  clearInterval(ST.timerInterval);
+  const total = ST.questions.length;
+  const correct = ST.correctFirst;
+  const pct = Math.round((correct/total)*100);
+  const theme = MOD_CFG[ST.module].theme;
+
+  const overlay = document.getElementById('result-overlay');
+  overlay.className = 'result-overlay show ' + theme;
+
+  document.getElementById('res-score').textContent = `${correct}/${total}`;
+  document.getElementById('res-correct').textContent = correct;
+  document.getElementById('res-wrong').textContent = ST.wrongAttempts;
+  document.getElementById('res-time').textContent = fmt(ST.timer);
+
+  const analysisEl = document.getElementById('analysis-section');
+  analysisEl.innerHTML = '';
+
+  if (ST.module==='toets') {
+    const themeNames = {lijnen:'Soorten lijnen',hoeken:'Soorten hoeken',vlak:'Vlakke figuren',driehoek:'Driehoeken',vierhoek:'Vierhoeken',cirkel:'Cirkel & ovaal',ruimte:'Ruimtefiguren'};
+    const counts = {};
+    ST.questions.forEach(q=>{ const m=q.module; if(!counts[m]) counts[m]={total:0}; counts[m].total++; });
+    Object.entries(counts).forEach(([m,d])=>{ d.errors=ST.themeErrors[m]||0; d.correct=d.total-d.errors; });
+    analysisEl.innerHTML = `<div class="analysis-title">Foutenanalyse per onderdeel</div>`;
+    const sorted = Object.entries(counts).sort((a,b)=>(a[1].correct/a[1].total)-(b[1].correct/b[1].total));
+    sorted.forEach(([m,d])=>{
+      const ok=d.correct>=d.total*0.7;
+      analysisEl.innerHTML+=`<div class="analysis-item ${ok?'good':'bad'}">
+        <div class="dot"></div>
+        <div><div style="font-weight:800;">${themeNames[m]||m}</div>
+        <div style="font-size:0.78rem;opacity:0.8;">${d.correct}/${d.total} (${Math.round(d.correct/d.total*100)}%) ${!ok?'— Blijf dit oefenen!':''}</div></div>
+      </div>`;
+    });
+    const savedMsg = document.getElementById('firebase-saved-msg');
+    if (!window._isGuest && window._currentUser) {
+      const saved = await saveToetsScore({
+        score:correct, total, percentage:pct, timeSeconds:ST.timer,
+        themeScores:Object.fromEntries(Object.entries(counts).map(([m,d])=>[m,{correct:d.correct,total:d.total}])),
+        wrongAttempts:ST.wrongAttempts
+      });
+      if (saved) savedMsg.style.display='block';
+    }
+  } else {
+    document.getElementById('firebase-saved-msg').style.display='none';
+    analysisEl.innerHTML=`<div class="analysis-title">Resultaat</div>
+      <div class="analysis-item ${pct>=70?'good':'bad'}">
+        <div class="dot"></div>
+        <div>${pct>=70?'🎉 Uitstekend! Ga zo door!':'💪 Nog even oefenen — je kan het!'}</div>
+      </div>`;
+  }
+  confettiBig();
+}
+
+function confettiSmall() { confetti({particleCount:40,spread:45,origin:{y:0.8},scalar:0.8}); }
+function confettiBig() { confetti({particleCount:120,spread:70,origin:{y:0.5}}); }
+
+function goHome() { clearInterval(ST.timerInterval); document.getElementById('result-overlay').className='result-overlay'; showScreen('screen-home'); }
+function restartOrHome() { document.getElementById('result-overlay').className='result-overlay'; openModule(ST.module); }
+window.goHome = goHome; window.restartOrHome = restartOrHome;
+</script>
+</body>
+</html>
