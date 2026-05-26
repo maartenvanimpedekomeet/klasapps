@@ -110,7 +110,7 @@ body { font-family: 'Nunito', sans-serif; background: #f0f7ff; margin: 0; paddin
 <div class="max-w-2xl mx-auto">
 
 <!-- ══ LOGIN ══ -->
-<div id="v-login" class="login-card p-8 mt-6 text-center max-w-md mx-auto" style="display:flex;flex-direction:column;gap:12px;">
+<div id="v-login" class="login-card p-8 mt-6 text-center max-w-md mx-auto" style="flex-direction:column;gap:12px;">
   <div style="font-size:3rem">📏</div>
   <h1 style="font-size:1.6rem;font-weight:900;color:#1e3a5f;margin:0">Lengtematen Oefenapp</h1>
   <p style="color:#64748b;font-size:.9rem;margin:0">Voer je naam en code in</p>
@@ -275,7 +275,10 @@ async function loginMetCode() {
     document.getElementById('fb-init').textContent  = initials;
     document.getElementById('fb-uname').textContent = data.weergavenaam || naam;
     document.getElementById('fb-uemail').textContent = '';
-    s('fb-user-badge'); h('v-login'); s('v-menu');
+    document.getElementById('fb-user-badge').classList.remove('hidden');
+    document.getElementById('v-login').style.display='none';
+    document.getElementById('v-menu').classList.remove('hidden');
+    document.getElementById('v-menu').style.display='';
   } catch(e) {
     errEl.textContent='Fout: '+e.message; errEl.style.display='block'; btn.disabled=false; btn.textContent='Inloggen';
   }
@@ -286,7 +289,10 @@ function loginGuest() {
   window._leerlingId = null; window._leerlingNaam = 'Gast';
   var gb = document.getElementById('fb-guest-badge');
   gb.textContent = '👤 Gast – score niet opgeslagen';
-  s(gb); h('v-login'); s('v-menu');
+  gb.classList.remove('hidden'); gb.style.display='';
+  document.getElementById('v-login').style.display='none';
+  document.getElementById('v-menu').classList.remove('hidden');
+  document.getElementById('v-menu').style.display='';
 }
 
 function doLogout() {
@@ -321,7 +327,7 @@ async function fbSave(rec) {
 // ── UTILS ─────────────────────────────────────────────────────────────────
 function $(id){return document.getElementById(id);}
 function s(id){const el=typeof id==="string"?$(id):id; if(el){el.classList.remove("hidden"); el.style.display='';} }
-function h(id){const el=typeof id==="string"?$(id):id; if(el){el.classList.add("hidden");} }
+function h(id){const el=typeof id==="string"?$(id):id; if(el){el.classList.add("hidden"); el.style.display='none';} }
 function shuffle(a){let b=[...a];for(let i=b.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[b[i],b[j]]=[b[j],b[i]];}return b;}
 function rnd(a,b){return Math.floor(Math.random()*(b-a+1))+a;}
 function pick(arr,n){return shuffle(arr).slice(0,n);}
