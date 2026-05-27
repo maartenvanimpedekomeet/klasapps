@@ -1,1378 +1,797 @@
 <!DOCTYPE html>
-
 <html lang="nl">
-
 <head>
-
     <meta charset="UTF-8">
-
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-    <title>Breuken & Kommagetallen</title>
-
+    <title>Breuken &amp; Kommagetallen</title>
     <script src="https://cdn.tailwindcss.com"></script>
-
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
-
     <style>
-
     @import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600&display=swap');
-
     body { font-family: 'Fredoka', sans-serif; background-color: #fff7ed; min-height: 100vh; }
-
     .fraction-box { display: inline-flex; flex-direction: column; align-items: center; vertical-align: middle; }
-
     .fraction-line { border-top: 2px solid currentColor; width: 100%; min-width: 30px; }
-
     .game-card { transition: transform 0.2s; }
-
     .game-card:hover { transform: translateY(-4px); }
-
-    input[type="number"]::-webkit-inner-spin-button, input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
-
+    input[type="number"]::-webkit-inner-spin-button,
+    input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
     .scrollbar-hide::-webkit-scrollbar { display: none; }
-
-        /* ── LOGIN ── */
-        #login-screen {
-            position:fixed; inset:0; z-index:9999;
-            background:linear-gradient(135deg,#4338ca 0%,#6d28d9 60%,#7c3aed 100%);
-            display:flex; align-items:center; justify-content:center; padding:20px;
-        }
-        #login-screen.hidden { display:none!important; }
-        .login-card {
-            background:white; border-radius:2rem; padding:2.5rem 2rem;
-            width:100%; max-width:380px;
-            box-shadow:0 25px 50px rgba(0,0,0,0.25); text-align:center;
-        }
-        .login-logo {
-            width:80px; height:80px; background:#ede9fe; border-radius:1.5rem;
-            display:flex; align-items:center; justify-content:center;
-            margin:0 auto 1.25rem; font-size:2.5rem;
-            box-shadow:0 4px 16px rgba(99,102,241,0.2);
-        }
-        .login-input {
-            width:100%; padding:14px 16px; border:2px solid #e5e7eb; border-radius:1rem;
-            font-family:inherit; font-size:1rem; font-weight:600; color:#374151;
-            margin-bottom:10px; outline:none; transition:border-color .2s; text-align:center;
-        }
-        .login-input:focus { border-color:#6d28d9; }
-        .login-input.err { border-color:#dc2626; background:#fef2f2; animation:loginShake .4s; }
-        @keyframes loginShake{0%,100%{transform:translateX(0)}25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
-        .btn-login {
-            width:100%; background:#6d28d9; color:white; border:none; border-radius:1rem;
-            padding:14px; font-family:inherit; font-size:1rem; font-weight:700;
-            cursor:pointer; transition:all .2s; margin-bottom:10px;
-        }
-        .btn-login:hover { background:#5b21b6; }
-        .btn-login:disabled { opacity:.6; cursor:not-allowed; }
-        .login-error { color:#dc2626; font-size:.85rem; font-weight:700; min-height:20px; margin-bottom:8px; }
-        .btn-guest {
-            width:100%; background:transparent; border:2px solid #d1d5db; border-radius:1rem;
-            padding:12px; font-family:inherit; font-size:.9rem; font-weight:700;
-            color:#6b7280; cursor:pointer; transition:all .2s;
-        }
-        .btn-guest:hover { border-color:#9ca3af; color:#374151; }
-        .teacher-link { margin-top:14px; font-size:.75rem; color:#9ca3af; }
-        .teacher-link a { color:#6d28d9; text-decoration:none; font-weight:700; }
+    /* Gebruik .k-hidden voor JS-gestuurde verberging — geen Tailwind !important conflicten */
+    .k-hidden { display: none !important; }
     </style>
-
 </head>
-
 <body class="p-4 md:p-8">
-    <!-- LOGIN SCREEN -->
-    <div id="login-screen">
-      <div class="login-card">
-        <div class="login-logo">🔢</div>
-        <h1 style="font-size:1.6rem;font-weight:800;color:#1f2937;margin-bottom:6px;">Kommagetallen</h1>
-        <p style="font-size:.85rem;color:#6b7280;margin-bottom:1.25rem;">Voer je naam en code in</p>
-        <input class="login-input" id="login-naam" type="text" placeholder="Jouw voornaam" autocomplete="off" autocapitalize="words">
-        <input class="login-input" id="login-code" type="password" placeholder="Jouw code" autocomplete="off">
-        <div class="login-error" id="login-error"></div>
-        <button class="btn-login" id="btn-login" onclick="loginMetCode()">Inloggen</button>
-        <button class="btn-guest" onclick="loginGuest()">Doorgaan als gast (geen opslag)</button>
-        <div class="teacher-link"><a href="dashboard.html">Leerkracht? Klik hier</a></div>
-      </div>
+
+<!-- ══════════════════════════════════════════════════════════════
+     LOGINSCHERM — zelfde systeem als gewichten-app
+     ══════════════════════════════════════════════════════════════ -->
+<div id="klas-login" style="position:fixed;inset:0;z-index:9999;background:linear-gradient(135deg,#c2410c,#ea580c);display:flex;align-items:center;justify-content:center;padding:20px;">
+  <div style="background:white;border-radius:24px;padding:2.5rem 2rem;width:100%;max-width:380px;box-shadow:0 25px 50px rgba(0,0,0,0.25);text-align:center;display:flex;flex-direction:column;gap:12px;">
+    <div style="font-size:3rem">🔢</div>
+    <h1 style="font-size:1.5rem;font-weight:900;color:#1f2937;margin:0">Breuken &amp; Kommagetallen</h1>
+    <p style="color:#6b7280;font-size:.9rem;margin:0">Voer je naam en code in</p>
+    <div id="klas-err" style="color:#dc2626;font-size:.85rem;font-weight:700;min-height:18px;display:none;background:#fee2e2;border:1px solid #fca5a5;padding:8px 12px;border-radius:8px;"></div>
+    <input type="text" id="klas-naam" placeholder="Jouw voornaam"
+      style="width:100%;padding:14px;border:2px solid #e5e7eb;border-radius:12px;font-family:inherit;font-size:1rem;font-weight:600;text-align:center;outline:none;"
+      autocomplete="off" autocapitalize="words">
+    <input type="password" id="klas-code" placeholder="Jouw code"
+      style="width:100%;padding:14px;border:2px solid #e5e7eb;border-radius:12px;font-family:inherit;font-size:1rem;font-weight:600;text-align:center;outline:none;"
+      autocomplete="off">
+    <button id="login-btn"
+      style="width:100%;background:#c2410c;color:white;border:none;border-radius:12px;padding:14px;font-family:inherit;font-size:1rem;font-weight:700;cursor:pointer;">
+      Inloggen
+    </button>
+    <button id="gast-btn"
+      style="width:100%;background:transparent;border:2px solid #e5e7eb;border-radius:12px;padding:12px;font-family:inherit;font-size:.9rem;font-weight:700;color:#6b7280;cursor:pointer;">
+      Doorgaan als gast (geen opslag)
+    </button>
+    <div style="font-size:.75rem;color:#9ca3af;">
+      <a href="dashboard.html" style="color:#c2410c;font-weight:700;text-decoration:none;">Leerkracht? Klik hier</a>
     </div>
-    <!-- ── LOGIN VIEW ── -->
-    <div id="login-view" style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:50vh;gap:16px;padding:20px;max-width:400px;margin:0 auto;">
-        <div style="font-size:2.5rem;">🔐</div>
-        <h2 style="font-size:1.3rem;font-weight:800;color:#1e293b;text-align:center;margin:0;">Aanmelden</h2>
-        <p style="color:#64748b;font-size:0.85rem;text-align:center;margin:0;max-width:320px;">Log in met je schoolaccount om je score op te slaan, of speel als gast.</p>
-        <div id="login-error" style="display:none;background:#fee2e2;border:1px solid #fca5a5;color:#b91c1c;padding:10px 16px;border-radius:10px;font-size:0.82rem;font-weight:600;max-width:320px;text-align:center;width:100%;box-sizing:border-box;"></div>
-        <button id="fb-google-btn" style="display:flex;align-items:center;gap:10px;background:#1e293b;color:white;border:none;border-radius:12px;padding:13px 20px;font-size:0.9rem;font-weight:700;cursor:pointer;width:100%;max-width:320px;justify-content:center;">
-            <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.31-8.16 2.31-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
-            Inloggen met schoolaccount
-        </button>
-        <div style="display:flex;align-items:center;gap:8px;width:100%;max-width:320px;color:#94a3b8;font-size:0.75rem;"><div style="flex:1;height:1px;background:#e2e8f0;"></div>of<div style="flex:1;height:1px;background:#e2e8f0;"></div></div>
-        <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:12px;width:100%;max-width:320px;box-sizing:border-box;">
-            <label style="font-size:0.68rem;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:0.06em;display:block;margin-bottom:5px;">Naam (gast)</label>
-            <input type="text" id="fb-guest-name" placeholder="Bv. Milan" style="width:100%;padding:9px 11px;border:1px solid #e2e8f0;border-radius:7px;font-size:0.88rem;font-weight:600;box-sizing:border-box;outline:none;">
-        </div>
-        <button id="fb-guest-btn" style="background:#f1f5f9;color:#475569;border:none;border-radius:10px;padding:11px 20px;font-size:0.88rem;font-weight:600;cursor:pointer;width:100%;max-width:320px;">
-            👤 Spelen als gast (score niet bewaard)
-        </button>
-    </div>
-    <div id="fb-user-badge" style="display:none;align-items:center;gap:8px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:6px 12px;margin-bottom:10px;width:fit-content;">
-        <div id="fb-user-initials" style="width:26px;height:26px;background:#3b82f6;border-radius:6px;color:white;font-weight:700;font-size:0.75rem;display:flex;align-items:center;justify-content:center;">?</div>
-        <div><div id="fb-user-name" style="font-size:0.82rem;font-weight:700;color:#1e293b;"></div><div id="fb-user-email" style="font-size:0.68rem;color:#94a3b8;"></div></div>
-        <button id="fb-logout-btn" style="background:none;border:none;cursor:pointer;color:#94a3b8;font-size:0.75rem;padding:3px 8px;border-left:1px solid #e2e8f0;margin-left:4px;">↩ Uit</button>
-    </div>
-    <div id="fb-guest-badge" style="display:none;background:#fefce8;border:1px solid #fde68a;border-radius:8px;padding:4px 10px;font-size:0.72rem;font-weight:700;color:#d97706;margin-bottom:8px;">👤 Gast – score niet opgeslagen</div>
+  </div>
+</div>
 
-
-
-
-    <div id="main-app" style="display:none;">
+<!-- ══════════════════════════════════════════════════════════════
+     HOOFD-APP
+     ══════════════════════════════════════════════════════════════ -->
+<div id="main-app" style="display:none;">
 <div class="max-w-4xl mx-auto">
 
-    <!-- Header -->
+  <!-- User badge (bovenaan, zichtbaar na login) -->
+  <div id="user-badge-bar" style="display:none;align-items:center;justify-content:flex-end;gap:8px;margin-bottom:12px;flex-wrap:wrap;">
+    <div id="user-badge-name" style="font-size:.85rem;font-weight:700;color:#92400e;background:#fef3c7;border:1px solid #fde68a;padding:4px 12px;border-radius:99px;"></div>
+    <span id="guest-badge-bar" style="display:none;font-size:.75rem;font-weight:700;color:#d97706;background:#fefce8;border:1px solid #fde68a;padding:4px 10px;border-radius:99px;">👤 Gast – score niet opgeslagen</span>
+    <button id="signout-btn" style="display:none;font-size:.75rem;font-weight:700;color:#6b7280;background:white;border:1px solid #e5e7eb;padding:4px 10px;border-radius:99px;cursor:pointer;">↩ Uitloggen</button>
+  </div>
 
-    <div id="header-main" class="text-center mb-8">
-
-    <h1 class="text-4xl font-bold text-orange-600 mb-2">Breuken & Kommagetallen</h1>
-
+  <!-- Header -->
+  <div id="header-main" class="text-center mb-8">
+    <h1 class="text-4xl font-bold text-orange-600 mb-2">Breuken &amp; Kommagetallen</h1>
     <p class="text-orange-800 italic">Oefen je vaardigheden met kommagetallen!</p>
+  </div>
 
-    </div>
-
-
-
-    <!-- Menu -->
-
-    <div id="menu" class="grid grid-cols-1 md:grid-cols-2 gap-4">
-
+  <!-- Menu -->
+  <div id="menu" class="grid grid-cols-1 md:grid-cols-2 gap-4">
     <button onclick="startMode('conversion', 'Omzetten', 10)" class="game-card bg-white p-6 rounded-2xl shadow-md border-b-4 border-orange-200 text-left">
-
-    <div class="text-3xl mb-2">🔄</div>
-
-    <h3 class="font-bold text-lg text-orange-700">Omzetten</h3>
-
-    <p class="text-sm text-slate-500">Breuken naar kommagetallen en omgekeerd.</p>
-
+      <div class="text-3xl mb-2">🔄</div>
+      <h3 class="font-bold text-lg text-orange-700">Omzetten</h3>
+      <p class="text-sm text-slate-500">Breuken naar kommagetallen en omgekeerd.</p>
     </button>
-
     <button onclick="startMode('value', 'Positiewaarde', 10)" class="game-card bg-white p-6 rounded-2xl shadow-md border-b-4 border-orange-200 text-left">
-
-    <div class="text-3xl mb-2">🔍</div>
-
-    <h3 class="font-bold text-lg text-orange-700">Positiewaarde</h3>
-
-    <p class="text-sm text-slate-500">Wat is de waarde van het cijfer in het getal?</p>
-
+      <div class="text-3xl mb-2">🔍</div>
+      <h3 class="font-bold text-lg text-orange-700">Positiewaarde</h3>
+      <p class="text-sm text-slate-500">Wat is de waarde van het cijfer in het getal?</p>
     </button>
-
     <button onclick="startMode('compare', 'Vergelijken', 10)" class="game-card bg-white p-6 rounded-2xl shadow-md border-b-4 border-orange-200 text-left">
-
-    <div class="text-3xl mb-2">⚖️</div>
-
-    <h3 class="font-bold text-lg text-orange-700">Vergelijken</h3>
-
-    <p class="text-sm text-slate-500">Kleiner dan, groter dan of gelijk aan?</p>
-
+      <div class="text-3xl mb-2">⚖️</div>
+      <h3 class="font-bold text-lg text-orange-700">Vergelijken</h3>
+      <p class="text-sm text-slate-500">Kleiner dan, groter dan of gelijk aan?</p>
     </button>
-
     <button onclick="startMode('axis', 'Getallenas', 10)" class="game-card bg-white p-6 rounded-2xl shadow-md border-b-4 border-orange-200 text-left">
-
-    <div class="text-3xl mb-2">📏</div>
-
-    <h3 class="font-bold text-lg text-orange-700">Getallenas</h3>
-
-    <p class="text-sm text-slate-500">Plaats het kommagetal op de juiste plek.</p>
-
+      <div class="text-3xl mb-2">📏</div>
+      <h3 class="font-bold text-lg text-orange-700">Getallenas</h3>
+      <p class="text-sm text-slate-500">Plaats het kommagetal op de juiste plek.</p>
     </button>
-
     <button onclick="startMode('between', 'Tussenliggende getallen', 10)" class="game-card bg-white p-6 rounded-2xl shadow-md border-b-4 border-orange-200 text-left">
-
-    <div class="text-3xl mb-2">📍</div>
-
-    <h3 class="font-bold text-lg text-orange-700">Tussenliggende getallen</h3>
-
-    <p class="text-sm text-slate-500">Vind een getal tussen twee kommagetallen.</p>
-
+      <div class="text-3xl mb-2">📍</div>
+      <h3 class="font-bold text-lg text-orange-700">Tussenliggende getallen</h3>
+      <p class="text-sm text-slate-500">Vind een getal tussen twee kommagetallen.</p>
     </button>
-
     <button onclick="startMode('mix', 'Grote Mix (Toets)', 20)" class="game-card bg-slate-800 p-6 rounded-2xl shadow-md border-b-4 border-slate-600 text-left">
-
-    <div class="text-3xl mb-2">🎓</div>
-
-    <h3 class="font-bold text-lg text-white">Toets: Alles door elkaar</h3>
-
-    <p class="text-sm text-slate-400">20 oefeningen over alle doelen heen.</p>
-
+      <div class="text-3xl mb-2">🎓</div>
+      <h3 class="font-bold text-lg text-white">Toets: Alles door elkaar</h3>
+      <p class="text-sm text-slate-400">20 oefeningen over alle doelen heen.</p>
     </button>
+  </div>
 
-    </div>
-
-
-
-    <!-- Game Interface -->
-
-    <div id="game-container" class="hidden bg-white rounded-3xl shadow-xl overflow-hidden border-4 border-orange-100">
-
+  <!-- Game Interface -->
+  <div id="game-container" class="hidden bg-white rounded-3xl shadow-xl overflow-hidden border-4 border-orange-100">
     <div id="status-bar" class="bg-orange-500 p-4 text-white flex justify-between items-center">
-
-    <button onclick="backToMenu()" class="text-sm font-bold bg-white/20 px-3 py-1 rounded-lg hover:bg-white/30 transition-colors">⬅ Menu</button>
-
-    <div class="text-center">
-
-    <span id="mode-title" class="font-bold uppercase tracking-widest text-xs block opacity-80"></span>
-
-    <span class="text-lg font-bold">Vraag <span id="current-q">1</span>/<span id="total-q">10</span></span>
-
+      <button onclick="backToMenu()" class="text-sm font-bold bg-white/20 px-3 py-1 rounded-lg hover:bg-white/30 transition-colors">⬅ Menu</button>
+      <div class="text-center">
+        <span id="mode-title" class="font-bold uppercase tracking-widest text-xs block opacity-80"></span>
+        <span class="text-lg font-bold">Vraag <span id="current-q">1</span>/<span id="total-q">10</span></span>
+      </div>
+      <div class="bg-white/20 px-3 py-1 rounded-lg font-bold">
+        Score: <span id="score">0</span>
+      </div>
     </div>
-
-    <div class="bg-white/20 px-3 py-1 rounded-lg font-bold">
-
-    Score: <span id="score">0</span>
-
-    </div>
-
-    </div>
-
-
-
     <div class="p-8 text-center min-h-[450px] flex flex-col justify-center items-center">
-
-    <div id="question-area" class="text-3xl font-bold text-slate-800 mb-8"></div>
-
-    <div id="input-area" class="w-full max-w-xs mx-auto"></div>
-
-    <div id="feedback" class="mt-8 h-8 font-bold text-lg"></div>
-
-    <button id="next-btn" onclick="nextQuestion()" class="hidden mt-8 w-full max-w-xs bg-slate-800 text-white font-bold py-4 rounded-2xl shadow-lg transition-transform active:scale-95">
-
-    Volgende vraag
-
-    </button>
-
+      <div id="question-area" class="text-3xl font-bold text-slate-800 mb-8"></div>
+      <div id="input-area" class="w-full max-w-xs mx-auto"></div>
+      <div id="feedback" class="mt-8 h-8 font-bold text-lg"></div>
+      <button id="next-btn" onclick="nextQuestion()" class="hidden mt-8 w-full max-w-xs bg-slate-800 text-white font-bold py-4 rounded-2xl shadow-lg transition-transform active:scale-95">
+        Volgende vraag
+      </button>
     </div>
+  </div>
 
-    </div>
-
-
-
-    <!-- End Screen -->
-
-    <div id="end-screen" class="hidden bg-white rounded-3xl shadow-xl overflow-hidden border-4 border-orange-100">
-
+  <!-- End Screen -->
+  <div id="end-screen" class="hidden bg-white rounded-3xl shadow-xl overflow-hidden border-4 border-orange-100">
     <div class="bg-orange-500 p-8 text-white text-center">
-
-    <h2 class="text-3xl font-bold mb-2">Resultaat: <span id="end-mode-name"></span></h2>
-
-    <div class="text-6xl font-bold mb-2"><span id="final-score">0</span>/<span id="final-total">10</span></div>
-
-    <p id="result-message" class="text-orange-100 font-medium"></p>
-
+      <h2 class="text-3xl font-bold mb-2">Resultaat: <span id="end-mode-name"></span></h2>
+      <div class="text-6xl font-bold mb-2"><span id="final-score">0</span>/<span id="final-total">10</span></div>
+      <p id="result-message" class="text-orange-100 font-medium"></p>
     </div>
-
-    
-
     <div class="p-6">
 
-    <div id="competency-container" class="mb-8 hidden">
+      <!-- Upload status (zelfde patroon als gewichten: style.display, nooit Tailwind hidden) -->
+      <div id="upload-status" style="display:none;" class="p-4 rounded-2xl border max-w-md mx-auto text-sm font-semibold text-center mb-6">
+        <i id="upload-spinner" class="inline-block w-4 h-4 border-2 border-slate-300 border-t-orange-500 rounded-full animate-spin mr-2 align-middle"></i>
+        <span id="upload-status-text">Bezig met opslaan...</span>
+      </div>
+      <div id="guest-result-note" style="display:none;" class="bg-amber-50 border border-amber-200 text-amber-700 text-xs p-3 rounded-2xl max-w-xs mx-auto text-center mb-6">
+        👤 Je speelde als gast. Score is <strong>niet</strong> opgeslagen.
+      </div>
 
-    <h3 class="text-xl font-bold text-slate-800 mb-4 border-b-2 border-orange-50 pb-2">Resultaat per doel</h3>
+      <div id="competency-container" class="mb-8 hidden">
+        <h3 class="text-xl font-bold text-slate-800 mb-4 border-b-2 border-orange-50 pb-2">Resultaat per doel</h3>
+        <div id="competency-list" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+      </div>
 
-    <div id="competency-list" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+      <!-- Foutenanalyse samenvatting -->
+      <div id="extra-oefenen-box" style="display:none;" class="bg-amber-50 border border-amber-200 rounded-2xl p-5 mb-6">
+        <p class="text-sm font-black text-amber-800 mb-2">⚠️ Dit moet je nog extra oefenen:</p>
+        <ul id="extra-oefenen-list" class="list-disc list-inside text-sm text-amber-700 space-y-1 font-semibold"></ul>
+      </div>
 
+      <h3 class="text-xl font-bold text-slate-800 mb-4 border-b-2 border-orange-50 pb-2">Foutenanalyse</h3>
+      <div id="analysis-container" class="space-y-3 max-h-60 overflow-y-auto pr-2 scrollbar-hide"></div>
+
+      <div class="mt-8 grid grid-cols-1 gap-3">
+        <button onclick="backToMenu()" class="bg-orange-500 text-white font-bold px-8 py-4 rounded-2xl text-xl shadow-lg hover:bg-orange-600 transition-colors">
+          Terug naar menu
+        </button>
+      </div>
     </div>
+  </div>
 
-
-
-    <h3 class="text-xl font-bold text-slate-800 mb-4 border-b-2 border-orange-50 pb-2">Foutenanalyse</h3>
-
-    <div id="analysis-container" class="space-y-3 max-h-60 overflow-y-auto pr-2 scrollbar-hide"></div>
-
-    
-
-    <div class="mt-8 grid grid-cols-1 gap-3">
-
-    <button onclick="backToMenu()" class="bg-orange-500 text-white font-bold px-8 py-4 rounded-2xl text-xl shadow-lg hover:bg-orange-600 transition-colors">
-
-    Terug naar menu
-
-    </button>
-
-    </div>
-
-    </div>
-
-    </div>
-
-    </div>
-
-
-
-    <script>
-
-    let currentMode = '';
-
-    let currentModeName = '';
-
-    let currentStep = 1;
-
-    let totalQuestions = 10;
-
-    let score = 0;
-
-    let currentAnswer = null;
-
-    let history = [];    
-
-    let usedQuestions = new Set();    
-
-    let currentQuestionType = '';    
-
-    let currentQuestionText = '';
-
-    let currentRange = [0, 0];
-
-
-
-    const MODES = ['conversion', 'value', 'compare', 'axis', 'between'];
-
-    const MODE_NAMES = {
-
-    'conversion': 'Omzetten',
-
-    'value': 'Positiewaarde',
-
-    'compare': 'Vergelijken',
-
-    'axis': 'Getallenas',
-
-    'between': 'Tussenliggend'
-
-    };
-
-
-
-    function backToMenu() {
-
-    document.getElementById('header-main').classList.remove('hidden');
-
-    document.getElementById('menu').classList.remove('hidden');
-
-    document.getElementById('game-container').classList.add('hidden');
-
-    document.getElementById('end-screen').classList.add('hidden');
-
-    usedQuestions.clear();
-
-    }
-
-
-
-    function startMode(mode, name, amount) {
-
-    currentMode = mode;
-
-    currentModeName = name;
-
-    currentStep = 1;
-
-    totalQuestions = amount;
-
-    score = 0;
-
-    history = [];
-
-    usedQuestions.clear();
-
-    
-
-    document.getElementById('header-main').classList.add('hidden');
-
-    document.getElementById('menu').classList.add('hidden');
-
-    document.getElementById('game-container').classList.remove('hidden');
-
-    document.getElementById('total-q').textContent = totalQuestions;
-
-    document.getElementById('score').textContent = score;
-
-    
-
-    const statusBar = document.getElementById('status-bar');
-
-    if (mode === 'mix') {
-
-    statusBar.classList.remove('bg-orange-500');
-
-    statusBar.classList.add('bg-slate-800');
-
-    } else {
-
-    statusBar.classList.remove('bg-slate-800');
-
-    statusBar.classList.add('bg-orange-500');
-
-    }
-
-
-
-    generateQuestion();
-
-    }
-
-
-
-    function generateQuestion() {
-
-    const qArea = document.getElementById('question-area');
-
-    const iArea = document.getElementById('input-area');
-
-    const feedback = document.getElementById('feedback');
-
-    const nextBtn = document.getElementById('next-btn');
-
-    const title = document.getElementById('mode-title');
-
-    
-
-    document.getElementById('current-q').textContent = currentStep;
-
-    feedback.textContent = '';
-
-    nextBtn.classList.add('hidden');
-
-    iArea.innerHTML = '';
-
-    qArea.innerHTML = '';
-
-
-
-    let effectiveMode = currentMode;
-
-    if (currentMode === 'mix') {
-
-    effectiveMode = MODES[Math.floor(Math.random() * MODES.length)];
-
-    }
-
-    currentQuestionType = effectiveMode;
-
-
-
-    let attempts = 0;
-
-    while (attempts < 100) {
-
-    let questionData = setupQuestionByMode(effectiveMode);
-
-    let qKey = `${effectiveMode}_${questionData.id}`;
-
-    
-
-    if (!usedQuestions.has(qKey)) {
-
-    usedQuestions.add(qKey);
-
-    renderQuestion(questionData, qArea, iArea, title);
-
-    break;
-
-    }
-
-    attempts++;
-
-    }
-
-    }
-
-
-
-    function setupQuestionByMode(mode) {
-
-    switch(mode) {
-
-    case 'conversion': return createConversionData();
-
-    case 'value': return createValueData();
-
-    case 'compare': return createCompareData();
-
-    case 'axis': return createAxisData();
-
-    case 'between': return createBetweenData();
-
-    }
-
-    }
-
-
-
-    function renderQuestion(data, qArea, iArea, title) {
-
-    title.textContent = MODE_NAMES[data.type];
-
-    currentQuestionText = data.text;
-
-    currentAnswer = data.answer;
-
-    if(data.range) currentRange = data.range;
-
-
-
-    if (data.html) qArea.innerHTML = data.html;
-
-    else qArea.textContent = data.text;
-
-
-
-    if (data.inputType === 'text') createTextInput(iArea, data.placeholder);
-
-    else if (data.inputType === 'fraction') createFractionInput(iArea);
-
-    else if (data.inputType === 'options') createButtonOptions(iArea, data.options);
-
-    }
-
-
-
-    function createConversionData() {
-
-    const isToDecimal = Math.random() > 0.5;
-
-    if (isToDecimal) {
-
-    const n = [10, 100, 1000][Math.floor(Math.random() * 3)];
-
-    const t = Math.floor(Math.random() * (n * 2)) + 1;
-
-    const ans = (t / n).toFixed(n === 10 ? 1 : (n === 100 ? 2 : 3)).replace('.', ',').replace(/,0+$/, '');
-
-    return {
-
-    type: 'conversion',
-
-    id: `toDec_${t}_${n}`,
-
-    text: `${t}/${n}`,
-
-    html: `<div class="fraction-box"><span>${t}</span><span class="fraction-line"></span><span>${n}</span></div> = ?`,
-
-    answer: ans.includes(',') ? ans : ans + ",0", // Normalize for easy check
-
-    inputType: 'text'
-
-    };
-
-    } else {
-
-    const n = [10, 100][Math.floor(Math.random() * 2)];
-
-    const g = (Math.floor(Math.random() * (n * 1.5)) + 1) / n;
-
-    const kStr = g.toFixed(n === 10 ? 1 : 2).replace('.', ',');
-
-    return {
-
-    type: 'conversion',
-
-    id: `toFrac_${kStr}`,
-
-    text: kStr,
-
-    html: `${kStr} = <div class="fraction-box"><span class="text-orange-400">?</span><span class="fraction-line"></span><span class="text-orange-400">?</span></div>`,
-
-    answer: { teller: Math.round(g * n).toString(), noemer: n.toString() },
-
-    inputType: 'fraction'
-
-    };
-
-    }
-
-    }
-
-
-
-    function createValueData() {
-
-    const digits = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9].sort(() => Math.random() - 0.5);
-
-    const isNatural = Math.random() < 0.2;
-
-    let str = isNatural ? `${digits[0]||1}${digits[1]}${digits[2]}` : `${digits[0]||1}${digits[1]}${digits[2]},${digits[3]}${digits[4]}`;
-
-    
-
-    const parts = str.split('');
-
-    const validIndices = parts.map((c, idx) => (c !== ',' ? idx : -1)).filter(idx => idx !== -1);
-
-    const targetIdx = validIndices[Math.floor(Math.random() * validIndices.length)];
-
-    const targetDigit = parts[targetIdx];
-
-
-
-    let html = `Waarde van <span class="text-orange-500 underline">${targetDigit}</span> in `;
-
-    parts.forEach((char, idx) => {
-
-    if (idx === targetIdx) html += `<span class="text-orange-500 underline">${char}</span>`;
-
-    else html += char;
-
-    });
-
-
-
-    const commaIdx = str.indexOf(',') === -1 ? str.length : str.indexOf(',');
-
-    const diff = commaIdx - targetIdx;
-
-    let ans = "";
-
-    if (diff === 3) ans = "Honderdtallen (H)";
-
-    else if (diff === 2) ans = "Tientallen (T)";
-
-    else if (diff === 1) ans = "Eenheden (E)";
-
-    else if (diff === -1) ans = "Tienden (t)";
-
-    else if (diff === -2) ans = "Honderdsten (h)";
-
-
-
-    return {
-
-    type: 'value',
-
-    id: `val_${str}_${targetIdx}`,
-
-    text: `Waarde van ${targetDigit} in ${str}`,
-
-    html: html,
-
-    answer: ans,
-
-    inputType: 'options',
-
-    options: ["Honderdtallen (H)", "Tientallen (T)", "Eenheden (E)", "Tienden (t)", "Honderdsten (h)"]
-
-    };
-
-    }
-
-
-
-    /**
-
-    * VERBETERDE VERGELIJKINGSLOGICA
-
-    */
-
-    function createCompareData() {
-
-    // Stap 1: Bepaal gewenste uitkomst voor afwisseling
-
-    // 35% kans op <, 35% kans op >, 30% kans op =
-
-    const dice = Math.random();
-
-    let desiredOutcome;
-
-    if (dice < 0.35) desiredOutcome = '<';
-
-    else if (dice < 0.70) desiredOutcome = '>';
-
-    else desiredOutcome = '=';
-
-
-
-    // Stap 2: Genereer getallen die dicht bij elkaar liggen
-
-    let val1, val2, display1, display2;
-
-    const base = (Math.floor(Math.random() * 100) / 10); // bijv 4.2
-
-    
-
-    if (desiredOutcome === '=') {
-
-    val1 = base;
-
-    val2 = base;
-
-    } else if (desiredOutcome === '<') {
-
-    val1 = base;
-
-    val2 = base + (Math.floor(Math.random() * 5) + 1) / 10;
-
-    } else {
-
-    val1 = base + (Math.floor(Math.random() * 5) + 1) / 10;
-
-    val2 = base;
-
-    }
-
-
-
-    // Stap 3: Mix de weergavevormen (breuk vs decimaal)
-
-    const getDisplay = (v) => {
-
-    const formatDice = Math.random();
-
-    if (formatDice < 0.4) {
-
-    // Als breuk (tienden)
-
-    const t = Math.round(v * 10);
-
-    return {    
-
-    html: `<div class="fraction-box"><span>${t}</span><span class="fraction-line"></span><span>10</span></div>`,
-
-    text: `${t}/10`    
-
-    };
-
-    } else {
-
-    // Als kommagetal
-
-    const s = v.toFixed(1).replace('.', ',');
-
-    return { html: s, text: s };
-
-    }
-
-    };
-
-
-
-    const d1Obj = getDisplay(val1);
-
-    const d2Obj = getDisplay(val2);
-
-    
-
-    const realAnswer = val1 < val2 ? '<' : (val1 > val2 ? '>' : '=');
-
-
-
-    return {
-
-    type: 'compare',
-
-    id: `comp_${val1}_${val2}_${d1Obj.text}_${d2Obj.text}`,
-
-    text: `${d1Obj.text} vs ${d2Obj.text}`,
-
-    html: `<div class="flex items-center justify-center gap-6">${d1Obj.html} <div class="w-12 h-12 flex items-center justify-center border-2 border-orange-200 rounded-lg text-orange-300">?</div> ${d2Obj.html}</div>`,
-
-    answer: realAnswer,
-
-    inputType: 'options',
-
-    options: ['<', '=', '>']
-
-    };
-
-    }
-
-
-
-    function createAxisData() {
-
-    const start = Math.floor(Math.random() * 10);
-
-    const target = (start + (Math.floor(Math.random() * 9) + 1) / 10).toFixed(1);
-
-    const targetStr = target.replace('.', ',');
-
-    
-
-    let html = `Plaats <b>${targetStr}</b> op de as:<div class="w-full h-1 bg-slate-300 my-12 relative">`;
-
-    for(let j=0; j<=10; j++) {
-
-    const pos = j * 10;
-
-    const val = (start + j/10).toFixed(1).replace('.', ',');
-
-    html += `<div class="absolute top-0 w-0.5 h-4 bg-slate-400" style="left: ${pos}%"></div>`;
-
-    if(j === 0 || j === 10) html += `<div class="absolute -top-8 text-sm font-bold -translate-x-1/2" style="left: ${pos}%">${val}</div>`;
-
-    if(j >= 0 && j <= 10) {
-
-    html += `<button onclick="checkAnswer('${val}', this)" class="absolute -top-2 w-5 h-5 bg-orange-100 border border-orange-300 rounded-full hover:bg-orange-500 transition-colors -translate-x-1/2 z-10" style="left: ${pos}%"></button>`;
-
-    }
-
-    }
-
-    html += `</div>`;
-
-
-
-    return {
-
-    type: 'axis',
-
-    id: `axis_${target}`,
-
-    text: `Plaats ${targetStr} op de as`,
-
-    html: html,
-
-    answer: targetStr,
-
-    inputType: 'axis'
-
-    };
-
-    }
-
-
-
-    function createBetweenData() {
-
-    const low = (Math.floor(Math.random() * 150) / 10);
-
-    const high = low + 0.1;
-
-    const lowStr = low.toFixed(1).replace('.', ',');
-
-    const highStr = high.toFixed(1).replace('.', ',');
-
-    
-
-    return {
-
-    type: 'between',
-
-    id: `bet_${low}`,
-
-    text: `Getal tussen ${lowStr} en ${highStr}`,
-
-    html: `Vind een getal tussen <br><span class="text-orange-600">${lowStr}</span> en <span class="text-orange-600">${highStr}</span>`,
-
-    answer: 'range',
-
-    range: [low, high],
-
-    inputType: 'text',
-
-    placeholder: 'Bijv. 1,45'
-
-    };
-
-    }
-
-
-
-    function createTextInput(container, placeholder = "Antwoord...") {
-
-    const input = document.createElement('input');
-
-    input.type = "text";
-
-    input.placeholder = placeholder;
-
-    input.className = "w-full p-4 border-4 border-orange-100 rounded-2xl text-center text-2xl focus:outline-none focus:border-orange-500";
-
-    input.id = "user-input";
-
-    input.onkeypress = (e) => { if(e.key === 'Enter') checkAnswer(input.value); };
-
-    const btn = document.createElement('button');
-
-    btn.textContent = "Controleer";
-
-    btn.className = "w-full mt-4 bg-orange-500 text-white font-bold py-3 rounded-xl shadow-md";
-
-    btn.onclick = () => checkAnswer(input.value);
-
-    container.appendChild(input);
-
-    container.appendChild(btn);
-
-    setTimeout(() => input.focus(), 100);
-
-    }
-
-
-
-    function createFractionInput(container) {
-
-    container.className = "flex flex-col items-center gap-4";
-
-    const box = document.createElement('div');
-
-    box.className = "flex flex-col items-center gap-1";
-
-    const tInp = document.createElement('input');
-
-    tInp.type = "number"; tInp.placeholder = "Teller"; tInp.className = "w-24 p-2 border-2 border-orange-200 rounded-lg text-center text-xl focus:border-orange-500 outline-none";
-
-    tInp.id = "teller-input";
-
-    const line = document.createElement('div'); line.className = "w-full h-1 bg-slate-800";
-
-    const nInp = document.createElement('input'); nInp.type = "number"; nInp.placeholder = "Noemer"; nInp.className = "w-24 p-2 border-2 border-orange-200 rounded-lg text-center text-xl focus:border-orange-500 outline-none";
-
-    nInp.id = "noemer-input";
-
-    box.appendChild(tInp); box.appendChild(line); box.appendChild(nInp);
-
-    const btn = document.createElement('button');
-
-    btn.textContent = "Controleer"; btn.className = "w-full bg-orange-500 text-white font-bold py-3 rounded-xl shadow-md";
-
-    btn.onclick = () => checkAnswer({ teller: tInp.value, noemer: nInp.value });
-
-    container.appendChild(box); container.appendChild(btn);
-
-    setTimeout(() => tInp.focus(), 100);
-
-    }
-
-
-
-    function createButtonOptions(container, options) {
-
-    container.className = "grid grid-cols-1 gap-3 w-full max-w-xs";
-
-    options.forEach(opt => {
-
-    const btn = document.createElement('button');
-
-    btn.textContent = opt;
-
-    btn.className = "p-4 bg-white border-2 border-orange-200 rounded-2xl font-bold text-2xl text-orange-800 hover:bg-orange-500 hover:text-white transition-all shadow-sm";
-
-    btn.onclick = () => checkAnswer(opt, btn);
-
-    container.appendChild(btn);
-
-    });
-
-    }
-
-
-
-    function checkAnswer(val, element = null) {
-
-    if(!isAnswering()) return;
-
-    const feedback = document.getElementById('feedback');
-
-    const nextBtn = document.getElementById('next-btn');
-
-    let isCorrect = false;
-
-    let dispUser = "";
-
-    let dispCorr = "";
-
-
-
-    if (currentAnswer === "range") {
-
-    const num = parseFloat(val.toString().trim().replace(',', '.'));
-
-    dispUser = val.toString();
-
-    dispCorr = `Bijv. ${(currentRange[0] + 0.05).toFixed(2).replace('.', ',')}`;
-
-    if (!isNaN(num) && num > currentRange[0] && num < currentRange[1]) isCorrect = true;
-
-    } else if (typeof currentAnswer === 'object') {
-
-    dispUser = `${val.teller}/${val.noemer}`;
-
-    dispCorr = `${currentAnswer.teller}/${currentAnswer.noemer}`;
-
-    if (val.teller == currentAnswer.teller && val.noemer == currentAnswer.noemer) isCorrect = true;
-
-    } else {
-
-    dispUser = val.toString().trim().replace('.', ',');
-
-    dispCorr = currentAnswer.toString();
-
-    
-
-    // Flexible number check for decimals
-
-    const parseLax = (s) => parseFloat(s.replace(',', '.'));
-
-    const nU = parseLax(dispUser);
-
-    const nC = parseLax(dispCorr);
-
-    
-
-    if (!isNaN(nU) && !isNaN(nC)) {
-
-    isCorrect = Math.abs(nU - nC) < 0.0001;
-
-    } else {
-
-    isCorrect = (dispUser === dispCorr);
-
-    }
-
-    }
-
-
-
-    history.push({
-
-    question: currentQuestionText,
-
-    user: dispUser || "(leeg)",
-
-    correct: dispCorr,
-
-    isCorrect: isCorrect,
-
-    type: currentQuestionType
-
-    });
-
-
-
-    if (isCorrect) {
-
-    score++;
-
-    feedback.innerHTML = '<span class="text-green-600">Goed gedaan! ✨</span>';
-
-    if(element && element.tagName === 'BUTTON') element.classList.add('bg-green-500', 'text-white', 'border-green-600');
-
-    confetti({ particleCount: 30, spread: 40, origin: { y: 0.8 }, colors: ['#f97316'] });
-
-    } else {
-
-    feedback.innerHTML = `<span class="text-red-500 font-bold">Helaas! Het was: ${dispCorr}</span>`;
-
-    if(element && element.tagName === 'BUTTON') element.classList.add('bg-red-500', 'text-white', 'border-red-600');
-
-    }
-
-
-
-    document.getElementById('score').textContent = score;
-
-    nextBtn.classList.remove('hidden');
-
-    const inputs = document.querySelectorAll('input'); inputs.forEach(i => i.disabled = true);
-
-    const buttons = document.querySelectorAll('#input-area button, #question-area button'); buttons.forEach(b => b.disabled = true);
-
-    }
-
-
-
-    function isAnswering() {
-
-    return document.getElementById('next-btn').classList.contains('hidden');
-
-    }
-
-
-
-    function nextQuestion() {
-
-    if (currentStep < totalQuestions) {
-
-    currentStep++;
-
-    generateQuestion();
-
-    } else {
-
-    showFinalResults();
-
-    }
-
-    }
-
-
-
-    function showFinalResults() {
-
-    document.getElementById('game-container').classList.add('hidden');
-
-    document.getElementById('end-screen').classList.remove('hidden');
-
-    document.getElementById('end-mode-name').textContent = currentModeName;
-
-    document.getElementById('final-score').textContent = score;
-
-    document.getElementById('final-total').textContent = totalQuestions;
-
-    
-
-    const msg = document.getElementById('result-message');
-
-    const percentage = (score / totalQuestions) * 100;
-
-    if(percentage === 100) msg.textContent = "Uitmuntend! Alles is foutloos.";
-
-    else if(percentage >= 80) msg.textContent = "Schitterend resultaat!";
-
-    else if(percentage >= 50) msg.textContent = "Voldoende, maar blijf goed oefenen.";
-
-    else msg.textContent = "Nog wat extra oefening nodig. Bekijk de analyse.";
-
-
-
-    const container = document.getElementById('analysis-container');
-
-    container.innerHTML = '';
-
-    history.forEach((item, index) => {
-
-    const div = document.createElement('div');
-
-    div.className = `p-3 rounded-xl border-l-4 ${item.isCorrect ? 'bg-green-50 border-green-500' : 'bg-red-50 border-red-500'}`;
-
-    div.innerHTML = `
-
-    <div class="flex justify-between items-start">
-
-    <span class="text-xs font-bold uppercase ${item.isCorrect ? 'text-green-600' : 'text-red-600'}">V${index + 1}: ${item.question}</span>
-
-    <span class="text-xs text-slate-400 font-bold">${MODE_NAMES[item.type]}</span>
-
-    </div>
-
-    <div class="text-sm mt-1">
-
-    <span class="text-slate-500 italic">Jouw antwoord:</span> <b>${item.user}</b>
-
-    ${!item.isCorrect ? `<br><span class="text-slate-500 italic">Juist:</span> <b class="text-green-700">${item.correct}</b>` : ''}
-
-    </div>
-
-    `;
-
-    container.appendChild(div);
-
-    });
-
-
-
-    const compContainer = document.getElementById('competency-container');
-
-    const compList = document.getElementById('competency-list');
-
-    if (currentMode === 'mix') {
-
-    compContainer.classList.remove('hidden');
-
-    compList.innerHTML = '';
-
-    MODES.forEach(modeKey => {
-
-    const modeHistory = history.filter(h => h.type === modeKey);
-
-    if (modeHistory.length > 0) {
-
-    const modeScore = modeHistory.filter(h => h.isCorrect).length;
-
-    const modeTotal = modeHistory.length;
-
-    const modePerc = (modeScore / modeTotal) * 100;
-
-    const card = document.createElement('div');
-
-    card.className = "bg-orange-50 p-3 rounded-xl border border-orange-100";
-
-    card.innerHTML = `
-
-    <div class="flex justify-between items-center mb-1">
-
-    <span class="font-bold text-orange-800">${MODE_NAMES[modeKey]}</span>
-
-    <span class="text-sm font-bold">${modeScore}/${modeTotal}</span>
-
-    </div>
-
-    <div class="w-full bg-orange-200 h-2 rounded-full overflow-hidden">
-
-    <div class="h-full ${modePerc >= 70 ? 'bg-green-500' : modePerc >= 50 ? 'bg-orange-500' : 'bg-red-500'}" style="width: ${modePerc}%"></div>
-
-    </div>
-
-    `;
-
-    compList.appendChild(card);
-
-    }
-
-    });
-
-    } else {
-
-    compContainer.classList.add('hidden');
-
-    }
-
-    }
-
-    </script>
-
+</div><!-- /max-w-4xl -->
 </div><!-- /main-app -->
 
-<script type="module">
-    import { initializeApp }   from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-    import { getAuth, GoogleAuthProvider, signInWithRedirect, getRedirectResult, signOut, onAuthStateChanged }
-        from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-    import { getFirestore, collection, addDoc, serverTimestamp }
-        from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-    const firebaseConfig = {
-        apiKey:            "AIzaSyCnQDVVAlK6jE-PPUUediRJMTbN0xqrLDE",
-        authDomain:        "klaswebsite-database.firebaseapp.com",
-        projectId:         "klaswebsite-database",
-        storageBucket:     "klaswebsite-database.firebasestorage.app",
-        messagingSenderId: "42912327282",
-        appId:             "1:42912327282:web:f13f2c706f6c42c115c4eb",
-        measurementId:     "G-V5MC9BY19Q"
-    };
-    const ALLOWED_DOMAIN = "bsbodebrug.be";
-    const _fbApp  = initializeApp(firebaseConfig);
-    const _fbAuth = getAuth(_fbApp);
-    const _fbDb   = getFirestore(_fbApp);
-    // ── FIREBASE AUTH ─────────────────────────────────────────────────────────
-    let _fbCurrentUser = null, _fbIsGuest = false, _fbGuestName = "";
 
-    getRedirectResult(_fbAuth).catch(e => _fbShowLoginErr(e.message));
+<!-- ══════════════════════════════════════════════════════════════
+     FIREBASE (compat SDK — zelfde als gewichten)
+     ══════════════════════════════════════════════════════════════ -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script>
+firebase.initializeApp({
+  apiKey:"AIzaSyCnQDVVAlK6jE-PPUUediRJMTbN0xqrLDE",
+  authDomain:"klaswebsite-database.firebaseapp.com",
+  projectId:"klaswebsite-database",
+  storageBucket:"klaswebsite-database.firebasestorage.app",
+  messagingSenderId:"42912327282",
+  appId:"1:42912327282:web:f13f2c706f6c42c115c4eb"
+});
+var _db = firebase.firestore();
+var currentUser = null;
+var isGuest     = false;
 
-    onAuthStateChanged(_fbAuth, user => {
-        if (user) {
-            if (!user.email.endsWith("@" + ALLOWED_DOMAIN)) {
-                signOut(_fbAuth);
-                _fbShowLoginErr("Enkel @" + ALLOWED_DOMAIN + " schoolaccounts worden opgeslagen.");
-                return;
-            }
-            _fbCurrentUser = user; _fbIsGuest = false;
-            document.getElementById("fb-user-initials").textContent = (user.displayName||"L").split(" ").map(n=>n[0]).join("").toUpperCase().substring(0,2);
-            document.getElementById("fb-user-name").textContent  = user.displayName || user.email;
-            document.getElementById("fb-user-email").textContent = user.email;
-            document.getElementById("login-view").style.display  = "none";
-            document.getElementById("fb-user-badge").style.display = "flex";
-            if (typeof _fbOnReady === "function") _fbOnReady();
-        } else {
-            if (!_fbIsGuest) { _fbCurrentUser = null; document.getElementById("login-view").style.display = "flex"; }
-        }
-    });
+// ── HELPERS STATUS BOX ────────────────────────────────────────────────────
+// Gebruikt style.display / style.background — GEEN Tailwind classes, vermijdt
+// het !important conflict dat eerder "Bezig met opslaan..." liet hangen.
+function setUploadStatus(type, msg) {
+  var box     = document.getElementById('upload-status');
+  var text    = document.getElementById('upload-status-text');
+  var spinner = document.getElementById('upload-spinner');
+  box.style.display     = 'block';
+  spinner.style.display = (type === 'loading') ? 'inline-block' : 'none';
+  if (type === 'loading') {
+    box.style.background   = '#f8fafc';
+    box.style.borderColor  = '#cbd5e1';
+    box.style.color        = '#475569';
+  } else if (type === 'ok') {
+    box.style.background   = '#f0fdf4';
+    box.style.borderColor  = '#bbf7d0';
+    box.style.color        = '#15803d';
+  } else {
+    box.style.background   = '#fff1f2';
+    box.style.borderColor  = '#fecdd3';
+    box.style.color        = '#be123c';
+  }
+  text.textContent = msg;
+  console.log('[komma saveToFirestore] status='+type+': '+msg);
+}
 
-    document.getElementById("fb-google-btn").addEventListener("click", async () => {
-        const p = new GoogleAuthProvider();
-        p.setCustomParameters({ hd: ALLOWED_DOMAIN });
-        try { await signInWithRedirect(_fbAuth, p); } catch(e) { _fbShowLoginErr(e.message); }
-    });
+// ── LOGIN ─────────────────────────────────────────────────────────────────
+function klasLogin() {
+  var naam = (document.getElementById('klas-naam').value||'').trim().toLowerCase();
+  var code = (document.getElementById('klas-code').value||'').trim();
+  var err  = document.getElementById('klas-err');
+  err.style.display = 'none';
+  if (!naam) { err.textContent = 'Vul je voornaam in.'; err.style.display = 'block'; return; }
+  if (!code) { err.textContent = 'Vul je code in.';    err.style.display = 'block'; return; }
 
-    document.getElementById("fb-guest-btn").addEventListener("click", () => {
-        const n = document.getElementById("fb-guest-name").value.trim();
-        if (!n) { document.getElementById("fb-guest-name").style.borderColor="#f87171"; return; }
-        _fbIsGuest = true; _fbCurrentUser = null; _fbGuestName = n;
-        document.getElementById("login-view").style.display = "none";
-        const gb = document.getElementById("fb-guest-badge");
-        gb.style.display = "block"; gb.textContent = "👤 Gast: " + n + " – score niet opgeslagen";
-        if (typeof _fbOnReady === "function") _fbOnReady();
-    });
-    document.getElementById("fb-guest-name").addEventListener("input", function(){ this.style.borderColor=""; });
+  // Geef feedback dat we aan het laden zijn
+  err.style.display = 'none';
+  document.getElementById('login-btn').textContent = 'Even wachten...';
+  document.getElementById('login-btn').disabled = true;
 
-    document.getElementById("fb-logout-btn").addEventListener("click", async () => {
-        _fbIsGuest = false; _fbCurrentUser = null;
-        await signOut(_fbAuth);
-        document.getElementById("fb-user-badge").style.display = "none";
-        document.getElementById("fb-guest-badge").style.display = "none";
-        document.getElementById("login-view").style.display = "flex";
-    });
+  _db.collection('leerlingen').doc(naam).get().then(function(doc) {
+    document.getElementById('login-btn').textContent = 'Inloggen';
+    document.getElementById('login-btn').disabled = false;
+    if (!doc.exists) { err.textContent = 'Naam niet gevonden.'; err.style.display = 'block'; return; }
+    var data = doc.data();
+    if (data.code !== code) { err.textContent = 'Verkeerde code.'; err.style.display = 'block'; return; }
+    window._leerlingNaam = data.weergavenaam || naam;
+    window._leerlingId   = naam;
+    currentUser = { uid: naam, displayName: data.weergavenaam };
+    isGuest     = false;
+    openApp(data.weergavenaam || naam, false);
+  }).catch(function(e) {
+    document.getElementById('login-btn').textContent = 'Inloggen';
+    document.getElementById('login-btn').disabled = false;
+    err.textContent = 'Fout: ' + e.message; err.style.display = 'block';
+  });
+}
 
-    function _fbShowLoginErr(msg) {
-        const el = document.getElementById("login-error");
-        el.textContent = msg; el.style.display = "block";
-    }
+function klasGast() {
+  isGuest     = true;
+  currentUser = null;
+  window._leerlingId   = null;
+  window._leerlingNaam = 'Gast';
+  openApp('Gast', true);
+}
 
-    async function _fbSave(record) {
-        if (_fbIsGuest || !_fbCurrentUser) return false;
-        try {
-            await addDoc(collection(_fbDb, "resultaten"), {
-                uid: _fbCurrentUser.uid, email: _fbCurrentUser.email,
-                displayName: _fbCurrentUser.displayName || _fbCurrentUser.email,
-                photoURL: _fbCurrentUser.photoURL || null,
-                vak: "Wiskunde", timestamp: serverTimestamp(), ...record
-            });
-            return true;
-        } catch(e) { console.error("Firebase save:", e); return false; }
-    }
+function openApp(naam, isGastUser) {
+  document.getElementById('klas-login').style.display = 'none';
+  document.getElementById('main-app').style.display   = 'block';
+  // Badge bar
+  var bar = document.getElementById('user-badge-bar');
+  bar.style.display = 'flex';
+  document.getElementById('user-badge-name').textContent = naam;
+  document.getElementById('user-badge-name').style.display = isGastUser ? 'none' : 'block';
+  document.getElementById('guest-badge-bar').style.display = isGastUser ? 'inline-block' : 'none';
+  document.getElementById('signout-btn').style.display     = isGastUser ? 'none' : 'inline-block';
+}
 
-    // ── KOMMAGETALLEN FIREBASE (enkel 'mix' toets opslaan) ─────────────────
-    function _fbOnReady() {
-        document.getElementById("main-app").style.display = "";
-    }
+function doSignOut() {
+  currentUser = null; isGuest = false;
+  window._leerlingId = null; window._leerlingNaam = null;
+  document.getElementById('main-app').style.display   = 'none';
+  document.getElementById('klas-login').style.display = 'flex';
+  document.getElementById('klas-naam').value  = '';
+  document.getElementById('klas-code').value  = '';
+  document.getElementById('klas-err').style.display = 'none';
+}
 
-    // Patch startMode — only save for 'mix' mode
-    const _origStart = window.startMode;
-    window.startMode = function(mode, name, amount) {
-        window._fbCurrentMode = mode;
-        if (_origStart) _origStart.apply(this, arguments);
-    };
+// ── OPSLAAN NAAR FIRESTORE ────────────────────────────────────────────────
+// Collection: komma_toets (dashboard auto-discovert dit)
+async function saveToFirestore(score, totalQ, pct, tijd, historyData) {
+  if (isGuest || !currentUser) {
+    setUploadStatus('error', '❌ Niet opgeslagen: je bent aangemeld als gast.');
+    return;
+  }
+  if (!window._leerlingId) {
+    setUploadStatus('error', '❌ Geen leerling-ID gevonden. Log opnieuw in.');
+    return;
+  }
+  if (!_db) {
+    setUploadStatus('error', '❌ Firebase niet beschikbaar. Herlaad de pagina.');
+    return;
+  }
 
-    // Patch showFinalResults to save
-    const _origFinal = window.showFinalResults;
-    window.showFinalResults = async function() {
-        if (_origFinal) _origFinal.apply(this, arguments);
+  setUploadStatus('loading', 'Bezig met opslaan...');
 
-        if (window._fbCurrentMode !== "mix") return; // Alleen mix opslaan
+  // Foutenanalyse — per vraagtype tellen
+  var foutenTelling = {};
+  (historyData||[]).filter(function(h){return !h.isCorrect;}).forEach(function(h) {
+    var cat = h.type || 'onbekend';
+    foutenTelling[cat] = (foutenTelling[cat]||0) + 1;
+  });
+  var extraOefenen = Object.entries(foutenTelling)
+    .sort(function(a,b){return b[1]-a[1];})
+    .map(function(e){ return e[0]+' ('+e[1]+'x fout)'; });
 
-        const h = window.history || [];
-        const totalQ = h.length;
-        const correctQ = h.filter(i=>i.correct).length;
-        const nw = totalQ>0 ? Math.round((correctQ/totalQ)*100) : 0;
+  var record = {
+    leerlingId:   window._leerlingId,
+    leerlingNaam: window._leerlingNaam || 'Leerling',
+    mode:         window._kommaMode || 'mix',
+    score:        score,
+    totalQ:       totalQ,
+    percentage:   pct,
+    tijd:         tijd,
+    hintsGebruikt:0,
+    timestamp:    firebase.firestore.FieldValue.serverTimestamp(),
+    foutenAnalyse: {
+      extraOefenen:       extraOefenen,
+      foutenPerCategorie: foutenTelling
+    },
+    vragen: (historyData||[]).map(function(h, i) {
+      return {
+        vraagNr:          i + 1,
+        vraag:            h.question  || '',
+        categorie:        h.type      || '',
+        antwoordLeerling: h.user      || '(leeg)',
+        juistAntwoord:    h.correct   || '',
+        isJuist:          h.isCorrect || false,
+        hintGebruikt:     false,
+        punten:           h.isCorrect ? 1 : 0,
+        tijdSeconden:     0
+      };
+    })
+  };
 
-        const record = {
-            oefening:    "Wiskunde - Kommagetallen: Grote Mix (Toets)",
-            score:       correctQ,
-            totaal:      totalQ,
-            nauwkeurigheid: nw,
-            tijdsduur:   "–",
-            vragen:      h.map((item,i) => ({
-                vraagNr: i+1,
-                formule: item.question || "–",
-                antwoordLeerling: item.userAnswer !== undefined ? String(item.userAnswer) : "–",
-                juistAntwoord:    item.correctAnswer !== undefined ? String(item.correctAnswer) : "–",
-                isJuist:          item.correct,
-                categorie:        item.type || "mix"
-            }))
-        };
-        const ok = await _fbSave(record);
+  console.log('[komma saveToFirestore] Opslaan naar komma_toets:', record);
 
-        // Show status on results screen
-        let box = document.getElementById("fb-komma-status");
-        if (!box) {
-            box = document.createElement("div");
-            box.id = "fb-komma-status";
-            box.style = "font-size:0.85rem;font-weight:700;text-align:center;padding:8px;border-radius:8px;margin-top:10px;";
-            const res = document.getElementById("results-view") || document.getElementById("final-screen") || document.querySelector(".results-container");
-            if (res) res.appendChild(box);
-            else document.body.appendChild(box);
-        }
-        box.style.background = ok ? "#f0fdf4" : (_fbIsGuest ? "#fefce8" : "#fef2f2");
-        box.style.color = ok ? "#16a34a" : (_fbIsGuest ? "#d97706" : "#dc2626");
-        box.textContent = ok ? "✅ Score opgeslagen in database!" : (_fbIsGuest ? "👤 Gast – score niet opgeslagen" : "❌ Opslaan mislukt");
-    };
+  try {
+    var docRef = await _db.collection('komma_toets').add(record);
+    setUploadStatus('ok', '✅ Score opgeslagen! (ID: '+docRef.id.substring(0,8)+'…)');
+    console.log('[komma saveToFirestore] Succes! ID:', docRef.id);
+  } catch(e) {
+    console.error('[komma saveToFirestore] Fout:', e.code, e.message);
+    var uitleg = e.message || 'Onbekende fout';
+    if (e.code === 'permission-denied') uitleg = 'Geen schrijfrechten. Contacteer de leerkracht.';
+    else if (e.code === 'unavailable')  uitleg = 'Geen internetverbinding. Probeer opnieuw.';
+    else if (e.code === 'not-found')    uitleg = 'Database niet gevonden. Controleer de Firebase config.';
+    setUploadStatus('error', '❌ Opslaan mislukt: ' + uitleg);
+  }
+}
+
+// ── EVENT LISTENERS login (in DOMContentLoaded — veilig, geen zwevende code) ──
+document.addEventListener('DOMContentLoaded', function() {
+  document.getElementById('login-btn').addEventListener('click', klasLogin);
+  document.getElementById('gast-btn').addEventListener('click', klasGast);
+  document.getElementById('signout-btn').addEventListener('click', doSignOut);
+  document.getElementById('klas-naam').addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') klasLogin();
+  });
+  document.getElementById('klas-code').addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') klasLogin();
+  });
+});
 </script>
 
+
+<!-- ══════════════════════════════════════════════════════════════
+     SPELLOGICA — ongewijzigd t.o.v. origineel, met tijdmeting
+     en opslaan toegevoegd aan showFinalResults
+     ══════════════════════════════════════════════════════════════ -->
+<script>
+var totalStartTime = null; // tijdmeting start bij startMode
+
+var currentMode      = '';
+var currentModeName  = '';
+var currentStep      = 1;
+var totalQuestions   = 10;
+var score            = 0;
+var currentAnswer    = null;
+var quizHistory          = [];
+var usedQuestions    = new Set();
+var currentQuestionType = '';
+var currentQuestionText = '';
+var currentRange     = [0, 0];
+
+const MODES = ['conversion', 'value', 'compare', 'axis', 'between'];
+const MODE_NAMES = {
+  'conversion': 'Omzetten',
+  'value':      'Positiewaarde',
+  'compare':    'Vergelijken',
+  'axis':       'Getallenas',
+  'between':    'Tussenliggend'
+};
+
+function backToMenu() {
+  document.getElementById('header-main').classList.remove('hidden');
+  document.getElementById('menu').classList.remove('hidden');
+  document.getElementById('game-container').classList.add('hidden');
+  document.getElementById('end-screen').classList.add('hidden');
+  usedQuestions.clear();
+}
+
+function startMode(mode, name, amount) {
+  currentMode      = mode;
+  currentModeName  = name;
+  currentStep      = 1;
+  totalQuestions   = amount;
+  score            = 0;
+  quizHistory          = [];
+  usedQuestions.clear();
+  totalStartTime   = new Date(); // start tijdmeting
+  window._kommaMode = mode;     // voor Firestore
+
+  document.getElementById('header-main').classList.add('hidden');
+  document.getElementById('menu').classList.add('hidden');
+  document.getElementById('game-container').classList.remove('hidden');
+  document.getElementById('total-q').textContent  = totalQuestions;
+  document.getElementById('score').textContent     = score;
+
+  var statusBar = document.getElementById('status-bar');
+  if (mode === 'mix') {
+    statusBar.classList.remove('bg-orange-500');
+    statusBar.classList.add('bg-slate-800');
+  } else {
+    statusBar.classList.remove('bg-slate-800');
+    statusBar.classList.add('bg-orange-500');
+  }
+  generateQuestion();
+}
+
+function generateQuestion() {
+  var qArea    = document.getElementById('question-area');
+  var iArea    = document.getElementById('input-area');
+  var feedback = document.getElementById('feedback');
+  var nextBtn  = document.getElementById('next-btn');
+  var title    = document.getElementById('mode-title');
+
+  document.getElementById('current-q').textContent = currentStep;
+  feedback.textContent = '';
+  nextBtn.classList.add('hidden');
+  iArea.innerHTML = '';
+  qArea.innerHTML = '';
+
+  var effectiveMode = currentMode;
+  if (currentMode === 'mix') {
+    effectiveMode = MODES[Math.floor(Math.random() * MODES.length)];
+  }
+  currentQuestionType = effectiveMode;
+
+  var attempts = 0;
+  while (attempts < 100) {
+    var questionData = setupQuestionByMode(effectiveMode);
+    var qKey = effectiveMode + '_' + questionData.id;
+    if (!usedQuestions.has(qKey)) {
+      usedQuestions.add(qKey);
+      renderQuestion(questionData, qArea, iArea, title);
+      break;
+    }
+    attempts++;
+  }
+}
+
+function setupQuestionByMode(mode) {
+  switch(mode) {
+    case 'conversion': return createConversionData();
+    case 'value':      return createValueData();
+    case 'compare':    return createCompareData();
+    case 'axis':       return createAxisData();
+    case 'between':    return createBetweenData();
+  }
+}
+
+function renderQuestion(data, qArea, iArea, title) {
+  title.textContent   = MODE_NAMES[data.type];
+  currentQuestionText = data.text;
+  currentAnswer       = data.answer;
+  if (data.range) currentRange = data.range;
+
+  if (data.html) qArea.innerHTML = data.html;
+  else qArea.textContent = data.text;
+
+  if      (data.inputType === 'text')     createTextInput(iArea, data.placeholder);
+  else if (data.inputType === 'fraction') createFractionInput(iArea);
+  else if (data.inputType === 'options')  createButtonOptions(iArea, data.options);
+}
+
+// ── VRAAGGENERATOREN (origineel, ongewijzigd) ─────────────────────────────
+function createConversionData() {
+  var isToDecimal = Math.random() > 0.5;
+  if (isToDecimal) {
+    var n = [10, 100, 1000][Math.floor(Math.random() * 3)];
+    var t = Math.floor(Math.random() * (n * 2)) + 1;
+    var ans = (t / n).toFixed(n === 10 ? 1 : (n === 100 ? 2 : 3)).replace('.', ',').replace(/,0+$/, '');
+    return {
+      type: 'conversion', id: 'toDec_'+t+'_'+n,
+      text: t+'/'+n,
+      html: '<div class="fraction-box"><span>'+t+'</span><span class="fraction-line"></span><span>'+n+'</span></div> = ?',
+      answer: ans.includes(',') ? ans : ans + ',0',
+      inputType: 'text'
+    };
+  } else {
+    var n2 = [10, 100][Math.floor(Math.random() * 2)];
+    var g  = (Math.floor(Math.random() * (n2 * 1.5)) + 1) / n2;
+    var kStr = g.toFixed(n2 === 10 ? 1 : 2).replace('.', ',');
+    return {
+      type: 'conversion', id: 'toFrac_'+kStr,
+      text: kStr,
+      html: kStr+' = <div class="fraction-box"><span class="text-orange-400">?</span><span class="fraction-line"></span><span class="text-orange-400">?</span></div>',
+      answer: { teller: String(Math.round(g * n2)), noemer: String(n2) },
+      inputType: 'fraction'
+    };
+  }
+}
+
+function createValueData() {
+  var digits = [0,1,2,3,4,5,6,7,8,9].sort(function(){return Math.random()-.5;});
+  var isNatural = Math.random() < 0.2;
+  var str = isNatural
+    ? ''+(digits[0]||1)+digits[1]+digits[2]
+    : ''+(digits[0]||1)+digits[1]+digits[2]+','+digits[3]+digits[4];
+  var parts = str.split('');
+  var validIndices = parts.map(function(c,idx){return c!==','?idx:-1;}).filter(function(idx){return idx!==-1;});
+  var targetIdx   = validIndices[Math.floor(Math.random()*validIndices.length)];
+  var targetDigit = parts[targetIdx];
+  var html = 'Waarde van <span class="text-orange-500 underline">'+targetDigit+'</span> in ';
+  parts.forEach(function(char,idx){
+    html += idx===targetIdx ? '<span class="text-orange-500 underline">'+char+'</span>' : char;
+  });
+  var commaIdx = str.indexOf(',') === -1 ? str.length : str.indexOf(',');
+  var diff = commaIdx - targetIdx;
+  var ans = diff===3?'Honderdtallen (H)':diff===2?'Tientallen (T)':diff===1?'Eenheden (E)':diff===-1?'Tienden (t)':'Honderdsten (h)';
+  return {
+    type: 'value', id: 'val_'+str+'_'+targetIdx,
+    text: 'Waarde van '+targetDigit+' in '+str, html: html, answer: ans,
+    inputType: 'options',
+    options: ['Honderdtallen (H)','Tientallen (T)','Eenheden (E)','Tienden (t)','Honderdsten (h)']
+  };
+}
+
+function createCompareData() {
+  var dice = Math.random();
+  var desiredOutcome = dice < 0.35 ? '<' : dice < 0.70 ? '>' : '=';
+  var base = Math.floor(Math.random()*100)/10;
+  var val1, val2;
+  if (desiredOutcome === '=') { val1 = base; val2 = base; }
+  else if (desiredOutcome === '<') { val1 = base; val2 = base + (Math.floor(Math.random()*5)+1)/10; }
+  else { val1 = base + (Math.floor(Math.random()*5)+1)/10; val2 = base; }
+  function getDisplay(v) {
+    if (Math.random() < 0.4) {
+      var t2 = Math.round(v*10);
+      return { html:'<div class="fraction-box"><span>'+t2+'</span><span class="fraction-line"></span><span>10</span></div>', text:t2+'/10' };
+    }
+    var s = v.toFixed(1).replace('.',','); return {html:s,text:s};
+  }
+  var d1 = getDisplay(val1), d2 = getDisplay(val2);
+  var realAnswer = val1<val2?'<':val1>val2?'>':'=';
+  return {
+    type:'compare', id:'comp_'+val1+'_'+val2+'_'+d1.text+'_'+d2.text,
+    text:d1.text+' vs '+d2.text,
+    html:'<div class="flex items-center justify-center gap-6">'+d1.html+' <div class="w-12 h-12 flex items-center justify-center border-2 border-orange-200 rounded-lg text-orange-300">?</div> '+d2.html+'</div>',
+    answer:realAnswer, inputType:'options', options:['<','=','>']
+  };
+}
+
+function createAxisData() {
+  var start  = Math.floor(Math.random()*10);
+  var target = (start + (Math.floor(Math.random()*9)+1)/10).toFixed(1);
+  var targetStr = target.replace('.',',');
+  var html = 'Plaats <b>'+targetStr+'</b> op de as:<div class="w-full h-1 bg-slate-300 my-12 relative">';
+  for (var j=0; j<=10; j++) {
+    var pos = j*10;
+    var val = (start + j/10).toFixed(1).replace('.',',');
+    html += '<div class="absolute top-0 w-0.5 h-4 bg-slate-400" style="left:'+pos+'%"></div>';
+    if (j===0||j===10) html += '<div class="absolute -top-8 text-sm font-bold -translate-x-1/2" style="left:'+pos+'%">'+val+'</div>';
+    html += '<button onclick="checkAnswer(\''+val+'\',this)" class="absolute -top-2 w-5 h-5 bg-orange-100 border border-orange-300 rounded-full hover:bg-orange-500 transition-colors -translate-x-1/2 z-10" style="left:'+pos+'%"></button>';
+  }
+  html += '</div>';
+  return { type:'axis', id:'axis_'+target, text:'Plaats '+targetStr+' op de as', html:html, answer:targetStr, inputType:'axis' };
+}
+
+function createBetweenData() {
+  var low = Math.floor(Math.random()*150)/10;
+  var high = low + 0.1;
+  var lowStr  = low.toFixed(1).replace('.',',');
+  var highStr = high.toFixed(1).replace('.',',');
+  return {
+    type:'between', id:'bet_'+low,
+    text:'Getal tussen '+lowStr+' en '+highStr,
+    html:'Vind een getal tussen <br><span class="text-orange-600">'+lowStr+'</span> en <span class="text-orange-600">'+highStr+'</span>',
+    answer:'range', range:[low,high], inputType:'text', placeholder:'Bijv. 1,45'
+  };
+}
+
+// ── INPUT BUILDERS ────────────────────────────────────────────────────────
+function createTextInput(container, placeholder) {
+  placeholder = placeholder || 'Antwoord...';
+  var input = document.createElement('input');
+  input.type = 'text'; input.placeholder = placeholder;
+  input.className = 'w-full p-4 border-4 border-orange-100 rounded-2xl text-center text-2xl focus:outline-none focus:border-orange-500';
+  input.id = 'user-input';
+  input.onkeypress = function(e) { if(e.key==='Enter') checkAnswer(input.value); };
+  var btn = document.createElement('button');
+  btn.textContent = 'Controleer';
+  btn.className = 'w-full mt-4 bg-orange-500 text-white font-bold py-3 rounded-xl shadow-md';
+  btn.onclick = function(){ checkAnswer(input.value); };
+  container.appendChild(input); container.appendChild(btn);
+  setTimeout(function(){ input.focus(); }, 100);
+}
+
+function createFractionInput(container) {
+  container.className = 'flex flex-col items-center gap-4';
+  var box = document.createElement('div'); box.className = 'flex flex-col items-center gap-1';
+  var tInp = document.createElement('input'); tInp.type='number'; tInp.placeholder='Teller';
+  tInp.className = 'w-24 p-2 border-2 border-orange-200 rounded-lg text-center text-xl focus:border-orange-500 outline-none'; tInp.id='teller-input';
+  var line = document.createElement('div'); line.className = 'w-full h-1 bg-slate-800';
+  var nInp = document.createElement('input'); nInp.type='number'; nInp.placeholder='Noemer';
+  nInp.className = 'w-24 p-2 border-2 border-orange-200 rounded-lg text-center text-xl focus:border-orange-500 outline-none'; nInp.id='noemer-input';
+  box.appendChild(tInp); box.appendChild(line); box.appendChild(nInp);
+  var btn = document.createElement('button'); btn.textContent='Controleer';
+  btn.className = 'w-full bg-orange-500 text-white font-bold py-3 rounded-xl shadow-md';
+  btn.onclick = function(){ checkAnswer({teller:tInp.value, noemer:nInp.value}); };
+  container.appendChild(box); container.appendChild(btn);
+  setTimeout(function(){ tInp.focus(); }, 100);
+}
+
+function createButtonOptions(container, options) {
+  container.className = 'grid grid-cols-1 gap-3 w-full max-w-xs';
+  options.forEach(function(opt) {
+    var btn = document.createElement('button');
+    btn.textContent = opt;
+    btn.className = 'p-4 bg-white border-2 border-orange-200 rounded-2xl font-bold text-2xl text-orange-800 hover:bg-orange-500 hover:text-white transition-all shadow-sm';
+    btn.onclick = function(){ checkAnswer(opt, btn); };
+    container.appendChild(btn);
+  });
+}
+
+// ── ANTWOORD CONTROLEREN ──────────────────────────────────────────────────
+function checkAnswer(val, element) {
+  element = element || null;
+  if (!isAnswering()) return;
+  var feedback = document.getElementById('feedback');
+  var nextBtn  = document.getElementById('next-btn');
+  var isCorrect = false, dispUser = '', dispCorr = '';
+
+  if (currentAnswer === 'range') {
+    var num = parseFloat(val.toString().trim().replace(',','.'));
+    dispUser = val.toString();
+    dispCorr = 'Bijv. '+(currentRange[0]+0.05).toFixed(2).replace('.',',');
+    if (!isNaN(num) && num > currentRange[0] && num < currentRange[1]) isCorrect = true;
+  } else if (typeof currentAnswer === 'object') {
+    dispUser = val.teller+'/'+val.noemer;
+    dispCorr = currentAnswer.teller+'/'+currentAnswer.noemer;
+    if (val.teller == currentAnswer.teller && val.noemer == currentAnswer.noemer) isCorrect = true;
+  } else {
+    dispUser = val.toString().trim().replace('.',',');
+    dispCorr = currentAnswer.toString();
+    var parseLax = function(s){ return parseFloat(s.replace(',','.')); };
+    var nU = parseLax(dispUser), nC = parseLax(dispCorr);
+    if (!isNaN(nU) && !isNaN(nC)) isCorrect = Math.abs(nU-nC) < 0.0001;
+    else isCorrect = (dispUser === dispCorr);
+  }
+
+  quizHistory.push({ question:currentQuestionText, user:dispUser||(  '(leeg)'), correct:dispCorr, isCorrect:isCorrect, type:currentQuestionType });
+
+  if (isCorrect) {
+    score++;
+    feedback.innerHTML = '<span class="text-green-600">Goed gedaan! ✨</span>';
+    if (element && element.tagName==='BUTTON') element.classList.add('bg-green-500','text-white','border-green-600');
+    if (window.confetti) confetti({ particleCount:30, spread:40, origin:{y:0.8}, colors:['#f97316'] });
+  } else {
+    feedback.innerHTML = '<span class="text-red-500 font-bold">Helaas! Het was: '+dispCorr+'</span>';
+    if (element && element.tagName==='BUTTON') element.classList.add('bg-red-500','text-white','border-red-600');
+  }
+
+  document.getElementById('score').textContent = score;
+  nextBtn.classList.remove('hidden');
+  document.querySelectorAll('input').forEach(function(i){ i.disabled = true; });
+  document.querySelectorAll('#input-area button, #question-area button').forEach(function(b){ b.disabled = true; });
+}
+
+function isAnswering() {
+  return document.getElementById('next-btn').classList.contains('hidden');
+}
+
+function nextQuestion() {
+  if (currentStep < totalQuestions) {
+    currentStep++;
+    generateQuestion();
+  } else {
+    showFinalResults();
+  }
+}
+
+// ── EINDRESULTATEN + OPSLAAN ──────────────────────────────────────────────
+async function showFinalResults() {
+  document.getElementById('game-container').classList.add('hidden');
+  document.getElementById('end-screen').classList.remove('hidden');
+  document.getElementById('end-mode-name').textContent  = currentModeName;
+  document.getElementById('final-score').textContent    = score;
+  document.getElementById('final-total').textContent    = totalQuestions;
+
+  // Reset statusboxen (vermijdt dat vorige run-status zichtbaar blijft)
+  document.getElementById('upload-status').style.display      = 'none';
+  document.getElementById('guest-result-note').style.display  = 'none';
+  document.getElementById('extra-oefenen-box').style.display  = 'none';
+
+  var pct = Math.round((score / totalQuestions) * 100);
+  var msg = document.getElementById('result-message');
+  if (pct===100)     msg.textContent = 'Uitmuntend! Alles is foutloos.';
+  else if (pct>=80)  msg.textContent = 'Schitterend resultaat!';
+  else if (pct>=50)  msg.textContent = 'Voldoende, maar blijf goed oefenen.';
+  else               msg.textContent = 'Nog wat extra oefening nodig. Bekijk de analyse.';
+
+  // Tijdsduur berekenen
+  var ms   = totalStartTime ? (new Date() - totalStartTime) : 0;
+  var mins = Math.floor(ms / 60000);
+  var secs = Math.floor((ms % 60000) / 1000);
+  var tijd = mins.toString().padStart(2,'0') + ':' + secs.toString().padStart(2,'0');
+
+  // Foutenanalyse samenvatting
+  var foutenTelling = {};
+  quizHistory.filter(function(h){return !h.isCorrect;}).forEach(function(h){
+    foutenTelling[h.type] = (foutenTelling[h.type]||0)+1;
+  });
+  var extraItems = Object.entries(foutenTelling).sort(function(a,b){return b[1]-a[1];});
+  if (extraItems.length > 0) {
+    var extraList = document.getElementById('extra-oefenen-list');
+    extraList.innerHTML = '';
+    extraItems.forEach(function(e){
+      var li = document.createElement('li');
+      li.textContent = (MODE_NAMES[e[0]]||e[0]) + ' — ' + e[1] + 'x fout';
+      extraList.appendChild(li);
+    });
+    document.getElementById('extra-oefenen-box').style.display = 'block';
+  }
+
+  // Foutenanalyse detail
+  var container = document.getElementById('analysis-container');
+  container.innerHTML = '';
+  quizHistory.forEach(function(item, index) {
+    var div = document.createElement('div');
+    div.className = 'p-3 rounded-xl border-l-4 '+(item.isCorrect ? 'bg-green-50 border-green-500' : 'bg-red-50 border-red-500');
+    div.innerHTML =
+      '<div class="flex justify-between items-start">'+
+      '<span class="text-xs font-bold uppercase '+(item.isCorrect?'text-green-600':'text-red-600')+'">V'+(index+1)+': '+item.question+'</span>'+
+      '<span class="text-xs text-slate-400 font-bold">'+(MODE_NAMES[item.type]||item.type)+'</span>'+
+      '</div>'+
+      '<div class="text-sm mt-1">'+
+      '<span class="text-slate-500 italic">Jouw antwoord:</span> <b>'+item.user+'</b>'+
+      (!item.isCorrect ? '<br><span class="text-slate-500 italic">Juist:</span> <b class="text-green-700">'+item.correct+'</b>' : '')+
+      '</div>';
+    container.appendChild(div);
+  });
+
+  // Per-doel resultaten (alleen bij mix)
+  var compContainer = document.getElementById('competency-container');
+  var compList      = document.getElementById('competency-list');
+  if (currentMode === 'mix') {
+    compContainer.classList.remove('hidden');
+    compList.innerHTML = '';
+    MODES.forEach(function(modeKey) {
+      var modeHistory = quizHistory.filter(function(h){return h.type===modeKey;});
+      if (!modeHistory.length) return;
+      var modeScore = modeHistory.filter(function(h){return h.isCorrect;}).length;
+      var modeTotal = modeHistory.length;
+      var modePerc  = (modeScore/modeTotal)*100;
+      var card = document.createElement('div');
+      card.className = 'bg-orange-50 p-3 rounded-xl border border-orange-100';
+      card.innerHTML =
+        '<div class="flex justify-between items-center mb-1">'+
+        '<span class="font-bold text-orange-800">'+MODE_NAMES[modeKey]+'</span>'+
+        '<span class="text-sm font-bold">'+modeScore+'/'+modeTotal+'</span>'+
+        '</div>'+
+        '<div class="w-full bg-orange-200 h-2 rounded-full overflow-hidden">'+
+        '<div class="h-full '+(modePerc>=70?'bg-green-500':modePerc>=50?'bg-orange-500':'bg-red-500')+'" style="width:'+modePerc+'%"></div>'+
+        '</div>';
+      compList.appendChild(card);
+    });
+  } else {
+    compContainer.classList.add('hidden');
+  }
+
+  // Opslaan of gast-melding — ALLEEN bij mix (toets)
+  if (currentMode === 'mix') {
+    if (isGuest || !currentUser) {
+      document.getElementById('guest-result-note').style.display = 'block';
+    } else {
+      document.getElementById('upload-status').style.display = 'block';
+      await saveToFirestore(score, totalQuestions, pct, tijd, quizHistory);
+    }
+  }
+}
+</script>
+
+<div style="position:fixed;bottom:10px;left:12px;font-size:.75rem;color:rgba(0,0,0,0.35);font-family:monospace;z-index:9998;pointer-events:none;background:rgba(255,255,255,0.8);padding:2px 6px;border-radius:4px;">v1.0 – kommagetallen</div>
 </body>
-
 </html>
-
-
-
