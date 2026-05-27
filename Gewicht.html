@@ -243,10 +243,10 @@
                 <span id="hints-val" class="text-3xl font-black text-amber-600">0</span>
             </div>
         </div>
-        <div id="upload-status" class="hidden bg-slate-50 p-4 rounded-2xl border border-slate-200 flex items-center justify-center gap-3 text-sm font-semibold text-slate-600 max-w-md mx-auto">
-            <i class="fa-solid fa-spinner fa-spin text-indigo-500 text-lg"></i> Bezig met opslaan...
+        <div id="upload-status" style="display:none;" class="p-4 rounded-2xl border max-w-md mx-auto text-sm font-semibold text-center">
+            <i id="upload-spinner" class="fa-solid fa-spinner fa-spin text-indigo-500 text-lg mr-2"></i><span id="upload-status-text">Bezig met opslaan...</span>
         </div>
-        <div id="guest-result-note" class="hidden bg-amber-50 border border-amber-200 text-amber-700 text-xs p-3 rounded-2xl max-w-xs mx-auto">
+        <div id="guest-result-note" style="display:none;" class="bg-amber-50 border border-amber-200 text-amber-700 text-xs p-3 rounded-2xl max-w-xs mx-auto">
             <i class="fa-solid fa-user-secret mr-1"></i> Je speelde als gast. Score is <strong>niet</strong> opgeslagen.
         </div>
     </div>
@@ -254,6 +254,10 @@
         <h3 class="text-2xl font-extrabold text-slate-800 flex items-center gap-3">
             <span class="bg-indigo-100 p-2 rounded-xl text-lg">📝</span> Resultaten & Foutenanalyse
         </h3>
+        <div id="extra-oefenen-box" class="hidden bg-amber-50 border border-amber-200 rounded-2xl p-5">
+            <p class="text-sm font-black text-amber-800 mb-2">⚠️ Dit moet je nog extra oefenen:</p>
+            <ul id="extra-oefenen-list" class="list-disc list-inside text-sm text-amber-700 space-y-1 font-semibold"></ul>
+        </div>
         <div id="mistake-list" class="space-y-4"></div>
         <button id="back-btn" class="w-full bg-slate-900 text-white py-5 rounded-2xl font-black text-lg hover:bg-black transition-all shadow-md">
             TERUG NAAR HET MENU
@@ -322,19 +326,99 @@ document.addEventListener('DOMContentLoaded', function() {
   });
 });
 
-async function saveToFirestore(roundedScore, pct, tijd) {
-  if (isGuest || !currentUser) return;
+async function saveToFirestore(roundedScore, pct, tijd, history) {
+  const statusBox  = document.getElementById("upload-status");
+  const statusText = document.getElementById("upload-status-text");
+  const spinner    = document.getElementById("upload-spinner");
+
+  function setStatus(type, msg) {
+    statusBox.style.display = "block";
+    spinner.style.display   = (type === "loading") ? "inline" : "none";
+    // Reset border/background via inline style to avoid Tailwind class conflicts
+    if (type === "loading") {
+      statusBox.style.background = "#f8fafc";
+      statusBox.style.borderColor = "#cbd5e1";
+      statusBox.style.color = "#475569";
+    } else if (type === "ok") {
+      statusBox.style.background = "#f0fdf4";
+      statusBox.style.borderColor = "#bbf7d0";
+      statusBox.style.color = "#15803d";
+    } else {
+      statusBox.style.background = "#fff1f2";
+      statusBox.style.borderColor = "#fecdd3";
+      statusBox.style.color = "#be123c";
+    }
+    statusText.textContent = msg;
+    console.log(`[saveToFirestore] status=${type}: ${msg}`);
+  }
+
+  // Guard: guest of niet ingelogd
+  if (isGuest || !currentUser) {
+    setStatus("error", "❌ Niet opgeslagen: je bent aangemeld als gast.");
+    return;
+  }
+  if (!window._leerlingId) {
+    setStatus("error", "❌ Geen leerling-ID gevonden. Log opnieuw in.");
+    return;
+  }
+  if (!_db) {
+    setStatus("error", "❌ Firebase niet beschikbaar. Herlaad de pagina.");
+    return;
+  }
+
+  setStatus("loading", "Bezig met opslaan...");
+
+  // Bouw het foutenrapport
+  const foutenTelling = {};
+  (history||[]).filter(h => !h.isCorrect).forEach(h => {
+    foutenTelling[h.category] = (foutenTelling[h.category]||0)+1;
+  });
+  const extraOefenen = Object.entries(foutenTelling)
+    .sort((a,b)=>b[1]-a[1])
+    .map(([cat,n]) => `${cat} (${n}x fout)`);
+
+  const record = {
+    leerlingId:    window._leerlingId,
+    leerlingNaam:  window._leerlingNaam || 'Leerling',
+    mode:          currentMode,
+    score:         roundedScore,
+    percentage:    pct,
+    tijd:          tijd,
+    hintsGebruikt: (typeof state !== "undefined") ? state.hintsUsed : 0,
+    timestamp:     firebase.firestore.FieldValue.serverTimestamp(),
+    foutenAnalyse: {
+      extraOefenen,
+      foutenPerCategorie: foutenTelling
+    },
+    vragen: (history||[]).map((h, i) => ({
+      vraagNr:            i + 1,
+      vraag:              h.title       || "",
+      categorie:          h.category    || "",
+      firestoreCategorie: h.firestoreCategorie || "",
+      antwoordLeerling:   h.user        || "(leeg)",
+      juistAntwoord:      h.correct     || "",
+      isJuist:            h.isCorrect   || false,
+      hintGebruikt:       h.hintUsed    || false,
+      punten:             h.points      || 0,
+      tijdSeconden:       h.tijdSeconden|| 0
+    }))
+  };
+
+  console.log("[saveToFirestore] Opslaan naar gewicht_toets:", record);
+
   try {
-    await _db.collection('gewicht_toets').add({
-      leerlingId:   window._leerlingId,
-      leerlingNaam: window._leerlingNaam || 'Leerling',
-      score:        roundedScore,
-      percentage:   pct,
-      tijd:         tijd,
-      mode:         currentMode,
-      timestamp:    firebase.firestore.FieldValue.serverTimestamp()
-    });
-  } catch(e) { console.error('Opslaan mislukt:', e); }
+    const docRef = await _db.collection('gewicht_toets').add(record);
+    setStatus("ok", `✅ Score opgeslagen! (ID: ${docRef.id.substring(0,8)}…)`);
+    console.log("[saveToFirestore] Succes! Document ID:", docRef.id);
+  } catch(e) {
+    console.error("[saveToFirestore] Fout:", e.code, e.message);
+    let uitleg = e.message || "Onbekende fout";
+    if (e.code === "permission-denied")  uitleg = "Geen schrijfrechten (Firestore rules). Contacteer de leerkracht.";
+    else if (e.code === "unavailable")   uitleg = "Geen internetverbinding. Probeer opnieuw.";
+    else if (e.code === "not-found")     uitleg = "Database niet gevonden. Controleer de Firebase config.";
+    else if (e.code === "invalid-argument") uitleg = `Ongeldig data-formaat: ${e.message}`;
+    setStatus("error", `❌ Opslaan mislukt: ${uitleg}`);
+  }
 }
 
 function showLoginError(msg) {
@@ -732,6 +816,16 @@ function goNextQuestion() {
 // ── RESULTATEN ────────────────────────────────────────────────────────────────
 async function showResults() {
     showView("result-view");
+
+    // Reset statusboxen voor nieuwe run
+    const uploadBox = document.getElementById("upload-status");
+    uploadBox.style.display = "none";
+    uploadBox.style.background = "";
+    uploadBox.style.borderColor = "";
+    uploadBox.style.color = "";
+    document.getElementById("upload-status-text").textContent = "Bezig met opslaan...";
+    document.getElementById("upload-spinner").style.display = "inline";
+    document.getElementById("guest-result-note").style.display = "none";
     const rounded = Math.round(state.score*10)/10;
     const pct     = Math.round((rounded/state.totalQ)*100);
 
@@ -742,6 +836,26 @@ async function showResults() {
     const re = document.getElementById("result-emoji");
     re.innerText = pct===100?"👑":pct>=80?"🌟":pct>=50?"👍":"📚";
     if (pct===100 && window.confetti) window.confetti({particleCount:150,spread:80,origin:{y:0.6}});
+
+    // Foutenanalyse samenvatting
+    const foutenTelling = {};
+    state.history.filter(h=>!h.isCorrect).forEach(h => {
+        foutenTelling[h.category] = (foutenTelling[h.category]||0)+1;
+    });
+    const extraBox  = document.getElementById("extra-oefenen-box");
+    const extraList = document.getElementById("extra-oefenen-list");
+    extraList.innerHTML = "";
+    const extraItems = Object.entries(foutenTelling).sort((a,b)=>b[1]-a[1]);
+    if (extraItems.length > 0) {
+        extraItems.forEach(([cat,n]) => {
+            const li = document.createElement("li");
+            li.textContent = `${cat} — ${n}x fout`;
+            extraList.appendChild(li);
+        });
+        extraBox.classList.remove("hidden");
+    } else {
+        extraBox.classList.add("hidden");
+    }
 
     // Foutenlijst
     const list = document.getElementById("mistake-list"); list.innerHTML="";
@@ -770,12 +884,12 @@ async function showResults() {
     const secs = ((ms%60000)/1000).toFixed(0);
     const tijd = `${mins.toString().padStart(2,"0")}:${secs.toString().padStart(2,"0")}`;
 
-    // Opslaan of gast-melding
+    // Opslaan of gast-melding — alleen bij mix (toets)
     if (isGuest) {
-        document.getElementById("guest-result-note").classList.remove("hidden");
-    } else {
-        document.getElementById("upload-status").classList.remove("hidden");
-        await saveToFirestore(rounded, pct, tijd);
+        document.getElementById("guest-result-note").style.display = "block";
+    } else if (currentMode === "mix") {
+        document.getElementById("upload-status").style.display = "block";
+        await saveToFirestore(rounded, pct, tijd, state.history);
     }
 }
 
@@ -806,6 +920,6 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 </script>
-<div style="position:fixed;bottom:10px;left:12px;font-size:.75rem;color:rgba(0,0,0,0.35);font-family:monospace;z-index:9998;pointer-events:none;background:rgba(255,255,255,0.8);padding:2px 6px;border-radius:4px;">v0.1</div>
+<div style="position:fixed;bottom:10px;left:12px;font-size:.75rem;color:rgba(0,0,0,0.35);font-family:monospace;z-index:9998;pointer-events:none;background:rgba(255,255,255,0.8);padding:2px 6px;border-radius:4px;">v0.2 – firebase fix</div>
 </body>
 </html>
