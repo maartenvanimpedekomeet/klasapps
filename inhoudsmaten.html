@@ -277,11 +277,8 @@ function rnd(a,b){return Math.floor(Math.random()*(b-a+1))+a;}
 function pick(arr,n){return shuffle(arr).slice(0,n);}
 
 // --- DATASET DEFINITIE ---
-const TABEL = ["1000l", "100l", "10l", "l", "dl", "cl", "ml"];
+const TABEL = ["l", "dl", "cl", "ml"];
 const TABEL_KLEUREN = {
-    "1000l": "#fce7f3",
-    "100l": "#fef3c7",
-    "10l": "#dcfce7",
     "l": "#dbeafe",
     "dl": "#ede9fe",
     "cl": "#fef9c3",
@@ -350,7 +347,7 @@ function genKiezen() {
     {v:"In een eierdopje gevuld met water past ongeveer ...",a:"3 cl",o:["3 cl","3 ml","3 l","3 dl"],tip:"Een eierdopje is heel klein, daar past ongeveer 3 centiliter (30 ml) in."},
     {v:"Hoeveel water zit er in een kokosnoot?",a:"3 dl",o:["3 dl","3 l","3 ml","30 l"],tip:"Ongeveer 3 tassen chocomel (3 dl)."},
     {v:"Een fles afwasmiddel bevat meestal ...",a:"5 dl",o:["5 dl","5 l","5 ml","50 l"],tip:"Een halve liter afwasmiddel, dus 5 deciliter (500 ml)."},
-    {v:"Wat is de inhoud van een grote soepterrine?",a:"3 l",o:["3 l","3 dl","3 cl","30 l"],tip:"Genoeg voor een heel gezin, dus 3 liter."},
+    {v:"Wat is de inhoud van de grote kom waar je soep in klaarmaakt?",a:"3 l",o:["3 l","3 dl","3 cl","30 l"],tip:"Genoeg voor een heel gezin, dus 3 liter."},
     {v:"In een pakje vloeibare slagroom zit ...",a:"20 cl",o:["20 cl","20 l","2 ml","2 dl"],tip:"Gelijk aan een klein fruitsapbrikje, dus 20 cl."},
     {v:"Een drinkbak voor koeien op de weide bevat ...",a:"500 l",o:["500 l","50 l","5 l","5000 l"],tip:"Heel groot, ongeveer 5 ligbaden, dus 500 liter."},
     {v:"De inhoud van een klein flesje nagellak is ...",a:"10 ml",o:["10 ml","10 cl","1 l","1 dl"],tip:"Nagellakflesjes zijn heel klein, dus 10 milliliter."},
@@ -373,12 +370,6 @@ function genHerleiden() {
     ["l", "dl", 10,   "× 10",  [1,2,3,4,5,6,7,8,9,10,12,15]],
     ["l", "cl", 100,  "× 100", [1,2,3,4,5,6,7,8,9,10]],
     ["cl","l",  0.01, "÷ 100", [100,200,300,400,500,600,700,800,900,1000]],
-    ["1000l","l", 1000, "× 1000",[1,2,3,4,5]],
-    ["l", "1000l", 0.001,"÷ 1000",[1000,2000,3000,4000,5000]],
-    ["10l","l", 10,   "× 10",  [1,2,3,4,5,6,7,8,9,10]],
-    ["l","10l", 0.1,  "÷ 10",  [10,20,30,40,50,60,70,80,90,100]],
-    ["100l","l",  100,  "× 100", [1,2,3,4,5,6,7,8,9,10]],
-    ["l","100l",  0.01, "÷ 100", [100,200,300,400,500,600,700,800,900,1000]],
   ];
   conversies.forEach(([van,naar,factor,regel,bronLijst])=>{
     shuffle(bronLijst).forEach(val=>{
@@ -703,7 +694,7 @@ function renderMC(q){
 let tabState={};
 function renderTabel(){
   $("q-cat").textContent="📊 Inhoudsmaattabel";
-  $("q-txt").innerHTML="Sleep de inhoudsmaten <b>van groot naar klein</b>: 1000l → ml";
+  $("q-txt").innerHTML="Sleep de inhoudsmaten <b>van groot naar klein</b>: l → ml";
   s("q-drag");
   const cont=$("q-drag");
   cont.innerHTML="";
@@ -824,10 +815,10 @@ function renderHerleiden(q){
 }
 
 function getKolomCijfers(waarde, eenheid) {
-  const mmPerUnit = {"1000l":1e6,"100l":1e5,"10l":1e4,l:1e3,dl:100,cl:10,ml:1};
+  const mmPerUnit = {l:1e3,dl:100,cl:10,ml:1};
   const totalMl = waarde * mmPerUnit[eenheid];
   const units = TABEL;
-  const rest_vals = [1e6,1e5,1e4,1e3,100,10,1];
+  const rest_vals = [1e3,100,10,1];
   const result = {};
   let remaining = totalMl;
   units.forEach((u,i)=>{
@@ -841,7 +832,7 @@ function getKolomCijfers(waarde, eenheid) {
 function buildLtTabel(waarde, eenheid) {
   const cijfers = getKolomCijfers(waarde, eenheid);
   const cols = TABEL;
-  const idx = {"1000l":0,"100l":1,"10l":2,l:3,dl:4,cl:5,ml:6};
+  const idx = {l:0,dl:1,cl:2,ml:3};
   const eenheidIdx = idx[eenheid];
   let startIdx = 0;
   for(let i=0;i<cols.length;i++){ if(cijfers[cols[i]]>0){ startIdx=i; break; } }
@@ -864,7 +855,7 @@ function buildLtTabel(waarde, eenheid) {
 function buildLtTabelForce(q) {
   const cijfers = getKolomCijfers(q.waarde, q.van);
   const cols = TABEL;
-  const idx = {"1000l":0,"100l":1,"10l":2,l:3,dl:4,cl:5,ml:6};
+  const idx = {l:0,dl:1,cl:2,ml:3};
   const vanIdx = idx[q.van];
   const naarIdx = idx[q.naar];
   const startIdx = Math.min(vanIdx, naarIdx);
