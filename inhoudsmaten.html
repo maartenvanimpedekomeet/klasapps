@@ -19,33 +19,6 @@ body { font-family: 'Nunito', sans-serif; background: #f0fdf4; margin: 0; paddin
   background:linear-gradient(135deg,#065f46 0%,#047857 50%,#10b981 100%);
   display:flex; align-items:center; justify-content:center; padding:20px;
 }
-#login-screen.hidden { display:none !important; }
-.login-card {
-  background:white; border-radius:2rem; padding:2.5rem 2rem;
-  width:100%; max-width:380px;
-  box-shadow:0 25px 50px rgba(0,0,0,0.25); text-align:center;
-}
-.login-logo {
-  width:80px; height:80px; background:#d1fae5; border-radius:1.5rem;
-  display:flex; align-items:center; justify-content:center;
-  margin:0 auto 1.25rem; font-size:2.5rem;
-  box-shadow:0 4px 16px rgba(16,185,129,0.25);
-}
-.btn-google-login {
-  display:flex; align-items:center; justify-content:center; gap:12px;
-  width:100%; background:white; border:2px solid #e5e7eb; border-radius:1rem;
-  padding:14px 20px; font-family:'Nunito',sans-serif;
-  font-size:1rem; font-weight:700; color:#374151;
-  cursor:pointer; transition:all .2s; margin-bottom:12px;
-}
-.btn-google-login:hover { border-color:#10b981; background:#f0fdf4; transform:translateY(-1px); }
-.btn-google-login:disabled { opacity:.6; cursor:not-allowed; transform:none; }
-.btn-guest-login {
-  width:100%; background:transparent; border:2px solid #d1d5db;
-  border-radius:1rem; padding:12px; font-family:'Nunito',sans-serif;
-  font-size:.9rem; font-weight:700; color:#6b7280; cursor:pointer; transition:all .2s;
-}
-.btn-guest-login:hover { border-color:#9ca3af; color:#374151; }
 
 /* ── USER BADGE ── */
 #user-bar {
@@ -54,7 +27,7 @@ body { font-family: 'Nunito', sans-serif; background: #f0fdf4; margin: 0; paddin
   margin-bottom:12px; box-shadow:0 2px 12px rgba(0,0,0,0.06);
   border:1px solid #d1fae5;
 }
-#user-bar.show { display:flex; }
+/* user-bar wordt nu via style.display aangestuurd */
 .u-avatar {
   width:34px; height:34px; border-radius:50%;
   background:#d1fae5; display:flex; align-items:center; justify-content:center;
@@ -69,15 +42,7 @@ body { font-family: 'Nunito', sans-serif; background: #f0fdf4; margin: 0; paddin
 }
 .btn-logout:hover { border-color:#dc2626; color:#dc2626; }
 
-/* ── SAVED BADGE ── */
-#saved-badge {
-  display:none; align-items:center; justify-content:center; gap:8px;
-  background:#d1fae5; border:1.5px solid #6ee7b7; border-radius:1rem;
-  padding:10px 16px; margin-top:12px;
-  font-size:.85rem; font-weight:700; color:#065f46;
-  font-family:'Nunito',sans-serif;
-}
-#saved-badge.show { display:flex; }
+/* ── SAVED BADGE ── (niet meer gebruikt, upload-status vervangt dit) */
 
 /* ── MENU ── */
 .menu-card { background:white; border-radius:20px; padding:18px 20px; cursor:pointer; border:3px solid transparent; transition:all .2s; box-shadow:0 4px 16px rgba(0,0,0,0.07); display:flex; align-items:center; gap:16px; }
@@ -156,39 +121,38 @@ body { font-family: 'Nunito', sans-serif; background: #f0fdf4; margin: 0; paddin
 </style>
 </head>
 <body class="min-h-screen p-3">
-    <!-- LOGIN SCREEN -->
-    <div id="login-screen">
-      <div class="login-card">
-        <div class="login-logo">🧪</div>
-        <h1 style="font-size:1.6rem;font-weight:800;color:#1f2937;margin-bottom:6px;">Inhoudsmaten</h1>
-        <p style="font-size:.85rem;color:#6b7280;margin-bottom:1.25rem;">Voer je naam en code in</p>
-        <input class="login-input" id="login-naam" type="text" placeholder="Jouw voornaam" autocomplete="off" autocapitalize="words">
-        <input class="login-input" id="login-code" type="password" placeholder="Jouw code" autocomplete="off">
-        <div class="login-error" id="login-error"></div>
-        <button class="btn-login" id="btn-login" onclick="loginMetCode()">Inloggen</button>
-        <button class="btn-guest" onclick="loginGuest()">Doorgaan als gast (geen opslag)</button>
-        <div class="teacher-link"><a href="dashboard.html">Leerkracht? Klik hier</a></div>
-      </div>
-    </div>
 
 <!-- LOGIN SCREEN -->
 <div id="login-screen">
-  <div class="login-card">
-    <div class="login-logo">🧪</div>
-    <h1 style="font-size:1.6rem;font-weight:900;color:#1f2937;margin-bottom:6px;">Inhoudsmaten</h1>
-    <p style="font-size:.85rem;color:#6b7280;margin-bottom:1.5rem;">Log in om je toetsresultaten bij te houden</p>
-    <button class="btn-google-login" id="btn-google-login" onclick="loginGoogle()">
-      <svg width="20" height="20" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9.1 3.5l6.8-6.8C35.8 2.4 30.3 0 24 0 14.7 0 6.7 5.4 2.6 13.3l7.9 6.1C12.4 13.1 17.7 9.5 24 9.5z"/><path fill="#4285F4" d="M46.5 24.5c0-1.6-.1-3.1-.4-4.5H24v8.5h12.7c-.5 2.9-2.2 5.4-4.7 7l7.4 5.7c4.3-4 6.8-9.9 7.1-16.7z"/><path fill="#FBBC05" d="M10.5 28.6A14.5 14.5 0 0 1 9.5 24c0-1.6.3-3.1.9-4.6l-7.9-6.1A24 24 0 0 0 0 24c0 3.9.9 7.5 2.6 10.7l7.9-6.1z"/><path fill="#34A853" d="M24 48c6.3 0 11.6-2.1 15.5-5.7l-7.4-5.7c-2.1 1.4-4.8 2.2-8.1 2.2-6.3 0-11.6-3.6-13.5-8.8l-7.9 6.1C6.7 42.6 14.7 48 24 48z"/></svg>
-      Inloggen met Google
+  <div style="background:white;border-radius:24px;padding:2.5rem 2rem;width:100%;max-width:380px;box-shadow:0 25px 50px rgba(0,0,0,0.25);text-align:center;display:flex;flex-direction:column;gap:12px;">
+    <div style="font-size:3rem">🧪</div>
+    <h1 style="font-size:1.5rem;font-weight:900;color:#1f2937;margin:0">Inhoudsmaten Trainer</h1>
+    <p style="color:#6b7280;font-size:.9rem;margin:0">Voer je naam en code in</p>
+    <div id="klas-err" style="color:#dc2626;font-size:.85rem;font-weight:700;min-height:18px;display:none;background:#fee2e2;border:1px solid #fca5a5;padding:8px 12px;border-radius:8px;"></div>
+    <input type="text" id="klas-naam" placeholder="Jouw voornaam"
+      style="width:100%;padding:14px;border:2px solid #e5e7eb;border-radius:12px;font-family:inherit;font-size:1rem;font-weight:600;text-align:center;outline:none;"
+      autocomplete="off" autocapitalize="words">
+    <input type="password" id="klas-code" placeholder="Jouw code"
+      style="width:100%;padding:14px;border:2px solid #e5e7eb;border-radius:12px;font-family:inherit;font-size:1rem;font-weight:600;text-align:center;outline:none;"
+      autocomplete="off">
+    <button id="login-btn"
+      style="width:100%;background:#065f46;color:white;border:none;border-radius:12px;padding:14px;font-family:inherit;font-size:1rem;font-weight:700;cursor:pointer;">
+      Inloggen
     </button>
-    <button class="btn-guest-login" onclick="loginGuest()">Doorgaan als gast (geen opslag)</button>
+    <button id="gast-btn"
+      style="width:100%;background:transparent;border:2px solid #e5e7eb;border-radius:12px;padding:12px;font-family:inherit;font-size:.9rem;font-weight:700;color:#6b7280;cursor:pointer;">
+      Doorgaan als gast (geen opslag)
+    </button>
+    <div style="font-size:.75rem;color:#9ca3af;">
+      <a href="dashboard.html" style="color:#065f46;font-weight:700;text-decoration:none;">Leerkracht? Klik hier</a>
+    </div>
   </div>
 </div>
 
 <div class="max-w-2xl mx-auto">
 
   <!-- USER BAR -->
-  <div id="user-bar">
+  <div id="user-bar" style="display:none;align-items:center;justify-content:space-between;background:white;border-radius:16px;padding:10px 18px;margin-bottom:12px;box-shadow:0 2px 12px rgba(0,0,0,0.06);border:1px solid #d1fae5;">
     <div style="display:flex;align-items:center;gap:10px;">
       <div class="u-avatar" id="u-avatar">👤</div>
       <div>
@@ -196,7 +160,7 @@ body { font-family: 'Nunito', sans-serif; background: #f0fdf4; margin: 0; paddin
         <div class="u-role" id="u-role">Gast — scores worden niet opgeslagen</div>
       </div>
     </div>
-    <button class="btn-logout" onclick="doLogout()">Uitloggen</button>
+    <button class="btn-logout" id="logout-btn">Uitloggen</button>
   </div>
 
 
@@ -288,9 +252,12 @@ body { font-family: 'Nunito', sans-serif; background: #f0fdf4; margin: 0; paddin
       <h3 style="font-weight:900;color:#0f766e;font-size:1rem;margin:0">Foutenanalyse:</h3>
       <div id="end-fouten" class="space-y-2 max-h-64 overflow-y-auto"></div>
     </div>
-    <div id="saved-badge">
-      ✓ Score opgeslagen in de database
+    <!-- Upload status (style.display — geen Tailwind hidden conflict) -->
+    <div id="upload-status" style="display:none;padding:12px 16px;border-radius:14px;border:2px solid;font-size:.85rem;font-weight:700;text-align:center;font-family:'Nunito',sans-serif;">
+      <span id="upload-spinner" style="display:inline-block;width:14px;height:14px;border:2px solid #e5e7eb;border-top-color:#10b981;border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle;margin-right:6px;"></span>
+      <span id="upload-status-text">Bezig met opslaan...</span>
     </div>
+    <style>@keyframes spin{to{transform:rotate(360deg)}}</style>
     <div class="flex gap-3">
       <button id="end-retry" class="btn-check" style="flex:1">Opnieuw</button>
       <button id="end-menu" class="btn-secondary" style="flex:1">Menu</button>
@@ -520,7 +487,7 @@ function startMode(mode){
     questions=buildToets();
   }
 
-  QS={ mode, questions, idx:0, score:0, history:[], isToets, startTime:new Date() };
+  QS={ mode, questions, idx:0, score:0, quizLog:[], isToets, startTime:new Date() };
   h("v-menu"); h("v-end"); s("v-quiz");
   $("q-mode-lbl").textContent=MODES[mode].lbl;
   buildBullets();
@@ -1032,7 +999,7 @@ function showFB(ok,okMsg,errMsg){
 }
 
 function record(ok,vraag,juist,leerling,cat){
-  QS.history.push({vraagNr:QS.idx+1,formule:vraag,juistAntwoord:juist,antwoordLeerling:leerling,isJuist:ok,categorie:cat});
+  QS.quizLog.push({vraagNr:QS.idx+1,formule:vraag,juistAntwoord:juist,antwoordLeerling:leerling,isJuist:ok,categorie:cat});
   if(ok)QS.score++;
   updBullet(QS.idx,ok);
 }
@@ -1049,13 +1016,25 @@ function nextQ(){
 // ── EINDSCHERM ─────────────────────────────────────────────────────────────
 function showEnd(){
   h("v-quiz"); s("v-end");
-  const {score,questions,history,mode}=QS;
-  const total=questions.length;
-  const pct=Math.round((score/total)*100);
 
-  // Sla op in Firebase als dit de toets was
-  if(mode==="toets"){
-    saveToetsResultaat(score, total, pct, history);
+  // Reset upload-statusbox voor nieuwe run (style.display — nooit Tailwind hidden)
+  document.getElementById("upload-status").style.display = "none";
+  document.getElementById("upload-status-text").textContent = "Bezig met opslaan...";
+  document.getElementById("upload-spinner").style.display = "inline-block";
+
+  const {score, questions, quizLog, mode} = QS;
+  const total = questions.length;
+  const pct = Math.round((score/total)*100);
+
+  // Tijdsduur
+  const ms = new Date() - QS.startTime;
+  const mins = Math.floor(ms/60000);
+  const secs = Math.floor((ms%60000)/1000);
+  const tijd = mins.toString().padStart(2,"0")+":"+secs.toString().padStart(2,"0");
+
+  // Opslaan — enkel bij toets
+  if(mode === "toets"){
+    saveToFirestore(score, total, pct, tijd, quizLog);
   }
 
   $("end-score").textContent=`${score}/${total}`;
@@ -1066,7 +1045,7 @@ function showEnd(){
 
   if(window.confetti&&pct>=75)window.confetti({particleCount:80,spread:70,origin:{y:.7}});
 
-  const fouten=history.filter(h2=>!h2.isJuist);
+  const fouten = quizLog.filter(f=>!f.isJuist);
   if(fouten.length>0){
     s("end-analyse");
     const list=$("end-fouten"); list.innerHTML="";
@@ -1079,74 +1058,189 @@ function showEnd(){
   } else h("end-analyse");
 }
 
-// --- APP OPSTART MENU ENIGE VIEW ---
-window.onload = function() {
-  s("v-menu");
-}
+// App opstart: menu blijft verborgen tot na login (login-screen is al zichtbaar via CSS)
 </script>
 
-<!-- FIREBASE compat scripts (geen module-scope, onclick werkt altijd) -->
-<!-- FIREBASE -->
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-    <script>
-        firebase.initializeApp({
-            apiKey:"AIzaSyCnQDVVAlK6jE-PPUUediRJMTbN0xqrLDE",
-            authDomain:"klaswebsite-database.firebaseapp.com",
-            projectId:"klaswebsite-database",
-            storageBucket:"klaswebsite-database.firebasestorage.app",
-            messagingSenderId:"42912327282",
-            appId:"1:42912327282:web:f13f2c706f6c42c115c4eb"
-        });
-        const fbDb = firebase.firestore();
+<!-- FIREBASE compat SDK — zelfde als gewichten en kommagetallen -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script>
+firebase.initializeApp({
+  apiKey:"AIzaSyCnQDVVAlK6jE-PPUUediRJMTbN0xqrLDE",
+  authDomain:"klaswebsite-database.firebaseapp.com",
+  projectId:"klaswebsite-database",
+  storageBucket:"klaswebsite-database.firebasestorage.app",
+  messagingSenderId:"42912327282",
+  appId:"1:42912327282:web:f13f2c706f6c42c115c4eb"
+});
+var _db = firebase.firestore();
+var _currentUser = null;
+var _isGuest     = false;
 
-        // ── LOGIN (leest leerlingen uit Firestore) ────────────────────
-        async function loginMetCode() {
-            var naam = (document.getElementById('login-naam').value||'').trim().toLowerCase();
-            var code = (document.getElementById('login-code').value||'').trim();
-            var errEl = document.getElementById('login-error');
-            var btn = document.getElementById('btn-login');
-            errEl.textContent = '';
-            document.getElementById('login-naam').classList.remove('err');
-            document.getElementById('login-code').classList.remove('err');
-            if (!naam) { errEl.textContent='Vul je voornaam in.'; document.getElementById('login-naam').classList.add('err'); return; }
-            if (!code) { errEl.textContent='Vul je code in.'; document.getElementById('login-code').classList.add('err'); return; }
-            btn.disabled=true; btn.textContent='Controleren...';
-            try {
-                var doc = await fbDb.collection('leerlingen').doc(naam).get();
-                if (!doc.exists) {
-                    errEl.textContent='Naam niet gevonden.'; btn.disabled=false; btn.textContent='Inloggen';
-                    document.getElementById('login-naam').classList.add('err'); return;
-                }
-                var data = doc.data();
-                if (data.code !== code) {
-                    errEl.textContent='Verkeerde code.'; btn.disabled=false; btn.textContent='Inloggen';
-                    document.getElementById('login-code').classList.add('err'); return;
-                }
-                window._leerlingNaam = data.weergavenaam || naam;
-                window._leerlingId = naam;
-                window._isGuest = false;
-                afterLogin(window._leerlingNaam);
-            } catch(e) {
-                errEl.textContent='Fout: '+e.message; btn.disabled=false; btn.textContent='Inloggen';
-            }
-        }
+// ── UPLOAD STATUS (style.display — NOOIT Tailwind hidden, vermijdt !important conflict) ──
+function setUploadStatus(type, msg) {
+  var box     = document.getElementById("upload-status");
+  var text    = document.getElementById("upload-status-text");
+  var spinner = document.getElementById("upload-spinner");
+  box.style.display    = "block";
+  spinner.style.display = (type === "loading") ? "inline-block" : "none";
+  if (type === "loading") {
+    box.style.background  = "#f8fafc";
+    box.style.borderColor = "#cbd5e1";
+    box.style.color       = "#475569";
+  } else if (type === "ok") {
+    box.style.background  = "#f0fdf4";
+    box.style.borderColor = "#86efac";
+    box.style.color       = "#15803d";
+  } else {
+    box.style.background  = "#fff1f2";
+    box.style.borderColor = "#fecdd3";
+    box.style.color       = "#be123c";
+  }
+  text.textContent = msg;
+  console.log("[inhoudsmaten saveToFirestore] status="+type+": "+msg);
+}
 
-        function loginGuest() {
-            window._leerlingNaam='Gast'; window._leerlingId=null; window._isGuest=true;
-            afterLogin('Gast');
-        }
+// ── LOGIN ─────────────────────────────────────────────────────────────────
+function klasLogin() {
+  var naam = (document.getElementById("klas-naam").value||"").trim().toLowerCase();
+  var code = (document.getElementById("klas-code").value||"").trim();
+  var err  = document.getElementById("klas-err");
+  err.style.display = "none";
+  if (!naam) { err.textContent="Vul je voornaam in."; err.style.display="block"; return; }
+  if (!code) { err.textContent="Vul je code in.";    err.style.display="block"; return; }
 
-        document.addEventListener('DOMContentLoaded', function() {
-            ['login-naam','login-code'].forEach(function(id) {
-                var el=document.getElementById(id);
-                if(el) {
-                    el.addEventListener('keypress',function(e){if(e.key==='Enter')loginMetCode();});
-                    el.addEventListener('focus',function(){el.classList.remove('err');document.getElementById('login-error').textContent='';});
-                }
-            });
-        });
-    </script>
+  var btn = document.getElementById("login-btn");
+  btn.textContent = "Even wachten..."; btn.disabled = true;
+
+  _db.collection("leerlingen").doc(naam).get().then(function(doc) {
+    btn.textContent = "Inloggen"; btn.disabled = false;
+    if (!doc.exists) { err.textContent="Naam niet gevonden."; err.style.display="block"; return; }
+    var data = doc.data();
+    if (data.code !== code) { err.textContent="Verkeerde code."; err.style.display="block"; return; }
+    window._leerlingNaam = data.weergavenaam || naam;
+    window._leerlingId   = naam;
+    _currentUser = { uid: naam, displayName: data.weergavenaam };
+    _isGuest = false;
+    openApp(data.weergavenaam || naam, false);
+  }).catch(function(e) {
+    btn.textContent = "Inloggen"; btn.disabled = false;
+    err.textContent = "Fout: "+e.message; err.style.display = "block";
+  });
+}
+
+function klasGast() {
+  _isGuest = true; _currentUser = null;
+  window._leerlingId   = null;
+  window._leerlingNaam = "Gast";
+  openApp("Gast", true);
+}
+
+function openApp(naam, isGast) {
+  document.getElementById("login-screen").style.display = "none";
+  // User bar tonen
+  var bar = document.getElementById("user-bar");
+  bar.style.display = "flex";
+  document.getElementById("u-name").textContent  = naam;
+  document.getElementById("u-role").textContent  = isGast
+    ? "Gast — toetsscores worden niet opgeslagen"
+    : "Ingelogd als leerling";
+  document.getElementById("u-avatar").textContent = naam[0].toUpperCase();
+  // Menu tonen
+  s("v-menu");
+}
+
+function doLogout() {
+  _currentUser = null; _isGuest = false;
+  window._leerlingId = null; window._leerlingNaam = null;
+  document.getElementById("login-screen").style.display = "flex";
+  document.getElementById("user-bar").style.display = "none";
+  document.getElementById("klas-naam").value = "";
+  document.getElementById("klas-code").value = "";
+  document.getElementById("klas-err").style.display = "none";
+  h("v-menu"); h("v-quiz"); h("v-end");
+}
+
+// ── OPSLAAN NAAR FIRESTORE ────────────────────────────────────────────────
+// Collection: inhoudsmaten_toets — dashboard pikt dit automatisch op
+async function saveToFirestore(score, total, pct, tijd, quizLog) {
+  if (_isGuest || !_currentUser) {
+    setUploadStatus("error", "❌ Niet opgeslagen: je speelt als gast.");
+    return;
+  }
+  if (!window._leerlingId) {
+    setUploadStatus("error", "❌ Geen leerling-ID. Log opnieuw in.");
+    return;
+  }
+
+  setUploadStatus("loading", "Bezig met opslaan...");
+
+  // Foutenanalyse per categorie
+  var foutenTelling = {};
+  (quizLog||[]).filter(function(h){return !h.isJuist;}).forEach(function(h) {
+    var cat = h.categorie || "algemeen";
+    foutenTelling[cat] = (foutenTelling[cat]||0) + 1;
+  });
+  var extraOefenen = Object.entries(foutenTelling)
+    .sort(function(a,b){return b[1]-a[1];})
+    .map(function(e){return e[0]+" ("+e[1]+"x fout)";});
+
+  var record = {
+    leerlingId:   window._leerlingId,
+    leerlingNaam: window._leerlingNaam || "Leerling",
+    mode:         "toets",
+    score:        score,
+    totalQ:       total,
+    percentage:   pct,
+    tijd:         tijd,
+    hintsGebruikt:0,
+    timestamp:    firebase.firestore.FieldValue.serverTimestamp(),
+    foutenAnalyse: {
+      extraOefenen:       extraOefenen,
+      foutenPerCategorie: foutenTelling
+    },
+    vragen: (quizLog||[]).map(function(h, i) {
+      return {
+        vraagNr:          i + 1,
+        vraag:            h.formule            || "",
+        categorie:        h.categorie          || "",
+        antwoordLeerling: h.antwoordLeerling   || "(leeg)",
+        juistAntwoord:    h.juistAntwoord      || "",
+        isJuist:          h.isJuist            || false,
+        hintGebruikt:     false,
+        punten:           h.isJuist ? 1 : 0,
+        tijdSeconden:     0
+      };
+    })
+  };
+
+  console.log("[inhoudsmaten saveToFirestore] Opslaan naar inhoudsmaten_toets:", record);
+
+  try {
+    var docRef = await _db.collection("inhoudsmaten_toets").add(record);
+    setUploadStatus("ok", "✅ Score opgeslagen! (ID: "+docRef.id.substring(0,8)+"…)");
+    console.log("[inhoudsmaten saveToFirestore] Succes! ID:", docRef.id);
+  } catch(e) {
+    console.error("[inhoudsmaten saveToFirestore] Fout:", e.code, e.message);
+    var uitleg = e.message || "Onbekende fout";
+    if (e.code === "permission-denied") uitleg = "Geen schrijfrechten. Contacteer de leerkracht.";
+    else if (e.code === "unavailable")  uitleg = "Geen internetverbinding. Probeer opnieuw.";
+    setUploadStatus("error", "❌ Opslaan mislukt: "+uitleg);
+  }
+}
+
+// ── EVENT LISTENERS (alles in één DOMContentLoaded — geen split over script-blokken) ──
+document.addEventListener("DOMContentLoaded", function() {
+  document.getElementById("login-btn").addEventListener("click", klasLogin);
+  document.getElementById("gast-btn").addEventListener("click", klasGast);
+  document.getElementById("logout-btn").addEventListener("click", doLogout);
+  document.getElementById("klas-naam").addEventListener("keypress", function(e) {
+    if (e.key === "Enter") klasLogin();
+  });
+  document.getElementById("klas-code").addEventListener("keypress", function(e) {
+    if (e.key === "Enter") klasLogin();
+  });
+});
+</script>
 </body>
 </html>
