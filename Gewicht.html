@@ -15,682 +15,26 @@
         .card-anim:hover { transform: translateY(-2px); box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); }
         .scale-needle { transition: transform 0.8s cubic-bezier(0.175,0.885,0.32,1.275); }
     </style>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-<script>
-firebase.initializeApp({
-  apiKey:"AIzaSyCnQDVVAlK6jE-PPUUediRJMTbN0xqrLDE",
-  authDomain:"klaswebsite-database.firebaseapp.com",
-  projectId:"klaswebsite-database",
-  storageBucket:"klaswebsite-database.firebasestorage.app",
-  messagingSenderId:"42912327282",
-  appId:"1:42912327282:web:f13f2c706f6c42c115c4eb"
-});
-var _db = firebase.firestore();
-
-var currentUser = null;
-var isGuest     = false;
-var guestName   = "";
-var currentMode = "";
-
-function klasLogin() {
-  var naam = (document.getElementById('klas-naam').value||'').trim().toLowerCase();
-  var code = (document.getElementById('klas-code').value||'').trim();
-  var err  = document.getElementById('klas-err');
-  err.style.display='none';
-  if (!naam) { err.textContent='Vul je voornaam in.'; err.style.display='block'; return; }
-  if (!code) { err.textContent='Vul je code in.'; err.style.display='block'; return; }
-  _db.collection('leerlingen').doc(naam).get().then(function(doc) {
-    if (!doc.exists) { err.textContent='Naam niet gevonden.'; err.style.display='block'; return; }
-    var data = doc.data();
-    if (data.code !== code) { err.textContent='Verkeerde code.'; err.style.display='block'; return; }
-    window._leerlingNaam = data.weergavenaam || naam;
-    window._leerlingId   = naam;
-    currentUser = {uid: naam, displayName: data.weergavenaam, email: naam+'@klas'};
-    isGuest = false;
-    setupBadge(data.weergavenaam || naam, '', null, false);
-    document.getElementById('klas-login').style.display = 'none';
-    showView('setup-view');
-  }).catch(function(e) { err.textContent='Fout: '+e.message; err.style.display='block'; });
-}
-
-function klasGast() {
-  isGuest = true; currentUser = null; guestName = 'Gast';
-  window._leerlingId = null; window._leerlingNaam = 'Gast';
-  setupBadge('Gast', '', null, true);
-  document.getElementById('klas-login').style.display = 'none';
-  showView('setup-view');
-}
-
-document.addEventListener('DOMContentLoaded', function() {
-  ['klas-naam','klas-code'].forEach(function(id) {
-    var el = document.getElementById(id);
-    if (el) el.addEventListener('keypress', function(e) { if(e.key==='Enter') klasLogin(); });
-  });
-  // Wire up the old signout button to our new logout
-  var so = document.getElementById('signout-btn');
-  if (so) so.addEventListener('click', function() {
-    isGuest=false; currentUser=null;
-    window._leerlingId=null; window._leerlingNaam=null;
-    document.getElementById('klas-login').style.display='flex';
-    showView('login-view'); // keep login-view hidden but reset
-  });
-});
-
-async function saveToFirestore(roundedScore, pct, tijd) {
-  if (isGuest || !currentUser) return;
-  try {
-    await _db.collection('gewicht_toets').add({
-      leerlingId:   window._leerlingId,
-      leerlingNaam: window._leerlingNaam || 'Leerling',
-      score:        roundedScore,
-      percentage:   pct,
-      tijd:         tijd,
-      mode:         currentMode,
-      timestamp:    firebase.firestore.FieldValue.serverTimestamp()
-    });
-  } catch(e) { console.error('Opslaan mislukt:', e); }
-}
-
-function showLoginError(msg) {
-  var err = document.getElementById('klas-err');
-  if (err) { err.textContent = msg; err.style.display = 'block'; }
-}
-
-// ── GAME STATE & LOGIC ────────────────────────────────────────────────────
-let state = {
-    questions: [], currentIndex: 0, score: 0.0,
-    hintsUsed: 0, history: [], currentHintUsedForQ: false,
-    totalQ: 10, totalStartTime: null, questionStartTime: null
-};
-
-// ── VIEWS ─────────────────────────────────────────────────────────────────────
-function showView(id) {
-    ["login-view","setup-view","quiz-view","result-view"].forEach(v =>
-        document.getElementById(v).classList.add("hidden"));
-    document.getElementById(id).classList.remove("hidden");
-    window.scrollTo(0,0);
-}
-
-// ── AUTH ──────────────────────────────────────────────────────────────────────
-getRedirectResult(auth).catch(e => showLoginError(e.message));
-
-onAuthStateChanged(auth, user => {
-    if (user) {
-        const domain = user.email.split("@")[1];
-        if (domain !== ALLOWED_DOMAIN) {
-            signOut(auth);
-            showLoginError(`Enkel @${ALLOWED_DOMAIN} schoolaccounts worden opgeslagen. Gebruik je schoolaccount of speel als gast.`);
-            return;
-        }
-        isGuest = false;
-        currentUser = user;
-        setupBadge(user.displayName || user.email, user.email, user.photoURL, false);
-        showView("setup-view");
-    } else {
-        if (!isGuest) { currentUser = null; showView("login-view"); }
-    }
-});
-
-document.getElementById("google-signin-btn").addEventListener("click", async () => {
-    const provider = new GoogleAuthProvider();
-    provider.setCustomParameters({ hd: ALLOWED_DOMAIN });
-    try { await signInWithRedirect(auth, provider); }
-    catch(e) { showLoginError(e.message); }
-});
-
-document.getElementById("guest-btn").addEventListener("click", () => {
-    const naam = document.getElementById("guest-name").value.trim();
-    if (!naam) {
-        document.getElementById("guest-name").classList.add("border-rose-400");
-        document.getElementById("guest-name").focus();
-        return;
-    }
-    isGuest = true; currentUser = null; guestName = naam;
-    setupBadge(naam + " (gast)", "", null, true);
-    showView("setup-view");
-});
-document.getElementById("guest-name").addEventListener("input", () =>
-    document.getElementById("guest-name").classList.remove("border-rose-400"));
-
-document.getElementById("signout-btn").addEventListener("click", async () => {
-    isGuest = false; guestName = ""; currentUser = null;
-    await signOut(auth);
-    showView("login-view");
-});
-
-function setupBadge(naam, email, photoURL, guest) {
-    document.getElementById("user-name-display").textContent = naam;
-    document.getElementById("user-email-display").textContent = email;
-    const av = document.getElementById("user-avatar");
-    if (photoURL) { av.src = photoURL; av.classList.remove("hidden"); } else av.classList.add("hidden");
-    document.getElementById("guest-badge").classList.toggle("hidden", !guest);
-    document.getElementById("signout-btn").classList.toggle("hidden", guest);
-}
-
-
-
-// ── DATASET ───────────────────────────────────────────────────────────────────
-const ITEMS = [
-    { name:"een pak suiker", baseWeight:1000, e:"🧂" },
-    { name:"een appel", baseWeight:150, e:"🍎" },
-    { name:"een pak melk", baseWeight:1000, e:"🥛" },
-    { name:"een doos aardbeien", baseWeight:500, e:"🍓" },
-    { name:"een zak aardappelen", baseWeight:2500, e:"🥔" },
-    { name:"een pot chocoladepasta", baseWeight:400, e:"🍯" },
-    { name:"een pak bloem", baseWeight:1000, e:"🌾" },
-    { name:"een pakje boter", baseWeight:250, e:"🧈" }
-];
-const HEAVY_ITEMS = [
-    { name:"een personenauto", baseWeight:1500, e:"🚗" },
-    { name:"een Afrikaanse olifant", baseWeight:5000, e:"🐘" },
-    { name:"een bestelwagen", baseWeight:3200, e:"🚚" },
-    { name:"een grote scheepscontainer", baseWeight:24000, e:"🚢" },
-    { name:"een jonge blauwe vinvis", baseWeight:45000, e:"🐋" }
-];
-
-function shuffle(arr) {
-    let a = [...arr];
-    for (let i = a.length-1; i>0; i--) {
-        const j = Math.floor(Math.random()*(i+1));
-        [a[i],a[j]] = [a[j],a[i]];
-    }
-    return a;
-}
-
-// ── VRAAGENGENERATOR ──────────────────────────────────────────────────────────
-function generateQuestions(mode) {
-    let pool = [];
-    const targetCount = mode === "mix" ? 20 : 10;
-    state.totalQ = targetCount;
-
-    for (let i = 0; i < 50; i++) {
-        const ri  = ITEMS[Math.floor(Math.random()*ITEMS.length)];
-        const rhi = HEAVY_ITEMS[Math.floor(Math.random()*HEAVY_ITEMS.length)];
-
-        // --- AFLEZEN ---
-        const scaleType = ["analog-1k","analog-4k","balance","digital"][Math.floor(Math.random()*4)];
-        if (scaleType === "analog-1k") {
-            const w = [125,250,375,500,625,750,875][Math.floor(Math.random()*7)];
-            pool.push({ category:"AFLEZEN (WIJZERPLAAT 1KG)", firestoreCategorie:"Wiskunde - Gewicht: Aflezen",
-                title:`Hoeveel weegt ${ri.name} ${ri.e} op deze weegschaal?`, type:"aflezen",
-                scaleStyle:"analog-1k", scaleWeight:w, inputType:"text", placeholder:"Aantal gram...",
-                answer:`${w} g`, rawAnswer:w,
-                hint: w%250===0 ? `De wijzer staat precies op ${w} gram.` : `De wijzer staat in het midden tussen ${w-125}g en ${w+125}g.`,
-                id:`af-1k-${i}` });
-        } else if (scaleType === "analog-4k") {
-            const w = [500,1000,1500,2000,2500,3000,3500][Math.floor(Math.random()*7)];
-            pool.push({ category:"AFLEZEN (WIJZERPLAAT 4KG)", firestoreCategorie:"Wiskunde - Gewicht: Aflezen",
-                title:`Hoeveel weegt ${ri.name} ${ri.e} op deze weegschaal?`, type:"aflezen",
-                scaleStyle:"analog-4k", scaleWeight:w, inputType:"text", placeholder:"Aantal gram...",
-                answer:`${w} g`, rawAnswer:w,
-                hint:`Deze weegschaal weegt tot 4 kg (4000g). De wijzer staat op ${w/1000} kg = ${w} g.`,
-                id:`af-4k-${i}` });
-        } else if (scaleType === "balance") {
-            const weightBlocks = [{label:"1 kg",val:1000},{label:"500 g",val:500},{label:"200 g",val:200},{label:"100 g",val:100},{label:"50 g",val:50}];
-            const blocks = shuffle(weightBlocks).slice(0, Math.floor(Math.random()*2)+2);
-            const total  = blocks.reduce((s,b)=>s+b.val,0);
-            pool.push({ category:"AFLEZEN (BALKBALANS)", firestoreCategorie:"Wiskunde - Gewicht: Aflezen",
-                title:`Wat is het totale gewicht van ${ri.name} ${ri.e}? Tel de gewichten rechts samen op.`,
-                type:"aflezen", scaleStyle:"balance", blocks, emoji:ri.e,
-                inputType:"text", placeholder:"Aantal gram...", answer:`${total} g`, rawAnswer:total,
-                hint:`Tel op: ${blocks.map(b=>b.label).join(" + ")}. (1 kg = 1000 g)`,
-                id:`af-bal-${i}` });
-        } else {
-            const dw = [0.25,0.5,0.75,1.2,1.5,2.25,3.5,4.05][Math.floor(Math.random()*8)];
-            const wg = dw*1000;
-            pool.push({ category:"AFLEZEN (DIGITAAL)", firestoreCategorie:"Wiskunde - Gewicht: Aflezen",
-                title:`Het display geeft ${dw.toString().replace(".",",")} kg aan. Hoeveel gram is dat?`,
-                type:"aflezen", scaleStyle:"digital", displayVal:dw, emoji:ri.e,
-                inputType:"text", placeholder:"Aantal gram...", answer:`${wg} g`, rawAnswer:wg,
-                hint:`kg → g: vermenigvuldig met 1000. ${dw.toString().replace(".",",")} × 1000 = ${wg} g.`,
-                id:`af-dig-${i}` });
-        }
-
-        // --- HERLEIDEN ---
-        if (Math.random()>0.5) {
-            const t = Math.floor(Math.random()*12)+1;
-            const k = (Math.floor(Math.random()*19)+1)*50;
-            if (Math.random()>0.5) {
-                pool.push({ category:"HERLEIDEN (TON)", firestoreCategorie:"Wiskunde - Gewicht: Maten Herleiden",
-                    title:`Hoeveel kg is ${t} t en ${k} kg samen?`, type:"herleiden",
-                    inputType:"text", placeholder:"Aantal kg...", answer:`${t*1000+k} kg`, rawAnswer:t*1000+k,
-                    hint:`1 t = 1000 kg. Dus ${t} t = ${t*1000} kg. Tel ${k} kg erbij.`, id:`her-ton-t-${i}` });
-            } else {
-                pool.push({ category:"HERLEIDEN (TON)", firestoreCategorie:"Wiskunde - Gewicht: Maten Herleiden",
-                    title:`Herleid ${t*1000+k} kg naar ton en kg:`, type:"herleiden-compound-ton",
-                    inputType:"compound", unit1:"t", unit2:"kg", answerKg:t, answerG:k,
-                    hint:`${t*1000+k} kg: de duizendtallen zijn tonnen (${t} t), de rest is kg (${k} kg).`, id:`her-ton-f-${i}` });
-            }
-        } else {
-            const kb = Math.floor(Math.random()*8)+1;
-            const gb = (Math.floor(Math.random()*19)+1)*50;
-            if (Math.random()>0.5) {
-                pool.push({ category:"HERLEIDEN", firestoreCategorie:"Wiskunde - Gewicht: Maten Herleiden",
-                    title:`Hoeveel gram is ${kb} kg en ${gb} g samen?`, type:"herleiden",
-                    inputType:"text", placeholder:"Aantal gram...", answer:`${kb*1000+gb} g`, rawAnswer:kb*1000+gb,
-                    hint:`1 kg = 1000 g. Dus ${kb} kg = ${kb*1000} g. Tel ${gb} g erbij.`, id:`her-t-${i}` });
-            } else {
-                pool.push({ category:"HERLEIDEN", firestoreCategorie:"Wiskunde - Gewicht: Maten Herleiden",
-                    title:`Herleid ${kb*1000+gb} g naar kg en g:`, type:"herleiden-compound",
-                    inputType:"compound", unit1:"kg", unit2:"g", answerKg:kb, answerG:gb,
-                    hint:`${kb*1000+gb} g: de duizendtallen zijn kg (${kb} kg), de rest is g (${gb} g).`, id:`her-f-${i}` });
-            }
-        }
-
-        // --- OPTELLEN & AFTREKKEN ---
-        if (Math.random()>0.5) {
-            const v1t=(Math.floor(Math.random()*4)+1), v1k=(Math.floor(Math.random()*9)+1)*100;
-            const v2t=(Math.floor(Math.random()*3)+1), v2k=(Math.floor(Math.random()*9)+1)*100;
-            const isAdd = Math.random()>0.5;
-            if (isAdd) {
-                const tot = (v1t*1000+v1k)+(v2t*1000+v2k);
-                pool.push({ category:"OPTELLEN (TON)", firestoreCategorie:"Wiskunde - Gewicht: Optellen en Aftrekken",
-                    title:`Reken uit: ${v1t} t ${v1k} kg + ${v2t} t ${v2k} kg =`, type:"calculatie",
-                    inputType:"compound", unit1:"t", unit2:"kg",
-                    answerKg:Math.floor(tot/1000), answerG:tot%1000,
-                    hint:`Tel kg op: ${v1k}+${v2k}=${v1k+v2k} kg. Elke 1000 kg = 1 t. Tel dan de tonnen.`, id:`calc-ton-p-${i}` });
-            } else {
-                const w1=(v1t+4)*1000+v1k, w2=v2t*1000+v2k, tot=w1-w2;
-                pool.push({ category:"AFTREKKEN (TON)", firestoreCategorie:"Wiskunde - Gewicht: Optellen en Aftrekken",
-                    title:`Reken uit: ${v1t+4} t ${v1k} kg - ${v2t} t ${v2k} kg =`, type:"calculatie",
-                    inputType:"compound", unit1:"t", unit2:"kg",
-                    answerKg:Math.floor(tot/1000), answerG:tot%1000,
-                    hint:`Trek t en kg apart af. Te weinig kg? Leen 1 t (1000 kg) van de tonnen.`, id:`calc-ton-m-${i}` });
-            }
-        } else {
-            const v1k=(Math.floor(Math.random()*3)+1), v1g=(Math.floor(Math.random()*9)+1)*100;
-            const v2k=(Math.floor(Math.random()*2)+1), v2g=(Math.floor(Math.random()*9)+1)*100;
-            const isAdd = Math.random()>0.5;
-            if (isAdd) {
-                const tot=(v1k*1000+v1g)+(v2k*1000+v2g);
-                pool.push({ category:"OPTELLEN", firestoreCategorie:"Wiskunde - Gewicht: Optellen en Aftrekken",
-                    title:`Reken uit: ${v1k} kg ${v1g} g + ${v2k} kg ${v2g} g =`, type:"calculatie",
-                    inputType:"compound", unit1:"kg", unit2:"g",
-                    answerKg:Math.floor(tot/1000), answerG:tot%1000,
-                    hint:`Tel g op, dan kg. 1000 g = 1 kg.`, id:`calc-p-${i}` });
-            } else {
-                const w1=(v1k+3)*1000+v1g, w2=v2k*1000+v2g, tot=w1-w2;
-                pool.push({ category:"AFTREKKEN", firestoreCategorie:"Wiskunde - Gewicht: Optellen en Aftrekken",
-                    title:`Reken uit: ${v1k+3} kg ${v1g} g - ${v2k} kg ${v2g} g =`, type:"calculatie",
-                    inputType:"compound", unit1:"kg", unit2:"g",
-                    answerKg:Math.floor(tot/1000), answerG:tot%1000,
-                    hint:`Trek kg en g apart af. Te weinig g? Leen 1 kg (1000 g).`, id:`calc-m-${i}` });
-            }
-        }
-
-        // --- BRUTO NETTO TARRA ---
-        const bruto = (Math.floor(Math.random()*15)+5)*50;
-        const tarra = (Math.floor(Math.random()*4)+2)*10;
-        const netto = bruto - tarra;
-        const bt = Math.floor(Math.random()*3);
-        if (bt===0) {
-            pool.push({ category:"BRUTO NETTO TARRA", firestoreCategorie:"Wiskunde - Gewicht: Bruto Netto Tarra",
-                title:`Een volle doos koekjes weegt bruto ${bruto} g. De lege doos weegt ${tarra} g (tarra). Wat is het netto gewicht?`,
-                type:"bruto-vraag", inputType:"text", placeholder:"Aantal gram...",
-                answer:`${netto} g`, rawAnswer:netto,
-                hint:"Netto = Bruto − Tarra.", id:`bnt-n-${i}` });
-        } else if (bt===1) {
-            pool.push({ category:"BRUTO NETTO TARRA", firestoreCategorie:"Wiskunde - Gewicht: Bruto Netto Tarra",
-                title:`Netto gewicht appels: ${netto} g. Mand (tarra): ${tarra} g. Wat is het bruto gewicht?`,
-                type:"bruto-vraag", inputType:"text", placeholder:"Aantal gram...",
-                answer:`${bruto} g`, rawAnswer:bruto,
-                hint:"Bruto = Netto + Tarra.", id:`bnt-b-${i}` });
-        } else {
-            pool.push({ category:"BRUTO NETTO TARRA", firestoreCategorie:"Wiskunde - Gewicht: Bruto Netto Tarra",
-                title:`Een pot chocopasta weegt bruto ${bruto} g, netto ${netto} g. Wat is de tarra (lege pot)?`,
-                type:"bruto-vraag", inputType:"text", placeholder:"Aantal gram...",
-                answer:`${tarra} g`, rawAnswer:tarra,
-                hint:"Tarra = Bruto − Netto.", id:`bnt-t-${i}` });
-        }
-    }
-
-    let filtered = pool;
-    if (mode==="aflezen")  filtered = pool.filter(q=>q.category.startsWith("AFLEZEN"));
-    else if (mode==="herleiden") filtered = pool.filter(q=>q.category.startsWith("HERLEIDEN"));
-    else if (mode==="optellen")  filtered = pool.filter(q=>q.category.startsWith("OPTELLEN")||q.category.startsWith("AFTREKKEN"));
-    else if (mode==="bruto")     filtered = pool.filter(q=>q.category==="BRUTO NETTO TARRA");
-
-    return shuffle(filtered).slice(0, targetCount);
-}
-
-// ── OEFENING STARTEN ─────────────────────────────────────────────────────────
-function startMode(mode) {
-    currentMode = mode;
-    state.questions      = generateQuestions(mode);
-    state.currentIndex   = 0;
-    state.score          = 0.0;
-    state.hintsUsed      = 0;
-    state.history        = [];
-    state.totalStartTime = new Date();
-    showView("quiz-view");
-    renderQuestion();
-}
-
-document.addEventListener('DOMContentLoaded', function() {
-    document.getElementById("btn-aflezen").addEventListener("click",  function() { startMode("aflezen"); });
-    document.getElementById("btn-herleiden").addEventListener("click", function() { startMode("herleiden"); });
-    document.getElementById("btn-optellen").addEventListener("click",  function() { startMode("optellen"); });
-    document.getElementById("btn-bruto").addEventListener("click",     function() { startMode("bruto"); });
-    document.getElementById("btn-mix").addEventListener("click",       function() { startMode("mix"); });
-});
-
-// ── VRAAG RENDEREN ────────────────────────────────────────────────────────────
-function renderQuestion() {
-    state.currentHintUsedForQ = false;
-    const q = state.questions[state.currentIndex];
-    state.questionStartTime = new Date();
-
-    document.getElementById("counter").innerText = `Vraag ${state.currentIndex+1} / ${state.totalQ}`;
-    document.getElementById("progress-bar").style.width = `${(state.currentIndex/state.totalQ)*100}%`;
-    document.getElementById("q-category").innerText = q.category;
-    document.getElementById("q-title").innerText = q.title;
-
-    // Reset weegschalen
-    ["scale-visual-container","scale-analog","scale-balance","scale-digital"].forEach(id =>
-        document.getElementById(id).classList.add("hidden"));
-    // Reset inputs & knoppen
-    ["single-input-container","compound-input-container","hint-box","feedback","next-btn"].forEach(id =>
-        document.getElementById(id).classList.add("hidden"));
-    ["submit-btn","hint-btn"].forEach(id =>
-        document.getElementById(id).classList.remove("hidden"));
-
-    // Weegschaal tonen
-    if (q.type === "aflezen") {
-        document.getElementById("scale-visual-container").classList.remove("hidden");
-        if (q.scaleStyle==="analog-1k"||q.scaleStyle==="analog-4k") {
-            document.getElementById("scale-analog").classList.remove("hidden");
-            const is4k = q.scaleStyle==="analog-4k";
-            document.getElementById("scale-analog-top").textContent    = "0g";
-            document.getElementById("scale-analog-right").textContent  = is4k?"1 kg":"250g";
-            document.getElementById("scale-analog-bottom").textContent = is4k?"2 kg":"500g";
-            document.getElementById("scale-analog-left").textContent   = is4k?"3 kg":"750g";
-            document.getElementById("scale-label").textContent         = is4k?"Analoge Wijzerplaat (tot 4 kg)":"Analoge Wijzerplaat (tot 1 kg)";
-            const angle = (q.scaleWeight/(is4k?4000:1000))*360;
-            document.getElementById("needle-group").style.transform = `rotate(${angle}deg)`;
-        } else if (q.scaleStyle==="balance") {
-            document.getElementById("scale-balance").classList.remove("hidden");
-            document.getElementById("balance-emoji").textContent = q.emoji;
-            document.getElementById("scale-label").textContent = "Klassieke balkbalans met losse gewichten";
-            const wc = document.getElementById("balance-weights-container");
-            wc.innerHTML = "";
-            q.blocks.forEach((block,idx) => {
-                const xo = 220+(idx%2===0?0:25), yo = 115-(Math.floor(idx/2)*15);
-                const rect = document.createElementNS("http://www.w3.org/2000/svg","rect");
-                rect.setAttribute("x",xo); rect.setAttribute("y",yo);
-                rect.setAttribute("width","35"); rect.setAttribute("height","14");
-                rect.setAttribute("fill","#fbbf24"); rect.setAttribute("stroke","#d97706");
-                rect.setAttribute("stroke-width","1.5"); rect.setAttribute("rx","2");
-                const text = document.createElementNS("http://www.w3.org/2000/svg","text");
-                text.setAttribute("x",xo+17.5); text.setAttribute("y",yo+10);
-                text.setAttribute("font-size","8"); text.setAttribute("font-weight","bold");
-                text.setAttribute("text-anchor","middle"); text.setAttribute("fill","#78350f");
-                text.textContent = block.label;
-                wc.appendChild(rect); wc.appendChild(text);
-            });
-        } else if (q.scaleStyle==="digital") {
-            document.getElementById("scale-digital").classList.remove("hidden");
-            document.getElementById("digital-emoji").textContent = q.emoji;
-            document.getElementById("digital-lcd").textContent = `${q.displayVal.toString().replace(".",",")} kg`;
-            document.getElementById("scale-label").textContent = "Digitale keukenweegschaal";
-        }
-    }
-
-    // Input activeren
-    if (q.inputType==="text") {
-        document.getElementById("single-input-container").classList.remove("hidden");
-        const inp = document.getElementById("user-input");
-        inp.value=""; inp.disabled=false; inp.placeholder=q.placeholder;
-        inp.className="w-full p-5 text-center text-2xl font-bold rounded-2xl border-4 border-slate-100 outline-none transition-all focus:border-indigo-500 focus:bg-indigo-50/30";
-        setTimeout(()=>inp.focus(),100);
-    } else if (q.inputType==="compound") {
-        document.getElementById("compound-input-container").classList.remove("hidden");
-        document.getElementById("compound-unit1-label").textContent = q.unit1||"kg";
-        document.getElementById("compound-unit2-label").textContent = q.unit2||"g";
-        const u1=document.getElementById("compound-unit1-val"), u2=document.getElementById("compound-unit2-val");
-        u1.value=""; u2.value=""; u1.disabled=false; u2.disabled=false;
-        u1.className="w-24 p-4 text-center text-2xl font-bold rounded-xl border-4 border-slate-100 outline-none focus:border-indigo-500";
-        u2.className="w-32 p-4 text-center text-2xl font-bold rounded-xl border-4 border-slate-100 outline-none focus:border-indigo-500";
-        setTimeout(()=>u1.focus(),100);
-    }
-}
-
-// ── HINT ──────────────────────────────────────────────────────────────────────
-document.getElementById("hint-btn").addEventListener("click", () => {
-    if (!state.currentHintUsedForQ) { state.currentHintUsedForQ=true; state.hintsUsed++; }
-    document.getElementById("hint-text").innerHTML = state.questions[state.currentIndex].hint;
-    document.getElementById("hint-box").classList.remove("hidden");
-});
-
-// ── ANTWOORD CONTROLEREN ──────────────────────────────────────────────────────
-document.getElementById("submit-btn").addEventListener("click", checkAnswer);
-
-function checkAnswer() {
-    const q = state.questions[state.currentIndex];
-    let isCorrect=false, displayAnswer="", correctAnswerString="";
-
-    if (q.inputType==="text") {
-        const raw = document.getElementById("user-input").value.trim();
-        if (!raw) return;
-        const val = parseInt(raw.replace(/\D/g,""));
-        isCorrect = val===q.rawAnswer;
-        displayAnswer = raw;
-        correctAnswerString = q.answer;
-    } else if (q.inputType==="compound") {
-        const u1=parseInt(document.getElementById("compound-unit1-val").value)||0;
-        const u2=parseInt(document.getElementById("compound-unit2-val").value)||0;
-        isCorrect = (u1===q.answerKg && u2===q.answerG);
-        displayAnswer = `${u1} ${q.unit1||"kg"} en ${u2} ${q.unit2||"g"}`;
-        correctAnswerString = `${q.answerKg} ${q.unit1||"kg"} en ${q.answerG} ${q.unit2||"g"}`;
-    }
-
-    // Disable inputs
-    document.getElementById("user-input").disabled=true;
-    document.getElementById("compound-unit1-val").disabled=true;
-    document.getElementById("compound-unit2-val").disabled=true;
-
-    let pointsEarned = 0;
-    if (isCorrect) {
-        pointsEarned = state.currentHintUsedForQ ? 0.5 : 1.0;
-        state.score += pointsEarned;
-        const fb = document.getElementById("feedback");
-        fb.innerHTML = `🎉 Super! Correct. <span class="block text-sm font-semibold mt-1 text-emerald-600">${pointsEarned===0.5?"+0,5 punt (hint)":"+1,0 punt"}</span>`;
-        fb.className = "p-5 rounded-2xl font-bold text-center bg-emerald-50 text-emerald-700 border-2 border-emerald-100";
-        fb.classList.remove("hidden");
-        document.getElementById("user-input").classList.add("border-emerald-500","bg-emerald-50");
-        document.getElementById("compound-unit1-val").classList.add("border-emerald-500","bg-emerald-50");
-        document.getElementById("compound-unit2-val").classList.add("border-emerald-500","bg-emerald-50");
-        if (window.confetti) window.confetti({particleCount:35,spread:60,origin:{y:0.8},colors:["#6366f1","#10b981"]});
-    } else {
-        const fb = document.getElementById("feedback");
-        fb.innerHTML = `❌ Oeps! Het juiste antwoord is: <strong>${correctAnswerString}</strong>`;
-        fb.className = "p-5 rounded-2xl font-bold text-center bg-rose-50 text-rose-700 border-2 border-rose-100";
-        fb.classList.remove("hidden");
-        document.getElementById("user-input").classList.add("border-rose-500","bg-rose-50");
-        document.getElementById("compound-unit1-val").classList.add("border-rose-500","bg-rose-50");
-        document.getElementById("compound-unit2-val").classList.add("border-rose-500","bg-rose-50");
-    }
-
-    const timeSpent = ((new Date()-state.questionStartTime)/1000).toFixed(1);
-    state.history.push({
-        title:         q.title,
-        category:      q.category,
-        firestoreCategorie: q.firestoreCategorie,
-        user:          displayAnswer||"(leeg)",
-        correct:       correctAnswerString,
-        points:        pointsEarned,
-        isCorrect,
-        hintUsed:      state.currentHintUsedForQ,
-        tijdSeconden:  parseFloat(timeSpent)
-    });
-
-    document.getElementById("submit-btn").classList.add("hidden");
-    document.getElementById("hint-btn").classList.add("hidden");
-    document.getElementById("next-btn").classList.remove("hidden");
-}
-
-// ── VOLGENDE VRAAG ────────────────────────────────────────────────────────────
-document.getElementById("next-btn").addEventListener("click", () => {
-    state.currentIndex++;
-    if (state.currentIndex<state.totalQ) renderQuestion(); else showResults();
-});
-
-// ── RESULTATEN ────────────────────────────────────────────────────────────────
-async function showResults() {
-    showView("result-view");
-    const rounded = Math.round(state.score*10)/10;
-    const pct     = Math.round((rounded/state.totalQ)*100);
-
-    document.getElementById("score-val").innerText   = `${rounded.toString().replace(".",",")}/${state.totalQ}`;
-    document.getElementById("percent-val").innerText = `${pct}%`;
-    document.getElementById("hints-val").innerText   = state.hintsUsed;
-
-    const re = document.getElementById("result-emoji");
-    re.innerText = pct===100?"👑":pct>=80?"🌟":pct>=50?"👍":"📚";
-    if (pct===100 && window.confetti) window.confetti({particleCount:150,spread:80,origin:{y:0.6}});
-
-    // Foutenlijst
-    const list = document.getElementById("mistake-list"); list.innerHTML="";
-    state.history.forEach((h,idx) => {
-        const card = document.createElement("div");
-        card.className = "p-5 rounded-2xl border flex flex-col gap-2 "+
-            (h.isCorrect?"bg-emerald-50/30 border-emerald-100":"bg-rose-50/30 border-rose-100");
-        card.innerHTML = `
-            <div class="flex justify-between items-start">
-                <span class="text-xs font-black uppercase tracking-wider ${h.isCorrect?"text-emerald-600":"text-rose-600"}">${h.category}</span>
-                <span class="text-xs ${h.hintUsed?"bg-amber-100 text-amber-800":"bg-slate-100 text-slate-600"} px-2 py-0.5 rounded-md font-bold">
-                    ${h.points.toString().replace(".",",")} pt ${h.hintUsed?"(💡 hint)":""}
-                </span>
-            </div>
-            <div class="text-slate-800 font-extrabold text-sm">${idx+1}. ${h.title}</div>
-            <div class="flex gap-4 text-xs mt-1 border-t border-dashed pt-2 ${h.isCorrect?"border-emerald-100":"border-rose-100"}">
-                <div>Jouw antwoord: <span class="font-extrabold ${h.isCorrect?"text-emerald-700":"text-rose-700"}">${h.user}</span></div>
-                ${!h.isCorrect?`<div>Correct: <span class="font-extrabold text-slate-800">${h.correct}</span></div>`:""}
-            </div>`;
-        list.appendChild(card);
-    });
-
-    // Tijdsduur
-    const ms   = new Date()-state.totalStartTime;
-    const mins = Math.floor(ms/60000);
-    const secs = ((ms%60000)/1000).toFixed(0);
-    const tijd = `${mins.toString().padStart(2,"0")}:${secs.toString().padStart(2,"0")}`;
-
-    // Opslaan of gast-melding
-    if (isGuest) {
-        document.getElementById("guest-result-note").classList.remove("hidden");
-    } else {
-        document.getElementById("upload-status").classList.remove("hidden");
-        await saveToFirestore(rounded, pct, tijd);
-    }
-}
-
-// ── FIRESTORE OPSLAAN ─────────────────────────────────────────────────────────
-// saveToFirestore defined above
-
-// ── NAVIGATIE ─────────────────────────────────────────────────────────────────
-document.getElementById("exit-btn").addEventListener("click",     () => document.getElementById("exit-modal").classList.remove("hidden"));
-document.getElementById("modal-cancel").addEventListener("click", () => document.getElementById("exit-modal").classList.add("hidden"));
-document.addEventListener('DOMContentLoaded', function() {
-    var mc = document.getElementById("modal-confirm");
-    if (mc) mc.addEventListener("click", function() { document.getElementById("exit-modal").classList.add("hidden"); showView("setup-view"); });
-});
-document.getElementById("back-btn").addEventListener("click",     () => showView("setup-view"));
-
-document.getElementById("user-input").addEventListener("keypress", e => {
-    if (e.key!=="Enter") return;
-    if (!document.getElementById("next-btn").classList.contains("hidden")) {
-        state.currentIndex++;
-        if (state.currentIndex<state.totalQ) renderQuestion(); else showResults();
-    } else checkAnswer();
-});
-
-</script>
 </head>
 <body class="bg-slate-50 min-h-screen pb-20">
-<!-- LOGIN OVERLAY -->
+<div id="app" class="max-w-4xl mx-auto p-4 py-8">
+
+<!-- ── LOGIN SCHERM ── -->
+
+<!-- LOGINSCHERM -->
 <div id="klas-login" style="position:fixed;inset:0;z-index:9999;background:linear-gradient(135deg,#1e3a5f,#0369a1);display:flex;align-items:center;justify-content:center;padding:20px;">
   <div style="background:white;border-radius:24px;padding:2.5rem 2rem;width:100%;max-width:380px;box-shadow:0 25px 50px rgba(0,0,0,0.25);text-align:center;display:flex;flex-direction:column;gap:12px;">
     <div style="font-size:3rem">⚖️</div>
     <h1 style="font-size:1.5rem;font-weight:900;color:#1f2937;margin:0">De Gewichten Trainer</h1>
     <p style="color:#6b7280;font-size:.9rem;margin:0">Voer je naam en code in</p>
     <div id="klas-err" style="color:#dc2626;font-size:.85rem;font-weight:700;min-height:18px;display:none;"></div>
-    <input type="text" id="klas-naam" placeholder="Jouw voornaam"
-      style="width:100%;padding:14px;border:2px solid #e5e7eb;border-radius:12px;font-family:inherit;font-size:1rem;font-weight:600;text-align:center;outline:none;"
-      autocomplete="off" autocapitalize="words">
-    <input type="password" id="klas-code" placeholder="Jouw code"
-      style="width:100%;padding:14px;border:2px solid #e5e7eb;border-radius:12px;font-family:inherit;font-size:1rem;font-weight:600;text-align:center;outline:none;"
-      autocomplete="off">
-    <button onclick="klasLogin()"
-      style="width:100%;background:#1e3a5f;color:white;border:none;border-radius:12px;padding:14px;font-family:inherit;font-size:1rem;font-weight:700;cursor:pointer;">
-      Inloggen
-    </button>
-    <button onclick="klasGast()"
-      style="width:100%;background:transparent;border:2px solid #e5e7eb;border-radius:12px;padding:12px;font-family:inherit;font-size:.9rem;font-weight:700;color:#6b7280;cursor:pointer;">
-      Doorgaan als gast (geen opslag)
-    </button>
-    <div style="font-size:.75rem;color:#9ca3af;">
-      <a href="dashboard.html" style="color:#1e3a5f;font-weight:700;text-decoration:none;">Leerkracht? Klik hier</a>
-    </div>
+    <input type="text" id="klas-naam" placeholder="Jouw voornaam" style="width:100%;padding:14px;border:2px solid #e5e7eb;border-radius:12px;font-family:inherit;font-size:1rem;font-weight:600;text-align:center;outline:none;" autocomplete="off" autocapitalize="words">
+    <input type="password" id="klas-code" placeholder="Jouw code" style="width:100%;padding:14px;border:2px solid #e5e7eb;border-radius:12px;font-family:inherit;font-size:1rem;font-weight:600;text-align:center;outline:none;" autocomplete="off">
+    <button onclick="klasLogin()" style="width:100%;background:#1e3a5f;color:white;border:none;border-radius:12px;padding:14px;font-family:inherit;font-size:1rem;font-weight:700;cursor:pointer;">Inloggen</button>
+    <button onclick="klasGast()" style="width:100%;background:transparent;border:2px solid #e5e7eb;border-radius:12px;padding:12px;font-family:inherit;font-size:.9rem;font-weight:700;color:#6b7280;cursor:pointer;">Doorgaan als gast (geen opslag)</button>
+    <div style="font-size:.75rem;color:#9ca3af;"><a href="dashboard.html" style="color:#1e3a5f;font-weight:700;text-decoration:none;">Leerkracht? Klik hier</a></div>
   </div>
 </div>
-
-    <!-- LOGIN SCREEN -->
-    <div id="login-screen">
-      <div class="login-card">
-        <div class="login-logo">⚖️</div>
-        <h1 style="font-size:1.6rem;font-weight:800;color:#1f2937;margin-bottom:6px;">Gewicht</h1>
-        <p style="font-size:.85rem;color:#6b7280;margin-bottom:1.25rem;">Voer je naam en code in</p>
-        <input class="login-input" id="login-naam" type="text" placeholder="Jouw voornaam" autocomplete="off" autocapitalize="words">
-        <input class="login-input" id="login-code" type="password" placeholder="Jouw code" autocomplete="off">
-        <div class="login-error" id="login-error"></div>
-        <button class="btn-login" id="btn-login" onclick="loginMetCode()">Inloggen</button>
-        <button class="btn-guest" onclick="loginGuest()">Doorgaan als gast (geen opslag)</button>
-        <div class="teacher-link"><a href="dashboard.html">Leerkracht? Klik hier</a></div>
-      </div>
-    </div>
-<div id="app" class="max-w-4xl mx-auto p-4 py-8">
-
-<!-- ── LOGIN SCHERM ── -->
-<div id="login-view" style="display:none!important;" class="bg-white rounded-[2.5rem] shadow-xl p-8 md:p-12 border border-slate-100 text-center space-y-8 max-w-lg mx-auto">
-    <div class="inline-flex p-4 bg-indigo-100 rounded-3xl text-5xl">🏋️‍♂️</div>
-    <div class="space-y-2">
-        <h1 class="text-3xl font-extrabold text-slate-900">De Gewichten Trainer</h1>
-        <p class="text-slate-500 text-sm">Log in met je schoolaccount om je score op te slaan.<br>Of speel als gast — je score wordt dan niet bewaard.</p>
-    </div>
-    <div id="login-error" class="hidden bg-rose-50 border border-rose-200 text-rose-700 text-sm p-3 rounded-2xl"></div>
-
-    <!-- Google knop -->
-    <button id="google-signin-btn" class="mx-auto flex items-center gap-3 px-8 py-4 bg-white border-2 border-slate-200 text-slate-800 font-bold rounded-2xl hover:bg-slate-50 transition shadow text-sm">
-        <svg width="20" height="20" viewBox="0 0 48 48">
-            <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
-            <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
-            <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
-            <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.31-8.16 2.31-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
-        </svg>
-        Inloggen met schoolaccount
-    </button>
-
-    <div class="flex items-center gap-3 max-w-xs mx-auto">
-        <div class="flex-1 h-px bg-slate-200"></div>
-        <span class="text-slate-400 text-xs font-bold uppercase tracking-wider">of</span>
-        <div class="flex-1 h-px bg-slate-200"></div>
-    </div>
-
-    <!-- Gast -->
-    <div class="space-y-3">
-        <div class="bg-slate-50 border border-slate-200 p-4 rounded-2xl max-w-xs mx-auto text-left space-y-2">
-            <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Naam (gast)</label>
-            <input type="text" id="guest-name" placeholder="Bv. Milan"
-                class="w-full px-4 py-3 rounded-xl bg-white border border-slate-200 focus:border-amber-400 focus:outline-none font-semibold text-slate-800 text-sm">
-        </div>
-        <button id="guest-btn" class="mx-auto flex items-center gap-2 px-8 py-3 bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold rounded-2xl transition text-sm">
-            <i class="fa-solid fa-user-secret text-amber-500"></i> Spelen als gast (score niet bewaard)
-        </button>
-    </div>
-</div>
-
-<!-- ── START SCHERM (MENU) ── -->
 <div id="setup-view" class="hidden bg-white rounded-[2.5rem] shadow-xl p-8 md:p-12 border border-slate-100 text-center space-y-8">
     <div class="inline-flex p-4 bg-indigo-100 rounded-3xl text-5xl">🏋️‍♂️</div>
 
@@ -920,43 +264,548 @@ document.getElementById("user-input").addEventListener("keypress", e => {
 </div><!-- /#app -->
 
 <!-- ── FIREBASE ── -->
-
-
-
-    <script>
-    function afterLogin(naam) {
-        document.getElementById('login-screen').classList.add('hidden');
-        // Try common user display elements
-        var nb = document.getElementById('user-badge') || document.getElementById('user-bar');
-        if (nb) { nb.classList.add('show'); nb.style.display='flex'; }
-        var na = document.getElementById('user-avatar') || document.getElementById('u-av') || document.getElementById('user-avatar-nav');
-        if (na) na.textContent = naam ? naam[0].toUpperCase() : '👤';
-        var nn = document.getElementById('user-name') || document.getElementById('u-nm') || document.getElementById('user-name-nav');
-        if (nn) nn.textContent = naam;
-        var nr = document.getElementById('u-rl');
-        if (nr) nr.textContent = window._isGuest ? 'Gast' : '';
-    }
-    
-// ── DOM EVENT LISTENERS ──
-document.addEventListener('DOMContentLoaded', function() {
-    document.getElementById("google-signin-btn").addEventListener("click", async () => {
-    document.getElementById("guest-btn").addEventListener("click", () => {
-    document.getElementById("guest-name").addEventListener("input", () =>
-    document.getElementById("signout-btn").addEventListener("click", async () => {
-    document.getElementById("btn-aflezen").addEventListener("click",  function() { startMode("aflezen"); });
-    document.getElementById("btn-herleiden").addEventListener("click", function() { startMode("herleiden"); });
-    document.getElementById("btn-optellen").addEventListener("click",  function() { startMode("optellen"); });
-    document.getElementById("btn-bruto").addEventListener("click",     function() { startMode("bruto"); });
-    document.getElementById("btn-mix").addEventListener("click",       function() { startMode("mix"); });
-    document.getElementById("hint-btn").addEventListener("click", () => {
-    document.getElementById("submit-btn").addEventListener("click", checkAnswer);
-    document.getElementById("next-btn").addEventListener("click", () => {
-    document.getElementById("exit-btn").addEventListener("click",     () => document.getElementById("exit-modal").classList.remove("hidden"));
-    document.getElementById("modal-cancel").addEventListener("click", () => document.getElementById("exit-modal").classList.add("hidden"));
-    document.getElementById("back-btn").addEventListener("click",     () => showView("setup-view"));
-    document.getElementById("user-input").addEventListener("keypress", e => {
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script>
+firebase.initializeApp({
+  apiKey:"AIzaSyCnQDVVAlK6jE-PPUUediRJMTbN0xqrLDE",
+  authDomain:"klaswebsite-database.firebaseapp.com",
+  projectId:"klaswebsite-database",
+  storageBucket:"klaswebsite-database.firebasestorage.app",
+  messagingSenderId:"42912327282",
+  appId:"1:42912327282:web:f13f2c706f6c42c115c4eb"
 });
+var _db = firebase.firestore();
+var currentUser = null;
+var isGuest = false;
+var guestName = "";
+var currentMode = "";
+
+function klasLogin() {
+  var naam = (document.getElementById('klas-naam').value||'').trim().toLowerCase();
+  var code = (document.getElementById('klas-code').value||'').trim();
+  var err = document.getElementById('klas-err');
+  err.style.display = 'none';
+  if (!naam) { err.textContent='Vul je voornaam in.'; err.style.display='block'; return; }
+  if (!code) { err.textContent='Vul je code in.'; err.style.display='block'; return; }
+  _db.collection('leerlingen').doc(naam).get().then(function(doc) {
+    if (!doc.exists) { err.textContent='Naam niet gevonden.'; err.style.display='block'; return; }
+    var data = doc.data();
+    if (data.code !== code) { err.textContent='Verkeerde code.'; err.style.display='block'; return; }
+    window._leerlingNaam = data.weergavenaam || naam;
+    window._leerlingId = naam;
+    currentUser = {uid:naam, displayName:data.weergavenaam};
+    isGuest = false;
+    setupBadge(data.weergavenaam || naam, '', null, false);
+    document.getElementById('klas-login').style.display = 'none';
+    showView('setup-view');
+  }).catch(function(e) { err.textContent='Fout: '+e.message; err.style.display='block'; });
+}
+
+function klasGast() {
+  isGuest = true; currentUser = null; guestName = 'Gast';
+  window._leerlingId = null; window._leerlingNaam = 'Gast';
+  setupBadge('Gast', '', null, true);
+  document.getElementById('klas-login').style.display = 'none';
+  showView('setup-view');
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  document.getElementById('klas-naam').addEventListener('keypress', function(e) { if(e.key==='Enter') klasLogin(); });
+  document.getElementById('klas-code').addEventListener('keypress', function(e) { if(e.key==='Enter') klasLogin(); });
+  // Signout button
+  var so = document.getElementById('signout-btn');
+  if (so) so.addEventListener('click', function() {
+    isGuest=false; currentUser=null;
+    window._leerlingId=null; window._leerlingNaam=null;
+    document.getElementById('klas-login').style.display='flex';
+  });
+});
+
+async function saveToFirestore(roundedScore, pct, tijd) {
+  if (isGuest || !currentUser) return;
+  try {
+    await _db.collection('gewicht_toets').add({
+      leerlingId:   window._leerlingId,
+      leerlingNaam: window._leerlingNaam || 'Leerling',
+      score:        roundedScore,
+      percentage:   pct,
+      tijd:         tijd,
+      mode:         currentMode,
+      timestamp:    firebase.firestore.FieldValue.serverTimestamp()
+    });
+  } catch(e) { console.error('Opslaan mislukt:', e); }
+}
+
+function showLoginError(msg) {
+  var err = document.getElementById('klas-err');
+  if (err) { err.textContent=msg; err.style.display='block'; }
+}
 </script>
-<div style="position:fixed;bottom:10px;left:12px;font-size:.75rem;color:rgba(0,0,0,0.35);font-family:monospace;z-index:9998;pointer-events:none;background:rgba(255,255,255,0.7);padding:2px 6px;border-radius:4px;">v0.1</div>
+<script>
+let state = {
+    questions: [], currentIndex: 0, score: 0.0,
+    hintsUsed: 0, history: [], currentHintUsedForQ: false,
+    totalQ: 10, totalStartTime: null, questionStartTime: null
+};
+
+// ── VIEWS ─────────────────────────────────────────────────────────────────────
+function showView(id) {
+    ["setup-view","quiz-view","result-view"].forEach(v =>
+        document.getElementById(v).classList.add("hidden"));
+    document.getElementById(id).classList.remove("hidden");
+    window.scrollTo(0,0);
+}
+
+
+function setupBadge(naam, email, photoURL, guest) {
+    document.getElementById("user-name-display").textContent = naam;
+    document.getElementById("user-email-display").textContent = email;
+    const av = document.getElementById("user-avatar");
+    if (photoURL) { av.src = photoURL; av.classList.remove("hidden"); } else av.classList.add("hidden");
+    document.getElementById("guest-badge").classList.toggle("hidden", !guest);
+    document.getElementById("signout-btn").classList.toggle("hidden", guest);
+}
+
+function showLoginError(msg) {
+    const el = document.getElementById("login-error");
+    el.textContent = msg; el.classList.remove("hidden");
+}
+
+// ── DATASET ───────────────────────────────────────────────────────────────────
+const ITEMS = [
+    { name:"een pak suiker", baseWeight:1000, e:"🧂" },
+    { name:"een appel", baseWeight:150, e:"🍎" },
+    { name:"een pak melk", baseWeight:1000, e:"🥛" },
+    { name:"een doos aardbeien", baseWeight:500, e:"🍓" },
+    { name:"een zak aardappelen", baseWeight:2500, e:"🥔" },
+    { name:"een pot chocoladepasta", baseWeight:400, e:"🍯" },
+    { name:"een pak bloem", baseWeight:1000, e:"🌾" },
+    { name:"een pakje boter", baseWeight:250, e:"🧈" }
+];
+const HEAVY_ITEMS = [
+    { name:"een personenauto", baseWeight:1500, e:"🚗" },
+    { name:"een Afrikaanse olifant", baseWeight:5000, e:"🐘" },
+    { name:"een bestelwagen", baseWeight:3200, e:"🚚" },
+    { name:"een grote scheepscontainer", baseWeight:24000, e:"🚢" },
+    { name:"een jonge blauwe vinvis", baseWeight:45000, e:"🐋" }
+];
+
+function shuffle(arr) {
+    let a = [...arr];
+    for (let i = a.length-1; i>0; i--) {
+        const j = Math.floor(Math.random()*(i+1));
+        [a[i],a[j]] = [a[j],a[i]];
+    }
+    return a;
+}
+
+// ── VRAAGENGENERATOR ──────────────────────────────────────────────────────────
+function generateQuestions(mode) {
+    let pool = [];
+    const targetCount = mode === "mix" ? 20 : 10;
+    state.totalQ = targetCount;
+
+    for (let i = 0; i < 50; i++) {
+        const ri  = ITEMS[Math.floor(Math.random()*ITEMS.length)];
+        const rhi = HEAVY_ITEMS[Math.floor(Math.random()*HEAVY_ITEMS.length)];
+
+        // --- AFLEZEN ---
+        const scaleType = ["analog-1k","analog-4k","balance","digital"][Math.floor(Math.random()*4)];
+        if (scaleType === "analog-1k") {
+            const w = [125,250,375,500,625,750,875][Math.floor(Math.random()*7)];
+            pool.push({ category:"AFLEZEN (WIJZERPLAAT 1KG)", firestoreCategorie:"Wiskunde - Gewicht: Aflezen",
+                title:`Hoeveel weegt ${ri.name} ${ri.e} op deze weegschaal?`, type:"aflezen",
+                scaleStyle:"analog-1k", scaleWeight:w, inputType:"text", placeholder:"Aantal gram...",
+                answer:`${w} g`, rawAnswer:w,
+                hint: w%250===0 ? `De wijzer staat precies op ${w} gram.` : `De wijzer staat in het midden tussen ${w-125}g en ${w+125}g.`,
+                id:`af-1k-${i}` });
+        } else if (scaleType === "analog-4k") {
+            const w = [500,1000,1500,2000,2500,3000,3500][Math.floor(Math.random()*7)];
+            pool.push({ category:"AFLEZEN (WIJZERPLAAT 4KG)", firestoreCategorie:"Wiskunde - Gewicht: Aflezen",
+                title:`Hoeveel weegt ${ri.name} ${ri.e} op deze weegschaal?`, type:"aflezen",
+                scaleStyle:"analog-4k", scaleWeight:w, inputType:"text", placeholder:"Aantal gram...",
+                answer:`${w} g`, rawAnswer:w,
+                hint:`Deze weegschaal weegt tot 4 kg (4000g). De wijzer staat op ${w/1000} kg = ${w} g.`,
+                id:`af-4k-${i}` });
+        } else if (scaleType === "balance") {
+            const weightBlocks = [{label:"1 kg",val:1000},{label:"500 g",val:500},{label:"200 g",val:200},{label:"100 g",val:100},{label:"50 g",val:50}];
+            const blocks = shuffle(weightBlocks).slice(0, Math.floor(Math.random()*2)+2);
+            const total  = blocks.reduce((s,b)=>s+b.val,0);
+            pool.push({ category:"AFLEZEN (BALKBALANS)", firestoreCategorie:"Wiskunde - Gewicht: Aflezen",
+                title:`Wat is het totale gewicht van ${ri.name} ${ri.e}? Tel de gewichten rechts samen op.`,
+                type:"aflezen", scaleStyle:"balance", blocks, emoji:ri.e,
+                inputType:"text", placeholder:"Aantal gram...", answer:`${total} g`, rawAnswer:total,
+                hint:`Tel op: ${blocks.map(b=>b.label).join(" + ")}. (1 kg = 1000 g)`,
+                id:`af-bal-${i}` });
+        } else {
+            const dw = [0.25,0.5,0.75,1.2,1.5,2.25,3.5,4.05][Math.floor(Math.random()*8)];
+            const wg = dw*1000;
+            pool.push({ category:"AFLEZEN (DIGITAAL)", firestoreCategorie:"Wiskunde - Gewicht: Aflezen",
+                title:`Het display geeft ${dw.toString().replace(".",",")} kg aan. Hoeveel gram is dat?`,
+                type:"aflezen", scaleStyle:"digital", displayVal:dw, emoji:ri.e,
+                inputType:"text", placeholder:"Aantal gram...", answer:`${wg} g`, rawAnswer:wg,
+                hint:`kg → g: vermenigvuldig met 1000. ${dw.toString().replace(".",",")} × 1000 = ${wg} g.`,
+                id:`af-dig-${i}` });
+        }
+
+        // --- HERLEIDEN ---
+        if (Math.random()>0.5) {
+            const t = Math.floor(Math.random()*12)+1;
+            const k = (Math.floor(Math.random()*19)+1)*50;
+            if (Math.random()>0.5) {
+                pool.push({ category:"HERLEIDEN (TON)", firestoreCategorie:"Wiskunde - Gewicht: Maten Herleiden",
+                    title:`Hoeveel kg is ${t} t en ${k} kg samen?`, type:"herleiden",
+                    inputType:"text", placeholder:"Aantal kg...", answer:`${t*1000+k} kg`, rawAnswer:t*1000+k,
+                    hint:`1 t = 1000 kg. Dus ${t} t = ${t*1000} kg. Tel ${k} kg erbij.`, id:`her-ton-t-${i}` });
+            } else {
+                pool.push({ category:"HERLEIDEN (TON)", firestoreCategorie:"Wiskunde - Gewicht: Maten Herleiden",
+                    title:`Herleid ${t*1000+k} kg naar ton en kg:`, type:"herleiden-compound-ton",
+                    inputType:"compound", unit1:"t", unit2:"kg", answerKg:t, answerG:k,
+                    hint:`${t*1000+k} kg: de duizendtallen zijn tonnen (${t} t), de rest is kg (${k} kg).`, id:`her-ton-f-${i}` });
+            }
+        } else {
+            const kb = Math.floor(Math.random()*8)+1;
+            const gb = (Math.floor(Math.random()*19)+1)*50;
+            if (Math.random()>0.5) {
+                pool.push({ category:"HERLEIDEN", firestoreCategorie:"Wiskunde - Gewicht: Maten Herleiden",
+                    title:`Hoeveel gram is ${kb} kg en ${gb} g samen?`, type:"herleiden",
+                    inputType:"text", placeholder:"Aantal gram...", answer:`${kb*1000+gb} g`, rawAnswer:kb*1000+gb,
+                    hint:`1 kg = 1000 g. Dus ${kb} kg = ${kb*1000} g. Tel ${gb} g erbij.`, id:`her-t-${i}` });
+            } else {
+                pool.push({ category:"HERLEIDEN", firestoreCategorie:"Wiskunde - Gewicht: Maten Herleiden",
+                    title:`Herleid ${kb*1000+gb} g naar kg en g:`, type:"herleiden-compound",
+                    inputType:"compound", unit1:"kg", unit2:"g", answerKg:kb, answerG:gb,
+                    hint:`${kb*1000+gb} g: de duizendtallen zijn kg (${kb} kg), de rest is g (${gb} g).`, id:`her-f-${i}` });
+            }
+        }
+
+        // --- OPTELLEN & AFTREKKEN ---
+        if (Math.random()>0.5) {
+            const v1t=(Math.floor(Math.random()*4)+1), v1k=(Math.floor(Math.random()*9)+1)*100;
+            const v2t=(Math.floor(Math.random()*3)+1), v2k=(Math.floor(Math.random()*9)+1)*100;
+            const isAdd = Math.random()>0.5;
+            if (isAdd) {
+                const tot = (v1t*1000+v1k)+(v2t*1000+v2k);
+                pool.push({ category:"OPTELLEN (TON)", firestoreCategorie:"Wiskunde - Gewicht: Optellen en Aftrekken",
+                    title:`Reken uit: ${v1t} t ${v1k} kg + ${v2t} t ${v2k} kg =`, type:"calculatie",
+                    inputType:"compound", unit1:"t", unit2:"kg",
+                    answerKg:Math.floor(tot/1000), answerG:tot%1000,
+                    hint:`Tel kg op: ${v1k}+${v2k}=${v1k+v2k} kg. Elke 1000 kg = 1 t. Tel dan de tonnen.`, id:`calc-ton-p-${i}` });
+            } else {
+                const w1=(v1t+4)*1000+v1k, w2=v2t*1000+v2k, tot=w1-w2;
+                pool.push({ category:"AFTREKKEN (TON)", firestoreCategorie:"Wiskunde - Gewicht: Optellen en Aftrekken",
+                    title:`Reken uit: ${v1t+4} t ${v1k} kg - ${v2t} t ${v2k} kg =`, type:"calculatie",
+                    inputType:"compound", unit1:"t", unit2:"kg",
+                    answerKg:Math.floor(tot/1000), answerG:tot%1000,
+                    hint:`Trek t en kg apart af. Te weinig kg? Leen 1 t (1000 kg) van de tonnen.`, id:`calc-ton-m-${i}` });
+            }
+        } else {
+            const v1k=(Math.floor(Math.random()*3)+1), v1g=(Math.floor(Math.random()*9)+1)*100;
+            const v2k=(Math.floor(Math.random()*2)+1), v2g=(Math.floor(Math.random()*9)+1)*100;
+            const isAdd = Math.random()>0.5;
+            if (isAdd) {
+                const tot=(v1k*1000+v1g)+(v2k*1000+v2g);
+                pool.push({ category:"OPTELLEN", firestoreCategorie:"Wiskunde - Gewicht: Optellen en Aftrekken",
+                    title:`Reken uit: ${v1k} kg ${v1g} g + ${v2k} kg ${v2g} g =`, type:"calculatie",
+                    inputType:"compound", unit1:"kg", unit2:"g",
+                    answerKg:Math.floor(tot/1000), answerG:tot%1000,
+                    hint:`Tel g op, dan kg. 1000 g = 1 kg.`, id:`calc-p-${i}` });
+            } else {
+                const w1=(v1k+3)*1000+v1g, w2=v2k*1000+v2g, tot=w1-w2;
+                pool.push({ category:"AFTREKKEN", firestoreCategorie:"Wiskunde - Gewicht: Optellen en Aftrekken",
+                    title:`Reken uit: ${v1k+3} kg ${v1g} g - ${v2k} kg ${v2g} g =`, type:"calculatie",
+                    inputType:"compound", unit1:"kg", unit2:"g",
+                    answerKg:Math.floor(tot/1000), answerG:tot%1000,
+                    hint:`Trek kg en g apart af. Te weinig g? Leen 1 kg (1000 g).`, id:`calc-m-${i}` });
+            }
+        }
+
+        // --- BRUTO NETTO TARRA ---
+        const bruto = (Math.floor(Math.random()*15)+5)*50;
+        const tarra = (Math.floor(Math.random()*4)+2)*10;
+        const netto = bruto - tarra;
+        const bt = Math.floor(Math.random()*3);
+        if (bt===0) {
+            pool.push({ category:"BRUTO NETTO TARRA", firestoreCategorie:"Wiskunde - Gewicht: Bruto Netto Tarra",
+                title:`Een volle doos koekjes weegt bruto ${bruto} g. De lege doos weegt ${tarra} g (tarra). Wat is het netto gewicht?`,
+                type:"bruto-vraag", inputType:"text", placeholder:"Aantal gram...",
+                answer:`${netto} g`, rawAnswer:netto,
+                hint:"Netto = Bruto − Tarra.", id:`bnt-n-${i}` });
+        } else if (bt===1) {
+            pool.push({ category:"BRUTO NETTO TARRA", firestoreCategorie:"Wiskunde - Gewicht: Bruto Netto Tarra",
+                title:`Netto gewicht appels: ${netto} g. Mand (tarra): ${tarra} g. Wat is het bruto gewicht?`,
+                type:"bruto-vraag", inputType:"text", placeholder:"Aantal gram...",
+                answer:`${bruto} g`, rawAnswer:bruto,
+                hint:"Bruto = Netto + Tarra.", id:`bnt-b-${i}` });
+        } else {
+            pool.push({ category:"BRUTO NETTO TARRA", firestoreCategorie:"Wiskunde - Gewicht: Bruto Netto Tarra",
+                title:`Een pot chocopasta weegt bruto ${bruto} g, netto ${netto} g. Wat is de tarra (lege pot)?`,
+                type:"bruto-vraag", inputType:"text", placeholder:"Aantal gram...",
+                answer:`${tarra} g`, rawAnswer:tarra,
+                hint:"Tarra = Bruto − Netto.", id:`bnt-t-${i}` });
+        }
+    }
+
+    let filtered = pool;
+    if (mode==="aflezen")  filtered = pool.filter(q=>q.category.startsWith("AFLEZEN"));
+    else if (mode==="herleiden") filtered = pool.filter(q=>q.category.startsWith("HERLEIDEN"));
+    else if (mode==="optellen")  filtered = pool.filter(q=>q.category.startsWith("OPTELLEN")||q.category.startsWith("AFTREKKEN"));
+    else if (mode==="bruto")     filtered = pool.filter(q=>q.category==="BRUTO NETTO TARRA");
+
+    return shuffle(filtered).slice(0, targetCount);
+}
+
+// ── OEFENING STARTEN ─────────────────────────────────────────────────────────
+function startMode(mode) {
+    currentMode = mode;
+    state.questions      = generateQuestions(mode);
+    state.currentIndex   = 0;
+    state.score          = 0.0;
+    state.hintsUsed      = 0;
+    state.history        = [];
+    state.totalStartTime = new Date();
+    showView("quiz-view");
+    renderQuestion();
+}
+
+
+// ── VRAAG RENDEREN ────────────────────────────────────────────────────────────
+function renderQuestion() {
+    state.currentHintUsedForQ = false;
+    const q = state.questions[state.currentIndex];
+    state.questionStartTime = new Date();
+
+    document.getElementById("counter").innerText = `Vraag ${state.currentIndex+1} / ${state.totalQ}`;
+    document.getElementById("progress-bar").style.width = `${(state.currentIndex/state.totalQ)*100}%`;
+    document.getElementById("q-category").innerText = q.category;
+    document.getElementById("q-title").innerText = q.title;
+
+    // Reset weegschalen
+    ["scale-visual-container","scale-analog","scale-balance","scale-digital"].forEach(id =>
+        document.getElementById(id).classList.add("hidden"));
+    // Reset inputs & knoppen
+    ["single-input-container","compound-input-container","hint-box","feedback","next-btn"].forEach(id =>
+        document.getElementById(id).classList.add("hidden"));
+    ["submit-btn","hint-btn"].forEach(id =>
+        document.getElementById(id).classList.remove("hidden"));
+
+    // Weegschaal tonen
+    if (q.type === "aflezen") {
+        document.getElementById("scale-visual-container").classList.remove("hidden");
+        if (q.scaleStyle==="analog-1k"||q.scaleStyle==="analog-4k") {
+            document.getElementById("scale-analog").classList.remove("hidden");
+            const is4k = q.scaleStyle==="analog-4k";
+            document.getElementById("scale-analog-top").textContent    = "0g";
+            document.getElementById("scale-analog-right").textContent  = is4k?"1 kg":"250g";
+            document.getElementById("scale-analog-bottom").textContent = is4k?"2 kg":"500g";
+            document.getElementById("scale-analog-left").textContent   = is4k?"3 kg":"750g";
+            document.getElementById("scale-label").textContent         = is4k?"Analoge Wijzerplaat (tot 4 kg)":"Analoge Wijzerplaat (tot 1 kg)";
+            const angle = (q.scaleWeight/(is4k?4000:1000))*360;
+            document.getElementById("needle-group").style.transform = `rotate(${angle}deg)`;
+        } else if (q.scaleStyle==="balance") {
+            document.getElementById("scale-balance").classList.remove("hidden");
+            document.getElementById("balance-emoji").textContent = q.emoji;
+            document.getElementById("scale-label").textContent = "Klassieke balkbalans met losse gewichten";
+            const wc = document.getElementById("balance-weights-container");
+            wc.innerHTML = "";
+            q.blocks.forEach((block,idx) => {
+                const xo = 220+(idx%2===0?0:25), yo = 115-(Math.floor(idx/2)*15);
+                const rect = document.createElementNS("http://www.w3.org/2000/svg","rect");
+                rect.setAttribute("x",xo); rect.setAttribute("y",yo);
+                rect.setAttribute("width","35"); rect.setAttribute("height","14");
+                rect.setAttribute("fill","#fbbf24"); rect.setAttribute("stroke","#d97706");
+                rect.setAttribute("stroke-width","1.5"); rect.setAttribute("rx","2");
+                const text = document.createElementNS("http://www.w3.org/2000/svg","text");
+                text.setAttribute("x",xo+17.5); text.setAttribute("y",yo+10);
+                text.setAttribute("font-size","8"); text.setAttribute("font-weight","bold");
+                text.setAttribute("text-anchor","middle"); text.setAttribute("fill","#78350f");
+                text.textContent = block.label;
+                wc.appendChild(rect); wc.appendChild(text);
+            });
+        } else if (q.scaleStyle==="digital") {
+            document.getElementById("scale-digital").classList.remove("hidden");
+            document.getElementById("digital-emoji").textContent = q.emoji;
+            document.getElementById("digital-lcd").textContent = `${q.displayVal.toString().replace(".",",")} kg`;
+            document.getElementById("scale-label").textContent = "Digitale keukenweegschaal";
+        }
+    }
+
+    // Input activeren
+    if (q.inputType==="text") {
+        document.getElementById("single-input-container").classList.remove("hidden");
+        const inp = document.getElementById("user-input");
+        inp.value=""; inp.disabled=false; inp.placeholder=q.placeholder;
+        inp.className="w-full p-5 text-center text-2xl font-bold rounded-2xl border-4 border-slate-100 outline-none transition-all focus:border-indigo-500 focus:bg-indigo-50/30";
+        setTimeout(()=>inp.focus(),100);
+    } else if (q.inputType==="compound") {
+        document.getElementById("compound-input-container").classList.remove("hidden");
+        document.getElementById("compound-unit1-label").textContent = q.unit1||"kg";
+        document.getElementById("compound-unit2-label").textContent = q.unit2||"g";
+        const u1=document.getElementById("compound-unit1-val"), u2=document.getElementById("compound-unit2-val");
+        u1.value=""; u2.value=""; u1.disabled=false; u2.disabled=false;
+        u1.className="w-24 p-4 text-center text-2xl font-bold rounded-xl border-4 border-slate-100 outline-none focus:border-indigo-500";
+        u2.className="w-32 p-4 text-center text-2xl font-bold rounded-xl border-4 border-slate-100 outline-none focus:border-indigo-500";
+        setTimeout(()=>u1.focus(),100);
+    }
+}
+
+// ── HINT ──────────────────────────────────────────────────────────────────────
+    if (!state.currentHintUsedForQ) { state.currentHintUsedForQ=true; state.hintsUsed++; }
+    document.getElementById("hint-text").innerHTML = state.questions[state.currentIndex].hint;
+    document.getElementById("hint-box").classList.remove("hidden");
+});
+
+// ── ANTWOORD CONTROLEREN ──────────────────────────────────────────────────────
+
+function checkAnswer() {
+    const q = state.questions[state.currentIndex];
+    let isCorrect=false, displayAnswer="", correctAnswerString="";
+
+    if (q.inputType==="text") {
+        const raw = document.getElementById("user-input").value.trim();
+        if (!raw) return;
+        const val = parseInt(raw.replace(/\D/g,""));
+        isCorrect = val===q.rawAnswer;
+        displayAnswer = raw;
+        correctAnswerString = q.answer;
+    } else if (q.inputType==="compound") {
+        const u1=parseInt(document.getElementById("compound-unit1-val").value)||0;
+        const u2=parseInt(document.getElementById("compound-unit2-val").value)||0;
+        isCorrect = (u1===q.answerKg && u2===q.answerG);
+        displayAnswer = `${u1} ${q.unit1||"kg"} en ${u2} ${q.unit2||"g"}`;
+        correctAnswerString = `${q.answerKg} ${q.unit1||"kg"} en ${q.answerG} ${q.unit2||"g"}`;
+    }
+
+    // Disable inputs
+    document.getElementById("user-input").disabled=true;
+    document.getElementById("compound-unit1-val").disabled=true;
+    document.getElementById("compound-unit2-val").disabled=true;
+
+    let pointsEarned = 0;
+    if (isCorrect) {
+        pointsEarned = state.currentHintUsedForQ ? 0.5 : 1.0;
+        state.score += pointsEarned;
+        const fb = document.getElementById("feedback");
+        fb.innerHTML = `🎉 Super! Correct. <span class="block text-sm font-semibold mt-1 text-emerald-600">${pointsEarned===0.5?"+0,5 punt (hint)":"+1,0 punt"}</span>`;
+        fb.className = "p-5 rounded-2xl font-bold text-center bg-emerald-50 text-emerald-700 border-2 border-emerald-100";
+        fb.classList.remove("hidden");
+        document.getElementById("user-input").classList.add("border-emerald-500","bg-emerald-50");
+        document.getElementById("compound-unit1-val").classList.add("border-emerald-500","bg-emerald-50");
+        document.getElementById("compound-unit2-val").classList.add("border-emerald-500","bg-emerald-50");
+        if (window.confetti) window.confetti({particleCount:35,spread:60,origin:{y:0.8},colors:["#6366f1","#10b981"]});
+    } else {
+        const fb = document.getElementById("feedback");
+        fb.innerHTML = `❌ Oeps! Het juiste antwoord is: <strong>${correctAnswerString}</strong>`;
+        fb.className = "p-5 rounded-2xl font-bold text-center bg-rose-50 text-rose-700 border-2 border-rose-100";
+        fb.classList.remove("hidden");
+        document.getElementById("user-input").classList.add("border-rose-500","bg-rose-50");
+        document.getElementById("compound-unit1-val").classList.add("border-rose-500","bg-rose-50");
+        document.getElementById("compound-unit2-val").classList.add("border-rose-500","bg-rose-50");
+    }
+
+    const timeSpent = ((new Date()-state.questionStartTime)/1000).toFixed(1);
+    state.history.push({
+        title:         q.title,
+        category:      q.category,
+        firestoreCategorie: q.firestoreCategorie,
+        user:          displayAnswer||"(leeg)",
+        correct:       correctAnswerString,
+        points:        pointsEarned,
+        isCorrect,
+        hintUsed:      state.currentHintUsedForQ,
+        tijdSeconden:  parseFloat(timeSpent)
+    });
+
+    document.getElementById("submit-btn").classList.add("hidden");
+    document.getElementById("hint-btn").classList.add("hidden");
+    document.getElementById("next-btn").classList.remove("hidden");
+}
+
+// ── VOLGENDE VRAAG ────────────────────────────────────────────────────────────
+    state.currentIndex++;
+    if (state.currentIndex<state.totalQ) renderQuestion(); else showResults();
+});
+
+// ── RESULTATEN ────────────────────────────────────────────────────────────────
+async function showResults() {
+    showView("result-view");
+    const rounded = Math.round(state.score*10)/10;
+    const pct     = Math.round((rounded/state.totalQ)*100);
+
+    document.getElementById("score-val").innerText   = `${rounded.toString().replace(".",",")}/${state.totalQ}`;
+    document.getElementById("percent-val").innerText = `${pct}%`;
+    document.getElementById("hints-val").innerText   = state.hintsUsed;
+
+    const re = document.getElementById("result-emoji");
+    re.innerText = pct===100?"👑":pct>=80?"🌟":pct>=50?"👍":"📚";
+    if (pct===100 && window.confetti) window.confetti({particleCount:150,spread:80,origin:{y:0.6}});
+
+    // Foutenlijst
+    const list = document.getElementById("mistake-list"); list.innerHTML="";
+    state.history.forEach((h,idx) => {
+        const card = document.createElement("div");
+        card.className = "p-5 rounded-2xl border flex flex-col gap-2 "+
+            (h.isCorrect?"bg-emerald-50/30 border-emerald-100":"bg-rose-50/30 border-rose-100");
+        card.innerHTML = `
+            <div class="flex justify-between items-start">
+                <span class="text-xs font-black uppercase tracking-wider ${h.isCorrect?"text-emerald-600":"text-rose-600"}">${h.category}</span>
+                <span class="text-xs ${h.hintUsed?"bg-amber-100 text-amber-800":"bg-slate-100 text-slate-600"} px-2 py-0.5 rounded-md font-bold">
+                    ${h.points.toString().replace(".",",")} pt ${h.hintUsed?"(💡 hint)":""}
+                </span>
+            </div>
+            <div class="text-slate-800 font-extrabold text-sm">${idx+1}. ${h.title}</div>
+            <div class="flex gap-4 text-xs mt-1 border-t border-dashed pt-2 ${h.isCorrect?"border-emerald-100":"border-rose-100"}">
+                <div>Jouw antwoord: <span class="font-extrabold ${h.isCorrect?"text-emerald-700":"text-rose-700"}">${h.user}</span></div>
+                ${!h.isCorrect?`<div>Correct: <span class="font-extrabold text-slate-800">${h.correct}</span></div>`:""}
+            </div>`;
+        list.appendChild(card);
+    });
+
+    // Tijdsduur
+    const ms   = new Date()-state.totalStartTime;
+    const mins = Math.floor(ms/60000);
+    const secs = ((ms%60000)/1000).toFixed(0);
+    const tijd = `${mins.toString().padStart(2,"0")}:${secs.toString().padStart(2,"0")}`;
+
+    // Opslaan of gast-melding
+    if (isGuest) {
+        document.getElementById("guest-result-note").classList.remove("hidden");
+    } else {
+        document.getElementById("upload-status").classList.remove("hidden");
+        await saveToFirestore(rounded, pct, tijd);
+    }
+}
+
+// ── FIRESTORE OPSLAAN ─────────────────────────────────────────────────────────
+
+
+// ── NAVIGATIE ─────────────────────────────────────────────────────────────────
+
+    if (e.key!=="Enter") return;
+    if (!document.getElementById("next-btn").classList.contains("hidden")) {
+        state.currentIndex++;
+        if (state.currentIndex<state.totalQ) renderQuestion(); else showResults();
+    } else checkAnswer();
+});
+
+document.addEventListener('DOMContentLoaded', function() {
+  document.getElementById("btn-aflezen").addEventListener("click",  () => startMode("aflezen"));
+  document.getElementById("btn-herleiden").addEventListener("click", () => startMode("herleiden"));
+  document.getElementById("btn-optellen").addEventListener("click",  () => startMode("optellen"));
+  document.getElementById("btn-bruto").addEventListener("click",     () => startMode("bruto"));
+  document.getElementById("btn-mix").addEventListener("click",       () => startMode("mix"));
+  document.getElementById("hint-btn").addEventListener("click", () => {
+  document.getElementById("submit-btn").addEventListener("click", checkAnswer);
+  document.getElementById("next-btn").addEventListener("click", () => {
+  document.getElementById("exit-btn").addEventListener("click",     () => document.getElementById("exit-modal").classList.remove("hidden"));
+  document.getElementById("modal-cancel").addEventListener("click", () => document.getElementById("exit-modal").classList.add("hidden"));
+  document.getElementById("modal-confirm").addEventListener("click",() => { document.getElementById("exit-modal").classList.add("hidden"); showView("setup-view"); });
+  document.getElementById("back-btn").addEventListener("click",     () => showView("setup-view"));
+  document.getElementById("user-input").addEventListener("keypress", e => {
+});
+
+</script>
+<div style="position:fixed;bottom:10px;left:12px;font-size:.75rem;color:rgba(0,0,0,0.35);font-family:monospace;z-index:9998;pointer-events:none;background:rgba(255,255,255,0.8);padding:2px 6px;border-radius:4px;">v0.1</div>
 </body>
 </html>
