@@ -8,31 +8,35 @@
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
 <style>
 *{box-sizing:border-box;}
-body{font-family:'Plus+Jakarta+Sans',sans-serif;background:#f8fafc;margin:0;}
+body{font-family:'Plus Jakarta Sans',sans-serif;background:#f8fafc;margin:0;}
 .hidden{display:none!important;}
 #login-screen{position:fixed;inset:0;z-index:9999;background:linear-gradient(135deg,#1e3a5f 0%,#1d4ed8 100%);display:flex;align-items:center;justify-content:center;padding:20px;}
-#login-screen.hidden{display:none!important;}
-.card{background:white;border-radius:1.5rem;box-shadow:0 4px 20px rgba(0,0,0,0.07);padding:1.5rem;}
-.badge-goed{background:#dcfce7;color:#166534;padding:3px 10px;border-radius:99px;font-size:.75rem;font-weight:700;}
-.badge-ok{background:#fef9c3;color:#713f12;padding:3px 10px;border-radius:99px;font-size:.75rem;font-weight:700;}
-.badge-slecht{background:#fee2e2;color:#991b1b;padding:3px 10px;border-radius:99px;font-size:.75rem;font-weight:700;}
-.tab-btn{padding:8px 18px;border-radius:99px;font-weight:700;font-size:.85rem;cursor:pointer;border:2px solid transparent;transition:all .2s;font-family:inherit;}
+.card{background:white;border-radius:1.5rem;box-shadow:0 4px 20px rgba(0,0,0,0.07);padding:1.5rem;margin-bottom:1rem;}
+.badge-goed{background:#dcfce7;color:#166534;padding:3px 10px;border-radius:99px;font-size:.75rem;font-weight:700;white-space:nowrap;}
+.badge-ok{background:#fef9c3;color:#713f12;padding:3px 10px;border-radius:99px;font-size:.75rem;font-weight:700;white-space:nowrap;}
+.badge-slecht{background:#fee2e2;color:#991b1b;padding:3px 10px;border-radius:99px;font-size:.75rem;font-weight:700;white-space:nowrap;}
+.tab-btn{padding:8px 18px;border-radius:99px;font-weight:700;font-size:.85rem;cursor:pointer;border:2px solid transparent;transition:all .2s;font-family:inherit;background:none;}
 .tab-btn.active{background:#1d4ed8;color:white;}
 .tab-btn:not(.active){color:#6b7280;border-color:#e5e7eb;}
 .tab-btn:not(.active):hover{background:#f1f5f9;}
 input,select{font-family:inherit;}
 .btn{padding:10px 20px;border-radius:1rem;font-weight:700;font-size:.9rem;cursor:pointer;border:none;transition:all .2s;font-family:inherit;}
-.btn-blue{background:#1d4ed8;color:white;}
-.btn-blue:hover{background:#1e40af;}
-.btn-red{background:#dc2626;color:white;}
-.btn-red:hover{background:#b91c1c;}
-.btn-green{background:#16a34a;color:white;}
-.btn-green:hover{background:#15803d;}
-.btn-outline{background:white;color:#374151;border:2px solid #e5e7eb;}
-.btn-outline:hover{border-color:#1d4ed8;color:#1d4ed8;}
+.btn-blue{background:#1d4ed8;color:white;} .btn-blue:hover{background:#1e40af;}
+.btn-red{background:#dc2626;color:white;} .btn-red:hover{background:#b91c1c;}
+.btn-green{background:#16a34a;color:white;} .btn-green:hover{background:#15803d;}
+.btn-outline{background:white;color:#374151;border:2px solid #e5e7eb;} .btn-outline:hover{border-color:#1d4ed8;color:#1d4ed8;}
 .leerling-row{display:flex;align-items:center;gap:12px;padding:12px 16px;border-radius:1rem;border:1px solid #e5e7eb;margin-bottom:8px;background:white;}
-.progress-bar{height:8px;background:#e5e7eb;border-radius:99px;overflow:hidden;}
+.progress-bar{height:8px;background:#e5e7eb;border-radius:99px;overflow:hidden;min-width:60px;}
 .progress-fill{height:100%;border-radius:99px;transition:width .5s;}
+.feed-row{display:flex;align-items:center;gap:10px;padding:12px 16px;border-radius:1rem;border:1px solid #e5e7eb;margin-bottom:8px;background:white;cursor:pointer;transition:all .15s;flex-wrap:wrap;}
+.feed-row:hover{border-color:#1d4ed8;box-shadow:0 2px 12px rgba(29,78,216,.08);}
+#detail-view{position:fixed;inset:0;z-index:50;background:#f8fafc;overflow-y:auto;}
+.ai-block{background:linear-gradient(135deg,#eff6ff,#f0fdf4);border:1px solid #bfdbfe;border-radius:1rem;padding:1.25rem;}
+#ai-output p{margin:.5rem 0;line-height:1.6;}
+#ai-output ul,#ai-output ol{margin:.4rem 0 .4rem 1.4rem;}
+#ai-output li{margin:.25rem 0;}
+.spinner{display:inline-block;width:18px;height:18px;border:3px solid #e5e7eb;border-top-color:#1d4ed8;border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle;}
+@keyframes spin{to{transform:rotate(360deg)}}
 </style>
 </head>
 <body>
@@ -52,85 +56,127 @@ input,select{font-family:inherit;}
 
 <!-- MAIN APP -->
 <div id="main-app" class="hidden">
-  <nav style="background:white;border-bottom:1px solid #e5e7eb;padding:16px 24px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;position:sticky;top:0;z-index:40;">
+  <nav style="background:white;border-bottom:1px solid #e5e7eb;padding:14px 24px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;position:sticky;top:0;z-index:40;">
     <div>
-      <div style="font-size:1.3rem;font-weight:800;color:#1e3a5f;">📊 Leerkracht Dashboard</div>
-      <div style="font-size:.78rem;color:#6b7280;font-weight:600;" id="klas-naam-header">Klaswebsite meester Maarten</div>
+      <div style="font-size:1.2rem;font-weight:800;color:#1e3a5f;">📊 Leerkracht Dashboard</div>
+      <div style="font-size:.75rem;color:#6b7280;font-weight:600;">Klaswebsite meester Maarten</div>
     </div>
-    <div style="display:flex;gap:8px;flex-wrap:wrap;">
-      <button class="tab-btn active" id="tab-overzicht" onclick="showTab('overzicht')">📋 Klassenoverzicht</button>
-      <button class="tab-btn" id="tab-detail" onclick="showTab('detail')">👤 Per leerling</button>
-      <button class="tab-btn" id="tab-leerlingen" onclick="showTab('leerlingen')">⚙️ Leerlingen beheren</button>
-      <button class="btn btn-outline" onclick="loadAll()" style="padding:8px 16px;font-size:.82rem;">🔄 Vernieuwen</button>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+      <button class="tab-btn active" id="tab-overzicht" onclick="showTab('overzicht')">📋 Feed</button>
+      <button class="tab-btn" id="tab-klas" onclick="showTab('klas')">👥 Per leerling</button>
+      <button class="tab-btn" id="tab-leerlingen" onclick="showTab('leerlingen')">⚙️ Leerlingen</button>
+      <button class="btn btn-outline" onclick="exportCSV()" style="padding:8px 14px;font-size:.8rem;">⬇️ CSV export</button>
+      <button class="btn btn-outline" onclick="loadAll()" style="padding:8px 14px;font-size:.8rem;">🔄 Vernieuwen</button>
     </div>
   </nav>
 
-  <div style="max-width:1100px;margin:0 auto;padding:24px 16px;">
+  <div style="max-width:1100px;margin:0 auto;padding:20px 16px;">
 
-    <!-- TAB: OVERZICHT -->
+    <!-- TAB: FEED -->
     <div id="tab-overzicht-content">
-      <div class="card mb-4">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
-          <h2 style="font-size:1rem;font-weight:800;color:#1e3a5f;">Laatste toets per leerling</h2>
-          <select id="filter-app" onchange="renderOverzicht()" style="padding:8px 12px;border:2px solid #e5e7eb;border-radius:.75rem;font-weight:700;font-size:.85rem;outline:none;">
-            <option value="">Alle apps</option>
-            <option value="getalbegrip">Getalbegrip</option>
-            <option value="breuken">Breuken</option>
-            <option value="geld">Geld rekenen</option>
-            <option value="inhoudsmaten">Inhoudsmaten</option>
-            <option value="negatieve_getallen">Negatieve getallen</option>
-            <option value="meetkunde">Meetkunde</option>
-            <option value="hoeken_meten">Hoeken meten</option>
-            <option value="gewicht">Gewichten</option>
+      <div class="card">
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:16px;">
+          <h2 style="font-size:1rem;font-weight:800;color:#1e3a5f;margin:0;">🕐 Laatste 30 ingestuurde toetsen</h2>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;">
+            <select id="feed-filter-leerling" onchange="renderFeed()" style="padding:8px 12px;border:2px solid #e5e7eb;border-radius:.75rem;font-weight:700;font-size:.82rem;outline:none;">
+              <option value="">Alle leerlingen</option>
+            </select>
+            <select id="feed-filter-app" onchange="renderFeed()" style="padding:8px 12px;border:2px solid #e5e7eb;border-radius:.75rem;font-weight:700;font-size:.82rem;outline:none;">
+              <option value="">Alle vakken</option>
+            </select>
+          </div>
+        </div>
+        <div id="feed-lijst"><div style="text-align:center;padding:2rem;color:#9ca3af;"><span class="spinner"></span> Laden...</div></div>
+      </div>
+    </div>
+
+    <!-- TAB: PER LEERLING -->
+    <div id="tab-klas-content" class="hidden">
+      <div class="card">
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:16px;">
+          <h2 style="font-size:1rem;font-weight:800;color:#1e3a5f;margin:0;">📈 Klassenoverzicht — laatste toets per leerling</h2>
+          <select id="klas-filter-app" onchange="renderKlas()" style="padding:8px 12px;border:2px solid #e5e7eb;border-radius:.75rem;font-weight:700;font-size:.82rem;outline:none;">
+            <option value="">Alle vakken</option>
           </select>
         </div>
         <div id="klas-tabel" style="overflow-x:auto;"></div>
       </div>
       <div class="card">
-        <h2 style="font-size:1rem;font-weight:800;color:#1e3a5f;margin-bottom:16px;">⚠️ Aandachtspunten per leerling</h2>
+        <h2 style="font-size:1rem;font-weight:800;color:#1e3a5f;margin-bottom:14px;">⚠️ Aandachtspunten per leerling</h2>
         <div id="zwakke-onderdelen"></div>
       </div>
-    </div>
-
-    <!-- TAB: PER LEERLING -->
-    <div id="tab-detail-content" class="hidden">
-      <div class="card mb-4">
-        <label style="font-weight:700;color:#374151;margin-bottom:8px;display:block;">Selecteer leerling:</label>
-        <select id="leerling-select" onchange="loadLeerlingDetail()" style="width:100%;padding:12px;border:2px solid #e5e7eb;border-radius:1rem;font-size:1rem;font-weight:600;outline:none;">
-          <option value="">-- Kies een leerling --</option>
-        </select>
+      <div class="card">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap;">
+          <h2 style="font-size:1rem;font-weight:800;color:#1e3a5f;margin:0;">👤 Historiek per leerling</h2>
+          <select id="leerling-select" onchange="renderLeerlingHistoriek()" style="padding:10px 14px;border:2px solid #e5e7eb;border-radius:.75rem;font-size:.9rem;font-weight:600;outline:none;flex:1;min-width:180px;">
+            <option value="">-- Kies een leerling --</option>
+          </select>
+        </div>
+        <div id="leerling-historiek"></div>
       </div>
-      <div id="leerling-detail"></div>
     </div>
 
     <!-- TAB: LEERLINGEN BEHEREN -->
     <div id="tab-leerlingen-content" class="hidden">
-      <div class="card mb-4">
-        <h2 style="font-size:1rem;font-weight:800;color:#1e3a5f;margin-bottom:16px;">➕ Nieuwe leerling toevoegen</h2>
+      <div class="card">
+        <h2 style="font-size:1rem;font-weight:800;color:#1e3a5f;margin-bottom:14px;">➕ Nieuwe leerling toevoegen</h2>
         <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;">
-          <div>
-            <label style="font-size:.78rem;font-weight:700;color:#6b7280;display:block;margin-bottom:4px;">Voornaam (kleine letters)</label>
-            <input type="text" id="nieuw-naam" placeholder="bv. emma" style="padding:11px 14px;border:2px solid #e5e7eb;border-radius:.75rem;font-size:.95rem;font-weight:600;outline:none;width:180px;">
-          </div>
-          <div>
-            <label style="font-size:.78rem;font-weight:700;color:#6b7280;display:block;margin-bottom:4px;">Weergavenaam</label>
-            <input type="text" id="nieuw-display" placeholder="bv. Emma" style="padding:11px 14px;border:2px solid #e5e7eb;border-radius:.75rem;font-size:.95rem;font-weight:600;outline:none;width:180px;">
-          </div>
-          <div>
-            <label style="font-size:.78rem;font-weight:700;color:#6b7280;display:block;margin-bottom:4px;">Code</label>
-            <input type="text" id="nieuw-code" placeholder="bv. emma2025" style="padding:11px 14px;border:2px solid #e5e7eb;border-radius:.75rem;font-size:.95rem;font-weight:600;outline:none;width:160px;">
-          </div>
+          <div><label style="font-size:.75rem;font-weight:700;color:#6b7280;display:block;margin-bottom:4px;">Voornaam (kleine letters)</label>
+            <input type="text" id="nieuw-naam" placeholder="bv. emma" style="padding:11px 14px;border:2px solid #e5e7eb;border-radius:.75rem;font-size:.9rem;font-weight:600;outline:none;width:180px;"></div>
+          <div><label style="font-size:.75rem;font-weight:700;color:#6b7280;display:block;margin-bottom:4px;">Weergavenaam</label>
+            <input type="text" id="nieuw-display" placeholder="bv. Emma" style="padding:11px 14px;border:2px solid #e5e7eb;border-radius:.75rem;font-size:.9rem;font-weight:600;outline:none;width:180px;"></div>
+          <div><label style="font-size:.75rem;font-weight:700;color:#6b7280;display:block;margin-bottom:4px;">Code</label>
+            <input type="text" id="nieuw-code" placeholder="bv. emma2025" style="padding:11px 14px;border:2px solid #e5e7eb;border-radius:.75rem;font-size:.9rem;font-weight:600;outline:none;width:160px;"></div>
           <button class="btn btn-green" onclick="voegLeerlingToe()">+ Toevoegen</button>
         </div>
         <div id="add-feedback" style="margin-top:10px;font-weight:700;font-size:.88rem;min-height:20px;"></div>
       </div>
       <div class="card">
-        <h2 style="font-size:1rem;font-weight:800;color:#1e3a5f;margin-bottom:16px;">👥 Huidige leerlingen</h2>
+        <h2 style="font-size:1rem;font-weight:800;color:#1e3a5f;margin-bottom:14px;">👥 Huidige leerlingen</h2>
         <div id="leerlingen-lijst"></div>
       </div>
     </div>
 
   </div>
+</div>
+
+<!-- CSV EXPORT MODAL -->
+<div id="csv-modal" style="display:none;position:fixed;inset:0;z-index:80;background:rgba(0,0,0,.45);align-items:center;justify-content:center;padding:20px;">
+  <div style="background:white;border-radius:1.5rem;padding:2rem;width:100%;max-width:420px;box-shadow:0 25px 50px rgba(0,0,0,.2);">
+    <h2 style="font-size:1.1rem;font-weight:800;color:#1e3a5f;margin:0 0 1.2rem;">⬇️ CSV Export</h2>
+    <div style="display:flex;flex-direction:column;gap:12px;">
+      <div><label style="font-size:.78rem;font-weight:700;color:#6b7280;display:block;margin-bottom:5px;">Periode</label>
+        <select id="csv-periode" style="width:100%;padding:11px;border:2px solid #e5e7eb;border-radius:.75rem;font-weight:700;font-size:.9rem;outline:none;">
+          <option value="7">Afgelopen 7 dagen</option>
+          <option value="10" selected>Afgelopen 10 dagen</option>
+          <option value="30">Afgelopen maand (30 dagen)</option>
+          <option value="90">Afgelopen 3 maanden</option>
+          <option value="365">Afgelopen jaar</option>
+          <option value="0">Alles exporteren</option>
+        </select></div>
+      <div><label style="font-size:.78rem;font-weight:700;color:#6b7280;display:block;margin-bottom:5px;">Leerling</label>
+        <select id="csv-leerling" style="width:100%;padding:11px;border:2px solid #e5e7eb;border-radius:.75rem;font-weight:700;font-size:.9rem;outline:none;">
+          <option value="">Alle leerlingen</option>
+        </select></div>
+      <div><label style="font-size:.78rem;font-weight:700;color:#6b7280;display:block;margin-bottom:5px;">Vak</label>
+        <select id="csv-app" style="width:100%;padding:11px;border:2px solid #e5e7eb;border-radius:.75rem;font-weight:700;font-size:.9rem;outline:none;">
+          <option value="">Alle vakken</option>
+        </select></div>
+    </div>
+    <div style="display:flex;gap:10px;margin-top:1.5rem;">
+      <button class="btn btn-outline" style="flex:1;" onclick="document.getElementById('csv-modal').style.display='none'">Annuleren</button>
+      <button class="btn btn-green" style="flex:1;" onclick="doExportCSV()">⬇️ Downloaden</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOETS DETAIL VIEW (full-screen overlay) -->
+<div id="detail-view" style="display:none;position:fixed;inset:0;z-index:50;background:#f8fafc;overflow-y:auto;">
+  <nav style="background:white;border-bottom:1px solid #e5e7eb;padding:14px 24px;display:flex;align-items:center;gap:14px;position:sticky;top:0;z-index:10;flex-wrap:wrap;">
+    <button class="btn btn-outline" style="padding:8px 16px;font-size:.85rem;" onclick="closeDetail()">← Terug</button>
+    <div style="font-size:1rem;font-weight:800;color:#1e3a5f;flex:1;" id="detail-title">Toetsdetail</div>
+  </nav>
+  <div style="max-width:900px;margin:0 auto;padding:20px 16px;" id="detail-content"></div>
 </div>
 
 <!-- FIREBASE -->
@@ -147,40 +193,70 @@ firebase.initializeApp({
 });
 const db = firebase.firestore();
 
-// ── WACHTWOORD ────────────────────────────────────────────────────────────
-const TEACHER_PWD = 'meester2025';
-
-// ── STATE ─────────────────────────────────────────────────────────────────
-var leerlingen = []; // [{id, naam, code}]
-var allScores = {};  // {leerlingId: [{app, score, ...}]}
-
-// CAT NAMEN
-const CAT_NAMEN = {
-  'LEESBAAR':'Leesbaarheid','WAARDE':'Getalwaarde','GETALBEELD':'Getalbeeld',
-  'INTERPRETEREN':'Interpreteren','ORDENEN':'Ordenen','GETALLENAS':'Getallenas',
-  'GETALLENRIJ':'Getallenrij','TOETS':'Toets','getalbegrip':'Getalbegrip',
-  'breuken':'Breuken','geld':'Geld rekenen','inhoudsmaten':'Inhoudsmaten',
-  'negatieve_getallen':'Negatieve getallen','meetkunde':'Meetkunde','hoeken_meten':'Hoeken meten',
-  'gewicht':'Gewichten',
-  'mix':'Grote Mix (Toets)','aflezen':'Aflezen','herleiden':'Herleiden',
-  'optellen':'Optellen & Aftrekken','bruto':'Bruto Netto Tarra'
+// ════════════════════════════════════════════════════════════════════════════
+// CONFIG — voeg hier optioneel labels toe voor nieuwe toetsen.
+// De app zal AUTOMATISCH alle *_toets collections ontdekken en laden.
+// Toevoegen van een label hier is enkel voor een mooiere weergave, NOOIT verplicht.
+// ════════════════════════════════════════════════════════════════════════════
+const COLLECTION_LABELS = {
+  'getalbegrip_toets':       'Getalbegrip',
+  'breuken_toets':           'Breuken',
+  'geld_toets':              'Geld rekenen',
+  'inhoudsmaten_toets':      'Inhoudsmaten',
+  'negatieve_getallen_toets':'Negatieve getallen',
+  'meetkunde_toets':         'Meetkunde',
+  'hoeken_meten_toets':      'Hoeken meten',
+  'gewicht_toets':           'Gewichten',
+  'komma_toets':             'Kommagetallen',
+  // Voorbeeld: 'tijd_toets': 'Tijdrekenen',
 };
 
-const APP_COLLECTIONS = [
-  {key:'getalbegrip', col:'getalbegrip_toets'},
-  {key:'breuken', col:'breuken_toets'},
-  {key:'geld', col:'geld_toets'},
-  {key:'inhoudsmaten', col:'inhoudsmaten_toets'},
-  {key:'negatieve_getallen', col:'negatieve_getallen_toets'},
-  {key:'meetkunde', col:'meetkunde_toets'},
-  {key:'hoeken_meten', col:'hoeken_meten_toets'},
-  {key:'gewicht', col:'gewicht_toets'},
-];
+const MODE_LABELS = {
+  'mix':'Grote Mix','aflezen':'Aflezen','herleiden':'Herleiden',
+  'optellen':'Optellen & Aftrekken','bruto':'Bruto Netto Tarra',
+  'conversion':'Omzetten','value':'Positiewaarde','compare':'Vergelijken',
+  'axis':'Getallenas','between':'Tussenliggende getallen',
+};
+
+// ── STATE ─────────────────────────────────────────────────────────────────
+const TEACHER_PWD = 'meester2025';
+var leerlingen   = [];
+var allRecords   = [];      // Genormaliseerde, gesorteerde flat array
+var knownCols    = [];      // Auto-ontdekte collections
+
+// ── HELPERS ───────────────────────────────────────────────────────────────
+function colLabel(col) {
+  return COLLECTION_LABELS[col] || col.replace(/_toets$/,'').replace(/_/g,' ');
+}
+function modeLabel(m) { return m ? (MODE_LABELS[m] || m) : ''; }
+function pctBadge(pct) {
+  if (pct >= 70) return '<span class="badge-goed">✓ Goed</span>';
+  if (pct >= 50) return '<span class="badge-ok">~ Oefenen</span>';
+  return '<span class="badge-slecht">✗ Extra hulp</span>';
+}
+function normRecord(raw, col) {
+  return Object.assign({}, raw, {
+    _col:         col,
+    _label:       colLabel(col),
+    _ts:          raw.timestamp ? raw.timestamp.seconds * 1000 : 0,
+    _pct:         raw.percentage || 0,
+    _score:       raw.score || 0,
+    _total:       raw.totalQ || raw.total || 0,
+    _tijd:        raw.tijd || (raw.timeSeconds ? Math.floor(raw.timeSeconds/60)+'m'+(raw.timeSeconds%60)+'s' : ''),
+    _hints:       raw.hintsGebruikt !== undefined ? raw.hintsGebruikt : (raw.hintsUsed || 0),
+    _leerlingId:  raw.leerlingId || '',
+    _leerlingNaam:raw.leerlingNaam || raw.leerlingId || '?',
+    _mode:        raw.mode || '',
+  });
+}
+function leerlingNaam(id) {
+  var l = leerlingen.find(function(x){return x.naam===id;});
+  return l ? l.weergavenaam : (id || '?');
+}
 
 // ── LOGIN ─────────────────────────────────────────────────────────────────
 function checkPwd() {
-  var pwd = document.getElementById('teacher-pwd').value;
-  if (pwd === TEACHER_PWD) {
+  if (document.getElementById('teacher-pwd').value === TEACHER_PWD) {
     document.getElementById('login-screen').classList.add('hidden');
     document.getElementById('main-app').classList.remove('hidden');
     loadAll();
@@ -196,7 +272,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // ── TABS ──────────────────────────────────────────────────────────────────
 function showTab(tab) {
-  ['overzicht','detail','leerlingen'].forEach(function(t) {
+  ['overzicht','klas','leerlingen'].forEach(function(t) {
     document.getElementById('tab-'+t+'-content').classList.toggle('hidden', t!==tab);
     document.getElementById('tab-'+t).classList.toggle('active', t===tab);
   });
@@ -204,383 +280,503 @@ function showTab(tab) {
 
 // ── LOAD ALL DATA ─────────────────────────────────────────────────────────
 async function loadAll() {
+  document.getElementById('feed-lijst').innerHTML =
+    '<div style="text-align:center;padding:2rem;color:#9ca3af;"><span class="spinner"></span> Laden...</div>';
   await loadLeerlingen();
-  await loadScores();
-  renderOverzicht();
+  await loadAllScores();
+  populateFilters();
+  renderFeed();
+  renderKlas();
   renderLeerlingenLijst();
-  populateLeerlingSelect();
 }
 
 async function loadLeerlingen() {
   try {
     var snap = await db.collection('leerlingen').orderBy('naam').get();
     leerlingen = [];
-    snap.forEach(function(doc) {
-      leerlingen.push(Object.assign({id: doc.id}, doc.data()));
-    });
-    // Als nog geen leerlingen in DB → initialiseer standaard klas
-    if (leerlingen.length === 0) {
-      await initieelLeerlingenAanmaken();
-    }
+    snap.forEach(function(doc) { leerlingen.push(Object.assign({id:doc.id}, doc.data())); });
+    if (leerlingen.length === 0) await initieelLeerlingenAanmaken();
   } catch(e) { console.error('Leerlingen laden:', e); }
 }
 
 async function initieelLeerlingenAanmaken() {
   var standaard = [
-    {naam:'ethanael', weergavenaam:'Ethanael', code:'ethanael2025'},
-    {naam:'eulalie',  weergavenaam:'Eulalie',  code:'eulalie2025'},
-    {naam:'gabriel',  weergavenaam:'Gabriel',  code:'gabriel2025'},
-    {naam:'kobe',     weergavenaam:'Kobe',      code:'kobe2025'},
-    {naam:'kriss',    weergavenaam:'Kriss',     code:'kriss2025'},
-    {naam:'kylian',   weergavenaam:'Kylian',    code:'kylian2025'},
-    {naam:'leila',    weergavenaam:'Leila',     code:'leila2025'},
-    {naam:'stijn',    weergavenaam:'Stijn',     code:'stijn2025'},
+    {naam:'ethanael',weergavenaam:'Ethanael',code:'ethanael2025'},
+    {naam:'eulalie', weergavenaam:'Eulalie', code:'eulalie2025'},
+    {naam:'gabriel', weergavenaam:'Gabriel', code:'gabriel2025'},
+    {naam:'kobe',    weergavenaam:'Kobe',    code:'kobe2025'},
+    {naam:'kriss',   weergavenaam:'Kriss',   code:'kriss2025'},
+    {naam:'kylian',  weergavenaam:'Kylian',  code:'kylian2025'},
+    {naam:'leila',   weergavenaam:'Leila',   code:'leila2025'},
+    {naam:'stijn',   weergavenaam:'Stijn',   code:'stijn2025'},
   ];
-  for (var l of standaard) {
-    await db.collection('leerlingen').doc(l.naam).set(l);
-  }
+  for (var l of standaard) await db.collection('leerlingen').doc(l.naam).set(l);
   await loadLeerlingen();
 }
 
-async function loadScores() {
-  allScores = {};
-  for (var appDef of APP_COLLECTIONS) {
+// AUTO-DISCOVERY van collections:
+// Combineert de vaste COLLECTION_LABELS met collections die eerder ontdekt werden
+// en opgeslagen zijn in localStorage. Zo hoef je nooit manueel iets aan te passen:
+// zodra een nieuwe *_toets collection data bevat, verschijnt die automatisch.
+async function loadAllScores() {
+  allRecords = [];
+  knownCols  = [];
+
+  // Startlijst: alle geconfigureerde + eerder ontdekte collections
+  var toLoad = Object.keys(COLLECTION_LABELS);
+  try {
+    var cached = JSON.parse(localStorage.getItem('db_known_cols') || '[]');
+    cached.forEach(function(c) { if (toLoad.indexOf(c) < 0) toLoad.push(c); });
+  } catch(e) {}
+
+  console.log('[loadAllScores] Collections te laden:', toLoad);
+
+  for (var col of toLoad) {
     try {
-      var snap = await db.collection(appDef.col)
-        .orderBy('timestamp','desc').limit(300).get();
-      snap.forEach(function(doc) {
-        var d = doc.data();
-        var id = d.leerlingId;
-        if (!id) return;
-        if (!allScores[id]) allScores[id] = [];
-        allScores[id].push(Object.assign({}, d, {_app: appDef.key}));
-      });
-    } catch(e) { /* collection may not exist yet */ }
+      var snap = await db.collection(col).orderBy('timestamp','desc').limit(500).get();
+      if (!snap.empty) {
+        knownCols.push(col);
+        snap.forEach(function(doc) {
+          var r = normRecord(doc.data(), col);
+          if (r._leerlingId) allRecords.push(r);
+        });
+        console.log('[loadAllScores]', col, '→', snap.size, 'records geladen');
+      }
+    } catch(e) { console.log('[loadAllScores] Skip', col, '(bestaat nog niet)'); }
   }
+
+  // Sla ontdekte collections op voor volgende sessie
+  try { localStorage.setItem('db_known_cols', JSON.stringify(knownCols)); } catch(e) {}
+
+  // Sorteer: nieuwste eerst
+  allRecords.sort(function(a,b) { return b._ts - a._ts; });
+  console.log('[loadAllScores] Totaal geladen:', allRecords.length, 'records');
 }
 
-// ── RENDER OVERZICHT ──────────────────────────────────────────────────────
-function renderOverzicht() {
-  var filterApp = document.getElementById('filter-app').value;
+// ── FILTERS OPVULLEN ──────────────────────────────────────────────────────
+function populateFilters() {
+  var appOpts = '<option value="">Alle vakken</option>';
+  knownCols.forEach(function(c) {
+    appOpts += '<option value="'+c+'">'+colLabel(c)+'</option>';
+  });
+
+  var lOpts = '<option value="">Alle leerlingen</option>';
+  leerlingen.forEach(function(l) {
+    lOpts += '<option value="'+l.naam+'">'+l.weergavenaam+'</option>';
+  });
+
+  ['feed-filter-app','klas-filter-app','csv-app'].forEach(function(id) {
+    var el = document.getElementById(id);
+    var v = el.value;
+    el.innerHTML = appOpts;
+    el.value = v;
+  });
+  ['feed-filter-leerling','leerling-select','csv-leerling'].forEach(function(id) {
+    var el = document.getElementById(id);
+    var v = el.value;
+    el.innerHTML = (id === 'leerling-select')
+      ? '<option value="">-- Kies een leerling --</option>' + lOpts.replace('<option value="">Alle leerlingen</option>','')
+      : lOpts;
+    el.value = v;
+  });
+}
+
+// ── RENDER FEED (laatste 30, chronologisch) ───────────────────────────────
+function renderFeed() {
+  var filterL = document.getElementById('feed-filter-leerling').value;
+  var filterA = document.getElementById('feed-filter-app').value;
+
+  var records = allRecords.filter(function(d) {
+    if (filterL && d._leerlingId !== filterL) return false;
+    if (filterA && d._col !== filterA) return false;
+    return true;
+  }).slice(0, 30);
+
+  if (records.length === 0) {
+    document.getElementById('feed-lijst').innerHTML =
+      '<p style="color:#9ca3af;font-style:italic;padding:1rem;">Geen resultaten gevonden.</p>';
+    return;
+  }
+
+  var html = '';
+  records.forEach(function(d, localIdx) {
+    var globalIdx = allRecords.indexOf(d);
+    var ts  = d._ts ? new Date(d._ts).toLocaleString('nl-BE') : '?';
+    var pct = d._pct;
+    var col = pct>=70?'#16a34a':pct>=50?'#d97706':'#dc2626';
+    var lnaam = leerlingNaam(d._leerlingId);
+    var modeTxt = (d._mode && modeLabel(d._mode)) ? ' · '+modeLabel(d._mode) : '';
+
+    html += '<div class="feed-row" onclick="openDetail('+globalIdx+')">';
+    html += '<div style="width:38px;height:38px;border-radius:50%;background:#dbeafe;display:flex;align-items:center;justify-content:center;font-weight:900;color:#1d4ed8;font-size:1rem;flex-shrink:0;">'+lnaam[0].toUpperCase()+'</div>';
+    html += '<div style="flex:1;min-width:0;">';
+    html += '<div style="font-weight:800;color:#1e3a5f;font-size:.92rem;">'+lnaam+'</div>';
+    html += '<div style="font-size:.78rem;color:#6b7280;font-weight:600;">'+d._label+modeTxt+' · '+ts+'</div>';
+    html += '</div>';
+    html += '<div style="text-align:right;flex-shrink:0;">';
+    html += '<div style="font-size:1.1rem;font-weight:900;color:'+col+';">'+pct+'%</div>';
+    html += '<div style="font-size:.75rem;color:#9ca3af;font-weight:600;">'+d._score+'/'+d._total+'</div>';
+    html += '</div>';
+    html += '<div style="flex-shrink:0;">'+pctBadge(pct)+'</div>';
+    if (d._tijd) html += '<div style="font-size:.75rem;color:#9ca3af;flex-shrink:0;white-space:nowrap;">⏱ '+d._tijd+'</div>';
+    html += '</div>';
+  });
+
+  document.getElementById('feed-lijst').innerHTML = html;
+}
+
+// ── RENDER KLAS OVERZICHT ─────────────────────────────────────────────────
+function renderKlas() {
+  var filterA = document.getElementById('klas-filter-app').value;
+
   var html = '<table style="width:100%;border-collapse:collapse;font-size:.88rem;">';
   html += '<tr style="border-bottom:2px solid #e5e7eb;">';
-  ['Leerling','Toetsen','Beste','Laatste','Gemiddelde','Status'].forEach(function(h) {
-    html += '<th style="text-align:left;padding:10px 12px;font-size:.75rem;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:#9ca3af;">'+h+'</th>';
+  ['Leerling','Vak','Datum','Score','Gem. (alle)','Status'].forEach(function(h) {
+    html += '<th style="text-align:left;padding:10px 12px;font-size:.72rem;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:#9ca3af;">'+h+'</th>';
   });
   html += '</tr>';
 
   leerlingen.forEach(function(l) {
-    var data = (allScores[l.naam] || []).filter(function(d) {
-      return !filterApp || d._app === filterApp;
+    var data = allRecords.filter(function(d) {
+      return d._leerlingId === l.naam && (!filterA || d._col === filterA);
     });
     if (data.length === 0) {
-      html += '<tr style="border-bottom:1px solid #f1f5f9;">';
-      html += '<td style="padding:12px;font-weight:800;color:#1e3a5f;">'+l.weergavenaam+'</td>';
+      html += '<tr style="border-bottom:1px solid #f1f5f9;"><td style="padding:12px;font-weight:800;color:#1e3a5f;">'+l.weergavenaam+'</td>';
       html += '<td colspan="5" style="padding:12px;color:#9ca3af;font-style:italic;">Nog geen toetsen</td></tr>';
       return;
     }
-    var scores = data.map(function(d){return d.percentage||0;});
-    var beste = Math.max.apply(null,scores);
-    var laatste = data[0].percentage||0;
-    var gem = Math.round(scores.reduce(function(a,b){return a+b;},0)/scores.length);
-    var badgeClass = gem>=70?'badge-goed':gem>=50?'badge-ok':'badge-slecht';
-    var status = gem>=70?'✓ Goed':gem>=50?'~ Oefenen':'✗ Extra hulp';
-    html += '<tr style="border-bottom:1px solid #f1f5f9;cursor:pointer;" onclick="showTab(\'detail\');document.getElementById(\'leerling-select\').value=\''+l.naam+'\';loadLeerlingDetail()" onmouseover="this.style.background=\'#f8fafc\'" onmouseout="this.style.background=\'#fff\'">';
+    var laatste = data[0];
+    var globalIdx = allRecords.indexOf(laatste);
+    var gem = Math.round(data.reduce(function(s,d){return s+d._pct;},0)/data.length);
+    var ts  = laatste._ts ? new Date(laatste._ts).toLocaleDateString('nl-BE') : '?';
+    var pct = laatste._pct;
+    var col = pct>=70?'#16a34a':pct>=50?'#d97706':'#dc2626';
+
+    html += '<tr style="border-bottom:1px solid #f1f5f9;cursor:pointer;" onclick="openDetail('+globalIdx+')" onmouseover="this.style.background=\'#f8fafc\'" onmouseout="this.style.background=\'#fff\'">';
     html += '<td style="padding:12px;font-weight:800;color:#1e3a5f;">'+l.weergavenaam+'</td>';
-    html += '<td style="padding:12px;font-weight:700;">'+data.length+'</td>';
-    html += '<td style="padding:12px;font-weight:700;">'+beste+'%</td>';
-    html += '<td style="padding:12px;font-weight:700;">'+laatste+'%</td>';
-    html += '<td style="padding:12px;">'+
-      '<div style="display:flex;align-items:center;gap:8px;">'+
-        '<div class="progress-bar" style="width:80px;"><div class="progress-fill" style="width:'+gem+'%;background:'+(gem>=70?'#16a34a':gem>=50?'#d97706':'#dc2626')+'"></div></div>'+
-        '<span style="font-weight:800;">'+gem+'%</span>'+
-      '</div></td>';
-    html += '<td style="padding:12px;"><span class="'+badgeClass+'">'+status+'</span></td>';
+    html += '<td style="padding:12px;font-size:.8rem;color:#6b7280;font-weight:600;">'+laatste._label+'</td>';
+    html += '<td style="padding:12px;font-size:.8rem;color:#6b7280;">'+ts+'</td>';
+    html += '<td style="padding:12px;font-weight:800;color:'+col+';">'+pct+'%</td>';
+    html += '<td style="padding:12px;"><div style="display:flex;align-items:center;gap:8px;"><div class="progress-bar" style="width:70px;"><div class="progress-fill" style="width:'+gem+'%;background:'+(gem>=70?'#16a34a':gem>=50?'#d97706':'#dc2626')+'"></div></div><span style="font-weight:800;font-size:.85rem;">'+gem+'%</span></div></td>';
+    html += '<td style="padding:12px;">'+pctBadge(pct)+'</td>';
     html += '</tr>';
   });
   html += '</table>';
   document.getElementById('klas-tabel').innerHTML = html;
+  renderAandachtspunten(filterA);
+}
 
-  // Aandachtspunten
-  var zwakHTML = '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px;">';
+function renderAandachtspunten(filterA) {
+  var html = '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:12px;">';
   var heeftData = false;
   leerlingen.forEach(function(l) {
-    var data = allScores[l.naam] || [];
-    if (data.length === 0) return;
+    var data = allRecords.filter(function(d){
+      return d._leerlingId === l.naam && (!filterA || d._col === filterA);
+    });
+    if (!data.length) return;
     heeftData = true;
     var cats = {};
-
     data.forEach(function(d) {
-      // Formaat 1: oudere apps met categoryScores
+      if (d.foutenAnalyse && d.foutenAnalyse.foutenPerCategorie) {
+        Object.entries(d.foutenAnalyse.foutenPerCategorie).forEach(function(e) {
+          cats[e[0]] = (cats[e[0]]||0) + e[1];
+        });
+      }
       if (d.categoryScores) {
         Object.entries(d.categoryScores).forEach(function(e) {
-          var cat=e[0],s=e[1];
-          if(!cats[cat])cats[cat]={correct:0,total:0};
-          cats[cat].correct+=s.correct||0;
-          cats[cat].total+=s.total||0;
-        });
-      }
-      // Formaat 2: gewicht-app met foutenAnalyse.foutenPerCategorie
-      if (d.foutenAnalyse && d.foutenAnalyse.foutenPerCategorie) {
-        var totalQ = d.totalQ || d.total || 20;
-        var aantalFout = Object.values(d.foutenAnalyse.foutenPerCategorie).reduce(function(a,b){return a+b;},0);
-        Object.entries(d.foutenAnalyse.foutenPerCategorie).forEach(function(e) {
-          var cat=e[0], nFout=e[1];
-          if(!cats[cat])cats[cat]={correct:0,total:0};
-          cats[cat].correct += 0;       // we weten correct niet exact per cat
-          cats[cat].total   += nFout;   // gebruik fouten als proxy (lager = beter)
-          cats[cat]._foutTelling = (cats[cat]._foutTelling||0) + nFout;
+          var s=e[1]; cats[e[0]] = (cats[e[0]]||0) + ((s.total||0)-(s.correct||0));
         });
       }
     });
+    var zwakste = Object.entries(cats).filter(function(e){return e[1]>0;})
+      .sort(function(a,b){return b[1]-a[1];}).slice(0,4);
 
-    // Toon zwakste categorieën — voor gewicht: hoogste foutentelling
-    var zwakste = Object.entries(cats)
-      .filter(function(e){return e[1].total>0;})
-      .map(function(e){
-        var hasPct = e[1].total > 0 && !e[1]._foutTelling;
-        return {
-          cat: e[0],
-          pct: hasPct ? Math.round(e[1].correct/e[1].total*100) : null,
-          fouten: e[1]._foutTelling || 0
-        };
-      })
-      .sort(function(a,b){
-        if (a.pct !== null && b.pct !== null) return a.pct - b.pct;
-        return b.fouten - a.fouten;
-      })
-      .slice(0,4);
-
-    zwakHTML += '<div style="background:#f8fafc;border-radius:1rem;padding:14px;border:1px solid #e5e7eb;">';
-    zwakHTML += '<div style="font-weight:800;color:#1e3a5f;margin-bottom:8px;font-size:.9rem;">'+l.weergavenaam+'</div>';
-    if (zwakste.length === 0) {
-      zwakHTML += '<div style="font-size:.8rem;color:#9ca3af;">Onvoldoende data</div>';
+    html += '<div style="background:#f8fafc;border-radius:1rem;padding:14px;border:1px solid #e5e7eb;">';
+    html += '<div style="font-weight:800;color:#1e3a5f;margin-bottom:8px;font-size:.9rem;">'+l.weergavenaam+'</div>';
+    if (!zwakste.length) {
+      html += '<div style="font-size:.8rem;color:#9ca3af;">Geen fouten of geen data</div>';
     } else {
       zwakste.forEach(function(z) {
-        var label = z.pct !== null
-          ? (CAT_NAMEN[z.cat]||z.cat)+' — '+z.pct+'%'
-          : (CAT_NAMEN[z.cat]||z.cat)+' — '+z.fouten+'× fout';
-        var col = (z.pct !== null)
-          ? (z.pct<50?'#dc2626':z.pct<70?'#d97706':'#16a34a')
-          : (z.fouten>=3?'#dc2626':z.fouten>=2?'#d97706':'#9ca3af');
-        zwakHTML += '<div style="font-size:.8rem;font-weight:700;color:'+col+';margin-bottom:4px;">⚠ '+label+'</div>';
+        var col2 = z[1]>=3?'#dc2626':z[1]>=2?'#d97706':'#9ca3af';
+        html += '<div style="font-size:.8rem;font-weight:700;color:'+col2+';margin-bottom:3px;">⚠ '+(modeLabel(z[0])||z[0])+' — '+z[1]+'× fout</div>';
       });
     }
-    zwakHTML += '</div>';
+    html += '</div>';
   });
-  zwakHTML += '</div>';
-  document.getElementById('zwakke-onderdelen').innerHTML = heeftData ? zwakHTML : '<p style="color:#9ca3af;font-style:italic;">Nog geen data beschikbaar.</p>';
+  html += '</div>';
+  document.getElementById('zwakke-onderdelen').innerHTML = heeftData ? html : '<p style="color:#9ca3af;font-style:italic;">Nog geen data.</p>';
 }
 
-// ── RENDER PER LEERLING ───────────────────────────────────────────────────
-function populateLeerlingSelect() {
-  var sel = document.getElementById('leerling-select');
-  sel.innerHTML = '<option value="">-- Kies een leerling --</option>';
-  leerlingen.forEach(function(l) {
-    var opt = document.createElement('option');
-    opt.value = l.naam; opt.textContent = l.weergavenaam;
-    sel.appendChild(opt);
-  });
-}
-
-function loadLeerlingDetail() {
+// ── LEERLING HISTORIEK ────────────────────────────────────────────────────
+function renderLeerlingHistoriek() {
   var id = document.getElementById('leerling-select').value;
-  var det = document.getElementById('leerling-detail');
-  if (!id) { det.innerHTML = ''; return; }
-  var l = leerlingen.find(function(x){return x.naam===id;});
-  var naam = l ? l.weergavenaam : id;
-  var data = allScores[id] || [];
+  var el = document.getElementById('leerling-historiek');
+  if (!id) { el.innerHTML = ''; return; }
+  var data = allRecords.filter(function(d){return d._leerlingId===id;});
+  var naam = leerlingNaam(id);
+  if (!data.length) { el.innerHTML = '<p style="color:#9ca3af;font-style:italic;">'+naam+' heeft nog geen toetsen.</p>'; return; }
 
-  if (data.length === 0) {
-    det.innerHTML = '<div class="card" style="text-align:center;color:#9ca3af;padding:2rem;">'+naam+' heeft nog geen toetsen gemaakt.</div>';
-    return;
-  }
-
-  var scores = data.map(function(d){return d.percentage||0;});
-  var beste = Math.max.apply(null,scores);
-  var gem = Math.round(scores.reduce(function(a,b){return a+b;},0)/scores.length);
-  var html = '<div class="card mb-4">';
-  html += '<h2 style="font-size:1rem;font-weight:800;color:#1e3a5f;margin-bottom:16px;">'+naam+' — Statistieken</h2>';
-  html += '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px;">';
-  [{l:'Toetsen gemaakt',v:data.length},{l:'Beste score',v:beste+'%'},{l:'Gemiddelde',v:gem+'%'}].forEach(function(s) {
-    html += '<div style="background:#f8fafc;border-radius:1rem;padding:16px;text-align:center;">';
-    html += '<div style="font-size:1.6rem;font-weight:800;color:#1d4ed8;">'+s.v+'</div>';
-    html += '<div style="font-size:.72rem;font-weight:700;color:#6b7280;text-transform:uppercase;margin-top:4px;">'+s.l+'</div></div>';
+  var gem = Math.round(data.reduce(function(s,d){return s+d._pct;},0)/data.length);
+  var beste = Math.max.apply(null,data.map(function(d){return d._pct;}));
+  var html = '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px;">';
+  [{l:'Toetsen',v:data.length},{l:'Beste',v:beste+'%'},{l:'Gemiddelde',v:gem+'%'}].forEach(function(s){
+    html += '<div style="background:#f8fafc;border-radius:1rem;padding:14px;text-align:center;">';
+    html += '<div style="font-size:1.5rem;font-weight:800;color:#1d4ed8;">'+s.v+'</div>';
+    html += '<div style="font-size:.7rem;font-weight:700;color:#9ca3af;text-transform:uppercase;margin-top:3px;">'+s.l+'</div></div>';
   });
-  html += '</div>';
-
-  // Per app
-  var apps = {};
+  html += '</div><div style="display:flex;flex-direction:column;gap:8px;">';
   data.forEach(function(d) {
-    var a = d._app||'onbekend';
-    if(!apps[a])apps[a]=[];
-    apps[a].push(d);
-  });
-  if (Object.keys(apps).length > 1) {
-    html += '<h3 style="font-size:.88rem;font-weight:800;color:#374151;margin-bottom:10px;">Per app:</h3>';
-    html += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:8px;margin-bottom:16px;">';
-    Object.entries(apps).forEach(function(e) {
-      var appKey=e[0], appData=e[1];
-      var appScores=appData.map(function(d){return d.percentage||0;});
-      var appGem=Math.round(appScores.reduce(function(a,b){return a+b;},0)/appScores.length);
-      var col=appGem>=70?'#16a34a':appGem>=50?'#d97706':'#dc2626';
-      html += '<div style="background:#f8fafc;border-radius:.75rem;padding:12px;text-align:center;">';
-      html += '<div style="font-size:.78rem;font-weight:700;color:#6b7280;margin-bottom:4px;">'+(CAT_NAMEN[appKey]||appKey)+'</div>';
-      html += '<div style="font-size:1.3rem;font-weight:800;color:'+col+';">'+appGem+'%</div>';
-      html += '<div style="font-size:.72rem;color:#9ca3af;">'+appData.length+' toets(en)</div></div>';
-    });
-    html += '</div>';
-  }
-
-  // Per categorie
-  var cats = {};
-  data.forEach(function(d) {
-    if (!d.categoryScores) return;
-    Object.entries(d.categoryScores).forEach(function(e) {
-      var cat=e[0],s=e[1];
-      if(!cats[cat])cats[cat]={correct:0,total:0};
-      cats[cat].correct+=s.correct||0;
-      cats[cat].total+=s.total||0;
-    });
-  });
-  if (Object.keys(cats).length > 0) {
-    html += '<h3 style="font-size:.88rem;font-weight:800;color:#374151;margin-bottom:10px;">Per onderdeel:</h3>';
-    Object.entries(cats).sort(function(a,b){
-      var pa=a[1].total?a[1].correct/a[1].total:1;
-      var pb=b[1].total?b[1].correct/b[1].total:1;
-      return pa-pb;
-    }).forEach(function(e) {
-      var cat=e[0],d=e[1];
-      if(d.total===0)return;
-      var pct=Math.round(d.correct/d.total*100);
-      var col=pct>=70?'#16a34a':pct>=50?'#d97706':'#dc2626';
-      var bg=pct>=70?'#f0fdf4':pct>=50?'#fefce8':'#fff1f2';
-      html += '<div style="display:flex;align-items:center;gap:12px;margin-bottom:6px;background:'+bg+';border-radius:.75rem;padding:10px 14px;">';
-      html += '<div style="font-weight:700;font-size:.85rem;flex:1;min-width:100px;">'+(CAT_NAMEN[cat]||cat)+'</div>';
-      html += '<div style="font-weight:800;color:'+col+';min-width:80px;text-align:right;">'+d.correct+'/'+d.total+' ('+pct+'%)</div>';
-      html += '<div class="progress-bar" style="width:100px;"><div class="progress-fill" style="width:'+pct+'%;background:'+col+'"></div></div>';
-      html += '</div>';
-    });
-  }
-  html += '</div>';
-
-  // Alle toetsen
-  html += '<div class="card"><h3 style="font-size:.88rem;font-weight:800;color:#374151;margin-bottom:12px;">Alle toetsen (nieuwste eerst):</h3>';
-  data.forEach(function(d) {
-    var ts = d.timestamp ? new Date(d.timestamp.seconds*1000).toLocaleString('nl-BE') : '?';
-    var pct = d.percentage||0;
+    var gi = allRecords.indexOf(d);
+    var ts = d._ts ? new Date(d._ts).toLocaleString('nl-BE') : '?';
+    var pct = d._pct;
     var col = pct>=70?'#16a34a':pct>=50?'#d97706':'#dc2626';
-    var appNaam = CAT_NAMEN[d._app]||d._app||'';
-    var modeNaam = CAT_NAMEN[d.mode]||d.mode||'';
-    // Normaliseer veldnamen: gewicht gebruikt 'hintsGebruikt'+'tijd', oudere apps 'hintsUsed'+'timeSeconds'
-    var hints = d.hintsGebruikt !== undefined ? d.hintsGebruikt : (d.hintsUsed || 0);
-    var tijdStr = d.tijd || (d.timeSeconds ? Math.floor(d.timeSeconds/60)+'m'+d.timeSeconds%60+'s' : '');
-
-    html += '<div style="border:1px solid #e5e7eb;border-radius:1rem;padding:14px;margin-bottom:12px;">';
-    // Header rij
-    html += '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:8px;">';
-    html += '<div style="font-size:.8rem;font-weight:600;color:#9ca3af;min-width:140px;">'+ts+'</div>';
-    if(appNaam) html += '<div style="font-size:.78rem;font-weight:700;color:#6b7280;background:#f1f5f9;padding:2px 8px;border-radius:99px;">'+appNaam+'</div>';
-    if(modeNaam && modeNaam !== appNaam) html += '<div style="font-size:.78rem;font-weight:700;color:#6b7280;background:#f1f5f9;padding:2px 8px;border-radius:99px;">'+modeNaam+'</div>';
-    html += '<div style="font-weight:800;">'+d.score+'/'+d.totalQ+'</div>';
+    var modeTxt = d._mode && modeLabel(d._mode) ? ' · '+modeLabel(d._mode) : '';
+    html += '<div style="display:flex;align-items:center;gap:10px;padding:10px 14px;border:1px solid #e5e7eb;border-radius:.75rem;background:white;cursor:pointer;flex-wrap:wrap;transition:border-color .15s;" onclick="openDetail('+gi+')" onmouseover="this.style.borderColor=\'#1d4ed8\'" onmouseout="this.style.borderColor=\'#e5e7eb\'">';
+    html += '<div style="font-size:.78rem;color:#9ca3af;min-width:130px;">'+ts+'</div>';
+    html += '<div style="font-size:.82rem;font-weight:700;color:#6b7280;flex:1;">'+d._label+modeTxt+'</div>';
     html += '<div style="font-weight:800;color:'+col+';">'+pct+'%</div>';
-    if(hints) html += '<div style="font-size:.78rem;color:#d97706;">💡 '+hints+' hints</div>';
-    if(tijdStr) html += '<div style="font-size:.78rem;color:#9ca3af;">⏱ '+tijdStr+'</div>';
-    html += '</div>';
-
-    // Foutenanalyse (gewicht-formaat)
-    if (d.foutenAnalyse && d.foutenAnalyse.extraOefenen && d.foutenAnalyse.extraOefenen.length > 0) {
-      html += '<div style="background:#fefce8;border:1px solid #fde68a;border-radius:.75rem;padding:10px 14px;margin-bottom:8px;">';
-      html += '<div style="font-size:.78rem;font-weight:800;color:#92400e;margin-bottom:4px;">⚠️ Extra oefenen:</div>';
-      d.foutenAnalyse.extraOefenen.forEach(function(item) {
-        html += '<div style="font-size:.78rem;color:#78350f;font-weight:600;">• '+item+'</div>';
-      });
-      html += '</div>';
-    }
-
-    // Vragendetail (gewicht-formaat: d.vragen[])
-    if (d.vragen && d.vragen.length > 0) {
-      html += '<details style="margin-top:4px;">';
-      html += '<summary style="font-size:.78rem;font-weight:700;color:#1d4ed8;cursor:pointer;padding:4px 0;">📋 Alle vragen bekijken ('+d.vragen.length+')</summary>';
-      html += '<div style="margin-top:8px;display:flex;flex-direction:column;gap:4px;">';
-      d.vragen.forEach(function(v) {
-        var ok = v.isJuist;
-        var bg = ok ? '#f0fdf4' : '#fff1f2';
-        var border = ok ? '#bbf7d0' : '#fecdd3';
-        var icon = ok ? '✅' : '❌';
-        html += '<div style="background:'+bg+';border:1px solid '+border+';border-radius:.6rem;padding:8px 12px;font-size:.78rem;">';
-        html += '<div style="font-weight:700;color:#1e293b;margin-bottom:2px;">'+icon+' '+v.vraagNr+'. '+v.vraag+'</div>';
-        html += '<div style="color:#6b7280;">Antwoord: <b>'+(ok?'<span style="color:#16a34a;">':' <span style="color:#dc2626;">')+v.antwoordLeerling+'</span></b>';
-        if(!ok) html += ' → juist: <b>'+v.juistAntwoord+'</b>';
-        html += '</div>';
-        if(v.categorie) html += '<div style="font-size:.72rem;color:#9ca3af;margin-top:2px;">'+v.categorie+(v.hintGebruikt?' · 💡 hint gebruikt':'')+'</div>';
-        html += '</div>';
-      });
-      html += '</div></details>';
-    }
-
+    html += '<div style="font-size:.75rem;color:#9ca3af;">'+d._score+'/'+d._total+'</div>';
+    if (d._tijd) html += '<div style="font-size:.75rem;color:#9ca3af;white-space:nowrap;">⏱ '+d._tijd+'</div>';
+    html += pctBadge(pct);
     html += '</div>';
   });
   html += '</div>';
-  det.innerHTML = html;
+  el.innerHTML = html;
+}
+
+// ── TOETS DETAIL VIEW ─────────────────────────────────────────────────────
+function openDetail(idx) {
+  var d = allRecords[idx];
+  if (!d) return;
+  var lnaam = leerlingNaam(d._leerlingId);
+  var ts = d._ts ? new Date(d._ts).toLocaleString('nl-BE') : '?';
+  var modeTxt = d._mode && modeLabel(d._mode) ? ' · '+modeLabel(d._mode) : '';
+  document.getElementById('detail-title').textContent = lnaam+' — '+d._label+modeTxt+' · '+ts;
+
+  var pct = d._pct;
+  var col = pct>=70?'#16a34a':pct>=50?'#d97706':'#dc2626';
+  var html = '';
+
+  // Scoreblok
+  html += '<div class="card"><div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:14px;">';
+  html += '<div><div style="font-size:1rem;font-weight:800;color:#1e3a5f;">'+lnaam+'</div>';
+  html += '<div style="font-size:.82rem;color:#6b7280;">'+d._label+modeTxt+' · '+ts+'</div></div>';
+  html += pctBadge(pct)+'</div>';
+  html += '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;">';
+  [{l:'Score',v:d._score+'/'+d._total},{l:'Percentage',v:pct+'%',c:col},{l:'Tijd',v:d._tijd||'—'},{l:'Hints',v:'💡 '+(d._hints||0)}].forEach(function(s){
+    html += '<div style="background:#f8fafc;border-radius:1rem;padding:12px;text-align:center;">';
+    html += '<div style="font-size:1.4rem;font-weight:800;color:'+(s.c||'#1d4ed8')+';">'+s.v+'</div>';
+    html += '<div style="font-size:.7rem;font-weight:700;color:#9ca3af;text-transform:uppercase;margin-top:3px;">'+s.l+'</div></div>';
+  });
+  html += '</div></div>';
+
+  // Foutenanalyse
+  if (d.foutenAnalyse && d.foutenAnalyse.extraOefenen && d.foutenAnalyse.extraOefenen.length) {
+    html += '<div class="card" style="background:#fefce8;border:1px solid #fde68a;">';
+    html += '<div style="font-weight:800;color:#92400e;margin-bottom:8px;">⚠️ Extra oefenen:</div>';
+    d.foutenAnalyse.extraOefenen.forEach(function(item){
+      html += '<div style="font-size:.88rem;color:#78350f;font-weight:600;margin-bottom:3px;">• '+item+'</div>';
+    });
+    html += '</div>';
+  }
+
+  // AI Analyse
+  html += '<div class="card ai-block">';
+  html += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:8px;">';
+  html += '<div style="font-weight:800;color:#1e3a5f;font-size:.95rem;">🤖 AI Analyse & Advies</div>';
+  html += '<button class="btn btn-blue" style="padding:8px 16px;font-size:.82rem;" id="ai-btn" onclick="generateAI('+idx+')">✨ Analyseer</button>';
+  html += '</div>';
+  html += '<div id="ai-output" style="font-size:.88rem;color:#374151;line-height:1.6;min-height:36px;">Klik op "Analyseer" voor een gepersonaliseerde analyse van '+lnaam+'.</div>';
+  html += '</div>';
+
+  // Vragenlijst
+  if (d.vragen && d.vragen.length) {
+    html += '<div class="card"><h3 style="font-size:.95rem;font-weight:800;color:#374151;margin-bottom:12px;">📋 Alle vragen & antwoorden ('+d.vragen.length+')</h3>';
+    d.vragen.forEach(function(v) {
+      var ok = v.isJuist;
+      var bg2 = ok?'#f0fdf4':'#fff1f2';
+      var bd2 = ok?'#bbf7d0':'#fecdd3';
+      html += '<div style="background:'+bg2+';border:1px solid '+bd2+';border-radius:.75rem;padding:12px 14px;margin-bottom:8px;">';
+      html += '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;flex-wrap:wrap;">';
+      html += '<div style="font-weight:700;color:#1e293b;font-size:.88rem;flex:1;">'+(ok?'✅':'❌')+' '+v.vraagNr+'. '+v.vraag+'</div>';
+      if (v.punten !== undefined) html += '<div style="font-size:.75rem;font-weight:700;color:#6b7280;white-space:nowrap;">'+String(v.punten).replace('.',',')+'pt</div>';
+      html += '</div>';
+      html += '<div style="margin-top:5px;font-size:.82rem;color:#6b7280;">Antwoord: <b style="color:'+(ok?'#16a34a':'#dc2626')+';">'+v.antwoordLeerling+'</b>';
+      if (!ok) html += ' → juist: <b style="color:#1e293b;">'+v.juistAntwoord+'</b>';
+      html += '</div>';
+      if (v.categorie) html += '<div style="font-size:.72rem;color:#9ca3af;margin-top:3px;">'+v.categorie+(v.hintGebruikt?' · 💡 hint':'')+'</div>';
+      html += '</div>';
+    });
+    html += '</div>';
+  }
+
+  document.getElementById('detail-content').innerHTML = html;
+  document.getElementById('detail-view').style.display = 'block';
+  document.getElementById('detail-view').scrollTop = 0;
+}
+
+function closeDetail() {
+  document.getElementById('detail-view').style.display = 'none';
+}
+
+// ── AI ANALYSE ────────────────────────────────────────────────────────────
+async function generateAI(idx) {
+  var d = allRecords[idx];
+  if (!d) return;
+  var lnaam = leerlingNaam(d._leerlingId);
+  var btn = document.getElementById('ai-btn');
+  var out = document.getElementById('ai-output');
+  btn.disabled = true;
+  btn.textContent = '⏳ Bezig...';
+  out.innerHTML = '<span class="spinner"></span> AI genereert analyse...';
+
+  var vragenTxt = '';
+  if (d.vragen && d.vragen.length) {
+    d.vragen.forEach(function(v) {
+      vragenTxt += (v.isJuist?'✓':'✗')+' V'+v.vraagNr+': '+v.vraag+
+        ' | Antwoord: '+v.antwoordLeerling+(v.isJuist?'':' (juist: '+v.juistAntwoord+')')+
+        (v.categorie?' ['+v.categorie+']':'')+'\n';
+    });
+  }
+  var foutenTxt = (d.foutenAnalyse && d.foutenAnalyse.extraOefenen)
+    ? d.foutenAnalyse.extraOefenen.join(', ') : 'geen specifieke fouten';
+
+  var prompt = 'Je bent een ervaren leerkracht wiskunde voor leerlingen met een leerbeperking '+
+    '(buitengewoon onderwijs, 11-13 jaar, niveau 3e-4e leerjaar).\n\n'+
+    'Analyseer de volgende toetsresultaten van leerling '+lnaam+':\n\n'+
+    'Vak: '+d._label+(d._mode?' · '+modeLabel(d._mode):'')+'\n'+
+    'Score: '+d._score+'/'+d._total+' ('+d._pct+'%)\n'+
+    'Tijd: '+(d._tijd||'onbekend')+'\n'+
+    'Fouten per categorie: '+foutenTxt+'\n\n'+
+    (vragenTxt?'Detail per vraag:\n'+vragenTxt+'\n':'')+
+    'Geef:\n'+
+    '1. Een korte analyse van wat de leerling goed en minder goed begrijpt (max 3 zinnen)\n'+
+    '2. Concrete tips voor de leerling zelf (max 3 bullets, eenvoudige taal)\n'+
+    '3. Advies voor de leerkracht: welke oefenvormen of extra aandacht helpen hier?\n\n'+
+    'Schrijf in het Nederlands. Houd het positief, praktisch en beknopt.';
+
+  try {
+    var resp = await fetch('https://api.anthropic.com/v1/messages', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        model:'claude-sonnet-4-20250514',
+        max_tokens:1000,
+        messages:[{role:'user',content:prompt}]
+      })
+    });
+    var data2 = await resp.json();
+    var tekst = (data2.content&&data2.content[0]&&data2.content[0].text) ? data2.content[0].text : 'Geen antwoord ontvangen.';
+    // Minimale markdown → HTML
+    tekst = tekst
+      .replace(/\*\*(.+?)\*\*/g,'<b>$1</b>')
+      .replace(/^#{1,3}\s+(.+)$/gm,'<b>$1</b>');
+    var regels = tekst.split('\n').filter(function(r){return r.trim();});
+    var uitvoer = '';
+    regels.forEach(function(r) {
+      r = r.replace(/^\d+\.\s+/,'');
+      if (/^[-•*]\s+/.test(r)) uitvoer += '<li>'+r.replace(/^[-•*]\s+/,'')+'</li>';
+      else if (uitvoer.endsWith('</li>')) uitvoer += '<br>'+r;
+      else uitvoer += '<p>'+r+'</p>';
+    });
+    out.innerHTML = uitvoer;
+    btn.textContent = '🔄 Opnieuw analyseren';
+    btn.disabled = false;
+  } catch(e) {
+    out.innerHTML = '<span style="color:#dc2626;">⚠ AI niet beschikbaar: '+e.message+'</span>';
+    btn.textContent = '✨ Opnieuw proberen';
+    btn.disabled = false;
+  }
+}
+
+// ── CSV EXPORT ────────────────────────────────────────────────────────────
+function exportCSV() {
+  document.getElementById('csv-modal').style.display = 'flex';
+}
+
+function doExportCSV() {
+  var dagen   = parseInt(document.getElementById('csv-periode').value);
+  var filterL = document.getElementById('csv-leerling').value;
+  var filterA = document.getElementById('csv-app').value;
+  var vanafMs = dagen > 0 ? Date.now() - dagen*86400000 : 0;
+
+  var rijen = allRecords.filter(function(d) {
+    if (filterL && d._leerlingId !== filterL) return false;
+    if (filterA && d._col !== filterA) return false;
+    if (vanafMs && d._ts < vanafMs) return false;
+    return true;
+  });
+
+  if (!rijen.length) { alert('Geen resultaten voor deze selectie.'); return; }
+
+  var lines = [['Datum','Leerling','Vak','Mode','Score','Totaal','Percentage','Tijd','Hints','Fouten_categorieen'].join(';')];
+  rijen.forEach(function(d) {
+    var ts = d._ts ? new Date(d._ts).toLocaleString('nl-BE') : '';
+    var fouten = (d.foutenAnalyse&&d.foutenAnalyse.extraOefenen) ? d.foutenAnalyse.extraOefenen.join(' | ') : '';
+    lines.push([
+      '"'+ts+'"',
+      '"'+leerlingNaam(d._leerlingId)+'"',
+      '"'+d._label+'"',
+      '"'+(modeLabel(d._mode)||'')+'"',
+      d._score, d._total, d._pct,
+      '"'+(d._tijd||'')+'"',
+      d._hints||0,
+      '"'+fouten+'"'
+    ].join(';'));
+  });
+
+  var csv = '\uFEFF' + lines.join('\r\n');
+  var blob = new Blob([csv],{type:'text/csv;charset=utf-8;'});
+  var url  = URL.createObjectURL(blob);
+  var a    = document.createElement('a');
+  a.href = url;
+  a.download = 'toetsen_'+(dagen>0?'laatste_'+dagen+'d':'alles')+'_'+new Date().toISOString().slice(0,10)+'.csv';
+  document.body.appendChild(a); a.click();
+  document.body.removeChild(a); URL.revokeObjectURL(url);
+  document.getElementById('csv-modal').style.display = 'none';
 }
 
 // ── LEERLINGEN BEHEREN ────────────────────────────────────────────────────
 function renderLeerlingenLijst() {
-  var html = '';
-  if (leerlingen.length === 0) {
-    html = '<p style="color:#9ca3af;font-style:italic;">Nog geen leerlingen toegevoegd.</p>';
-  } else {
-    leerlingen.forEach(function(l) {
-      html += '<div class="leerling-row">';
-      html += '<div style="width:36px;height:36px;border-radius:50%;background:#dbeafe;display:flex;align-items:center;justify-content:center;font-weight:900;color:#1d4ed8;font-size:.95rem;">'+l.weergavenaam[0]+'</div>';
-      html += '<div style="flex:1;">';
-      html += '<div style="font-weight:800;color:#1e3a5f;">'+l.weergavenaam+'</div>';
-      html += '<div style="font-size:.78rem;color:#6b7280;">Login: <b>'+l.naam+'</b> | Code: <b>'+l.code+'</b></div>';
-      html += '</div>';
-      html += '<button class="btn btn-outline" style="font-size:.78rem;padding:6px 12px;" onclick="wijzigCode(\''+l.naam+'\',\''+l.weergavenaam+'\')">🔑 Code wijzigen</button>';
-      html += '<button class="btn btn-red" style="font-size:.78rem;padding:6px 12px;" onclick="verwijderLeerling(\''+l.naam+'\',\''+l.weergavenaam+'\')">🗑 Verwijderen</button>';
-      html += '</div>';
-    });
-  }
-  document.getElementById('leerlingen-lijst').innerHTML = html;
+  document.getElementById('leerlingen-lijst').innerHTML = !leerlingen.length
+    ? '<p style="color:#9ca3af;font-style:italic;">Nog geen leerlingen.</p>'
+    : leerlingen.map(function(l){
+        return '<div class="leerling-row">'+
+          '<div style="width:36px;height:36px;border-radius:50%;background:#dbeafe;display:flex;align-items:center;justify-content:center;font-weight:900;color:#1d4ed8;font-size:.95rem;">'+l.weergavenaam[0]+'</div>'+
+          '<div style="flex:1;"><div style="font-weight:800;color:#1e3a5f;">'+l.weergavenaam+'</div>'+
+          '<div style="font-size:.75rem;color:#6b7280;">Login: <b>'+l.naam+'</b> · Code: <b>'+l.code+'</b></div></div>'+
+          '<button class="btn btn-outline" style="font-size:.78rem;padding:6px 12px;" onclick="wijzigCode(\''+l.naam+'\',\''+l.weergavenaam+'\')">🔑 Code wijzigen</button>'+
+          '<button class="btn btn-red" style="font-size:.78rem;padding:6px 12px;" onclick="verwijderLeerling(\''+l.naam+'\',\''+l.weergavenaam+'\')">🗑 Verwijderen</button>'+
+          '</div>';
+      }).join('');
 }
 
 async function voegLeerlingToe() {
-  var naam = document.getElementById('nieuw-naam').value.trim().toLowerCase();
-  var display = document.getElementById('nieuw-display').value.trim();
-  var code = document.getElementById('nieuw-code').value.trim();
-  var fb = document.getElementById('add-feedback');
-
-  if (!naam || !display || !code) { fb.innerHTML = '<span style="color:#dc2626;">Vul alle velden in.</span>'; return; }
-  if (leerlingen.find(function(l){return l.naam===naam;})) { fb.innerHTML = '<span style="color:#dc2626;">Deze naam bestaat al.</span>'; return; }
-
+  var naam=document.getElementById('nieuw-naam').value.trim().toLowerCase();
+  var display=document.getElementById('nieuw-display').value.trim();
+  var code=document.getElementById('nieuw-code').value.trim();
+  var fb=document.getElementById('add-feedback');
+  if(!naam||!display||!code){fb.innerHTML='<span style="color:#dc2626;">Vul alle velden in.</span>';return;}
+  if(leerlingen.find(function(l){return l.naam===naam;})){fb.innerHTML='<span style="color:#dc2626;">Naam bestaat al.</span>';return;}
   try {
-    await db.collection('leerlingen').doc(naam).set({naam:naam, weergavenaam:display, code:code});
-    fb.innerHTML = '<span style="color:#16a34a;">✓ '+display+' toegevoegd!</span>';
-    document.getElementById('nieuw-naam').value = '';
-    document.getElementById('nieuw-display').value = '';
-    document.getElementById('nieuw-code').value = '';
+    await db.collection('leerlingen').doc(naam).set({naam,weergavenaam:display,code});
+    fb.innerHTML='<span style="color:#16a34a;">✓ '+display+' toegevoegd!</span>';
+    ['nieuw-naam','nieuw-display','nieuw-code'].forEach(function(id){document.getElementById(id).value='';});
     await loadAll();
-  } catch(e) { fb.innerHTML = '<span style="color:#dc2626;">Fout: '+e.message+'</span>'; }
+  } catch(e){fb.innerHTML='<span style="color:#dc2626;">Fout: '+e.message+'</span>';}
 }
 
-async function verwijderLeerling(naam, display) {
-  if (!confirm('Ben je zeker dat je '+display+' wil verwijderen? Scores blijven bewaard.')) return;
-  try {
-    await db.collection('leerlingen').doc(naam).delete();
-    await loadAll();
-  } catch(e) { alert('Fout: '+e.message); }
+async function verwijderLeerling(naam,display) {
+  if(!confirm('Ben je zeker dat je '+display+' wil verwijderen? Scores blijven bewaard.'))return;
+  try{await db.collection('leerlingen').doc(naam).delete();await loadAll();}
+  catch(e){alert('Fout: '+e.message);}
 }
 
-async function wijzigCode(naam, display) {
-  var nieuweCode = prompt('Nieuwe code voor '+display+':', '');
-  if (!nieuweCode) return;
-  try {
-    await db.collection('leerlingen').doc(naam).update({code: nieuweCode});
-    alert('✓ Code gewijzigd voor '+display);
-    await loadAll();
-  } catch(e) { alert('Fout: '+e.message); }
+async function wijzigCode(naam,display) {
+  var nieuw=prompt('Nieuwe code voor '+display+':','');
+  if(!nieuw)return;
+  try{await db.collection('leerlingen').doc(naam).update({code:nieuw});alert('✓ Code gewijzigd');await loadAll();}
+  catch(e){alert('Fout: '+e.message);}
 }
 </script>
 </body>
