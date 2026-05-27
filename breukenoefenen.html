@@ -15,27 +15,14 @@ body{font-family:'Nunito',sans-serif;background:#fdf4ff;margin:0;padding:0;}
 
 /* LOGIN */
 #login-screen{position:fixed;inset:0;z-index:9999;background:linear-gradient(135deg,#6d28d9 0%,#a855f7 60%,#c084fc 100%);display:flex;align-items:center;justify-content:center;padding:20px;}
-#login-screen.hidden{display:none!important;}
-.login-card{background:white;border-radius:2rem;padding:2.5rem 2rem;width:100%;max-width:380px;box-shadow:0 25px 50px rgba(0,0,0,0.25);text-align:center;}
-.login-logo{width:80px;height:80px;background:#f3e8ff;border-radius:1.5rem;display:flex;align-items:center;justify-content:center;margin:0 auto 1.25rem;font-size:2.5rem;box-shadow:0 4px 16px rgba(168,85,247,0.25);}
-.btn-google{display:flex;align-items:center;justify-content:center;gap:12px;width:100%;background:white;border:2px solid #e5e7eb;border-radius:1rem;padding:14px 20px;font-family:'Nunito',sans-serif;font-size:1rem;font-weight:700;color:#374151;cursor:pointer;transition:all .2s;margin-bottom:12px;}
-.btn-google:hover{border-color:#a855f7;background:#fdf4ff;transform:translateY(-1px);}
-.btn-google:disabled{opacity:.6;cursor:not-allowed;transform:none;}
-.btn-guest{width:100%;background:transparent;border:2px solid #d1d5db;border-radius:1rem;padding:12px;font-family:'Nunito',sans-serif;font-size:.9rem;font-weight:700;color:#6b7280;cursor:pointer;transition:all .2s;}
-.btn-guest:hover{border-color:#9ca3af;color:#374151;}
 
 /* USER BAR */
 #user-bar{display:none;align-items:center;justify-content:space-between;background:white;border-radius:16px;padding:10px 18px;margin-bottom:12px;box-shadow:0 2px 12px rgba(0,0,0,0.06);border:1px solid #e9d5ff;}
-#user-bar.show{display:flex;}
-.u-av{width:34px;height:34px;border-radius:50%;background:#f3e8ff;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:.9rem;color:#7e22ce;flex-shrink:0;}
-.u-nm{font-weight:800;color:#1f2937;font-size:.88rem;}
-.u-rl{font-size:.7rem;color:#6b7280;font-weight:600;}
-.btn-lo{background:none;border:1.5px solid #e5e7eb;border-radius:.65rem;padding:5px 12px;font-family:'Nunito',sans-serif;font-size:.78rem;font-weight:700;color:#9ca3af;cursor:pointer;transition:all .2s;}
-.btn-lo:hover{border-color:#dc2626;color:#dc2626;}
 
-/* SAVED BADGE */
-#saved-badge{display:none;align-items:center;justify-content:center;gap:8px;background:#f3e8ff;border:1.5px solid #d8b4fe;border-radius:1rem;padding:10px 16px;margin-top:12px;font-size:.85rem;font-weight:700;color:#6d28d9;font-family:'Nunito',sans-serif;}
-#saved-badge.show{display:flex;}
+/* UPLOAD STATUS */
+#upload-status{display:none;align-items:center;justify-content:center;gap:8px;border-radius:1rem;padding:10px 16px;margin-top:12px;font-size:.85rem;font-weight:700;font-family:'Nunito',sans-serif;border:2px solid;}
+@keyframes spin{to{transform:rotate(360deg)}}
+#upload-spinner{display:inline-block;width:14px;height:14px;border:2px solid #e5e7eb;border-top-color:#7c3aed;border-radius:50%;animation:spin .7s linear infinite;}
 
 /* LAYOUT */
 .app{max-width:640px;margin:0 auto;padding:12px;}
@@ -158,32 +145,31 @@ body{font-family:'Nunito',sans-serif;background:#fdf4ff;margin:0;padding:0;}
 </style>
 </head>
 <body>
-    <!-- LOGIN SCREEN -->
-    <div id="login-screen">
-      <div class="login-card">
-        <div class="login-logo">➗</div>
-        <h1 style="font-size:1.6rem;font-weight:800;color:#1f2937;margin-bottom:6px;">Breuken</h1>
-        <p style="font-size:.85rem;color:#6b7280;margin-bottom:1.25rem;">Voer je naam en code in</p>
-        <input class="login-input" id="login-naam" type="text" placeholder="Jouw voornaam" autocomplete="off" autocapitalize="words">
-        <input class="login-input" id="login-code" type="password" placeholder="Jouw code" autocomplete="off">
-        <div class="login-error" id="login-error"></div>
-        <button class="btn-login" id="btn-login" onclick="loginMetCode()">Inloggen</button>
-        <button class="btn-guest" onclick="loginGuest()">Doorgaan als gast (geen opslag)</button>
-        <div class="teacher-link"><a href="dashboard.html">Leerkracht? Klik hier</a></div>
-      </div>
-    </div>
 
 <!-- LOGIN -->
 <div id="login-screen">
-  <div class="login-card">
-    <div class="login-logo">➗</div>
-    <h1 style="font-size:1.6rem;font-weight:900;color:#1f2937;margin-bottom:6px;" class="ff">Breuken</h1>
-    <p style="font-size:.85rem;color:#6b7280;margin-bottom:1.5rem;">Log in om je toetsresultaten bij te houden</p>
-    <button class="btn-google" id="btn-google-login" onclick="loginGoogle()">
-      <svg width="20" height="20" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9.1 3.5l6.8-6.8C35.8 2.4 30.3 0 24 0 14.7 0 6.7 5.4 2.6 13.3l7.9 6.1C12.4 13.1 17.7 9.5 24 9.5z"/><path fill="#4285F4" d="M46.5 24.5c0-1.6-.1-3.1-.4-4.5H24v8.5h12.7c-.5 2.9-2.2 5.4-4.7 7l7.4 5.7c4.3-4 6.8-9.9 7.1-16.7z"/><path fill="#FBBC05" d="M10.5 28.6A14.5 14.5 0 0 1 9.5 24c0-1.6.3-3.1.9-4.6l-7.9-6.1A24 24 0 0 0 0 24c0 3.9.9 7.5 2.6 10.7l7.9-6.1z"/><path fill="#34A853" d="M24 48c6.3 0 11.6-2.1 15.5-5.7l-7.4-5.7c-2.1 1.4-4.8 2.2-8.1 2.2-6.3 0-11.6-3.6-13.5-8.8l-7.9 6.1C6.7 42.6 14.7 48 24 48z"/></svg>
-      Inloggen met Google
+  <div style="background:white;border-radius:2rem;padding:2.5rem 2rem;width:100%;max-width:380px;box-shadow:0 25px 50px rgba(0,0,0,0.25);text-align:center;display:flex;flex-direction:column;gap:12px;">
+    <div style="width:80px;height:80px;background:#f3e8ff;border-radius:1.5rem;display:flex;align-items:center;justify-content:center;margin:0 auto;font-size:2.5rem;box-shadow:0 4px 16px rgba(168,85,247,0.25);">➗</div>
+    <h1 style="font-size:1.6rem;font-weight:900;color:#1f2937;margin:0;" class="ff">Breuken</h1>
+    <p style="font-size:.85rem;color:#6b7280;margin:0;">Voer je naam en code in</p>
+    <div id="klas-err" style="display:none;color:#dc2626;font-size:.85rem;font-weight:700;background:#fee2e2;border:1px solid #fca5a5;padding:8px 12px;border-radius:8px;"></div>
+    <input type="text" id="klas-naam" placeholder="Jouw voornaam"
+      style="width:100%;padding:14px;border:2px solid #e5e7eb;border-radius:12px;font-family:'Nunito',sans-serif;font-size:1rem;font-weight:600;text-align:center;outline:none;"
+      autocomplete="off" autocapitalize="words">
+    <input type="password" id="klas-code" placeholder="Jouw code"
+      style="width:100%;padding:14px;border:2px solid #e5e7eb;border-radius:12px;font-family:'Nunito',sans-serif;font-size:1rem;font-weight:600;text-align:center;outline:none;"
+      autocomplete="off">
+    <button id="login-btn"
+      style="width:100%;background:#7c3aed;color:white;border:none;border-radius:12px;padding:14px;font-family:'Nunito',sans-serif;font-size:1rem;font-weight:700;cursor:pointer;">
+      Inloggen
     </button>
-    <button class="btn-guest" onclick="loginGuest()">Doorgaan als gast (geen opslag)</button>
+    <button id="gast-btn"
+      style="width:100%;background:transparent;border:2px solid #d1d5db;border-radius:12px;padding:12px;font-family:'Nunito',sans-serif;font-size:.9rem;font-weight:700;color:#6b7280;cursor:pointer;">
+      Doorgaan als gast (geen opslag)
+    </button>
+    <div style="font-size:.75rem;color:#9ca3af;">
+      <a href="dashboard.html" style="color:#7c3aed;font-weight:700;text-decoration:none;">Leerkracht? Klik hier</a>
+    </div>
   </div>
 </div>
 
@@ -210,7 +196,7 @@ body{font-family:'Nunito',sans-serif;background:#fdf4ff;margin:0;padding:0;}
     <div class="menu-card" onclick="openMod('gelijkwaardig')"><div class="mico" style="background:#fff7ed;">🔄</div><div><div class="mttl">Gelijkwaardige breuken</div><div class="msub">Breuken met andere noemer maken</div></div></div>
     <div class="menu-card" onclick="openMod('gelijknamig')"><div class="mico" style="background:#e0f2fe;">🔀</div><div><div class="mttl">Vergelijken via gelijknamig maken</div><div class="msub">Zelfde noemer → dan vergelijken</div></div></div>
     <div class="menu-card" onclick="openMod('breukgetal')"><div class="mico" style="background:#dcfce7;">🍰</div><div><div class="mttl">Breuk van een getal</div><div class="msub">Stap voor stap berekenen</div></div></div>
-    <div class="menu-card toets-card" onclick="openMod('toets')"><div class="mico">🏆</div><div><div class="mttl">Toets — Alles door elkaar</div><div class="msub">40 vragen · score wordt opgeslagen</div></div></div>
+    <div class="menu-card toets-card" onclick="openMod('toets')"><div class="mico">🏆</div><div><div class="mttl">Toets — Alles door elkaar</div><div class="msub">30 vragen · score wordt opgeslagen</div></div></div>
   </div>
 
   <!-- MODULE -->
@@ -249,74 +235,921 @@ body{font-family:'Nunito',sans-serif;background:#fdf4ff;margin:0;padding:0;}
     </div>
     <div class="stat-box" style="background:#eff6ff;text-align:center;margin-bottom:10px;"><div class="snum" style="color:#1d4ed8;" id="res-time">00:00</div><div class="slbl" style="color:#1d4ed8;">Tijd</div></div>
     <div id="res-analysis"></div>
-    <div id="saved-badge">✓ Score opgeslagen in de database</div>
+    <div id="upload-status">
+      <span id="upload-spinner"></span>
+      <span id="upload-status-text">Bezig met opslaan...</span>
+    </div>
     <button class="btn-restart" onclick="restartMod()">Opnieuw beginnen</button>
     <button onclick="goMenu()" style="width:100%;margin-top:8px;background:none;border:2px solid #e5e7eb;border-radius:1rem;padding:12px;font-family:'Nunito',sans-serif;font-size:.9rem;font-weight:700;color:#6b7280;cursor:pointer;">← Terug naar menu</button>
   </div>
 </div>
 
-<!-- FIREBASE -->
-<!-- FIREBASE -->
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-    <script>
-        firebase.initializeApp({
-            apiKey:"AIzaSyCnQDVVAlK6jE-PPUUediRJMTbN0xqrLDE",
-            authDomain:"klaswebsite-database.firebaseapp.com",
-            projectId:"klaswebsite-database",
-            storageBucket:"klaswebsite-database.firebasestorage.app",
-            messagingSenderId:"42912327282",
-            appId:"1:42912327282:web:f13f2c706f6c42c115c4eb"
-        });
-        const fbDb = firebase.firestore();
+<!-- FIREBASE compat SDK — zelfde als alle andere apps -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script>
+firebase.initializeApp({
+  apiKey:"AIzaSyCnQDVVAlK6jE-PPUUediRJMTbN0xqrLDE",
+  authDomain:"klaswebsite-database.firebaseapp.com",
+  projectId:"klaswebsite-database",
+  storageBucket:"klaswebsite-database.firebasestorage.app",
+  messagingSenderId:"42912327282",
+  appId:"1:42912327282:web:f13f2c706f6c42c115c4eb"
+});
+var _db          = firebase.firestore();
+var _currentUser = null;
+var _isGuest     = false;
 
-        // ── LOGIN (leest leerlingen uit Firestore) ────────────────────
-        async function loginMetCode() {
-            var naam = (document.getElementById('login-naam').value||'').trim().toLowerCase();
-            var code = (document.getElementById('login-code').value||'').trim();
-            var errEl = document.getElementById('login-error');
-            var btn = document.getElementById('btn-login');
-            errEl.textContent = '';
-            document.getElementById('login-naam').classList.remove('err');
-            document.getElementById('login-code').classList.remove('err');
-            if (!naam) { errEl.textContent='Vul je voornaam in.'; document.getElementById('login-naam').classList.add('err'); return; }
-            if (!code) { errEl.textContent='Vul je code in.'; document.getElementById('login-code').classList.add('err'); return; }
-            btn.disabled=true; btn.textContent='Controleren...';
-            try {
-                var doc = await fbDb.collection('leerlingen').doc(naam).get();
-                if (!doc.exists) {
-                    errEl.textContent='Naam niet gevonden.'; btn.disabled=false; btn.textContent='Inloggen';
-                    document.getElementById('login-naam').classList.add('err'); return;
-                }
-                var data = doc.data();
-                if (data.code !== code) {
-                    errEl.textContent='Verkeerde code.'; btn.disabled=false; btn.textContent='Inloggen';
-                    document.getElementById('login-code').classList.add('err'); return;
-                }
-                window._leerlingNaam = data.weergavenaam || naam;
-                window._leerlingId = naam;
-                window._isGuest = false;
-                afterLogin(window._leerlingNaam);
-            } catch(e) {
-                errEl.textContent='Fout: '+e.message; btn.disabled=false; btn.textContent='Inloggen';
-            }
+// ── UPLOAD STATUS (style.display — NOOIT Tailwind/class, vermijdt !important conflict) ──
+function setUploadStatus(type, msg) {
+  var box     = document.getElementById("upload-status");
+  var text    = document.getElementById("upload-status-text");
+  var spinner = document.getElementById("upload-spinner");
+  box.style.display    = "flex";
+  spinner.style.display = (type === "loading") ? "inline-block" : "none";
+  if (type === "loading") {
+    box.style.background  = "#f8fafc";
+    box.style.borderColor = "#cbd5e1";
+    box.style.color       = "#475569";
+  } else if (type === "ok") {
+    box.style.background  = "#f3e8ff";
+    box.style.borderColor = "#d8b4fe";
+    box.style.color       = "#6d28d9";
+  } else {
+    box.style.background  = "#fff1f2";
+    box.style.borderColor = "#fecdd3";
+    box.style.color       = "#be123c";
+  }
+  text.textContent = msg;
+  console.log("[breuken saveToFirestore] status=" + type + ": " + msg);
+}
+
+// ── LOGIN ─────────────────────────────────────────────────────────────────
+function klasLogin() {
+  var naam = (document.getElementById("klas-naam").value||"").trim().toLowerCase();
+  var code = (document.getElementById("klas-code").value||"").trim();
+  var err  = document.getElementById("klas-err");
+  err.style.display = "none";
+  if (!naam) { err.textContent = "Vul je voornaam in."; err.style.display = "block"; return; }
+  if (!code) { err.textContent = "Vul je code in.";    err.style.display = "block"; return; }
+
+  var btn = document.getElementById("login-btn");
+  btn.textContent = "Even wachten..."; btn.disabled = true;
+
+  _db.collection("leerlingen").doc(naam).get().then(function(doc) {
+    btn.textContent = "Inloggen"; btn.disabled = false;
+    if (!doc.exists) { err.textContent = "Naam niet gevonden."; err.style.display = "block"; return; }
+    var data = doc.data();
+    if (data.code !== code) { err.textContent = "Verkeerde code."; err.style.display = "block"; return; }
+    window._leerlingNaam = data.weergavenaam || naam;
+    window._leerlingId   = naam;
+    _currentUser = { uid: naam, displayName: data.weergavenaam || naam };
+    _isGuest = false;
+    openApp(_currentUser.displayName, false);
+  }).catch(function(e) {
+    btn.textContent = "Inloggen"; btn.disabled = false;
+    err.textContent = "Fout: " + e.message; err.style.display = "block";
+  });
+}
+
+function klasGast() {
+  _isGuest = true; _currentUser = null;
+  window._leerlingId   = null;
+  window._leerlingNaam = "Gast";
+  openApp("Gast", true);
+}
+
+function openApp(naam, isGast) {
+  document.getElementById("login-screen").style.display = "none";
+  var bar = document.getElementById("user-bar");
+  bar.style.display = "flex";
+  document.getElementById("u-av").textContent  = isGast ? "👤" : naam[0].toUpperCase();
+  document.getElementById("u-nm").textContent  = naam;
+  document.getElementById("u-rl").textContent  = isGast
+    ? "Gast — toetsscores worden niet opgeslagen"
+    : "Ingelogd als leerling";
+}
+
+function doLogout() {
+  _currentUser = null; _isGuest = false;
+  window._leerlingId = null; window._leerlingNaam = null;
+  document.getElementById("login-screen").style.display = "flex";
+  document.getElementById("user-bar").style.display     = "none";
+  document.getElementById("klas-naam").value = "";
+  document.getElementById("klas-code").value = "";
+  document.getElementById("klas-err").style.display = "none";
+  showV("v-menu");
+}
+
+// ── OPSLAAN NAAR FIRESTORE ────────────────────────────────────────────────
+// Collection: breuken_toets — dashboard pikt dit automatisch op
+async function saveToFirestore(correct, total, pct, tijd, counts) {
+  if (_isGuest || !_currentUser) {
+    setUploadStatus("error", "❌ Niet opgeslagen: je speelt als gast.");
+    return;
+  }
+  if (!window._leerlingId) {
+    setUploadStatus("error", "❌ Geen leerling-ID. Log opnieuw in.");
+    return;
+  }
+
+  setUploadStatus("loading", "Bezig met opslaan...");
+
+  // Foutenanalyse per thema
+  var foutenTelling = {};
+  var extraOefenen  = [];
+  Object.entries(counts).forEach(function(e) {
+    var thema = e[0], d = e[1];
+    var fouten = d.errors || 0;
+    if (fouten > 0) {
+      foutenTelling[thema] = fouten;
+      extraOefenen.push(thema + " (" + fouten + "x fout)");
+    }
+  });
+  extraOefenen.sort(function(a,b) {
+    var fa = parseInt(a.match(/\d+/)||0);
+    var fb2 = parseInt(b.match(/\d+/)||0);
+    return fb2 - fa;
+  });
+
+  var record = {
+    leerlingId:   window._leerlingId,
+    leerlingNaam: window._leerlingNaam || "Leerling",
+    mode:         "toets",
+    score:        correct,
+    totalQ:       total,
+    percentage:   pct,
+    tijd:         tijd,
+    hintsGebruikt: 0,
+    timestamp:    firebase.firestore.FieldValue.serverTimestamp(),
+    foutenAnalyse: {
+      extraOefenen:       extraOefenen,
+      foutenPerCategorie: foutenTelling
+    },
+    vragen: Object.entries(counts).map(function(e) {
+      var thema = e[0], d = e[1];
+      return {
+        vraagNr:          0,
+        vraag:            thema,
+        categorie:        thema,
+        antwoordLeerling: (d.total - (d.errors||0)) + "/" + d.total,
+        juistAntwoord:    d.total + "/" + d.total,
+        isJuist:          (d.errors||0) <= Math.floor(d.total * 0.3),
+        hintGebruikt:     false,
+        punten:           d.total - (d.errors||0),
+        tijdSeconden:     0
+      };
+    })
+  };
+
+  console.log("[breuken saveToFirestore] Opslaan naar breuken_toets:", record);
+
+  try {
+    var docRef = await _db.collection("breuken_toets").add(record);
+    setUploadStatus("ok", "✅ Score opgeslagen! (ID: " + docRef.id.substring(0,8) + "…)");
+    console.log("[breuken saveToFirestore] Succes! ID:", docRef.id);
+  } catch(e) {
+    console.error("[breuken saveToFirestore] Fout:", e.code, e.message);
+    var uitleg = e.message || "Onbekende fout";
+    if (e.code === "permission-denied") uitleg = "Geen schrijfrechten. Contacteer de leerkracht.";
+    else if (e.code === "unavailable")  uitleg = "Geen internetverbinding. Probeer opnieuw.";
+    setUploadStatus("error", "❌ Opslaan mislukt: " + uitleg);
+  }
+}
+
+// ── EVENT LISTENERS (één DOMContentLoaded — nooit split over script-blokken) ──
+document.addEventListener("DOMContentLoaded", function() {
+  document.getElementById("login-btn").addEventListener("click", klasLogin);
+  document.getElementById("gast-btn").addEventListener("click", klasGast);
+  document.getElementById("klas-naam").addEventListener("keypress", function(e) {
+    if (e.key === "Enter") klasLogin();
+  });
+  document.getElementById("klas-code").addEventListener("keypress", function(e) {
+    if (e.key === "Enter") klasLogin();
+  });
+});
+</script>
+
+<script>
+// ── UTILS ────────────────────────────────────────────────────────────────
+function showV(id){['v-menu','v-mod','v-result'].forEach(v=>document.getElementById(v).classList.add('hidden'));document.getElementById(id).classList.remove('hidden');}
+function rnd(a,b){return Math.floor(Math.random()*(b-a+1))+a;}
+function pick(arr){return arr[Math.floor(Math.random()*arr.length)];}
+function shuffle(a){const b=[...a];for(let i=b.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[b[i],b[j]]=[b[j],b[i]];}return b;}
+function pickN(arr,n){return shuffle(arr).slice(0,n);}
+function fmt(s){return String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0');}
+function breukHTML(t,n,cls=''){return `<span class="breuk ${cls}"><span class="tl">${t}</span><span class="nm">${n}</span></span>`;}
+function gcd(a,b){return b===0?a:gcd(b,a%b);}
+
+// ── MODULE CONFIG ─────────────────────────────────────────────────────────
+const MODS = {
+  woordenschat: {title:'Woordenschat',icon:'📖',theme:'t-woordenschat',desc:'Leer de delen van een breuk benoemen.',count:10},
+  getallenas:   {title:'Breuken op de getallenas',icon:'📏',theme:'t-getallenas',desc:'Duid de breuk aan op de juiste plek.',count:10},
+  vergelijk:    {title:'Breuken vergelijken',icon:'⚖️',theme:'t-vergelijk',desc:'Kies het juiste teken: <, = of >.',count:10},
+  gehelen:      {title:'Gehelen uit breuken',icon:'🔢',theme:'t-gehelen',desc:'Haal gehelen uit een onechte breuk.',count:10},
+  gelijkwaardig:{title:'Gelijkwaardige breuken',icon:'🔄',theme:'t-gelijkwaardig',desc:'Maak een gelijkwaardige breuk.',count:10},
+  gelijknamig:  {title:'Vergelijken via gelijknamig',icon:'🔀',theme:'t-gelijknamig',desc:'Maak gelijknamig en vergelijk.',count:10},
+  breukgetal:   {title:'Breuk van een getal',icon:'🍰',theme:'t-breukgetal',desc:'Bereken stap voor stap een breuk van een getal.',count:10},
+  toets:        {title:'Toets — Breuken',icon:'🏆',theme:'t-toets',desc:'30 vragen over alles. Score wordt opgeslagen!',count:30},
+};
+
+// ── STATE ─────────────────────────────────────────────────────────────────
+let ST = {mod:null,questions:[],idx:0,correct:0,wrong:0,mistake:false,timer:0,timerInt:null,themeErr:{}};
+
+// ── NAVIGATION ────────────────────────────────────────────────────────────
+function openMod(mod){
+  ST.mod=mod;
+  const cfg=MODS[mod];
+  const el=document.getElementById('v-mod');
+  el.className=''+cfg.theme;
+  document.getElementById('mod-title').textContent=cfg.title;
+  document.getElementById('ms-icon').textContent=cfg.icon;
+  document.getElementById('ms-title').textContent=cfg.title;
+  document.getElementById('ms-desc').textContent=cfg.desc;
+  document.getElementById('mod-start-box').classList.remove('hidden');
+  document.getElementById('q-area').classList.add('hidden');
+  clearTimer();
+  showV('v-mod');
+}
+window.openMod=openMod;
+
+function goMenu(){clearTimer();showV('v-menu');}
+window.goMenu=goMenu;
+
+function restartMod(){document.getElementById('v-result').className='result-overlay';openMod(ST.mod);}
+window.restartMod=restartMod;
+
+function startMod(){
+  document.getElementById('mod-start-box').classList.add('hidden');
+  document.getElementById('q-area').classList.remove('hidden');
+  ST.questions=buildQ(ST.mod);
+  ST.idx=0;ST.correct=0;ST.wrong=0;ST.themeErr={};
+  startTimer();renderQ();
+}
+window.startMod=startMod;
+
+// ── TIMER ─────────────────────────────────────────────────────────────────
+function startTimer(){ST.timer=0;ST.timerInt=setInterval(()=>{ST.timer++;document.getElementById('mod-timer').textContent=fmt(ST.timer);},1000);}
+function clearTimer(){clearInterval(ST.timerInt);ST.timer=0;document.getElementById('mod-timer').textContent='00:00';}
+
+// ── QUESTION BUILDERS ─────────────────────────────────────────────────────
+
+// Simple fractions with easy denominators
+const EASY_N = [2,3,4,5,6,8,10,12];
+
+function mkBreuk(maxN=8){
+  const n=pick(EASY_N.filter(x=>x<=maxN));
+  const t=rnd(1,n-1);
+  return {t,n};
+}
+function mkOnecht(){
+  // onechte breuk: teller > noemer, noemer 2-6, gehelen 1-3
+  const n=rnd(2,6);
+  const g=rnd(1,3);
+  const r=rnd(1,n-1);
+  return {t:g*n+r,n,g,r};
+}
+
+function buildQ(mod){
+  if(mod==='toets') return buildToets();
+  const builders={
+    woordenschat:()=>buildWoordenschat(),
+    getallenas:  ()=>buildGetallenas(),
+    vergelijk:   ()=>buildVergelijk(),
+    gehelen:     ()=>buildGehelen(),
+    gelijkwaardig:()=>buildGelijkwaardig(),
+    gelijknamig: ()=>buildGelijknamig(),
+    breukgetal:  ()=>buildBreukGetal(),
+  };
+  return (builders[mod]||builders.woordenschat)().map(q=>({...q,module:mod}));
+}
+
+function buildToets(){
+  // 30 vragen in totaal, eerlijk verdeeld over de 7 onderwerpen:
+  // 5 onderwerpen krijgen elk 4 vragen en 2 onderwerpen krijgen elk 5 vragen (5+5+4+4+4+4+4 = 30)
+  let all=[];
+  all.push(...pickN(buildWoordenschat(), 5).map(q=>({...q,module:'woordenschat'})));
+  all.push(...pickN(buildGetallenas(), 5).map(q=>({...q,module:'getallenas'})));
+  all.push(...pickN(buildVergelijk(), 4).map(q=>({...q,module:'vergelijk'})));
+  all.push(...pickN(buildGehelen(), 4).map(q=>({...q,module:'gehelen'})));
+  all.push(...pickN(buildGelijkwaardig(), 4).map(q=>({...q,module:'gelijkwaardig'})));
+  all.push(...pickN(buildGelijknamig(), 4).map(q=>({...q,module:'gelijknamig'})));
+  all.push(...pickN(buildBreukGetal(), 4).map(q=>({...q,module:'breukgetal'})));
+  return shuffle(all);
+}
+
+// WOORDENSCHAT — 5 soorten vragen
+function buildWoordenschat(){
+  const questions=[];
+  // 1. Noemer aanduiden
+  for(let i=0;i<2;i++){const{t,n}=mkBreuk();questions.push({type:'woord_noemer',t,n,answer:String(n),question:`Wat is de <span class="hl-noemer">noemer</span> van deze breuk?`});}
+  // 2. Teller aanduiden
+  for(let i=0;i<2;i++){const{t,n}=mkBreuk();questions.push({type:'woord_teller',t,n,answer:String(t),question:`Wat is de <span class="hl-teller">teller</span> van deze breuk?`});}
+  // 3. In hoeveel delen verdeeld?
+  for(let i=0;i<2;i++){const{t,n}=mkBreuk();questions.push({type:'woord_noemer',t,n,answer:String(n),question:`In hoeveel gelijke stukken is dit geheel verdeeld?`});}
+  // 4. Hoeveel stukken neem ik?
+  for(let i=0;i<2;i++){const{t,n}=mkBreuk();questions.push({type:'woord_teller',t,n,answer:String(t),question:`Hoeveel stukken ga ik nemen?`});}
+  // 5. Wat is een geheel? (noemer = teller)
+  for(let i=0;i<2;i++){const n=rnd(2,8);questions.push({type:'woord_geheel',t:n,n,answer:String(n),question:`Hoeveel stukken heb je nodig voor <span class="hl-geheel">één geheel</span>?`});}
+  return shuffle(questions);
+}
+
+// GETALLENAS
+function buildGetallenas(){
+  const questions=[];
+  const configs=[
+    {min:0,max:1,steps:[2,3,4,5,6,8,10]},
+    {min:0,max:2,steps:[2,3,4,5]},
+  ];
+  for(let i=0;i<12;i++){
+    const cfg=pick(configs);
+    const n=pick(cfg.steps);
+    const t=rnd(1,n*cfg.max-1);
+    // Avoid whole numbers
+    if(t%n===0)continue;
+    questions.push({type:'getallenas',t,n,min:cfg.min,max:cfg.max});
+  }
+  return shuffle(questions).slice(0,10);
+}
+
+// VERGELIJKEN
+function buildVergelijk(){
+  const questions=[];
+  // Gelijke noemer
+  for(let i=0;i<5;i++){
+    const n=rnd(2,12);
+    let t1=rnd(1,n-1),t2=rnd(1,n-1);
+    while(t1===t2)t2=rnd(1,n-1);
+    const teken=t1<t2?'<':t1>t2?'>':'=';
+    questions.push({type:'verg_noemer',t1,n1:n,t2,n2:n,teken,subtype:'noemer'});
+  }
+  // Gelijke teller
+  for(let i=0;i<5;i++){
+    const t=rnd(1,5);
+    let n1=rnd(t+1,t+8),n2=rnd(t+1,t+8);
+    while(n1===n2)n2=rnd(t+1,t+8);
+    const v1=t/n1,v2=t/n2;
+    const teken=v1<v2?'<':v1>v2?'>':'=';
+    questions.push({type:'verg_teller',t1:t,n1,t2:t,n2,teken,subtype:'teller'});
+  }
+  return shuffle(questions);
+}
+
+// GEHELEN
+function buildGehelen(){
+  const questions=[];
+  for(let i=0;i<12;i++){
+    const q=mkOnecht();
+    questions.push({type:'gehelen',...q});
+  }
+  return shuffle(questions).slice(0,10);
+}
+
+// GELIJKWAARDIGE BREUKEN
+function buildGelijkwaardig(){
+  const questions=[];
+  const bases=[{t:1,n:2},{t:1,n:3},{t:2,n:3},{t:1,n:4},{t:3,n:4},{t:1,n:5},{t:2,n:5},{t:3,n:5},{t:4,n:5},{t:1,n:6},{t:5,n:6},{t:2,n:4}];
+  for(let i=0;i<12;i++){
+    const{t,n}=pick(bases);
+    const f=pick([2,3,4]);
+    questions.push({type:'gelijkwaardig',t1:t,n1:n,t2:t*f,n2:n*f,factor:f,
+      // Random: vul teller of noemer in
+      missing:pick(['t','n'])});
+  }
+  return shuffle(questions).slice(0,10);
+}
+
+// GELIJKNAMIG VERGELIJKEN
+function buildGelijknamig(){
+  const questions=[];
+  const pairs=[
+    {n1:2,n2:3},{n1:2,n2:4},{n1:3,n2:6},{n1:2,n2:6},{n1:4,n2:8},{n1:3,n2:9},{n1:2,n2:8},{n1:5,n2:10},{n1:4,n2:12},{n1:3,n2:12}
+  ];
+  for(let i=0;i<12;i++){
+    const{n1,n2}=pick(pairs);
+    const t1=rnd(1,n1-1);
+    const t2=rnd(1,n2-1);
+    const v1=t1/n1,v2=t2/n2;
+    const teken=Math.abs(v1-v2)<0.0001?'=':v1<v2?'<':'>';
+    questions.push({type:'gelijknamig',t1,n1,t2,n2,teken});
+  }
+  return shuffle(questions).slice(0,10);
+}
+
+// BREUK VAN EEN GETAL
+function buildBreukGetal(){
+  const questions=[];
+  // Eenvoudige combinaties: noemer × multiplier ≤ 24
+  const combos=[];
+  for(const n of [2,3,4,5,6]){
+    for(const m of [2,3,4]){
+      if(n*m<=24){
+        for(let t=1;t<n;t++){
+          combos.push({t,n,getal:n*m,each:m});
         }
+      }
+    }
+  }
+  return shuffle(combos).slice(0,10).map(q=>({type:'breukgetal',...q}));
+}
 
-        function loginGuest() {
-            window._leerlingNaam='Gast'; window._leerlingId=null; window._isGuest=true;
-            afterLogin('Gast');
-        }
+// ── RENDER ────────────────────────────────────────────────────────────────
+function renderQ(){
+  const q=ST.questions[ST.idx];
+  const total=ST.questions.length;
+  ST.mistake=false;
+  document.getElementById('mod-qcnt').textContent=`${ST.idx+1}/${total}`;
+  document.getElementById('mod-prog').style.width=`${(ST.idx/total)*100}%`;
+  const area=document.getElementById('q-area');
+  area.innerHTML='';
+  const mod=q.module||ST.mod;
 
-        document.addEventListener('DOMContentLoaded', function() {
-            ['login-naam','login-code'].forEach(function(id) {
-                var el=document.getElementById(id);
-                if(el) {
-                    el.addEventListener('keypress',function(e){if(e.key==='Enter')loginMetCode();});
-                    el.addEventListener('focus',function(){el.classList.remove('err');document.getElementById('login-error').textContent='';});
-                }
-            });
-        });
-    </script>
+  if(mod==='woordenschat') renderWoordenschat(q,area);
+  else if(mod==='getallenas') renderGetallenas(q,area);
+  else if(mod==='vergelijk') renderVergelijk(q,area);
+  else if(mod==='gehelen') renderGehelen(q,area);
+  else if(mod==='gelijkwaardig') renderGelijkwaardig(q,area);
+  else if(mod==='gelijknamig') renderGelijknamig(q,area);
+  else if(mod==='breukgetal') renderBreukGetal(q,area);
+}
+
+// ── WOORDENSCHAT ──────────────────────────────────────────────────────────
+function renderWoordenschat(q,area){
+  const isGeheel=q.type==='woord_geheel';
+  area.innerHTML=`
+    <div class="qlabel">${q.question}</div>
+    <div class="vraag-breuk" style="flex-direction:column;gap:8px;">
+      <div style="display:flex;align-items:center;gap:10px;">
+        ${isGeheel?`<span style="font-size:1.1rem;color:#6b7280;">Als de noemer = </span>`:''}
+        <span class="breuk breuk-lg">
+          <span class="tl" id="tl-hl" style="${q.type==='woord_teller'?'background:#dbeafe;border-radius:6px;':''}">${q.t}</span>
+          <span class="nm" id="nm-hl" style="${q.type==='woord_noemer'||q.type==='woord_geheel'?'background:#fee2e2;border-radius:6px;':''}">${q.n}</span>
+        </span>
+        ${isGeheel?`<span style="font-size:1.1rem;color:#6b7280;">, dan heb je <b>1 geheel</b></span>`:''}
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center;" id="opts"></div>
+    <button class="btn-next" id="btn-next" onclick="nextQ()">Volgende →</button>`;
+
+  // Wrong options
+  const correct=parseInt(q.answer);
+  const wrongs=new Set();
+  while(wrongs.size<3){const w=correct+pick([-3,-2,-1,1,2,3]);if(w>0&&w!==correct)wrongs.add(w);}
+  const opts=shuffle([correct,...wrongs]);
+  const grid=area.querySelector('#opts');
+  opts.forEach(o=>{
+    const b=document.createElement('button');
+    b.className='opt-btn';b.style.width='auto';b.style.minWidth='80px';b.style.padding='14px 20px';b.style.fontSize='1.3rem';
+    b.textContent=o;
+    b.onclick=()=>checkSimple(b,String(o),q.answer,q.module||ST.mod,area);
+    grid.appendChild(b);
+  });
+}
+
+// ── GETALLENAS ────────────────────────────────────────────────────────────
+function renderGetallenas(q,area){
+  const{t,n,min,max}=q;
+  const val=t/n;
+  const correct=t+'/'+n;
+
+  // Wrong options: same denominator, closest values
+  const candidates=[];
+  for(let tt=1;tt<=n*max-1;tt++){if(tt!==t)candidates.push(tt);}
+  candidates.sort((a,b)=>Math.abs(a/n-val)-Math.abs(b/n-val));
+  const wrongs=candidates.slice(0,3).map(tt=>tt+'/'+n);
+  const opts=shuffle([correct,...wrongs]);
+
+  // SVG dimensions
+  const W=320, H=100, pad=36, lineY=62;
+  const range=max-min;
+  const xOf=function(v){return pad+(v-min)/range*(W-2*pad);};
+  const targetX=xOf(val);
+
+  // Ticks + labels
+  let ticks='';
+  for(let i=0;i<=n*range;i++){
+    const v=min+i/n;
+    const cx=xOf(v);
+    const isWhole=i%n===0;
+    const tickH=isWhole?12:7;
+    ticks+='<line x1="'+cx+'" y1="'+(lineY-tickH)+'" x2="'+cx+'" y2="'+(lineY+tickH)+'" stroke="#374151" stroke-width="'+(isWhole?2.5:1.5)+'"/>';
+    if(isWhole){
+      ticks+='<text x="'+cx+'" y="'+(lineY+28)+'" text-anchor="middle" font-size="13" font-weight="800" fill="#374151" font-family="Nunito,sans-serif">'+v+'</text>';
+    }
+  }
+
+  // Blue downward arrow above target tick
+  const arrowSVG=
+    '<line x1="'+targetX+'" y1="'+(lineY-32)+'" x2="'+targetX+'" y2="'+(lineY-15)+'" stroke="#0891b2" stroke-width="3" stroke-linecap="round"/>'+
+    '<polygon points="'+(targetX-7)+','+(lineY-15)+' '+(targetX+7)+','+(lineY-15)+' '+targetX+','+(lineY-4)+'" fill="#0891b2"/>'+
+    '<rect x="'+(targetX-16)+'" y="'+(lineY-54)+'" width="32" height="24" rx="6" fill="#0891b2"/>'+
+    '<text x="'+targetX+'" y="'+(lineY-36)+'" text-anchor="middle" font-size="14" font-weight="900" fill="white" font-family="Nunito,sans-serif">?</text>';
+
+  area.innerHTML=
+    '<div class="qlabel">Bij welke breuk hoort het pijltje?</div>'+
+    '<div class="number-line-wrap">'+
+    '<svg class="nl-svg" width="'+W+'" height="'+H+'" viewBox="0 0 '+W+' '+H+'">'+
+    '<line x1="'+pad+'" y1="'+lineY+'" x2="'+(W-pad-4)+'" y2="'+lineY+'" stroke="#374151" stroke-width="2.5" stroke-linecap="round"/>'+
+    '<polygon points="'+(W-pad)+','+(lineY-5)+' '+(W-pad+10)+','+lineY+' '+(W-pad)+','+(lineY+5)+'" fill="#374151"/>'+
+    ticks+arrowSVG+
+    '</svg></div>'+
+    '<div class="qlabel">Kies de juiste breuk:</div>'+
+    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;" id="opts"></div>'+
+    '<button class="btn-next" id="btn-next" onclick="nextQ()">Volgende \u2192</button>';
+
+  const grid=area.querySelector('#opts');
+  opts.forEach(function(o){
+    const parts=o.split('/');
+    const ot=parseInt(parts[0]), on=parseInt(parts[1]);
+    const b=document.createElement('button');
+    b.className='opt-btn';
+    b.style.padding='14px 8px';
+    b.innerHTML=breukHTML(ot,on);
+    b.onclick=function(){
+      if(b.disabled)return;
+      if(o===correct){
+        b.classList.add('correct');
+        grid.querySelectorAll('.opt-btn').forEach(function(x){x.disabled=true;});
+        if(!ST.mistake){ST.correct++;confettiSmall();}
+        area.querySelector('#btn-next').classList.add('show');
+      } else {
+        if(!ST.mistake){ST.wrong++;ST.mistake=true;ST.themeErr['getallenas']=(ST.themeErr['getallenas']||0)+1;}
+        b.classList.add('wrong');setTimeout(function(){b.classList.remove('wrong');},600);
+      }
+    };
+    grid.appendChild(b);
+  });
+}
+
+// ── VERGELIJKEN ───────────────────────────────────────────────────────────
+function renderVergelijk(q,area){
+  const lbl=q.subtype==='noemer'?'De noemers zijn gelijk — welk teken hoort ertussen?':'De tellers zijn gelijk — welk teken hoort ertussen?';
+  area.innerHTML=`
+    <div class="qlabel">${lbl}</div>
+    <div class="vraag-breuk">
+      ${breukHTML(q.t1,q.n1,'breuk-lg')}
+      <div class="symb-box" id="symb">?</div>
+      ${breukHTML(q.t2,q.n2,'breuk-lg')}
+    </div>
+    <div style="display:flex;gap:12px;justify-content:center;margin-bottom:12px;">
+      <button class="symb-btn" onclick="checkVerg(this,'<','${q.teken}',area)">&lt;</button>
+      <button class="symb-btn" onclick="checkVerg(this,'=','${q.teken}',area)">=</button>
+      <button class="symb-btn" onclick="checkVerg(this,'>','${q.teken}',area)">&gt;</button>
+    </div>
+    <button class="btn-next" id="btn-next" onclick="nextQ()">Volgende →</button>`;
+  // store area ref for onclick
+  area._q=q;
+  // Fix: rebind onclick properly
+  area.querySelectorAll('.symb-btn').forEach(b=>{
+    const sym=b.textContent.trim()==='<'?'<':b.textContent.trim()==='='?'=':'>';
+    b.onclick=()=>checkVerg(b,sym,q.teken,area);
+  });
+}
+
+function checkVerg(btn,chosen,correct,area){
+  if(btn.disabled)return;
+  const sb=area.querySelector('#symb');
+  area.querySelectorAll('.symb-btn').forEach(b=>b.disabled=true);
+  sb.textContent=chosen;
+  if(chosen===correct){
+    sb.classList.add('answered');
+    if(!ST.mistake){ST.correct++;confettiSmall();}
+    area.querySelector('#btn-next').classList.add('show');
+  } else {
+    if(!ST.mistake){ST.wrong++;ST.mistake=true;ST.themeErr['vergelijk']=(ST.themeErr['vergelijk']||0)+1;}
+    sb.classList.add('wrong-ans');
+    setTimeout(()=>{sb.textContent='?';sb.classList.remove('wrong-ans');area.querySelectorAll('.symb-btn').forEach(b=>b.disabled=false);},800);
+  }
+}
+window.checkVerg=checkVerg;
+
+// ── GEHELEN ───────────────────────────────────────────────────────────────
+function renderGehelen(q,area){
+  area.innerHTML=`
+    <div class="qlabel">Haal de gehelen uit deze onechte breuk.</div>
+    <div class="vraag-breuk">
+      ${breukHTML(q.t,q.n,'breuk-lg')}
+      <span style="font-size:2rem;font-weight:800;color:#374151;">=</span>
+      <div style="display:flex;align-items:center;gap:6px;">
+        <div style="display:flex;flex-direction:column;align-items:center;">
+          <input type="number" class="breuk-input" id="in-g" placeholder="?" min="0" max="20" style="margin-bottom:4px;">
+          <span style="font-size:.7rem;font-weight:700;color:#6b7280;">geheel</span>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:center;">
+          <input type="number" class="breuk-input" id="in-t" placeholder="?" min="0" max="20" style="border-bottom:3px solid #374151;border-radius:10px 10px 0 0;">
+          <input type="number" class="breuk-input" id="in-n" placeholder="?" min="0" max="20" style="border-radius:0 0 10px 10px;">
+        </div>
+      </div>
+    </div>
+    <div id="fb" style="min-height:28px;text-align:center;font-weight:700;font-size:.95rem;"></div>
+    <button class="btn-check" onclick="checkGehelen(${q.g},${q.r},${q.n},area)" id="btn-ch">Controleer</button>
+    <button class="btn-next" id="btn-next" onclick="nextQ()">Volgende →</button>`;
+  area._q=q;
+  // Rebind
+  area.querySelector('#btn-ch').onclick=()=>checkGehelen(q.g,q.r,q.n,area);
+}
+
+function checkGehelen(g,r,n,area){
+  const ig=parseInt(area.querySelector('#in-g').value);
+  const it=parseInt(area.querySelector('#in-t').value);
+  const ino=parseInt(area.querySelector('#in-n').value);
+  const ok=ig===g&&it===r&&ino===n;
+  const fb=area.querySelector('#fb');
+  if(ok){
+    ['in-g','in-t','in-n'].forEach(id=>area.querySelector('#'+id).classList.add('ok'));
+    fb.innerHTML='<span style="color:#16a34a;">✓ Correct! Knap gedaan!</span>';
+    area.querySelector('#btn-ch').style.display='none';
+    if(!ST.mistake){ST.correct++;confettiSmall();}
+    area.querySelector('#btn-next').classList.add('show');
+  } else {
+    if(!ST.mistake){ST.wrong++;ST.mistake=true;ST.themeErr['gehelen']=(ST.themeErr['gehelen']||0)+1;}
+    ['in-g','in-t','in-n'].forEach((id,i)=>{
+      const el=area.querySelector('#'+id);
+      const vals=[ig,it,ino],cor=[g,r,n];
+      el.classList.toggle('ok',vals[i]===cor[i]);
+      el.classList.toggle('err',vals[i]!==cor[i]);
+      setTimeout(()=>el.classList.remove('err'),600);
+    });
+    fb.innerHTML='<span style="color:#dc2626;">Nog niet juist. Probeer opnieuw!</span>';
+  }
+}
+window.checkGehelen=checkGehelen;
+
+// ── GELIJKWAARDIGE BREUKEN ────────────────────────────────────────────────
+function renderGelijkwaardig(q,area){
+  const isT=q.missing==='t'; // vul teller of noemer in
+  area.innerHTML=`
+    <div class="qlabel">Maak de breuken gelijkwaardig. Vul het ontbrekende getal in.</div>
+    <div class="vraag-breuk">
+      ${breukHTML(q.t1,q.n1,'breuk-lg')}
+      <span style="font-size:2rem;font-weight:700;">=</span>
+      <span class="breuk breuk-lg">
+        <span class="tl">${isT?`<input type="number" class="breuk-input" id="in-x" placeholder="?" style="width:56px;height:48px;font-size:1.4rem;">`:q.t2}</span>
+        <span class="nm">${!isT?`<input type="number" class="breuk-input" id="in-x" placeholder="?" style="width:56px;height:48px;font-size:1.4rem;">`:q.n2}</span>
+      </span>
+    </div>
+    <div id="fb" style="min-height:28px;text-align:center;font-weight:700;font-size:.95rem;"></div>
+    <button class="btn-check" id="btn-ch">Controleer</button>
+    <button class="btn-next" id="btn-next" onclick="nextQ()">Volgende →</button>`;
+  const ans=isT?q.t2:q.n2;
+  area.querySelector('#btn-ch').onclick=()=>{
+    const val=parseInt(area.querySelector('#in-x').value);
+    const fb=area.querySelector('#fb');
+    if(val===ans){
+      area.querySelector('#in-x').classList.add('ok');
+      fb.innerHTML=`<span style="color:#16a34a;">✓ Super! ${breukHTML(q.t1,q.n1,'breuk-sm')} = ${breukHTML(q.t2,q.n2,'breuk-sm')} (×${q.factor})</span>`;
+      area.querySelector('#btn-ch').style.display='none';
+      if(!ST.mistake){ST.correct++;confettiSmall();}
+      area.querySelector('#btn-next').classList.add('show');
+    } else {
+      if(!ST.mistake){ST.wrong++;ST.mistake=true;ST.themeErr['gelijkwaardig']=(ST.themeErr['gelijkwaardig']||0)+1;}
+      area.querySelector('#in-x').classList.add('err');
+      fb.innerHTML='<span style="color:#dc2626;">Niet juist. Kijk naar de factor!</span>';
+      setTimeout(()=>area.querySelector('#in-x').classList.remove('err'),600);
+    }
+  };
+}
+
+// ── GELIJKNAMIG VERGELIJKEN ───────────────────────────────────────────────
+function renderGelijknamig(q,area){
+  const lcm=function(a,b){return a*b/gcd(a,b);};
+  const gem=lcm(q.n1,q.n2);
+  const f1=gem/q.n1, f2=gem/q.n2;
+  const correctT1=q.t1*f1, correctN1=gem;
+  const correctT2=q.t2*f2, correctN2=gem;
+
+  // State for this question
+  let fase=1; // 1=invullen breuk1, 2=invullen breuk2, 3=vergelijken
+  let b1ok=false, b2ok=false;
+
+  area.innerHTML=
+    '<div class="qlabel">Maak beide breuken gelijknamig (noemer = <b>'+gem+'</b>) en vergelijk daarna.</div>'+
+
+    // Original fractions display
+    '<div class="vraag-breuk" style="gap:20px;flex-wrap:wrap;">'+
+      breukHTML(q.t1,q.n1,'breuk-lg')+
+      '<span style="font-size:2rem;color:#6b7280;">?</span>'+
+      breukHTML(q.t2,q.n2,'breuk-lg')+
+    '</div>'+
+
+    // Step 1: convert both fractions
+    '<div style="background:#f0f9ff;border-radius:14px;padding:14px;margin-bottom:12px;">'+
+      '<div style="font-size:.75rem;font-weight:800;text-transform:uppercase;color:#0369a1;margin-bottom:10px;">'+
+        'Stap 1 — Maak gelijknamig (gemeenschappelijke noemer: '+gem+')'+
+      '</div>'+
+      '<div style="display:flex;align-items:center;justify-content:center;gap:16px;flex-wrap:wrap;">'+
+        // Breuk 1 input
+        '<div style="display:flex;flex-direction:column;align-items:center;gap:4px;">'+
+          '<span style="font-size:.75rem;font-weight:700;color:#64748b;">'+breukHTML(q.t1,q.n1,'breuk-sm')+' wordt:</span>'+
+          '<span class="breuk"><input type="number" class="breuk-input" id="in-t1" placeholder="?" style="width:54px;height:48px;font-size:1.3rem;border-bottom:3px solid #374151;border-radius:10px 10px 0 0;"><input type="number" class="breuk-input" id="in-n1" placeholder="?" style="width:54px;height:48px;font-size:1.3rem;border-radius:0 0 10px 10px;" value="'+gem+'" readonly></span>'+
+        '</div>'+
+        '<span style="font-size:2rem;color:#94a3b8;">en</span>'+
+        // Breuk 2 input
+        '<div style="display:flex;flex-direction:column;align-items:center;gap:4px;">'+
+          '<span style="font-size:.75rem;font-weight:700;color:#64748b;">'+breukHTML(q.t2,q.n2,'breuk-sm')+' wordt:</span>'+
+          '<span class="breuk"><input type="number" class="breuk-input" id="in-t2" placeholder="?" style="width:54px;height:48px;font-size:1.3rem;border-bottom:3px solid #374151;border-radius:10px 10px 0 0;"><input type="number" class="breuk-input" id="in-n2" placeholder="?" style="width:54px;height:48px;font-size:1.3rem;border-radius:0 0 10px 10px;" value="'+gem+'" readonly></span>'+
+        '</div>'+
+      '</div>'+
+      '<div id="fb-stap1" style="min-height:24px;text-align:center;font-weight:700;font-size:.88rem;margin-top:8px;"></div>'+
+      '<button class="btn-check" id="btn-stap1" style="margin-top:8px;width:100%;">Controleer</button>'+
+    '</div>'+
+
+    // Step 2: compare (hidden until step 1 correct)
+    '<div id="stap2-box" style="display:none;background:#f0fdf4;border-radius:14px;padding:14px;margin-bottom:12px;">'+
+      '<div style="font-size:.75rem;font-weight:800;text-transform:uppercase;color:#15803d;margin-bottom:10px;">Stap 2 — Vergelijk</div>'+
+      '<div style="display:flex;align-items:center;justify-content:center;gap:16px;flex-wrap:wrap;">'+
+        '<span class="breuk breuk-lg"><span class="tl" id="show-t1">'+correctT1+'</span><span class="nm">'+gem+'</span></span>'+
+        '<div class="symb-box" id="symb">?</div>'+
+        '<span class="breuk breuk-lg"><span class="tl" id="show-t2">'+correctT2+'</span><span class="nm">'+gem+'</span></span>'+
+      '</div>'+
+      '<div style="display:flex;gap:12px;justify-content:center;margin-top:12px;">'+
+        '<button class="symb-btn" id="sv-lt">&lt;</button>'+
+        '<button class="symb-btn" id="sv-eq">=</button>'+
+        '<button class="symb-btn" id="sv-gt">&gt;</button>'+
+      '</div>'+
+    '</div>'+
+
+    '<button class="btn-next" id="btn-next" onclick="nextQ()">Volgende \u2192</button>';
+
+  // Stap 1 controleer
+  area.querySelector('#btn-stap1').onclick=function(){
+    const it1=parseInt(area.querySelector('#in-t1').value);
+    const it2=parseInt(area.querySelector('#in-t2').value);
+    const ok1=it1===correctT1;
+    const ok2=it2===correctT2;
+    const fb=area.querySelector('#fb-stap1');
+
+    area.querySelector('#in-t1').classList.toggle('ok', ok1);
+    area.querySelector('#in-t1').classList.toggle('err', !ok1);
+    area.querySelector('#in-t2').classList.toggle('ok', ok2);
+    area.querySelector('#in-t2').classList.toggle('err', !ok2);
+    setTimeout(function(){
+      area.querySelector('#in-t1').classList.remove('err');
+      area.querySelector('#in-t2').classList.remove('err');
+    }, 600);
+
+    if(ok1&&ok2){
+      fb.innerHTML='<span style="color:#16a34a;">\u2713 Juist! Nu vergelijken.</span>';
+      area.querySelector('#btn-stap1').style.display='none';
+      area.querySelector('#stap2-box').style.display='block';
+      // Bind compare buttons
+      const teken=q.teken;
+      [['#sv-lt','<'],['#sv-eq','='],['#sv-gt','>']].forEach(function(pair){
+        area.querySelector(pair[0]).onclick=function(){
+          checkVerg(area.querySelector(pair[0]),pair[1],teken,area);
+        };
+      });
+    } else {
+      if(!ST.mistake){ST.wrong++;ST.mistake=true;ST.themeErr['gelijknamig']=(ST.themeErr['gelijknamig']||0)+1;}
+      fb.innerHTML='<span style="color:#dc2626;">Nog niet juist — ×'+f1+' voor de eerste, ×'+f2+' voor de tweede breuk.</span>';
+    }
+  };
+}
+
+// ── BREUK VAN EEN GETAL ───────────────────────────────────────────────────
+let _stepState={};
+function renderBreukGetal(q,area){
+  _stepState={q,step:0,wrong:0};
+  area.innerHTML=`
+    <div class="qlabel">Bereken stap voor stap:</div>
+    <div class="vraag-breuk">
+      ${breukHTML(q.t,q.n,'breuk-lg')}
+      <span style="font-size:1.3rem;color:#6b7280;font-style:italic;">van</span>
+      <span style="font-size:2.5rem;font-weight:800;">${q.getal}</span>
+      <span style="font-size:2rem;color:#6b7280;">=</span>
+      <span id="q-ans" style="font-size:2.5rem;font-weight:800;color:var(--mc,#16a34a);">?</span>
+    </div>
+    <div id="steps-area"></div>
+    <button class="btn-next" id="btn-next" onclick="nextQ()">Volgende →</button>`;
+
+  renderSteps(area,q);
+}
+
+function renderSteps(area,q){
+  const steps=[
+    {id:0,label:`1. Wat is het <span class="acc">geheel</span>?`,ans:q.getal},
+    {id:1,label:`2. In hoeveel verdeel ik? <span class="acc">(noemer)</span>`,ans:q.n},
+    {id:2,label:`3. Hoeveel zit in één groepje? <span class="acc">(geheel ÷ noemer)</span>`,ans:q.each},
+    {id:3,label:`4. Hoeveel groepjes neem ik? <span class="acc">(teller)</span>`,ans:q.t},
+    {id:4,label:`5. Wat is het antwoord? <span class="acc">(groepje × teller)</span>`,ans:q.each*q.t},
+  ];
+  const sa=area.querySelector('#steps-area');
+  sa.innerHTML='';
+  steps.forEach((s,i)=>{
+    const row=document.createElement('div');
+    row.className='step-row '+(i===0?'active':'dimmed');
+    row.id=`sr-${i}`;
+    row.innerHTML=`<span class="step-txt">${s.label}</span>
+      <div style="display:flex;align-items:center;gap:6px;">
+        <input type="number" class="breuk-input" style="width:60px;height:48px;font-size:1.3rem;" id="si-${i}" placeholder="?" ${i>0?'disabled':''}>
+        <button class="btn-check" style="padding:8px 14px;font-size:.85rem;" id="sb-${i}">✓</button>
+        <span id="sc-${i}" style="font-size:1.3rem;display:none;">✅</span>
+      </div>`;
+    row.querySelector(`#sb-${i}`).onclick=()=>checkStep(i,s.ans,q,area);
+    sa.appendChild(row);
+  });
+}
+
+function checkStep(i,correct,q,area){
+  const inp=area.querySelector(`#si-${i}`);
+  const val=parseInt(inp.value);
+  if(val===correct){
+    inp.classList.add('ok');
+    area.querySelector(`#sb-${i}`).style.display='none';
+    area.querySelector(`#sc-${i}`).style.display='inline';
+    area.querySelector(`#sr-${i}`).className='step-row done';
+    // Unlock next
+    if(i<4){
+      const next=area.querySelector(`#sr-${i+1}`);
+      next.className='step-row active';
+      const nextInp=area.querySelector(`#si-${i+1}`);
+      nextInp.disabled=false;
+      nextInp.focus();
+    } else {
+      // Done!
+      area.querySelector('#q-ans').textContent=q.each*q.t;
+      if(!ST.mistake){ST.correct++;confettiSmall();}
+      area.querySelector('#btn-next').classList.add('show');
+    }
+  } else {
+    if(!ST.mistake){ST.wrong++;ST.mistake=true;ST.themeErr['breukgetal']=(ST.themeErr['breukgetal']||0)+1;}
+    inp.classList.add('err');
+    setTimeout(()=>inp.classList.remove('err'),500);
+  }
+}
+window.checkStep=checkStep;
+
+// ── CHECK SIMPLE ──────────────────────────────────────────────────────────
+function checkSimple(btn,sel,cor,mod,area){
+  if(btn.disabled)return;
+  if(sel===cor){
+    btn.classList.add('correct');
+    area.querySelectorAll('.opt-btn').forEach(b=>b.disabled=true);
+    if(!ST.mistake){ST.correct++;confettiSmall();}
+    area.querySelector('#btn-next').classList.add('show');
+  } else {
+    if(!ST.mistake){ST.wrong++;ST.mistake=true;ST.themeErr[mod]=(ST.themeErr[mod]||0)+1;}
+    btn.classList.add('wrong');
+    setTimeout(()=>btn.classList.remove('wrong'),600);
+    area.querySelectorAll('.opt-btn').forEach(b=>{if(b.textContent.trim()===cor)b.style.outline='3px solid #22c55e';});
+  }
+}
+window.checkSimple=checkSimple;
+
+// ── NEXT ──────────────────────────────────────────────────────────────────
+function nextQ(){
+  ST.idx++;
+  if(ST.idx>=ST.questions.length)showResults();
+  else renderQ();
+}
+window.nextQ=nextQ;
+
+// ── RESULTS ───────────────────────────────────────────────────────────────
+async function showResults(){
+  clearInterval(ST.timerInt);
+  const total=ST.questions.length;
+  const pct=Math.round((ST.correct/total)*100);
+  const cfg=MODS[ST.mod];
+
+  const ov=document.getElementById('v-result');
+  ov.className='result-overlay show '+cfg.theme;
+
+  document.getElementById('res-score').textContent=`${ST.correct}/${total}`;
+  document.getElementById('res-cor').textContent=ST.correct;
+  document.getElementById('res-wrg').textContent=ST.wrong;
+  document.getElementById('res-time').textContent=fmt(ST.timer);
+
+  const an=document.getElementById('res-analysis');
+  an.innerHTML='';
+
+  if(ST.mod==='toets'){
+    const names={woordenschat:'Woordenschat',getallenas:'Getallenas',vergelijk:'Vergelijken',gehelen:'Gehelen',gelijkwaardig:'Gelijkwaardige breuken',gelijknamig:'Gelijknamig vergelijken',breukgetal:'Breuk van een getal'};
+    const counts={};
+    ST.questions.forEach(q=>{const m=q.module;if(!counts[m])counts[m]={total:0,errors:0};counts[m].total++;});
+    Object.entries(ST.themeErr).forEach(([m,e])=>{if(counts[m])counts[m].errors=e;});
+    an.innerHTML='<div style="font-size:.72rem;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:#6b7280;margin-bottom:10px;padding-bottom:6px;border-bottom:2px solid #e5e7eb;">Foutenanalyse per onderdeel</div>';
+    Object.entries(counts).sort((a,b)=>(a[1].errors/a[1].total)-(b[1].errors/b[1].total)).reverse().forEach(([m,d])=>{
+      const ok=d.errors<=d.total*.3;
+      an.innerHTML+=`<div class="analysis-item ${ok?'good':'bad'}"><div class="dot"></div><div><div style="font-weight:800;">${names[m]||m}</div><div style="font-size:.78rem;opacity:.8;">${d.total-d.errors}/${d.total} juist${!ok?' — Blijf dit oefenen!':''}</div></div></div>`;
+    });
+    // Reset en opslaan (enkel bij toets, enkel voor ingelogde leerlingen)
+    document.getElementById("upload-status").style.display = "none";
+    document.getElementById("upload-status-text").textContent = "Bezig met opslaan...";
+    document.getElementById("upload-spinner").style.display = "inline-block";
+    if (!_isGuest && _currentUser) {
+      document.getElementById("upload-status").style.display = "flex";
+      const tijd = fmt(ST.timer);
+      saveToFirestore(ST.correct, total, pct, tijd, counts);
+    }
+  } else {
+    document.getElementById("upload-status").style.display = "none";
+    an.innerHTML=`<div class="analysis-item ${pct>=70?'good':'bad'}"><div class="dot"></div><div>${pct>=70?'🎉 Uitstekend! Ga zo door!':'💪 Blijf oefenen — je kan het!'}</div></div>`;
+  }
+  confettiBig();
+}
+
+function confettiSmall(){if(window.confetti)confetti({particleCount:40,spread:45,origin:{y:.8},scalar:.8});}
+function confettiBig(){if(window.confetti)confetti({particleCount:120,spread:70,origin:{y:.5}});}
+</script>
 </body>
 </html>
