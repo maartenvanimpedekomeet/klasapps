@@ -651,10 +651,11 @@ function renderQuestion() {
 }
 
 // ── HINT ──────────────────────────────────────────────────────────────────────
+function showHint() {
     if (!state.currentHintUsedForQ) { state.currentHintUsedForQ=true; state.hintsUsed++; }
     document.getElementById("hint-text").innerHTML = state.questions[state.currentIndex].hint;
     document.getElementById("hint-box").classList.remove("hidden");
-});
+}
 
 // ── ANTWOORD CONTROLEREN ──────────────────────────────────────────────────────
 
@@ -723,9 +724,10 @@ function checkAnswer() {
 }
 
 // ── VOLGENDE VRAAG ────────────────────────────────────────────────────────────
+function goNextQuestion() {
     state.currentIndex++;
     if (state.currentIndex<state.totalQ) renderQuestion(); else showResults();
-});
+}
 
 // ── RESULTATEN ────────────────────────────────────────────────────────────────
 async function showResults() {
@@ -782,27 +784,25 @@ async function showResults() {
 
 // ── NAVIGATIE ─────────────────────────────────────────────────────────────────
 
-    if (e.key!=="Enter") return;
-    if (!document.getElementById("next-btn").classList.contains("hidden")) {
-        state.currentIndex++;
-        if (state.currentIndex<state.totalQ) renderQuestion(); else showResults();
-    } else checkAnswer();
-});
-
 document.addEventListener('DOMContentLoaded', function() {
   document.getElementById("btn-aflezen").addEventListener("click",  () => startMode("aflezen"));
   document.getElementById("btn-herleiden").addEventListener("click", () => startMode("herleiden"));
   document.getElementById("btn-optellen").addEventListener("click",  () => startMode("optellen"));
   document.getElementById("btn-bruto").addEventListener("click",     () => startMode("bruto"));
   document.getElementById("btn-mix").addEventListener("click",       () => startMode("mix"));
-  document.getElementById("hint-btn").addEventListener("click", () => {
+  document.getElementById("hint-btn").addEventListener("click", showHint);
   document.getElementById("submit-btn").addEventListener("click", checkAnswer);
-  document.getElementById("next-btn").addEventListener("click", () => {
+  document.getElementById("next-btn").addEventListener("click", goNextQuestion);
   document.getElementById("exit-btn").addEventListener("click",     () => document.getElementById("exit-modal").classList.remove("hidden"));
   document.getElementById("modal-cancel").addEventListener("click", () => document.getElementById("exit-modal").classList.add("hidden"));
   document.getElementById("modal-confirm").addEventListener("click",() => { document.getElementById("exit-modal").classList.add("hidden"); showView("setup-view"); });
   document.getElementById("back-btn").addEventListener("click",     () => showView("setup-view"));
   document.getElementById("user-input").addEventListener("keypress", e => {
+    if (e.key!=="Enter") return;
+    if (!document.getElementById("next-btn").classList.contains("hidden")) {
+        goNextQuestion();
+    } else checkAnswer();
+  });
 });
 
 </script>
