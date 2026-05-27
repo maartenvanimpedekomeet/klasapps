@@ -14,77 +14,9 @@
         .card-anim { transition: transform 0.2s, box-shadow 0.2s; }
         .card-anim:hover { transform: translateY(-2px); box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); }
         .scale-needle { transition: transform 0.8s cubic-bezier(0.175,0.885,0.32,1.275); }
-        /* ── LOGIN ── */
-        #login-screen {
-            position:fixed; inset:0; z-index:9999;
-            background:linear-gradient(135deg,#4338ca 0%,#6d28d9 60%,#7c3aed 100%);
-            display:flex; align-items:center; justify-content:center; padding:20px;
-        }
-        #login-screen.hidden { display:none!important; }
-        .login-card {
-            background:white; border-radius:2rem; padding:2.5rem 2rem;
-            width:100%; max-width:380px;
-            box-shadow:0 25px 50px rgba(0,0,0,0.25); text-align:center;
-        }
-        .login-logo {
-            width:80px; height:80px; background:#ede9fe; border-radius:1.5rem;
-            display:flex; align-items:center; justify-content:center;
-            margin:0 auto 1.25rem; font-size:2.5rem;
-            box-shadow:0 4px 16px rgba(99,102,241,0.2);
-        }
-        .login-input {
-            width:100%; padding:14px 16px; border:2px solid #e5e7eb; border-radius:1rem;
-            font-family:inherit; font-size:1rem; font-weight:600; color:#374151;
-            margin-bottom:10px; outline:none; transition:border-color .2s; text-align:center;
-        }
-        .login-input:focus { border-color:#6d28d9; }
-        .login-input.err { border-color:#dc2626; background:#fef2f2; animation:loginShake .4s; }
-        @keyframes loginShake{0%,100%{transform:translateX(0)}25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
-        .btn-login {
-            width:100%; background:#6d28d9; color:white; border:none; border-radius:1rem;
-            padding:14px; font-family:inherit; font-size:1rem; font-weight:700;
-            cursor:pointer; transition:all .2s; margin-bottom:10px;
-        }
-        .btn-login:hover { background:#5b21b6; }
-        .btn-login:disabled { opacity:.6; cursor:not-allowed; }
-        .login-error { color:#dc2626; font-size:.85rem; font-weight:700; min-height:20px; margin-bottom:8px; }
-        .btn-guest {
-            width:100%; background:transparent; border:2px solid #d1d5db; border-radius:1rem;
-            padding:12px; font-family:inherit; font-size:.9rem; font-weight:700;
-            color:#6b7280; cursor:pointer; transition:all .2s;
-        }
-        .btn-guest:hover { border-color:#9ca3af; color:#374151; }
-        .teacher-link { margin-top:14px; font-size:.75rem; color:#9ca3af; }
-        .teacher-link a { color:#6d28d9; text-decoration:none; font-weight:700; }
     </style>
 </head>
 <body class="bg-slate-50 min-h-screen pb-20">
-<!-- LOGIN OVERLAY -->
-<div id="v-login" style="position:fixed;inset:0;z-index:9999;background:linear-gradient(135deg,#4338ca,#6d28d9);display:flex;align-items:center;justify-content:center;padding:20px;">
-  <div style="background:white;border-radius:24px;padding:2.5rem 2rem;width:100%;max-width:380px;box-shadow:0 25px 50px rgba(0,0,0,0.25);text-align:center;display:flex;flex-direction:column;gap:12px;">
-    <div style="font-size:3rem" id="_login_icon">⚖️</div>
-    <h1 style="font-size:1.5rem;font-weight:900;color:#1f2937;margin:0" id="_login_title">Gewicht</h1>
-    <p style="color:#6b7280;font-size:.9rem;margin:0">Voer je naam en code in</p>
-    <div id="_login_err" style="color:#dc2626;font-size:.85rem;font-weight:700;min-height:18px;display:none;"></div>
-    <input type="text" id="login-naam" placeholder="Jouw voornaam"
-      style="width:100%;padding:14px;border:2px solid #e5e7eb;border-radius:12px;font-family:inherit;font-size:1rem;font-weight:600;text-align:center;outline:none;"
-      autocomplete="off" autocapitalize="words">
-    <input type="password" id="login-code" placeholder="Jouw code"
-      style="width:100%;padding:14px;border:2px solid #e5e7eb;border-radius:12px;font-family:inherit;font-size:1rem;font-weight:600;text-align:center;outline:none;"
-      autocomplete="off">
-    <button onclick="loginMetCode()"
-      style="width:100%;background:#6d28d9;color:white;border:none;border-radius:12px;padding:14px;font-family:inherit;font-size:1rem;font-weight:700;cursor:pointer;">
-      Inloggen
-    </button>
-    <button onclick="loginGuest()"
-      style="width:100%;background:transparent;border:2px solid #e5e7eb;border-radius:12px;padding:12px;font-family:inherit;font-size:.9rem;font-weight:700;color:#6b7280;cursor:pointer;">
-      Doorgaan als gast (geen opslag)
-    </button>
-    <div style="font-size:.75rem;color:#9ca3af;">
-      <a href="dashboard.html" style="color:#6d28d9;font-weight:700;text-decoration:none;">Leerkracht? Klik hier</a>
-    </div>
-  </div>
-</div>
     <!-- LOGIN SCREEN -->
     <div id="login-screen">
       <div class="login-card">
@@ -102,7 +34,7 @@
 <div id="app" class="max-w-4xl mx-auto p-4 py-8">
 
 <!-- ── LOGIN SCHERM ── -->
-<div id="login-view" class="bg-white rounded-[2.5rem] shadow-xl p-8 md:p-12 border border-slate-100 text-center space-y-8 max-w-lg mx-auto">
+<div id="login-view" style="display:none!important;" class="bg-white rounded-[2.5rem] shadow-xl p-8 md:p-12 border border-slate-100 text-center space-y-8 max-w-lg mx-auto">
     <div class="inline-flex p-4 bg-indigo-100 rounded-3xl text-5xl">🏋️‍♂️</div>
     <div class="space-y-2">
         <h1 class="text-3xl font-extrabold text-slate-900">De Gewichten Trainer</h1>
@@ -370,113 +302,207 @@
 </div><!-- /#app -->
 
 <!-- ── FIREBASE ── -->
+
+<!-- ── NIEUW LOGINSCHERM (naam + code) ── -->
+<div id="klas-login" style="position:fixed;inset:0;z-index:9999;background:linear-gradient(135deg,#1e3a5f,#0369a1);display:flex;align-items:center;justify-content:center;padding:20px;">
+  <div style="background:white;border-radius:24px;padding:2.5rem 2rem;width:100%;max-width:380px;box-shadow:0 25px 50px rgba(0,0,0,0.25);text-align:center;display:flex;flex-direction:column;gap:12px;">
+    <div style="font-size:3rem">⚖️</div>
+    <h1 style="font-size:1.5rem;font-weight:900;color:#1f2937;margin:0">De Gewichten Trainer</h1>
+    <p style="color:#6b7280;font-size:.9rem;margin:0">Voer je naam en code in</p>
+    <div id="klas-err" style="color:#dc2626;font-size:.85rem;font-weight:700;min-height:18px;display:none;"></div>
+    <input type="text" id="klas-naam" placeholder="Jouw voornaam"
+      style="width:100%;padding:14px;border:2px solid #e5e7eb;border-radius:12px;font-family:inherit;font-size:1rem;font-weight:600;text-align:center;outline:none;"
+      autocomplete="off" autocapitalize="words">
+    <input type="password" id="klas-code" placeholder="Jouw code"
+      style="width:100%;padding:14px;border:2px solid #e5e7eb;border-radius:12px;font-family:inherit;font-size:1rem;font-weight:600;text-align:center;outline:none;"
+      autocomplete="off">
+    <button onclick="klasLogin()"
+      style="width:100%;background:#1e3a5f;color:white;border:none;border-radius:12px;padding:14px;font-family:inherit;font-size:1rem;font-weight:700;cursor:pointer;">
+      Inloggen
+    </button>
+    <button onclick="klasGast()"
+      style="width:100%;background:transparent;border:2px solid #e5e7eb;border-radius:12px;padding:12px;font-family:inherit;font-size:.9rem;font-weight:700;color:#6b7280;cursor:pointer;">
+      Doorgaan als gast (geen opslag)
+    </button>
+    <div style="font-size:.75rem;color:#9ca3af;">
+      <a href="dashboard.html" style="color:#1e3a5f;font-weight:700;text-decoration:none;">Leerkracht? Klik hier</a>
+    </div>
+  </div>
+</div>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 <script>
-(function() {
-  try { firebase.app(); } catch(e) {
-    firebase.initializeApp({
-      apiKey:"AIzaSyCnQDVVAlK6jE-PPUUediRJMTbN0xqrLDE",
-      authDomain:"klaswebsite-database.firebaseapp.com",
-      projectId:"klaswebsite-database",
-      storageBucket:"klaswebsite-database.firebasestorage.app",
-      messagingSenderId:"42912327282",
-      appId:"1:42912327282:web:f13f2c706f6c42c115c4eb"
-    });
-  }
-  window._fbDb = window._fbDb || firebase.firestore();
-})();
+firebase.initializeApp({
+  apiKey:"AIzaSyCnQDVVAlK6jE-PPUUediRJMTbN0xqrLDE",
+  authDomain:"klaswebsite-database.firebaseapp.com",
+  projectId:"klaswebsite-database",
+  storageBucket:"klaswebsite-database.firebasestorage.app",
+  messagingSenderId:"42912327282",
+  appId:"1:42912327282:web:f13f2c706f6c42c115c4eb"
+});
+var _db = firebase.firestore();
 
-var _CU = null, _GUEST = false;
+var currentUser = null;
+var isGuest     = false;
+var guestName   = "";
+var currentMode = "";
 
-function loginMetCode() {
-  var naam = (document.getElementById('login-naam').value||'').trim().toLowerCase();
-  var code = (document.getElementById('login-code').value||'').trim();
-  var errEl = document.getElementById('_login_err');
-  errEl.style.display='none'; errEl.textContent='';
-  if (!naam) { errEl.textContent='Vul je voornaam in.'; errEl.style.display='block'; return; }
-  if (!code) { errEl.textContent='Vul je code in.'; errEl.style.display='block'; return; }
-  window._fbDb.collection('leerlingen').doc(naam).get().then(function(doc) {
-    if (!doc.exists) { errEl.textContent='Naam niet gevonden.'; errEl.style.display='block'; return; }
+function klasLogin() {
+  var naam = (document.getElementById('klas-naam').value||'').trim().toLowerCase();
+  var code = (document.getElementById('klas-code').value||'').trim();
+  var err  = document.getElementById('klas-err');
+  err.style.display='none';
+  if (!naam) { err.textContent='Vul je voornaam in.'; err.style.display='block'; return; }
+  if (!code) { err.textContent='Vul je code in.'; err.style.display='block'; return; }
+  _db.collection('leerlingen').doc(naam).get().then(function(doc) {
+    if (!doc.exists) { err.textContent='Naam niet gevonden.'; err.style.display='block'; return; }
     var data = doc.data();
-    if (data.code !== code) { errEl.textContent='Verkeerde code.'; errEl.style.display='block'; return; }
+    if (data.code !== code) { err.textContent='Verkeerde code.'; err.style.display='block'; return; }
     window._leerlingNaam = data.weergavenaam || naam;
     window._leerlingId   = naam;
-    _CU = {uid:naam, displayName:data.weergavenaam};
-    _GUEST = false;
-    _showAfterLogin(data.weergavenaam || naam, false);
-  }).catch(function(e) { errEl.textContent='Fout: '+e.message; errEl.style.display='block'; });
+    currentUser = {uid: naam, displayName: data.weergavenaam, email: naam+'@klas'};
+    isGuest = false;
+    setupBadge(data.weergavenaam || naam, '', null, false);
+    document.getElementById('klas-login').style.display = 'none';
+    showView('setup-view');
+  }).catch(function(e) { err.textContent='Fout: '+e.message; err.style.display='block'; });
 }
 
-function loginGuest() {
-  _GUEST = true; _CU = null;
+function klasGast() {
+  isGuest = true; currentUser = null; guestName = 'Gast';
   window._leerlingId = null; window._leerlingNaam = 'Gast';
-  _showAfterLogin('Gast', true);
-}
-
-function _showAfterLogin(naam, isGuest) {
-  document.getElementById('v-login').style.display = 'none';
-  // Show user badge - try multiple common badge element ids
-  var badge_ids = ['fb-user-badge','user-badge','user-bar','_user_bar'];
-  badge_ids.forEach(function(id) {
-    var el = document.getElementById(id);
-    if (el) { el.classList.remove('hidden'); el.style.display='flex'; }
-  });
-  var guest_ids = ['fb-guest-badge','_guest_badge'];
-  if (isGuest) {
-    guest_ids.forEach(function(id) {
-      var el = document.getElementById(id);
-      if (el) { el.textContent='👤 Gast – score niet opgeslagen'; el.classList.remove('hidden'); el.style.display=''; }
-    });
-  }
-  // Show main menu - try multiple common menu ids
-  var menu_ids = ['v-menu','menuSectie','main-content','app-content','_main'];
-  menu_ids.forEach(function(id) {
-    var el = document.getElementById(id);
-    if (el) { el.classList.remove('hidden'); el.style.display=''; }
-  });
-  // Update name displays
-  var name_ids = ['fb-uname','user-name','u-nm','_user_name'];
-  name_ids.forEach(function(id) {
-    var el = document.getElementById(id);
-    if (el) el.textContent = naam;
-  });
-  var init_ids = ['fb-init','user-avatar','u-av','_user_init'];
-  init_ids.forEach(function(id) {
-    var el = document.getElementById(id);
-    if (el) el.textContent = naam ? naam[0].toUpperCase() : '?';
-  });
-  // Call afterLogin if it exists (for newer apps)
-  if (typeof afterLogin === 'function') afterLogin(naam);
-}
-
-function doLogout() {
-  _GUEST=false; _CU=null;
-  window._leerlingId=null; window._leerlingNaam=null;
-  document.getElementById('v-login').style.display='flex';
-  ['fb-user-badge','user-badge','user-bar','fb-guest-badge'].forEach(function(id) {
-    var el=document.getElementById(id);
-    if(el){el.classList.add('hidden');el.style.display='none';}
-  });
-  ['v-menu','menuSectie','main-content'].forEach(function(id) {
-    var el=document.getElementById(id);
-    if(el){el.classList.add('hidden');el.style.display='none';}
-  });
-  var n=document.getElementById('login-naam'); if(n) n.value='';
-  var c=document.getElementById('login-code'); if(c) c.value='';
+  setupBadge('Gast', '', null, true);
+  document.getElementById('klas-login').style.display = 'none';
+  showView('setup-view');
 }
 
 document.addEventListener('DOMContentLoaded', function() {
-  ['login-naam','login-code'].forEach(function(id) {
-    var el=document.getElementById(id);
-    if(el) el.addEventListener('keypress',function(e){if(e.key==='Enter')loginMetCode();});
+  ['klas-naam','klas-code'].forEach(function(id) {
+    var el = document.getElementById(id);
+    if (el) el.addEventListener('keypress', function(e) { if(e.key==='Enter') klasLogin(); });
+  });
+  // Wire up the old signout button to our new logout
+  var so = document.getElementById('signout-btn');
+  if (so) so.addEventListener('click', function() {
+    isGuest=false; currentUser=null;
+    window._leerlingId=null; window._leerlingNaam=null;
+    document.getElementById('klas-login').style.display='flex';
+    showView('login-view'); // keep login-view hidden but reset
   });
 });
 
-// Compatibility: map old Firebase variables to new ones
-window.fbDb = window._fbDb;
-</script>
-<script>
+async function saveToFirestore(roundedScore, pct, tijd) {
+  if (isGuest || !currentUser) return;
+  try {
+    await _db.collection('gewicht_toets').add({
+      leerlingId:   window._leerlingId,
+      leerlingNaam: window._leerlingNaam || 'Leerling',
+      score:        roundedScore,
+      percentage:   pct,
+      tijd:         tijd,
+      mode:         currentMode,
+      timestamp:    firebase.firestore.FieldValue.serverTimestamp()
+    });
+  } catch(e) { console.error('Opslaan mislukt:', e); }
+}
+
+function showLoginError(msg) {
+  var err = document.getElementById('klas-err');
+  if (err) { err.textContent = msg; err.style.display = 'block'; }
+}
+
+// ── GAME STATE & LOGIC ────────────────────────────────────────────────────
+let state = {
+    questions: [], currentIndex: 0, score: 0.0,
+    hintsUsed: 0, history: [], currentHintUsedForQ: false,
+    totalQ: 10, totalStartTime: null, questionStartTime: null
+};
+
+// ── VIEWS ─────────────────────────────────────────────────────────────────────
+function showView(id) {
+    ["login-view","setup-view","quiz-view","result-view"].forEach(v =>
+        document.getElementById(v).classList.add("hidden"));
+    document.getElementById(id).classList.remove("hidden");
+    window.scrollTo(0,0);
+}
+
+// ── AUTH ──────────────────────────────────────────────────────────────────────
+getRedirectResult(auth).catch(e => showLoginError(e.message));
+
+onAuthStateChanged(auth, user => {
+    if (user) {
+        const domain = user.email.split("@")[1];
+        if (domain !== ALLOWED_DOMAIN) {
+            signOut(auth);
+            showLoginError(`Enkel @${ALLOWED_DOMAIN} schoolaccounts worden opgeslagen. Gebruik je schoolaccount of speel als gast.`);
+            return;
+        }
+        isGuest = false;
+        currentUser = user;
+        setupBadge(user.displayName || user.email, user.email, user.photoURL, false);
+        showView("setup-view");
+    } else {
+        if (!isGuest) { currentUser = null; showView("login-view"); }
+    }
+});
+
+document.getElementById("google-signin-btn").addEventListener("click", async () => {
+    const provider = new GoogleAuthProvider();
+    provider.setCustomParameters({ hd: ALLOWED_DOMAIN });
+    try { await signInWithRedirect(auth, provider); }
+    catch(e) { showLoginError(e.message); }
+});
+
+document.getElementById("guest-btn").addEventListener("click", () => {
+    const naam = document.getElementById("guest-name").value.trim();
+    if (!naam) {
+        document.getElementById("guest-name").classList.add("border-rose-400");
+        document.getElementById("guest-name").focus();
+        return;
+    }
+    isGuest = true; currentUser = null; guestName = naam;
+    setupBadge(naam + " (gast)", "", null, true);
+    showView("setup-view");
+});
+document.getElementById("guest-name").addEventListener("input", () =>
+    document.getElementById("guest-name").classList.remove("border-rose-400"));
+
+document.getElementById("signout-btn").addEventListener("click", async () => {
+    isGuest = false; guestName = ""; currentUser = null;
+    await signOut(auth);
+    showView("login-view");
+});
+
+function setupBadge(naam, email, photoURL, guest) {
+    document.getElementById("user-name-display").textContent = naam;
+    document.getElementById("user-email-display").textContent = email;
+    const av = document.getElementById("user-avatar");
+    if (photoURL) { av.src = photoURL; av.classList.remove("hidden"); } else av.classList.add("hidden");
+    document.getElementById("guest-badge").classList.toggle("hidden", !guest);
+    document.getElementById("signout-btn").classList.toggle("hidden", guest);
+}
+
+
+
+// ── DATASET ───────────────────────────────────────────────────────────────────
+const ITEMS = [
+    { name:"een pak suiker", baseWeight:1000, e:"🧂" },
+    { name:"een appel", baseWeight:150, e:"🍎" },
+    { name:"een pak melk", baseWeight:1000, e:"🥛" },
+    { name:"een doos aardbeien", baseWeight:500, e:"🍓" },
+    { name:"een zak aardappelen", baseWeight:2500, e:"🥔" },
+    { name:"een pot chocoladepasta", baseWeight:400, e:"🍯" },
+    { name:"een pak bloem", baseWeight:1000, e:"🌾" },
+    { name:"een pakje boter", baseWeight:250, e:"🧈" }
+];
+const HEAVY_ITEMS = [
+    { name:"een personenauto", baseWeight:1500, e:"🚗" },
+    { name:"een Afrikaanse olifant", baseWeight:5000, e:"🐘" },
+    { name:"een bestelwagen", baseWeight:3200, e:"🚚" },
+    { name:"een grote scheepscontainer", baseWeight:24000, e:"🚢" },
+    { name:"een jonge blauwe vinvis", baseWeight:45000, e:"🐋" }
+];
+
 function shuffle(arr) {
     let a = [...arr];
     for (let i = a.length-1; i>0; i--) {
@@ -872,60 +898,7 @@ async function showResults() {
 }
 
 // ── FIRESTORE OPSLAAN ─────────────────────────────────────────────────────────
-async function saveToFirestore(roundedScore, pct, tijd) {
-    const statusBox = document.getElementById("upload-status");
-
-    // Bepaal oefening-naam en vak op basis van modus
-    const modeLabels = {
-        aflezen:  "Wiskunde - Gewicht: Aflezen",
-        herleiden:"Wiskunde - Gewicht: Maten Herleiden",
-        optellen: "Wiskunde - Gewicht: Optellen en Aftrekken",
-        bruto:    "Wiskunde - Gewicht: Bruto Netto Tarra",
-        mix:      "Wiskunde - Gewicht: Toets (Mix)"
-    };
-
-    const record = {
-        // Leerling
-        uid:         currentUser.uid,
-        email:       currentUser.email,
-        displayName: currentUser.displayName || currentUser.email,
-        photoURL:    currentUser.photoURL || null,
-
-        // Oefening
-        vak:         "Wiskunde",
-        oefening:    modeLabels[currentMode] || "Gewichten Trainer",
-
-        // Score
-        score:          roundedScore,
-        totaal:         state.totalQ,
-        nauwkeurigheid: pct,
-        tijdsduur:      tijd,
-        hintsGebruikt:  state.hintsUsed,
-
-        // Detail per vraag
-        vragen: state.history.map((h,i) => ({
-            vraagNr:          i+1,
-            formule:          h.title,
-            categorie:        h.firestoreCategorie,
-            antwoordLeerling: h.user,
-            juistAntwoord:    h.correct,
-            isJuist:          h.isCorrect,
-            hintGebruikt:     h.hintUsed,
-            tijdSeconden:     h.tijdSeconden
-        })),
-
-        timestamp: serverTimestamp()
-    };
-
-    try {
-        await addDoc(collection(db,"resultaten"), record);
-        statusBox.innerHTML = `<i class="fa-solid fa-circle-check text-emerald-500 text-xl"></i> Resultaten opgeslagen!`;
-        statusBox.className = "bg-emerald-50 p-4 rounded-2xl border border-emerald-100 flex items-center justify-center gap-3 text-sm font-semibold text-emerald-700 max-w-md mx-auto";
-    } catch(err) {
-        statusBox.innerHTML = `<i class="fa-solid fa-circle-xmark text-rose-500 text-xl"></i> Opslaan mislukt: ${err.message}`;
-        statusBox.className = "bg-rose-50 p-4 rounded-2xl border border-rose-100 flex items-center justify-center gap-3 text-sm font-semibold text-rose-700 max-w-md mx-auto";
-    }
-}
+// saveToFirestore defined above
 
 // ── NAVIGATIE ─────────────────────────────────────────────────────────────────
 document.getElementById("exit-btn").addEventListener("click",     () => document.getElementById("exit-modal").classList.remove("hidden"));
@@ -942,6 +915,7 @@ document.getElementById("user-input").addEventListener("keypress", e => {
 });
 
 </script>
+
     <script>
     function afterLogin(naam) {
         document.getElementById('login-screen').classList.add('hidden');
@@ -956,9 +930,6 @@ document.getElementById("user-input").addEventListener("keypress", e => {
         if (nr) nr.textContent = window._isGuest ? 'Gast' : '';
     }
     </script>
-
-<!-- Version badge -->
 <div style="position:fixed;bottom:8px;left:10px;font-size:.65rem;color:rgba(0,0,0,0.25);font-family:monospace;z-index:9998;pointer-events:none;">v0.1</div>
-
 </body>
 </html>
