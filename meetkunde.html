@@ -345,32 +345,31 @@ body { font-family: 'Nunito', sans-serif; background: var(--c-bg); min-height: 1
 </style>
 </head>
 <body>
-    <!-- LOGIN SCREEN -->
-    <div id="login-screen">
-      <div class="login-card">
-        <div class="login-logo">📐</div>
-        <h1 style="font-size:1.6rem;font-weight:800;color:#1f2937;margin-bottom:6px;">Meetkunde</h1>
-        <p style="font-size:.85rem;color:#6b7280;margin-bottom:1.25rem;">Voer je naam en code in</p>
-        <input class="login-input" id="login-naam" type="text" placeholder="Jouw voornaam" autocomplete="off" autocapitalize="words">
-        <input class="login-input" id="login-code" type="password" placeholder="Jouw code" autocomplete="off">
-        <div class="login-error" id="login-error"></div>
-        <button class="btn-login" id="btn-login" onclick="loginMetCode()">Inloggen</button>
-        <button class="btn-guest" onclick="loginGuest()">Doorgaan als gast (geen opslag)</button>
-        <div class="teacher-link"><a href="dashboard.html">Leerkracht? Klik hier</a></div>
-      </div>
-    </div>
 
 <!-- LOGIN -->
 <div id="screen-login" class="screen active">
   <div class="login-card">
     <div class="login-logo">📐</div>
     <h1 class="title-font" style="font-size:1.8rem;color:#1e1b4b;margin-bottom:6px;">Meetkunde</h1>
-    <p style="font-size:0.85rem;color:#6b7280;margin-bottom:2rem;">Log in om je voortgang bij te houden</p>
-    <button class="btn-google" onclick="loginGoogle()">
-      <svg width="20" height="20" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9.1 3.5l6.8-6.8C35.8 2.4 30.3 0 24 0 14.7 0 6.7 5.4 2.6 13.3l7.9 6.1C12.4 13.1 17.7 9.5 24 9.5z"/><path fill="#4285F4" d="M46.5 24.5c0-1.6-.1-3.1-.4-4.5H24v8.5h12.7c-.5 2.9-2.2 5.4-4.7 7l7.4 5.7c4.3-4 6.8-9.9 7.1-16.7z"/><path fill="#FBBC05" d="M10.5 28.6A14.5 14.5 0 0 1 9.5 24c0-1.6.3-3.1.9-4.6l-7.9-6.1A24 24 0 0 0 0 24c0 3.9.9 7.5 2.6 10.7l7.9-6.1z"/><path fill="#34A853" d="M24 48c6.3 0 11.6-2.1 15.5-5.7l-7.4-5.7c-2.1 1.4-4.8 2.2-8.1 2.2-6.3 0-11.6-3.6-13.5-8.8l-7.9 6.1C6.7 42.6 14.7 48 24 48z"/></svg>
-      Inloggen met Google
+    <p style="font-size:0.85rem;color:#6b7280;margin-bottom:1.5rem;">Voer je naam en code in</p>
+    <div id="klas-err" style="display:none;color:#dc2626;font-size:.85rem;font-weight:700;background:#fee2e2;border:1px solid #fca5a5;padding:8px 12px;border-radius:8px;margin-bottom:8px;"></div>
+    <input type="text" id="klas-naam" placeholder="Jouw voornaam"
+      style="width:100%;padding:14px;border:2px solid #e5e7eb;border-radius:12px;font-family:'Nunito',sans-serif;font-size:1rem;font-weight:600;text-align:center;outline:none;margin-bottom:10px;"
+      autocomplete="off" autocapitalize="words">
+    <input type="password" id="klas-code" placeholder="Jouw code"
+      style="width:100%;padding:14px;border:2px solid #e5e7eb;border-radius:12px;font-family:'Nunito',sans-serif;font-size:1rem;font-weight:600;text-align:center;outline:none;margin-bottom:10px;"
+      autocomplete="off">
+    <button id="login-btn"
+      style="width:100%;background:#4f46e5;color:white;border:none;border-radius:12px;padding:14px;font-family:'Nunito',sans-serif;font-size:1rem;font-weight:700;cursor:pointer;margin-bottom:10px;">
+      Inloggen
     </button>
-    <button class="btn-guest" onclick="loginGuest()">Doorgaan als gast (geen opslag)</button>
+    <button id="gast-btn"
+      style="width:100%;background:transparent;border:2px solid #d1d5db;border-radius:12px;padding:12px;font-family:'Nunito',sans-serif;font-size:.9rem;font-weight:700;color:#6b7280;cursor:pointer;margin-bottom:10px;">
+      Doorgaan als gast (geen opslag)
+    </button>
+    <div style="font-size:.75rem;color:#9ca3af;">
+      <a href="dashboard.html" style="color:#4f46e5;font-weight:700;text-decoration:none;">Leerkracht? Klik hier</a>
+    </div>
   </div>
 </div>
 
@@ -415,7 +414,7 @@ body { font-family: 'Nunito', sans-serif; background: var(--c-bg); min-height: 1
     </div>
   </div>
   <div style="text-align:center;padding-bottom:1.5rem;">
-    <button onclick="logout()" style="background:none;border:none;color:#9ca3af;font-size:0.82rem;font-weight:700;cursor:pointer;font-family:'Nunito',sans-serif;">Uitloggen</button>
+    <button onclick="doLogout()" style="background:none;border:none;color:#9ca3af;font-size:0.82rem;font-weight:700;cursor:pointer;font-family:'Nunito',sans-serif;">Uitloggen</button>
   </div>
 </div>
 
@@ -436,7 +435,7 @@ body { font-family: 'Nunito', sans-serif; background: var(--c-bg); min-height: 1
     <div id="mod-start-overlay" class="mod-start">
       <div style="font-size:3rem;" id="mod-start-icon">📏</div>
       <h2 id="mod-start-title">Soorten lijnen</h2>
-      <p id="mod-start-desc">Bekijk de lijn en kies de juiste naam.</p>
+      <p id="mod-start-desc">Bekijk de lijn og kies de juiste naam.</p>
       <button class="btn-start" onclick="startCurrentModule()">Start de oefening</button>
     </div>
     <div id="question-area" style="display:none;"></div>
@@ -465,7 +464,10 @@ body { font-family: 'Nunito', sans-serif; background: var(--c-bg); min-height: 1
       <div class="lbl" style="color:#1d4ed8;">Tijd</div>
     </div>
     <div class="analysis-section" id="analysis-section"></div>
-    <div id="firebase-saved-msg" style="display:none;text-align:center;font-size:0.82rem;color:#10b981;font-weight:700;margin-top:10px;">✓ Score opgeslagen</div>
+    <div id="upload-status" style="display:none;text-align:center;font-size:0.82rem;font-weight:700;padding:10px 14px;border-radius:10px;border:2px solid;margin-top:10px;">
+      <span id="upload-spinner" style="display:inline-block;width:13px;height:13px;border:2px solid #e5e7eb;border-top-color:#4f46e5;border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle;margin-right:6px;"></span>
+      <span id="upload-status-text">Bezig met opslaan...</span>
+    </div>
     <button class="btn-restart" onclick="restartOrHome()">Opnieuw beginnen</button>
     <button onclick="goHome()" style="width:100%;margin-top:8px;background:none;border:2px solid var(--c-border);border-radius:1rem;padding:12px;font-family:'Nunito',sans-serif;font-size:0.9rem;font-weight:700;color:var(--c-muted);cursor:pointer;">← Terug naar menu</button>
   </div>
@@ -473,80 +475,185 @@ body { font-family: 'Nunito', sans-serif; background: var(--c-bg); min-height: 1
 
 <div class="toast" id="toast"></div>
 
-<!-- FIREBASE -->
-<script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-import { getAuth, GoogleAuthProvider, signInWithRedirect, getRedirectResult, signInAnonymously, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-const firebaseConfig = {
-  apiKey: "AIzaSyCnQDVVAlK6jE-PPUUediRJMTbN0xqrLDE",
-  authDomain: "klaswebsite-database.firebaseapp.com",
-  projectId: "klaswebsite-database",
-  storageBucket: "klaswebsite-database.firebasestorage.app",
-  messagingSenderId: "42912327282",
-  appId: "1:42912327282:web:f13f2c706f6c42c115c4eb"
-};
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getFirestore(app);
-const provider = new GoogleAuthProvider();
-window._fbAuth = auth; window._fbDb = db;
-window._fbCollection = collection; window._fbAddDoc = addDoc;
-window._fbServerTimestamp = serverTimestamp; window._fbSignOut = signOut;
-
-// Check redirect result on page load (comes back after Google login)
-getRedirectResult(auth).then(result => {
-  if (result && result.user) {
-    window._currentUser = result.user;
-    window._isGuest = false;
-    afterLogin();
-  }
-}).catch(e => {
-  console.error('Redirect error:', e);
-  // Show login screen so user can try again
-  showScreen('screen-login');
+<!-- FIREBASE compat SDK — zelfde als gewichten, kommagetallen en inhoudsmaten -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script>
+firebase.initializeApp({
+  apiKey:"AIzaSyCnQDVVAlK6jE-PPUUediRJMTbN0xqrLDE",
+  authDomain:"klaswebsite-database.firebaseapp.com",
+  projectId:"klaswebsite-database",
+  storageBucket:"klaswebsite-database.firebasestorage.app",
+  messagingSenderId:"42912327282",
+  appId:"1:42912327282:web:f13f2c706f6c42c115c4eb"
 });
+var _db = firebase.firestore();
+var _currentUser = null;   // { uid, displayName }
+var _isGuest     = false;
 
-// Also check if user is already signed in
-onAuthStateChanged(auth, user => {
-  if (user && !window._loginHandled) {
-    window._loginHandled = true;
-    window._currentUser = user;
-    window._isGuest = false;
-    afterLogin();
+// ── UPLOAD STATUS (style.display — NOOIT Tailwind class, vermijdt !important conflict) ──
+function setUploadStatus(type, msg) {
+  var box     = document.getElementById("upload-status");
+  var text    = document.getElementById("upload-status-text");
+  var spinner = document.getElementById("upload-spinner");
+  box.style.display    = "block";
+  spinner.style.display = (type === "loading") ? "inline-block" : "none";
+  if (type === "loading") {
+    box.style.background  = "#f8fafc";
+    box.style.borderColor = "#cbd5e1";
+    box.style.color       = "#475569";
+  } else if (type === "ok") {
+    box.style.background  = "#f0fdf4";
+    box.style.borderColor = "#86efac";
+    box.style.color       = "#15803d";
+  } else {
+    box.style.background  = "#fff1f2";
+    box.style.borderColor = "#fecdd3";
+    box.style.color       = "#be123c";
   }
-});
-
-window.loginGoogle = () => {
-  // Show loading state on button
-  const btn = document.querySelector('.btn-google');
-  if (btn) { btn.textContent = 'Doorverwijzen...'; btn.disabled = true; }
-  signInWithRedirect(auth, provider);
-};
-window.loginGuest = () => { window._currentUser = null; window._isGuest = true; afterLogin(); };
-window.logout = async () => {
-  window._loginHandled = false;
-  if (!window._isGuest) await signOut(auth);
-  window._currentUser = null; window._isGuest = false; showScreen('screen-login');
-};
-window.saveToetsScore = async (data) => {
-  if (window._isGuest || !window._currentUser) return false;
-  try {
-    await window._fbAddDoc(window._fbCollection(window._fbDb, 'meetkunde_toets'), {
-      userId: window._currentUser.uid,
-      displayName: window._currentUser.displayName || 'Leerling',
-      email: window._currentUser.email || '',
-      ...data, timestamp: window._fbServerTimestamp()
-    });
-    return true;
-  } catch(e) { console.error(e); return false; }
-};
-function afterLogin() {
-  const u = window._currentUser;
-  document.getElementById('user-name').textContent = window._isGuest ? 'Gast' : (u.displayName || u.email || 'Leerling');
-  document.getElementById('user-avatar').textContent = window._isGuest ? '👤' : (u.displayName ? u.displayName[0].toUpperCase() : '👤');
-  showScreen('screen-home');
+  text.textContent = msg;
+  console.log("[meetkunde saveToFirestore] status=" + type + ": " + msg);
 }
+
+// ── LOGIN ─────────────────────────────────────────────────────────────────
+function klasLogin() {
+  var naam = (document.getElementById("klas-naam").value||"").trim().toLowerCase();
+  var code = (document.getElementById("klas-code").value||"").trim();
+  var err  = document.getElementById("klas-err");
+  err.style.display = "none";
+  if (!naam) { err.textContent = "Vul je voornaam in."; err.style.display = "block"; return; }
+  if (!code) { err.textContent = "Vul je code in.";    err.style.display = "block"; return; }
+
+  var btn = document.getElementById("login-btn");
+  btn.textContent = "Even wachten..."; btn.disabled = true;
+
+  _db.collection("leerlingen").doc(naam).get().then(function(doc) {
+    btn.textContent = "Inloggen"; btn.disabled = false;
+    if (!doc.exists) { err.textContent = "Naam niet gevonden."; err.style.display = "block"; return; }
+    var data = doc.data();
+    if (data.code !== code) { err.textContent = "Verkeerde code."; err.style.display = "block"; return; }
+    window._leerlingNaam = data.weergavenaam || naam;
+    window._leerlingId   = naam;
+    _currentUser = { uid: naam, displayName: data.weergavenaam || naam };
+    _isGuest = false;
+    openApp(_currentUser.displayName, false);
+  }).catch(function(e) {
+    btn.textContent = "Inloggen"; btn.disabled = false;
+    err.textContent = "Fout: " + e.message; err.style.display = "block";
+  });
+}
+
+function klasGast() {
+  _isGuest = true; _currentUser = null;
+  window._leerlingId   = null;
+  window._leerlingNaam = "Gast";
+  openApp("Gast", true);
+}
+
+function openApp(naam, isGast) {
+  document.getElementById("user-name").textContent   = naam;
+  document.getElementById("user-avatar").textContent = isGast ? "👤" : naam[0].toUpperCase();
+  showScreen("screen-home");
+}
+
+function doLogout() {
+  _currentUser = null; _isGuest = false;
+  window._leerlingId = null; window._leerlingNaam = null;
+  document.getElementById("klas-naam").value = "";
+  document.getElementById("klas-code").value = "";
+  document.getElementById("klas-err").style.display = "none";
+  showScreen("screen-login");
+}
+
+// ── OPSLAAN NAAR FIRESTORE ────────────────────────────────────────────────
+// Collection: meetkunde_toets — dashboard pikt dit automatisch op
+async function saveToFirestore(correct, total, pct, tijd, themeScores, wrongAttempts) {
+  if (_isGuest || !_currentUser) {
+    setUploadStatus("error", "❌ Niet opgeslagen: je speelt als gast.");
+    return;
+  }
+  if (!window._leerlingId) {
+    setUploadStatus("error", "❌ Geen leerling-ID. Log opnieuw in.");
+    return;
+  }
+
+  setUploadStatus("loading", "Bezig met opslaan...");
+
+  // Foutenanalyse per thema
+  var foutenTelling = {};
+  var extraOefenen  = [];
+  Object.entries(themeScores).forEach(function(e) {
+    var thema = e[0], d = e[1];
+    var fouten = d.total - d.correct;
+    if (fouten > 0) {
+      foutenTelling[thema] = fouten;
+      extraOefenen.push(thema + " (" + fouten + "x fout)");
+    }
+  });
+  extraOefenen.sort(function(a,b){
+    var fa = foutenTelling[a.split(" ")[0]]||0;
+    var fb2 = foutenTelling[b.split(" ")[0]]||0;
+    return fb2 - fa;
+  });
+
+  var record = {
+    leerlingId:   window._leerlingId,
+    leerlingNaam: window._leerlingNaam || "Leerling",
+    mode:         "toets",
+    score:        correct,
+    totalQ:       total,
+    percentage:   pct,
+    tijd:         tijd,
+    hintsGebruikt: 0,
+    timestamp:    firebase.firestore.FieldValue.serverTimestamp(),
+    foutenAnalyse: {
+      extraOefenen:       extraOefenen,
+      foutenPerCategorie: foutenTelling
+    },
+    // Per-thema scores voor dashboard analyse
+    themaScores: themeScores,
+    vragen: Object.entries(themeScores).map(function(e) {
+      var thema = e[0], d = e[1];
+      return {
+        vraagNr:          0,
+        vraag:            thema,
+        categorie:        thema,
+        antwoordLeerling: d.correct + "/" + d.total,
+        juistAntwoord:    d.total + "/" + d.total,
+        isJuist:          d.correct >= Math.ceil(d.total * 0.7),
+        hintGebruikt:     false,
+        punten:           d.correct,
+        tijdSeconden:     0
+      };
+    })
+  };
+
+  console.log("[meetkunde saveToFirestore] Opslaan naar meetkunde_toets:", record);
+
+  try {
+    var docRef = await _db.collection("meetkunde_toets").add(record);
+    setUploadStatus("ok", "✅ Score opgeslagen! (ID: " + docRef.id.substring(0,8) + "…)");
+    console.log("[meetkunde saveToFirestore] Succes! ID:", docRef.id);
+  } catch(e) {
+    console.error("[meetkunde saveToFirestore] Fout:", e.code, e.message);
+    var uitleg = e.message || "Onbekende fout";
+    if (e.code === "permission-denied") uitleg = "Geen schrijfrechten. Contacteer de leerkracht.";
+    else if (e.code === "unavailable")  uitleg = "Geen internetverbinding. Probeer opnieuw.";
+    setUploadStatus("error", "❌ Opslaan mislukt: " + uitleg);
+  }
+}
+
+// ── EVENT LISTENERS (één DOMContentLoaded — nooit split over script-blokken) ──
+document.addEventListener("DOMContentLoaded", function() {
+  document.getElementById("login-btn").addEventListener("click", klasLogin);
+  document.getElementById("gast-btn").addEventListener("click", klasGast);
+  document.getElementById("klas-naam").addEventListener("keypress", function(e) {
+    if (e.key === "Enter") klasLogin();
+  });
+  document.getElementById("klas-code").addEventListener("keypress", function(e) {
+    if (e.key === "Enter") klasLogin();
+  });
+});
 </script>
 
 <script>
@@ -631,7 +738,7 @@ const DB_VLAK = [
   { id:"1jNsca-TlryOVn6wpu4RboNHL6iVbk0FA", name:"ongelijkzijdige driehoek",correct:["vlakke figuur","veelhoek","driehoek","geen regelmaat"] }
 ];
 
-/* DRIEHOEKEN — SVG gegenereerd */
+/* DRIEHOEKEN — SVG gegeneerd (Wiskundig Gecorrigeerd!) */
 function driehoekSVG(pts, kleur) {
   const p = pts.map(([x,y])=>`${x},${y}`).join(' ');
   return `<svg width="280" height="220" viewBox="0 0 280 220">
@@ -640,24 +747,24 @@ function driehoekSVG(pts, kleur) {
 }
 const DB_DRIEHOEKEN = [
   // scherphoekig
-  {pts:[[140,20],[240,200],[40,200]], hoek:'scherphoekige driehoek', zijde:'gelijkbenige driehoek',  qType:'hoeken', svg:driehoekSVG([[140,20],[240,200],[40,200]],'#dc2626')},
-  {pts:[[40,20],[240,20],[140,200]], hoek:'scherphoekige driehoek', zijde:'gelijkzijdige driehoek', qType:'hoeken', svg:driehoekSVG([[40,20],[240,20],[140,200]],'#dc2626')},
-  {pts:[[60,20],[240,180],[20,180]], hoek:'scherphoekige driehoek', zijde:'ongelijkzijdige driehoek',qType:'hoeken', svg:driehoekSVG([[60,20],[240,180],[20,180]],'#dc2626')},
+  {pts:[[150,40],[250,200],[50,200]], hoek:'scherphoekige driehoek', zijde:'gelijkbenige driehoek',  qType:'hoeken', svg:driehoekSVG([[150,40],[250,200],[50,200]],'#dc2626')},
+  {pts:[[150,17],[250,190],[50,190]], hoek:'scherphoekige driehoek', zijde:'gelijkzijdige driehoek', qType:'hoeken', svg:driehoekSVG([[150,17],[250,190],[50,190]],'#dc2626')},
+  {pts:[[70,40],[240,180],[30,190]], hoek:'scherphoekige driehoek', zijde:'ongelijkzijdige driehoek',qType:'hoeken', svg:driehoekSVG([[70,40],[240,180],[30,190]],'#dc2626')},
   // rechthoekig
-  {pts:[[20,200],[260,200],[20,40]], hoek:'rechthoekige driehoek',  zijde:'ongelijkzijdige driehoek',qType:'hoeken', svg:driehoekSVG([[20,200],[260,200],[20,40]],'#1d4ed8')},
-  {pts:[[140,20],[260,200],[20,200]],hoek:'rechthoekige driehoek',  zijde:'gelijkbenige driehoek',  qType:'hoeken', svg:driehoekSVG([[140,20],[260,200],[20,200]],'#1d4ed8')},
+  {pts:[[40,40],[240,200],[40,200]], hoek:'rechthoekige driehoek',  zijde:'ongelijkzijdige driehoek',qType:'hoeken', svg:driehoekSVG([[40,40],[240,200],[40,200]],'#1d4ed8')},
+  {pts:[[140,100],[230,190],[50,190]],hoek:'rechthoekige driehoek',  zijde:'gelijkbenige driehoek',  qType:'hoeken', svg:driehoekSVG([[140,100],[230,190],[50,190]],'#1d4ed8')},
   // stomphoekig
-  {pts:[[20,200],[260,200],[60,40]], hoek:'stomphoekige driehoek',  zijde:'ongelijkzijdige driehoek',qType:'hoeken', svg:driehoekSVG([[20,200],[260,200],[60,40]],'#7c3aed')},
-  {pts:[[20,200],[260,200],[80,70]], hoek:'stomphoekige driehoek',  zijde:'gelijkbenige driehoek',  qType:'hoeken', svg:driehoekSVG([[20,200],[260,200],[80,70]],'#7c3aed')},
+  {pts:[[90,150],[240,180],[40,180]], hoek:'stomphoekige driehoek',  zijde:'ongelijkzijdige driehoek',qType:'hoeken', svg:driehoekSVG([[90,150],[240,180],[40,180]],'#7c3aed')},
+  {pts:[[140,150],[240,180],[40,180]], hoek:'stomphoekige driehoek',  zijde:'gelijkbenige driehoek',  qType:'hoeken', svg:driehoekSVG([[140,150],[240,180],[40,180]],'#7c3aed')},
   // zijden
-  {pts:[[140,20],[240,200],[40,200]], hoek:'scherphoekige driehoek', zijde:'gelijkbenige driehoek',  qType:'zijden', svg:driehoekSVG([[140,20],[240,200],[40,200]],'#ea580c')},
-  {pts:[[40,20],[240,20],[140,200]], hoek:'scherphoekige driehoek', zijde:'gelijkzijdige driehoek', qType:'zijden', svg:driehoekSVG([[40,20],[240,20],[140,200]],'#ea580c')},
-  {pts:[[60,20],[240,180],[20,180]], hoek:'scherphoekige driehoek', zijde:'ongelijkzijdige driehoek',qType:'zijden', svg:driehoekSVG([[60,20],[240,180],[20,180]],'#ea580c')},
-  {pts:[[20,200],[260,200],[20,40]], hoek:'rechthoekige driehoek',  zijde:'ongelijkzijdige driehoek',qType:'zijden', svg:driehoekSVG([[20,200],[260,200],[20,40]],'#0891b2')},
-  {pts:[[20,200],[260,200],[80,70]], hoek:'stomphoekige driehoek',  zijde:'gelijkbenige driehoek',  qType:'zijden', svg:driehoekSVG([[20,200],[260,200],[80,70]],'#0891b2')},
+  {pts:[[150,40],[250,200],[50,200]], hoek:'scherphoekige driehoek', zijde:'gelijkbenige driehoek',  qType:'zijden', svg:driehoekSVG([[150,40],[250,200],[50,200]],'#ea580c')},
+  {pts:[[150,17],[250,190],[50,190]], hoek:'scherphoekige driehoek', zijde:'gelijkzijdige driehoek', qType:'zijden', svg:driehoekSVG([[150,17],[250,190],[50,190]],'#ea580c')},
+  {pts:[[70,40],[240,180],[30,190]], hoek:'scherphoekige driehoek', zijde:'ongelijkzijdige driehoek',qType:'zijden', svg:driehoekSVG([[70,40],[240,180],[30,190]],'#ea580c')},
+  {pts:[[40,40],[240,200],[40,200]], hoek:'rechthoekige driehoek',  zijde:'ongelijkzijdige driehoek',qType:'zijden', svg:driehoekSVG([[40,40],[240,200],[40,200]],'#0891b2')},
+  {pts:[[140,150],[240,180],[40,180]], hoek:'stomphoekige driehoek',  zijde:'gelijkbenige driehoek',  qType:'zijden', svg:driehoekSVG([[140,150],[240,180],[40,180]],'#0891b2')},
 ];
 
-/* VIERHOEKEN — geen vlieger */
+/* VIERHOEKEN — SVG gegeneerd (Wiskundig Gecorrigeerd!) */
 function vierhoekSVG(pts, kleur) {
   const p = pts.map(([x,y])=>`${x},${y}`).join(' ');
   return `<svg width="280" height="220" viewBox="0 0 280 220">
@@ -665,14 +772,14 @@ function vierhoekSVG(pts, kleur) {
   </svg>`;
 }
 const DB_VIERHOEKEN = [
-  {name:'vierkant',              svg:vierhoekSVG([[90,50],[190,50],[190,170],[90,170]],'#ea580c')},
-  {name:'vierkant',              svg:vierhoekSVG([[80,40],[180,40],[180,180],[80,180]],'#ea580c')},
+  {name:'vierkant',              svg:vierhoekSVG([[90,60],[190,60],[190,160],[90,160]],'#ea580c')},
+  {name:'vierkant',              svg:vierhoekSVG([[80,50],[180,50],[180,150],[80,150]],'#ea580c')},
   {name:'rechthoek',             svg:vierhoekSVG([[40,70],[240,70],[240,160],[40,160]],'#ea580c')},
   {name:'rechthoek',             svg:vierhoekSVG([[30,80],[250,80],[250,150],[30,150]],'#ea580c')},
   {name:'parallellogram',        svg:vierhoekSVG([[60,170],[160,50],[220,50],[120,170]],'#ea580c')},
   {name:'parallellogram',        svg:vierhoekSVG([[50,180],[170,60],[230,60],[110,180]],'#ea580c')},
   {name:'ruit',                  svg:vierhoekSVG([[140,20],[240,110],[140,200],[40,110]],'#ea580c')},
-  {name:'ruit',                  svg:vierhoekSVG([[140,30],[230,110],[140,195],[50,110]],'#ea580c')},
+  {name:'ruit',                  svg:vierhoekSVG([[140,30],[230,110],[140,190],[50,110]],'#ea580c')},
   {name:'trapezium',             svg:vierhoekSVG([[80,60],[200,60],[240,180],[40,180]],'#ea580c')},
   {name:'trapezium',             svg:vierhoekSVG([[70,70],[210,70],[250,185],[30,185]],'#ea580c')},
   {name:'onregelmatige vierhoek',svg:vierhoekSVG([[50,40],[230,70],[200,190],[60,160]],'#ea580c')},
@@ -1295,6 +1402,16 @@ async function showResults() {
   const correct = ST.correctFirst;
   const pct = Math.round((correct/total)*100);
   const theme = MOD_CFG[ST.module].theme;
+  const tijd = fmt(ST.timer);
+
+  // Reset upload-statusbox voor nieuwe run (style.display — nooit class)
+  const uploadBox = document.getElementById("upload-status");
+  uploadBox.style.display = "none";
+  uploadBox.style.background = "";
+  uploadBox.style.borderColor = "";
+  uploadBox.style.color = "";
+  document.getElementById("upload-status-text").textContent = "Bezig met opslaan...";
+  document.getElementById("upload-spinner").style.display = "inline-block";
 
   const overlay = document.getElementById('result-overlay');
   overlay.className = 'result-overlay show ' + theme;
@@ -1302,7 +1419,7 @@ async function showResults() {
   document.getElementById('res-score').textContent = `${correct}/${total}`;
   document.getElementById('res-correct').textContent = correct;
   document.getElementById('res-wrong').textContent = ST.wrongAttempts;
-  document.getElementById('res-time').textContent = fmt(ST.timer);
+  document.getElementById('res-time').textContent = tijd;
 
   const analysisEl = document.getElementById('analysis-section');
   analysisEl.innerHTML = '';
@@ -1322,17 +1439,12 @@ async function showResults() {
         <div style="font-size:0.78rem;opacity:0.8;">${d.correct}/${d.total} (${Math.round(d.correct/d.total*100)}%) ${!ok?'— Blijf dit oefenen!':''}</div></div>
       </div>`;
     });
-    const savedMsg = document.getElementById('firebase-saved-msg');
-    if (!window._isGuest && window._currentUser) {
-      const saved = await window.saveToetsScore({
-        score:correct, total, percentage:pct, timeSeconds:ST.timer,
-        themeScores:Object.fromEntries(Object.entries(counts).map(([m,d])=>[m,{correct:d.correct,total:d.total}])),
-        wrongAttempts:ST.wrongAttempts
-      });
-      if (saved) savedMsg.style.display='block';
+    // Opslaan enkel bij toets en ingelogde leerling
+    if (!_isGuest && _currentUser) {
+      document.getElementById("upload-status").style.display = "block";
+      await saveToFirestore(correct, total, pct, tijd, counts, ST.wrongAttempts);
     }
   } else {
-    document.getElementById('firebase-saved-msg').style.display='none';
     analysisEl.innerHTML=`<div class="analysis-title">Resultaat</div>
       <div class="analysis-item ${pct>=70?'good':'bad'}">
         <div class="dot"></div>
