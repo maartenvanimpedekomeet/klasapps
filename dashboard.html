@@ -76,13 +76,16 @@ input,select{font-family:inherit;}
     <div id="tab-overzicht-content">
       <div class="card">
         <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:16px;">
-          <h2 style="font-size:1rem;font-weight:800;color:#1e3a5f;margin:0;">🕐 Laatste 30 ingestuurde toetsen</h2>
+          <h2 style="font-size:1rem;font-weight:800;color:#1e3a5f;margin:0;">🕐 Laatste 30 ingestuurde resultaten</h2>
           <div style="display:flex;gap:8px;flex-wrap:wrap;">
             <select id="feed-filter-leerling" onchange="renderFeed()" style="padding:8px 12px;border:2px solid #e5e7eb;border-radius:.75rem;font-weight:700;font-size:.82rem;outline:none;">
               <option value="">Alle leerlingen</option>
             </select>
-            <select id="feed-filter-app" onchange="renderFeed()" style="padding:8px 12px;border:2px solid #e5e7eb;border-radius:.75rem;font-weight:700;font-size:.82rem;outline:none;">
+            <select id="feed-filter-vak" onchange="onVakFilterChange()" style="padding:8px 12px;border:2px solid #e5e7eb;border-radius:.75rem;font-weight:700;font-size:.82rem;outline:none;">
               <option value="">Alle vakken</option>
+            </select>
+            <select id="feed-filter-app" onchange="renderFeed()" style="padding:8px 12px;border:2px solid #e5e7eb;border-radius:.75rem;font-weight:700;font-size:.82rem;outline:none;">
+              <option value="">Alle vakonderdelen</option>
             </select>
           </div>
         </div>
@@ -194,11 +197,13 @@ firebase.initializeApp({
 const db = firebase.firestore();
 
 // ════════════════════════════════════════════════════════════════════════════
-// CONFIG — voeg hier optioneel labels toe voor nieuwe toetsen.
-// De app zal AUTOMATISCH alle *_toets collections ontdekken en laden.
-// Toevoegen van een label hier is enkel voor een mooiere weergave, NOOIT verplicht.
+// CONFIG
+// Voeg hier optioneel labels toe voor nieuwe apps. NOOIT verplicht —
+// de registry ontdekt nieuwe apps automatisch. Labels zijn enkel voor
+// mooiere weergave.
 // ════════════════════════════════════════════════════════════════════════════
 const COLLECTION_LABELS = {
+  // Wiskunde
   'getalbegrip_toets':       'Getalbegrip',
   'breuken_toets':           'Breuken',
   'geld_toets':              'Geld rekenen',
@@ -209,7 +214,30 @@ const COLLECTION_LABELS = {
   'gewicht_toets':           'Gewichten',
   'komma_toets':             'Kommagetallen',
   'tabellen_toets':          'Tabellen en Grafieken',
+  'cijferen_toets':          'Cijferen (gehele getallen)',
+  'cijferen_komma_toets':    'Cijferen (kommagetallen)',
+  'lengte_toets':            'Lengtematen',
+  'juiste_maat_toets':       'De Juiste Maateenheid',
+  'hoofdrekenen_toets':      'Hoofdrekenen',
+  'rekenmachine_toets':      'Rekenmachine & Rekentaal',
+  // Taal
+  'taal_spreekwoorden':      'Spreekwoorden',
+  // Voeg nieuwe apps toe voor een mooier label, bv:
+  // 'taal_werkwoorden':     'Werkwoorden',
+  // 'wo_water':             'Water (WO)',
 };
+
+// Mapping collection → vak.
+// Wordt automatisch aangevuld via toets_registry (veld 'vak').
+// Hier enkel nodig als fallback voor apps zonder 'vak' veld in Firestore.
+const COLLECTION_VAK_FALLBACK = {
+  'taal_spreekwoorden': 'Taal',
+  // Alle overige collections worden als 'Wiskunde' beschouwd (fallback)
+};
+
+// Volgorde van vakken in de filter-dropdown.
+// Nieuwe vakken die via de registry binnenkomen, verschijnen automatisch daarna.
+const VAK_VOLGORDE = ['Wiskunde','Taal','WO','Leren Leren','Frans','SEO'];
 
 const MODE_LABELS = {
   'mix':'Grote Mix','aflezen':'Aflezen','herleiden':'Herleiden',
@@ -226,7 +254,18 @@ var knownCols    = [];      // Auto-ontdekte collections
 
 // ── HELPERS ───────────────────────────────────────────────────────────────
 function colLabel(col) {
-  return COLLECTION_LABELS[col] || col.replace(/_toets$/,'').replace(/_/g,' ');
+  return COLLECTION_LABELS[col] || col.replace(/_toets$/,'').replace(/^taal_/,'').replace(/^wo_/,'').replace(/_/g,' ');
+}
+function colVak(col, rawVak) {
+  // Prioriteit: 1. veld in Firestore-document, 2. fallback-tabel, 3. prefix-herkenning, 4. Wiskunde
+  if (rawVak) return rawVak;
+  if (COLLECTION_VAK_FALLBACK[col]) return COLLECTION_VAK_FALLBACK[col];
+  if (col.startsWith('taal_')) return 'Taal';
+  if (col.startsWith('wo_'))   return 'WO';
+  if (col.startsWith('ll_'))   return 'Leren Leren';
+  if (col.startsWith('seo_'))  return 'SEO';
+  if (col.startsWith('fr_'))   return 'Frans';
+  return 'Wiskunde'; // standaard fallback
 }
 function modeLabel(m) { return m ? (MODE_LABELS[m] || m) : ''; }
 function pctBadge(pct) {
@@ -238,6 +277,7 @@ function normRecord(raw, col) {
   return Object.assign({}, raw, {
     _col:         col,
     _label:       colLabel(col),
+    _vak:         colVak(col, raw.vak),
     _ts:          raw.timestamp ? raw.timestamp.seconds * 1000 : 0,
     _pct:         raw.percentage || 0,
     _score:       raw.score || 0,
@@ -365,25 +405,76 @@ async function loadAllScores() {
 }
 
 // ── FILTERS OPVULLEN ──────────────────────────────────────────────────────
-function populateFilters() {
-  var appOpts = '<option value="">Alle vakken</option>';
-  knownCols.forEach(function(c) {
-    appOpts += '<option value="'+c+'">'+colLabel(c)+'</option>';
+function getVakkenUitData() {
+  // Verzamel alle unieke vakken uit de data, gesorteerd via VAK_VOLGORDE
+  var vakSet = {};
+  allRecords.forEach(function(d) { vakSet[d._vak] = true; });
+  // Sorteer: eerst bekende vakken op volgorde, daarna nieuwe alfabetisch
+  var result = VAK_VOLGORDE.filter(function(v) { return vakSet[v]; });
+  Object.keys(vakSet).forEach(function(v) {
+    if (result.indexOf(v) < 0) result.push(v);
   });
+  return result;
+}
 
-  var lOpts = '<option value="">Alle leerlingen</option>';
-  leerlingen.forEach(function(l) {
-    lOpts += '<option value="'+l.naam+'">'+l.weergavenaam+'</option>';
+function getColsVoorVak(vak) {
+  // Geef alle collections terug die bij het gegeven vak horen (of alles als leeg)
+  if (!vak) return knownCols;
+  return knownCols.filter(function(c) {
+    return allRecords.some(function(d) { return d._col === c && d._vak === vak; });
   });
+}
+
+function onVakFilterChange() {
+  // Bij verandering van vak: vakonderdelen herfilteren, feed herrenderen
+  var vak = document.getElementById('feed-filter-vak').value;
+  var colSel = document.getElementById('feed-filter-app');
+  var oldVal = colSel.value;
+
+  var cols = getColsVoorVak(vak);
+  colSel.innerHTML = '<option value="">Alle vakonderdelen</option>';
+  cols.forEach(function(c) {
+    colSel.innerHTML += '<option value="'+c+'">'+colLabel(c)+'</option>';
+  });
+  // Behoud selectie als die nog geldig is
+  if (cols.indexOf(oldVal) >= 0) colSel.value = oldVal;
+  renderFeed();
+}
+
+function populateFilters() {
+  // ── Vakken ──
+  var vakken = getVakkenUitData();
+  var vakOpts = '<option value="">Alle vakken</option>';
+  vakken.forEach(function(v) { vakOpts += '<option value="'+v+'">'+v+'</option>'; });
+  var vakSel = document.getElementById('feed-filter-vak');
+  var vakVal = vakSel ? vakSel.value : '';
+  if (vakSel) { vakSel.innerHTML = vakOpts; if (vakVal) vakSel.value = vakVal; }
+
+  // ── Vakonderdelen (gefilterd op huidig vak) ──
+  var curVak = vakSel ? vakSel.value : '';
+  var cols = getColsVoorVak(curVak);
+  var colOpts = '<option value="">Alle vakonderdelen</option>';
+  cols.forEach(function(c) { colOpts += '<option value="'+c+'">'+colLabel(c)+'</option>'; });
+
+  var allColOpts = '<option value="">Alle vakonderdelen</option>';
+  knownCols.forEach(function(c) { allColOpts += '<option value="'+c+'">'+colLabel(c)+'</option>'; });
 
   ['feed-filter-app','klas-filter-app','csv-app'].forEach(function(id) {
     var el = document.getElementById(id);
+    if (!el) return;
     var v = el.value;
-    el.innerHTML = appOpts;
-    el.value = v;
+    // feed-filter-app is cascaderend (gefilterd op vak), rest toont alles
+    el.innerHTML = (id === 'feed-filter-app') ? colOpts : allColOpts;
+    if (knownCols.indexOf(v) >= 0) el.value = v;
   });
+
+  // ── Leerlingen ──
+  var lOpts = '<option value="">Alle leerlingen</option>';
+  leerlingen.forEach(function(l) { lOpts += '<option value="'+l.naam+'">'+l.weergavenaam+'</option>'; });
+
   ['feed-filter-leerling','leerling-select','csv-leerling'].forEach(function(id) {
     var el = document.getElementById(id);
+    if (!el) return;
     var v = el.value;
     el.innerHTML = (id === 'leerling-select')
       ? '<option value="">-- Kies een leerling --</option>' + lOpts.replace('<option value="">Alle leerlingen</option>','')
@@ -393,12 +484,28 @@ function populateFilters() {
 }
 
 // ── RENDER FEED (laatste 30, chronologisch) ───────────────────────────────
+// Vak-badge kleuren
+var VAK_KLEUREN = {
+  'Wiskunde':     { bg:'#dbeafe', color:'#1d4ed8' },
+  'Taal':         { bg:'#dcfce7', color:'#15803d' },
+  'WO':           { bg:'#fef9c3', color:'#92400e' },
+  'Leren Leren':  { bg:'#f3e8ff', color:'#6d28d9' },
+  'Frans':        { bg:'#fce7f3', color:'#9d174d' },
+  'SEO':          { bg:'#ffedd5', color:'#c2410c' },
+};
+function vakBadgeStyle(vak) {
+  var k = VAK_KLEUREN[vak] || { bg:'#f1f5f9', color:'#475569' };
+  return 'background:'+k.bg+';color:'+k.color+';padding:2px 8px;border-radius:99px;font-size:.7rem;font-weight:800;white-space:nowrap;';
+}
+
 function renderFeed() {
   var filterL = document.getElementById('feed-filter-leerling').value;
+  var filterV = document.getElementById('feed-filter-vak') ? document.getElementById('feed-filter-vak').value : '';
   var filterA = document.getElementById('feed-filter-app').value;
 
   var records = allRecords.filter(function(d) {
     if (filterL && d._leerlingId !== filterL) return false;
+    if (filterV && d._vak !== filterV) return false;
     if (filterA && d._col !== filterA) return false;
     return true;
   }).slice(0, 30);
@@ -422,8 +529,11 @@ function renderFeed() {
     html += '<div style="width:38px;height:38px;border-radius:50%;background:#dbeafe;display:flex;align-items:center;justify-content:center;font-weight:900;color:#1d4ed8;font-size:1rem;flex-shrink:0;">'+lnaam[0].toUpperCase()+'</div>';
     html += '<div style="flex:1;min-width:0;">';
     html += '<div style="font-weight:800;color:#1e3a5f;font-size:.92rem;">'+lnaam+'</div>';
-    html += '<div style="font-size:.78rem;color:#6b7280;font-weight:600;">'+d._label+modeTxt+' · '+ts+'</div>';
-    html += '</div>';
+    html += '<div style="font-size:.78rem;color:#6b7280;font-weight:600;display:flex;align-items:center;gap:6px;flex-wrap:wrap;">';
+    html += '<span style="'+vakBadgeStyle(d._vak)+'">'+d._vak+'</span>';
+    html += '<span>'+d._label+modeTxt+'</span>';
+    html += '<span style="color:#9ca3af;">'+ts+'</span>';
+    html += '</div></div>';
     html += '<div style="text-align:right;flex-shrink:0;">';
     html += '<div style="font-size:1.1rem;font-weight:900;color:'+col+';">'+pct+'%</div>';
     html += '<div style="font-size:.75rem;color:#9ca3af;font-weight:600;">'+d._score+'/'+d._total+'</div>';
@@ -571,7 +681,10 @@ function openDetail(idx) {
   // Scoreblok
   html += '<div class="card"><div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:14px;">';
   html += '<div><div style="font-size:1rem;font-weight:800;color:#1e3a5f;">'+lnaam+'</div>';
-  html += '<div style="font-size:.82rem;color:#6b7280;">'+d._label+modeTxt+' · '+ts+'</div></div>';
+  html += '<div style="font-size:.82rem;color:#6b7280;display:flex;align-items:center;gap:6px;flex-wrap:wrap;">';
+  html += '<span style="'+vakBadgeStyle(d._vak)+'">'+d._vak+'</span>';
+  html += '<span>'+d._label+modeTxt+' · '+ts+'</span>';
+  html += '</div></div>';
   html += pctBadge(pct)+'</div>';
   html += '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;">';
   [{l:'Score',v:d._score+'/'+d._total},{l:'Percentage',v:pct+'%',c:col},{l:'Tijd',v:d._tijd||'—'},{l:'Hints',v:'💡 '+(d._hints||0)}].forEach(function(s){
@@ -720,13 +833,14 @@ function doExportCSV() {
 
   if (!rijen.length) { alert('Geen resultaten voor deze selectie.'); return; }
 
-  var lines = [['Datum','Leerling','Vak','Mode','Score','Totaal','Percentage','Tijd','Hints','Fouten_categorieen'].join(';')];
+  var lines = [['Datum','Leerling','Vak','Vakonderdeel','Mode','Score','Totaal','Percentage','Tijd','Hints','Fouten_categorieen'].join(';')];
   rijen.forEach(function(d) {
     var ts = d._ts ? new Date(d._ts).toLocaleString('nl-BE') : '';
     var fouten = (d.foutenAnalyse&&d.foutenAnalyse.extraOefenen) ? d.foutenAnalyse.extraOefenen.join(' | ') : '';
     lines.push([
       '"'+ts+'"',
       '"'+leerlingNaam(d._leerlingId)+'"',
+      '"'+(d._vak||'')+'"',
       '"'+d._label+'"',
       '"'+(modeLabel(d._mode)||'')+'"',
       d._score, d._total, d._pct,
@@ -741,7 +855,7 @@ function doExportCSV() {
   var url  = URL.createObjectURL(blob);
   var a    = document.createElement('a');
   a.href = url;
-  a.download = 'toetsen_'+(dagen>0?'laatste_'+dagen+'d':'alles')+'_'+new Date().toISOString().slice(0,10)+'.csv';
+  a.download = 'resultaten_'+(dagen>0?'laatste_'+dagen+'d':'alles')+'_'+new Date().toISOString().slice(0,10)+'.csv';
   document.body.appendChild(a); a.click();
   document.body.removeChild(a); URL.revokeObjectURL(url);
   document.getElementById('csv-modal').style.display = 'none';
