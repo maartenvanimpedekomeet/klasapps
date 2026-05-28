@@ -14,91 +14,44 @@
         .hidden { display: none; }
         .card-anim { transition: transform 0.2s, box-shadow 0.2s; }
         .card-anim:hover { transform: translateY(-3px); box-shadow: 0 10px 15px -3px rgba(0,0,0,0.05); }
-        /* ── LOGIN ── */
-        #login-screen {
-            position:fixed; inset:0; z-index:9999;
-            background:linear-gradient(135deg,#4338ca 0%,#6d28d9 60%,#7c3aed 100%);
-            display:flex; align-items:center; justify-content:center; padding:20px;
-        }
-        #login-screen.hidden { display:none!important; }
-        .login-card {
-            background:white; border-radius:2rem; padding:2.5rem 2rem;
-            width:100%; max-width:380px;
-            box-shadow:0 25px 50px rgba(0,0,0,0.25); text-align:center;
-        }
-        .login-logo {
-            width:80px; height:80px; background:#ede9fe; border-radius:1.5rem;
-            display:flex; align-items:center; justify-content:center;
-            margin:0 auto 1.25rem; font-size:2.5rem;
-            box-shadow:0 4px 16px rgba(99,102,241,0.2);
-        }
-        .login-input {
-            width:100%; padding:14px 16px; border:2px solid #e5e7eb; border-radius:1rem;
-            font-family:inherit; font-size:1rem; font-weight:600; color:#374151;
-            margin-bottom:10px; outline:none; transition:border-color .2s; text-align:center;
-        }
-        .login-input:focus { border-color:#6d28d9; }
-        .login-input.err { border-color:#dc2626; background:#fef2f2; animation:loginShake .4s; }
-        @keyframes loginShake{0%,100%{transform:translateX(0)}25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
-        .btn-login {
-            width:100%; background:#6d28d9; color:white; border:none; border-radius:1rem;
-            padding:14px; font-family:inherit; font-size:1rem; font-weight:700;
-            cursor:pointer; transition:all .2s; margin-bottom:10px;
-        }
-        .btn-login:hover { background:#5b21b6; }
-        .btn-login:disabled { opacity:.6; cursor:not-allowed; }
-        .login-error { color:#dc2626; font-size:.85rem; font-weight:700; min-height:20px; margin-bottom:8px; }
-        .btn-guest {
-            width:100%; background:transparent; border:2px solid #d1d5db; border-radius:1rem;
-            padding:12px; font-family:inherit; font-size:.9rem; font-weight:700;
-            color:#6b7280; cursor:pointer; transition:all .2s;
-        }
-        .btn-guest:hover { border-color:#9ca3af; color:#374151; }
-        .teacher-link { margin-top:14px; font-size:.75rem; color:#9ca3af; }
-        .teacher-link a { color:#6d28d9; text-decoration:none; font-weight:700; }
     </style>
 </head>
 <body class="bg-slate-50 min-h-screen pb-20">
-    <!-- LOGIN SCREEN -->
-    <div id="login-screen">
-      <div class="login-card">
-        <div class="login-logo">📏</div>
-        <h1 style="font-size:1.6rem;font-weight:800;color:#1f2937;margin-bottom:6px;">Maateenheden</h1>
-        <p style="font-size:.85rem;color:#6b7280;margin-bottom:1.25rem;">Voer je naam en code in</p>
-        <input class="login-input" id="login-naam" type="text" placeholder="Jouw voornaam" autocomplete="off" autocapitalize="words">
-        <input class="login-input" id="login-code" type="password" placeholder="Jouw code" autocomplete="off">
-        <div class="login-error" id="login-error"></div>
-        <button class="btn-login" id="btn-login" onclick="loginMetCode()">Inloggen</button>
-        <button class="btn-guest" onclick="loginGuest()">Doorgaan als gast (geen opslag)</button>
-        <div class="teacher-link"><a href="dashboard.html">Leerkracht? Klik hier</a></div>
+    <!-- LOGIN SCHERM (fixed overlay — app blijft zichtbaar op de achtergrond) -->
+    <div id="login-screen" style="position:fixed;inset:0;z-index:9999;background:linear-gradient(135deg,#3730a3,#4f46e5);display:flex;align-items:center;justify-content:center;padding:20px;">
+      <div style="background:white;border-radius:24px;padding:2.5rem 2rem;width:100%;max-width:380px;box-shadow:0 25px 50px rgba(0,0,0,0.25);text-align:center;display:flex;flex-direction:column;gap:12px;">
+        <div style="font-size:3rem">📏</div>
+        <h1 style="font-size:1.5rem;font-weight:900;color:#1f2937;margin:0;">De Juiste Maateenheid</h1>
+        <p style="color:#6b7280;font-size:.9rem;margin:0;">Voer je naam en code in</p>
+        <div id="klas-err" style="display:none;color:#dc2626;font-size:.85rem;font-weight:700;background:#fee2e2;border:1px solid #fca5a5;padding:8px 12px;border-radius:8px;"></div>
+        <input type="text" id="klas-naam" placeholder="Jouw voornaam"
+          style="width:100%;padding:14px;border:2px solid #e5e7eb;border-radius:12px;font-family:inherit;font-size:1rem;font-weight:600;text-align:center;outline:none;"
+          autocomplete="off" autocapitalize="words">
+        <input type="password" id="klas-code" placeholder="Jouw code"
+          style="width:100%;padding:14px;border:2px solid #e5e7eb;border-radius:12px;font-family:inherit;font-size:1rem;font-weight:600;text-align:center;outline:none;"
+          autocomplete="off">
+        <button id="login-btn"
+          style="width:100%;background:#4f46e5;color:white;border:none;border-radius:12px;padding:14px;font-family:inherit;font-size:1rem;font-weight:700;cursor:pointer;">
+          Inloggen
+        </button>
+        <button id="gast-btn"
+          style="width:100%;background:transparent;border:2px solid #e5e7eb;border-radius:12px;padding:12px;font-family:inherit;font-size:.9rem;font-weight:700;color:#6b7280;cursor:pointer;">
+          Doorgaan als gast (geen opslag)
+        </button>
+        <div style="font-size:.75rem;color:#9ca3af;">
+          <a href="dashboard.html" style="color:#4f46e5;font-weight:700;text-decoration:none;">Leerkracht? Klik hier</a>
+        </div>
       </div>
     </div>
-    <!-- ── LOGIN VIEW ── -->
-    <div id="login-view" style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:50vh;gap:16px;padding:20px;max-width:400px;margin:0 auto;">
-        <div style="font-size:2.5rem;">🔐</div>
-        <h2 style="font-size:1.3rem;font-weight:800;color:#1e293b;text-align:center;margin:0;">Aanmelden</h2>
-        <p style="color:#64748b;font-size:0.85rem;text-align:center;margin:0;max-width:320px;">Log in met je schoolaccount om je score op te slaan, of speel als gast.</p>
-        <div id="login-error" style="display:none;background:#fee2e2;border:1px solid #fca5a5;color:#b91c1c;padding:10px 16px;border-radius:10px;font-size:0.82rem;font-weight:600;max-width:320px;text-align:center;width:100%;box-sizing:border-box;"></div>
-        <button id="fb-google-btn" style="display:flex;align-items:center;gap:10px;background:#1e293b;color:white;border:none;border-radius:12px;padding:13px 20px;font-size:0.9rem;font-weight:700;cursor:pointer;width:100%;max-width:320px;justify-content:center;">
-            <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.31-8.16 2.31-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
-            Inloggen met schoolaccount
-        </button>
-        <div style="display:flex;align-items:center;gap:8px;width:100%;max-width:320px;color:#94a3b8;font-size:0.75rem;"><div style="flex:1;height:1px;background:#e2e8f0;"></div>of<div style="flex:1;height:1px;background:#e2e8f0;"></div></div>
-        <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:12px;width:100%;max-width:320px;box-sizing:border-box;">
-            <label style="font-size:0.68rem;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:0.06em;display:block;margin-bottom:5px;">Naam (gast)</label>
-            <input type="text" id="fb-guest-name" placeholder="Bv. Milan" style="width:100%;padding:9px 11px;border:1px solid #e2e8f0;border-radius:7px;font-size:0.88rem;font-weight:600;box-sizing:border-box;outline:none;">
-        </div>
-        <button id="fb-guest-btn" style="background:#f1f5f9;color:#475569;border:none;border-radius:10px;padding:11px 20px;font-size:0.88rem;font-weight:600;cursor:pointer;width:100%;max-width:320px;">
-            👤 Spelen als gast (score niet bewaard)
-        </button>
+
+    <!-- User badge (verborgen via style.display — nooit classList) -->
+    <div id="user-badge" style="display:none;position:fixed;top:10px;right:14px;z-index:50;align-items:center;gap:8px;background:#eef2ff;border:1px solid #c7d2fe;border-radius:10px;padding:5px 12px;font-size:.8rem;font-weight:700;color:#3730a3;">
+      <span id="user-badge-naam"></span>
+      <button id="logout-btn" style="background:none;border:none;cursor:pointer;color:#94a3b8;font-size:.75rem;padding:2px 6px;border-left:1px solid #e2e8f0;margin-left:4px;font-family:inherit;">↩ Uit</button>
     </div>
-    <div id="fb-user-badge" style="display:none;align-items:center;gap:8px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:6px 12px;margin-bottom:10px;width:fit-content;">
-        <div id="fb-user-initials" style="width:26px;height:26px;background:#3b82f6;border-radius:6px;color:white;font-weight:700;font-size:0.75rem;display:flex;align-items:center;justify-content:center;">?</div>
-        <div><div id="fb-user-name" style="font-size:0.82rem;font-weight:700;color:#1e293b;"></div><div id="fb-user-email" style="font-size:0.68rem;color:#94a3b8;"></div></div>
-        <button id="fb-logout-btn" style="background:none;border:none;cursor:pointer;color:#94a3b8;font-size:0.75rem;padding:3px 8px;border-left:1px solid #e2e8f0;margin-left:4px;">↩ Uit</button>
-    </div>
-    <div id="fb-guest-badge" style="display:none;background:#fefce8;border:1px solid #fde68a;border-radius:8px;padding:4px 10px;font-size:0.72rem;font-weight:700;color:#d97706;margin-bottom:8px;">👤 Gast – score niet opgeslagen</div>
-<div id="fb-maat-wrapper" style="display:none;">
+    <div id="gast-badge" style="display:none;position:fixed;top:10px;right:14px;z-index:50;background:#fefce8;border:1px solid #fde68a;border-radius:8px;padding:4px 10px;font-size:.75rem;font-weight:700;color:#d97706;">👤 Gast – niet opgeslagen</div>
+
+<!-- APP (was fb-maat-wrapper) -->
 
 
     <!-- NAVIGATIEBALK -->
@@ -144,7 +97,7 @@
                     <button class="menu-btn card-anim bg-white p-5 border border-slate-200/60 rounded-2xl text-left flex items-center gap-4 hover:border-indigo-300 group transition-all" onclick="startToets('toets-lengte', 'Toets: Lengtematen')">
                         <div class="w-12 h-12 bg-blue-50 text-blue-500 rounded-xl flex items-center justify-center text-xl group-hover:bg-blue-500 group-hover:text-white transition-colors"><i class="fa-solid fa-ruler"></i></div>
                         <div>
-                            <h4 class="font-extrabold text-slate-800">Toets Lengtematen</h4>
+                            <h4 class="font-extrabold text-slate-800">Lengtematen</h4>
                             <p class="text-xs text-slate-400">10 vragen • mm, cm, dm, m, km</p>
                         </div>
                     </button>
@@ -152,7 +105,7 @@
                     <button class="menu-btn card-anim bg-white p-5 border border-slate-200/60 rounded-2xl text-left flex items-center gap-4 hover:border-indigo-300 group transition-all" onclick="startToets('toets-inhoud', 'Toets: Inhoudsmaten')">
                         <div class="w-12 h-12 bg-teal-50 text-teal-600 rounded-xl flex items-center justify-center text-xl group-hover:bg-teal-600 group-hover:text-white transition-colors"><i class="fa-solid fa-flask"></i></div>
                         <div>
-                            <h4 class="font-extrabold text-slate-800">Toets Inhoudsmaten</h4>
+                            <h4 class="font-extrabold text-slate-800">Inhoudsmaten</h4>
                             <p class="text-xs text-slate-400">10 vragen • ml, cl, dl, l</p>
                         </div>
                     </button>
@@ -160,7 +113,7 @@
                     <button class="menu-btn card-anim bg-white p-5 border border-slate-200/60 rounded-2xl text-left flex items-center gap-4 hover:border-indigo-300 group transition-all" onclick="startToets('toets-gewicht', 'Toets: Gewicht')">
                         <div class="w-12 h-12 bg-amber-50 text-amber-500 rounded-xl flex items-center justify-center text-xl group-hover:bg-amber-500 group-hover:text-white transition-colors"><i class="fa-solid fa-weight-scale"></i></div>
                         <div>
-                            <h4 class="font-extrabold text-slate-800">Toets Gewicht</h4>
+                            <h4 class="font-extrabold text-slate-800">Gewicht</h4>
                             <p class="text-xs text-slate-400">10 vragen • g, kg, t</p>
                         </div>
                     </button>
@@ -318,6 +271,13 @@
             <button class="w-full mt-8 bg-slate-950 text-white font-bold py-4 rounded-2xl hover:bg-black transition-all shadow-md cursor-pointer" onclick="stopOefening()">
                 <i class="fa-solid fa-house mr-2"></i> Terug naar hoofdmenu
             </button>
+
+            <!-- Upload status (style.display — nooit classList) -->
+            <div id="upload-status" style="display:none;padding:10px 14px;border-radius:10px;border:2px solid;font-size:.85rem;font-weight:700;text-align:center;margin-top:12px;">
+              <span id="upload-spinner" style="display:inline-block;width:13px;height:13px;border:2px solid #e5e7eb;border-top-color:#4f46e5;border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle;margin-right:6px;"></span>
+              <span id="upload-status-text">Bezig met opslaan...</span>
+            </div>
+            <style>@keyframes spin{to{transform:rotate(360deg)}}</style>
         </section>
 
     </main>
@@ -404,7 +364,7 @@
         const CUSTOM_LENGTE_MATEN = ["mm", "cm", "dm", "m", "dam", "hm", "km"];
 
         let state = {
-            currentMode: '', // 'toets-lengte', 'toets-inhoud', 'toets-gewicht', 'toets-alles', 'custom'
+            currentMode: '', // 'lengte', 'inhoud', 'gewicht', 'toets-alles', 'custom'
             questions: [],
             currentIndex: 0,
             score: 0,
@@ -440,7 +400,7 @@
         function buildQuestionsForMode(mode) {
             let selectedQuestions = [];
             
-            if (mode === 'toets-lengte') {
+            if (mode === 'lengte') {
                 state.totalQ = 10;
                 const units = MATEN_GROEPEN.lengte; // mm, cm, dm, m, km (GEEN dam en hm!)
                 const categoryPool = QUESTION_POOL.filter(q => q.category === 'lengte' && q.unit !== 'dam' && q.unit !== 'hm');
@@ -459,7 +419,7 @@
                     selectedQuestions.push(remainingPool.pop());
                 }
             }
-            else if (mode === 'toets-inhoud') {
+            else if (mode === 'inhoud') {
                 state.totalQ = 10;
                 const units = MATEN_GROEPEN.inhoud; // ml, cl, dl, l
                 const categoryPool = QUESTION_POOL.filter(q => q.category === 'inhoud');
@@ -476,7 +436,7 @@
                     selectedQuestions.push(remainingPool.pop());
                 }
             }
-            else if (mode === 'toets-gewicht') {
+            else if (mode === 'ewicht') {
                 state.totalQ = 10;
                 const units = MATEN_GROEPEN.gewicht; // g, kg, t
                 const categoryPool = QUESTION_POOL.filter(q => q.category === 'gewicht' && q.unit !== 'mg');
@@ -495,7 +455,7 @@
             }
             else if (mode === 'toets-alles') {
                 // Toets alles door elkaar: we eisen dat de 12 officiële units (GEEN dam, hm en mg) vertegenwoordigd zijn!
-                state.totalQ = 15;
+                state.totalQ = 20;
                 const allUnits = [...MATEN_GROEPEN.lengte, ...MATEN_GROEPEN.inhoud, ...MATEN_GROEPEN.gewicht];
                 
                 allUnits.forEach(u => {
@@ -711,6 +671,16 @@
             document.getElementById("percent-val").innerText = `${nauwkeurigheid}%`;
             document.getElementById("hints-val").innerText = state.hintsUsed;
 
+            // Reset upload-status voor nieuwe run (style.display — nooit classList)
+            document.getElementById("upload-status").style.display = "none";
+            document.getElementById("upload-status-text").textContent = "Bezig met opslaan...";
+            document.getElementById("upload-spinner").style.display = "inline-block";
+
+            // Opslaan — enkel bij officiële toetsen (niet custom)
+            if (state.currentMode && state.currentMode.startsWith("toets-")) {
+                saveToFirestore();
+            }
+
             const list = document.getElementById("mistake-list");
             list.innerHTML = "";
 
@@ -756,145 +726,213 @@
             showView("menu-view");
         }
     </script>
-</div><!-- /fb-maat-wrapper -->
+<!-- /APP -->
 
-<script type="module">
-    import { initializeApp }   from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-    import { getAuth, GoogleAuthProvider, signInWithRedirect, getRedirectResult, signOut, onAuthStateChanged }
-        from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-    import { getFirestore, collection, addDoc, serverTimestamp }
-        from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-    const firebaseConfig = {
-        apiKey:            "AIzaSyCnQDVVAlK6jE-PPUUediRJMTbN0xqrLDE",
-        authDomain:        "klaswebsite-database.firebaseapp.com",
-        projectId:         "klaswebsite-database",
-        storageBucket:     "klaswebsite-database.firebasestorage.app",
-        messagingSenderId: "42912327282",
-        appId:             "1:42912327282:web:f13f2c706f6c42c115c4eb",
-        measurementId:     "G-V5MC9BY19Q"
-    };
-    const ALLOWED_DOMAIN = "bsbodebrug.be";
-    const _fbApp  = initializeApp(firebaseConfig);
-    const _fbAuth = getAuth(_fbApp);
-    const _fbDb   = getFirestore(_fbApp);
-    // ── FIREBASE AUTH ─────────────────────────────────────────────────────────
-    let _fbCurrentUser = null, _fbIsGuest = false, _fbGuestName = "";
+<!-- FIREBASE compat SDK — zelfde als alle andere apps -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script>
+firebase.initializeApp({
+  apiKey:"AIzaSyCnQDVVAlK6jE-PPUUediRJMTbN0xqrLDE",
+  authDomain:"klaswebsite-database.firebaseapp.com",
+  projectId:"klaswebsite-database",
+  storageBucket:"klaswebsite-database.firebasestorage.app",
+  messagingSenderId:"42912327282",
+  appId:"1:42912327282:web:f13f2c706f6c42c115c4eb"
+});
+var _db          = firebase.firestore();
+var _currentUser = null;
+var _isGuest     = false;
+var COL_NAME     = "juiste_maat_toets";
 
-    getRedirectResult(_fbAuth).catch(e => _fbShowLoginErr(e.message));
+const MAAT_LABELS = {
+  "toets-lengte":  "Toets Lengtematen",
+  "toets-inhoud":  "Toets Inhoudsmaten",
+  "toets-gewicht": "Toets Gewicht",
+  "toets-alles":   "Toets Alles door elkaar"
+};
 
-    onAuthStateChanged(_fbAuth, user => {
-        if (user) {
-            if (!user.email.endsWith("@" + ALLOWED_DOMAIN)) {
-                signOut(_fbAuth);
-                _fbShowLoginErr("Enkel @" + ALLOWED_DOMAIN + " schoolaccounts worden opgeslagen.");
-                return;
-            }
-            _fbCurrentUser = user; _fbIsGuest = false;
-            document.getElementById("fb-user-initials").textContent = (user.displayName||"L").split(" ").map(n=>n[0]).join("").toUpperCase().substring(0,2);
-            document.getElementById("fb-user-name").textContent  = user.displayName || user.email;
-            document.getElementById("fb-user-email").textContent = user.email;
-            document.getElementById("login-view").style.display  = "none";
-            document.getElementById("fb-user-badge").style.display = "flex";
-            if (typeof _fbOnReady === "function") _fbOnReady();
-        } else {
-            if (!_fbIsGuest) { _fbCurrentUser = null; document.getElementById("login-view").style.display = "flex"; }
-        }
-    });
+// ── UPLOAD STATUS (style.display — nooit classList) ───────────────────────
+function setUploadStatus(type, msg) {
+  var box     = document.getElementById("upload-status");
+  var text    = document.getElementById("upload-status-text");
+  var spinner = document.getElementById("upload-spinner");
+  if (!box) return;
+  box.style.display    = "block";
+  spinner.style.display = (type === "loading") ? "inline-block" : "none";
+  if (type === "loading") {
+    box.style.background  = "#eef2ff";
+    box.style.borderColor = "#c7d2fe";
+    box.style.color       = "#3730a3";
+  } else if (type === "ok") {
+    box.style.background  = "#f0fdf4";
+    box.style.borderColor = "#86efac";
+    box.style.color       = "#15803d";
+  } else {
+    box.style.background  = "#fff1f2";
+    box.style.borderColor = "#fecdd3";
+    box.style.color       = "#be123c";
+  }
+  text.textContent = msg;
+  console.log("[juiste_maat saveToFirestore] " + type + ": " + msg);
+}
 
-    document.getElementById("fb-google-btn").addEventListener("click", async () => {
-        const p = new GoogleAuthProvider();
-        p.setCustomParameters({ hd: ALLOWED_DOMAIN });
-        try { await signInWithRedirect(_fbAuth, p); } catch(e) { _fbShowLoginErr(e.message); }
-    });
+// ── LOGIN (leerlingen uit Firestore — openApp gebruikt ALLEEN style.display) ─
+function klasLogin() {
+  var naam = (document.getElementById("klas-naam").value||"").trim().toLowerCase();
+  var code = (document.getElementById("klas-code").value||"").trim();
+  var err  = document.getElementById("klas-err");
+  err.style.display = "none";
+  if (!naam) { err.textContent="Vul je voornaam in."; err.style.display="block"; return; }
+  if (!code) { err.textContent="Vul je code in.";    err.style.display="block"; return; }
 
-    document.getElementById("fb-guest-btn").addEventListener("click", () => {
-        const n = document.getElementById("fb-guest-name").value.trim();
-        if (!n) { document.getElementById("fb-guest-name").style.borderColor="#f87171"; return; }
-        _fbIsGuest = true; _fbCurrentUser = null; _fbGuestName = n;
-        document.getElementById("login-view").style.display = "none";
-        const gb = document.getElementById("fb-guest-badge");
-        gb.style.display = "block"; gb.textContent = "👤 Gast: " + n + " – score niet opgeslagen";
-        if (typeof _fbOnReady === "function") _fbOnReady();
-    });
-    document.getElementById("fb-guest-name").addEventListener("input", function(){ this.style.borderColor=""; });
+  var btn = document.getElementById("login-btn");
+  btn.textContent = "Even wachten..."; btn.disabled = true;
 
-    document.getElementById("fb-logout-btn").addEventListener("click", async () => {
-        _fbIsGuest = false; _fbCurrentUser = null;
-        await signOut(_fbAuth);
-        document.getElementById("fb-user-badge").style.display = "none";
-        document.getElementById("fb-guest-badge").style.display = "none";
-        document.getElementById("login-view").style.display = "flex";
-    });
+  _db.collection("leerlingen").doc(naam).get().then(function(doc) {
+    btn.textContent = "Inloggen"; btn.disabled = false;
+    if (!doc.exists) { err.textContent="Naam niet gevonden."; err.style.display="block"; return; }
+    var data = doc.data();
+    if (data.code !== code) { err.textContent="Verkeerde code."; err.style.display="block"; return; }
+    window._leerlingNaam = data.weergavenaam || (naam.charAt(0).toUpperCase() + naam.slice(1));
+    window._leerlingId   = naam;
+    _currentUser = { uid: naam, displayName: window._leerlingNaam };
+    _isGuest = false;
+    openApp(window._leerlingNaam, false);
+  }).catch(function(e) {
+    btn.textContent = "Inloggen"; btn.disabled = false;
+    err.textContent = "Fout: " + e.message; err.style.display = "block";
+  });
+}
 
-    function _fbShowLoginErr(msg) {
-        const el = document.getElementById("login-error");
-        el.textContent = msg; el.style.display = "block";
-    }
+function klasGast() {
+  _isGuest = true; _currentUser = null;
+  window._leerlingId   = null;
+  window._leerlingNaam = "Gast";
+  openApp("Gast", true);
+}
 
-    async function _fbSave(record) {
-        if (_fbIsGuest || !_fbCurrentUser) return false;
-        try {
-            await addDoc(collection(_fbDb, "resultaten"), {
-                uid: _fbCurrentUser.uid, email: _fbCurrentUser.email,
-                displayName: _fbCurrentUser.displayName || _fbCurrentUser.email,
-                photoURL: _fbCurrentUser.photoURL || null,
-                vak: "Wiskunde", timestamp: serverTimestamp(), ...record
-            });
-            return true;
-        } catch(e) { console.error("Firebase save:", e); return false; }
-    }
+// openApp: ALLEEN style.display — nooit classList of h()/s() functies
+function openApp(naam, isGast) {
+  document.getElementById("login-screen").style.display = "none";
+  if (isGast) {
+    document.getElementById("gast-badge").style.display  = "block";
+    document.getElementById("user-badge").style.display  = "none";
+  } else {
+    document.getElementById("user-badge-naam").textContent = naam;
+    document.getElementById("user-badge").style.display    = "flex";
+    document.getElementById("gast-badge").style.display    = "none";
+  }
+}
 
-    function _fbOnReady() {
-        document.getElementById("fb-maat-wrapper").style.display = "";
-    }
+function doLogout() {
+  _currentUser = null; _isGuest = false;
+  window._leerlingId = null; window._leerlingNaam = null;
+  document.getElementById("login-screen").style.display = "flex";
+  document.getElementById("user-badge").style.display   = "none";
+  document.getElementById("gast-badge").style.display   = "none";
+  document.getElementById("klas-naam").value = "";
+  document.getElementById("klas-code").value = "";
+  document.getElementById("klas-err").style.display = "none";
+  document.getElementById("login-btn").disabled = false;
+  document.getElementById("login-btn").textContent = "Inloggen";
+}
 
-    const MAAT_LABELS = {
-        "toets-lengte":  "Wiskunde - Maateenheden: Toets Lengtematen",
-        "toets-inhoud":  "Wiskunde - Maateenheden: Toets Inhoudsmaten",
-        "toets-gewicht": "Wiskunde - Maateenheden: Toets Gewicht",
-        "toets-alles":   "Wiskunde - Maateenheden: Toets Alles door elkaar"
-    };
+// ── OPSLAAN (enkel bij officiële toetsen — niet custom) ───────────────────
+async function saveToFirestore() {
+  if (_isGuest || !_currentUser) {
+    setUploadStatus("error", "❌ Niet opgeslagen: je speelt als gast.");
+    return;
+  }
+  if (!window._leerlingId) {
+    setUploadStatus("error", "❌ Geen leerling-ID. Log opnieuw in.");
+    return;
+  }
 
-    // Patch sluitSessieAf
-    const _origSluit = window.sluitSessieAf;
-    window.sluitSessieAf = async function() {
-        if (_origSluit) _origSluit.apply(this, arguments);
+  setUploadStatus("loading", "Bezig met opslaan...");
 
-        const mode = window.state ? window.state.currentMode : "onbekend";
-        // Only save official toetsen, not custom
-        if (!mode.startsWith("toets-")) return;
+  var s      = window.state || {};
+  var h      = s.history || [];
+  var mode   = s.currentMode || "onbekend";
+  var label  = MAAT_LABELS[mode] || ("Maateenheden: " + mode);
+  var total  = s.totalQ || 10;
+  var correct = s.score || 0;
+  var pct    = total > 0 ? Math.round((correct/total)*100) : 0;
 
-        const label = MAAT_LABELS[mode] || ("Wiskunde - Maateenheden: " + mode);
-        const s = window.state || {};
-        const h = s.history || [];
-        const nw = s.score !== undefined && s.totalQ ? Math.round((s.score/s.totalQ)*100) : 0;
+  // Foutenanalyse per categorie (lengte/inhoud/gewicht)
+  var foutenTelling = {};
+  h.filter(function(i){return !i.isCorrect;}).forEach(function(i) {
+    var cat = i.category || "onbekend";
+    foutenTelling[cat] = (foutenTelling[cat]||0) + 1;
+  });
+  var extraOefenen = Object.entries(foutenTelling)
+    .sort(function(a,b){return b[1]-a[1];})
+    .map(function(e){return e[0] + " (" + e[1] + "x fout)";});
 
-        const ok = await _fbSave({
-            oefening:    label,
-            score:       s.score || 0,
-            totaal:      s.totalQ || 10,
-            nauwkeurigheid: nw,
-            hintsGebruikt: s.hintsUsed || 0,
-            tijdsduur:   "–",
-            vragen: h.map((item,i) => ({
-                vraagNr:          i+1,
-                formule:          item.question || "–",
-                antwoordLeerling: item.userAnswer || "–",
-                juistAntwoord:    item.correctAnswer || "–",
-                isJuist:          item.isCorrect,
-                categorie:        label
-            }))
-        });
+  var record = {
+    leerlingId:   window._leerlingId,
+    leerlingNaam: window._leerlingNaam || "Leerling",
+    mode:         label,
+    score:        correct,
+    totalQ:       total,
+    percentage:   pct,
+    tijd:         "",
+    hintsGebruikt: s.hintsUsed || 0,
+    timestamp:    firebase.firestore.FieldValue.serverTimestamp(),
+    foutenAnalyse: {
+      extraOefenen:       extraOefenen,
+      foutenPerCategorie: foutenTelling
+    },
+    vragen: h.map(function(item, i) {
+      return {
+        vraagNr:          i + 1,
+        vraag:            item.question || "",
+        categorie:        item.category || "maateenheden",
+        antwoordLeerling: item.userAnswer || "(leeg)",
+        juistAntwoord:    item.correctAnswer || "",
+        isJuist:          item.isCorrect || false,
+        hintGebruikt:     item.hintUsed || false,
+        punten:           item.isCorrect ? 1 : 0,
+        tijdSeconden:     0
+      };
+    })
+  };
 
-        const statusBox = document.getElementById("db-status-box");
-        if (statusBox) {
-            statusBox.innerHTML = ok
-                ? '<i class="fa-solid fa-circle-check text-emerald-500"></i> Score opgeslagen in database!'
-                : (_fbIsGuest ? '<i class="fa-solid fa-user-secret text-amber-500"></i> Gast – score niet opgeslagen'
-                              : '<i class="fa-solid fa-circle-xmark text-rose-500"></i> Opslaan mislukt');
-            statusBox.style.background = ok ? "#f0fdf4" : (_fbIsGuest ? "#fefce8" : "#fef2f2");
-        }
-    };
+  console.log("[juiste_maat saveToFirestore] Opslaan naar " + COL_NAME + ":", record);
+
+  try {
+    var docRef = await _db.collection(COL_NAME).add(record);
+
+    // Registry — dashboard ontdekt collection automatisch
+    await _db.collection("toets_registry").doc(COL_NAME).set({
+      naam:       "De Juiste Maateenheid",
+      collection: COL_NAME,
+      lastSeen:   firebase.firestore.FieldValue.serverTimestamp()
+    }, { merge: true });
+
+    setUploadStatus("ok", "✅ Score opgeslagen! (ID: " + docRef.id.substring(0,8) + "…)");
+    console.log("[juiste_maat saveToFirestore] Succes! ID:", docRef.id);
+  } catch(e) {
+    console.error("[juiste_maat saveToFirestore] Fout:", e.code, e.message);
+    var uitleg = e.message || "Onbekende fout";
+    if (e.code === "permission-denied") uitleg = "Geen schrijfrechten. Contacteer de leerkracht.";
+    else if (e.code === "unavailable")  uitleg = "Geen internetverbinding. Probeer opnieuw.";
+    setUploadStatus("error", "❌ Opslaan mislukt: " + uitleg);
+  }
+}
+
+// ── EVENT LISTENERS (één DOMContentLoaded — nooit split over script-blokken) ──
+document.addEventListener("DOMContentLoaded", function() {
+  document.getElementById("login-btn").addEventListener("click", klasLogin);
+  document.getElementById("gast-btn").addEventListener("click", klasGast);
+  document.getElementById("logout-btn").addEventListener("click", doLogout);
+  document.getElementById("klas-naam").addEventListener("keypress", function(e) {
+    if (e.key === "Enter") klasLogin();
+  });
+  document.getElementById("klas-code").addEventListener("keypress", function(e) {
+    if (e.key === "Enter") klasLogin();
+  });
+});
 </script>
 </body>
 </html>
