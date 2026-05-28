@@ -314,43 +314,54 @@ async function initieelLeerlingenAanmaken() {
   await loadLeerlingen();
 }
 
-// AUTO-DISCOVERY van collections:
-// Combineert de vaste COLLECTION_LABELS met collections die eerder ontdekt werden
-// en opgeslagen zijn in localStorage. Zo hoef je nooit manueel iets aan te passen:
-// zodra een nieuwe *_toets collection data bevat, verschijnt die automatisch.
+// AUTO-DISCOVERY via toets_registry:
+// Elke toets-app schrijft bij het opslaan naar toets_registry/{colName}.
+// Het dashboard leest die collectie eerst → alle ooit gebruikte collections
+// verschijnen automatisch, zonder dat je COLLECTION_LABELS ooit hoeft aan te passen.
 async function loadAllScores() {
   allRecords = [];
   knownCols  = [];
 
-  // Startlijst: alle geconfigureerde + eerder ontdekte collections
-  var toLoad = Object.keys(COLLECTION_LABELS);
+  // Stap 1: Lees de registry (collections die ooit een score hebben opgeslagen)
+  var registryCollections = [];
   try {
-    var cached = JSON.parse(localStorage.getItem('db_known_cols') || '[]');
+    var regSnap = await db.collection("toets_registry").get();
+    regSnap.forEach(function(doc) {
+      var d = doc.data();
+      if (d.collection) registryCollections.push({ col: d.collection, label: d.naam || colLabel(d.collection) });
+    });
+    console.log("[dashboard] Registry: " + registryCollections.map(function(r){return r.col;}).join(", "));
+  } catch(e) { console.log("[dashboard] Registry niet beschikbaar:", e.message); }
+
+  // Stap 2: Combineer registry + COLLECTION_LABELS + eerder ontdekte collections
+  var toLoad = Object.keys(COLLECTION_LABELS);
+  registryCollections.forEach(function(r) {
+    if (toLoad.indexOf(r.col) < 0) toLoad.push(r.col);
+  });
+  try {
+    var cached = JSON.parse(localStorage.getItem("db_known_cols") || "[]");
     cached.forEach(function(c) { if (toLoad.indexOf(c) < 0) toLoad.push(c); });
   } catch(e) {}
 
-  console.log('[loadAllScores] Collections te laden:', toLoad);
+  console.log("[loadAllScores] Collections te laden:", toLoad);
 
   for (var col of toLoad) {
     try {
-      var snap = await db.collection(col).orderBy('timestamp','desc').limit(500).get();
+      var snap = await db.collection(col).orderBy("timestamp","desc").limit(500).get();
       if (!snap.empty) {
         knownCols.push(col);
         snap.forEach(function(doc) {
           var r = normRecord(doc.data(), col);
           if (r._leerlingId) allRecords.push(r);
         });
-        console.log('[loadAllScores]', col, '→', snap.size, 'records geladen');
+        console.log("[loadAllScores]", col, "→", snap.size, "records geladen");
       }
-    } catch(e) { console.log('[loadAllScores] Skip', col, '(bestaat nog niet)'); }
+    } catch(e) { console.log("[loadAllScores] Skip", col, "(bestaat nog niet)"); }
   }
 
-  // Sla ontdekte collections op voor volgende sessie
-  try { localStorage.setItem('db_known_cols', JSON.stringify(knownCols)); } catch(e) {}
-
-  // Sorteer: nieuwste eerst
+  try { localStorage.setItem("db_known_cols", JSON.stringify(knownCols)); } catch(e) {}
   allRecords.sort(function(a,b) { return b._ts - a._ts; });
-  console.log('[loadAllScores] Totaal geladen:', allRecords.length, 'records');
+  console.log("[loadAllScores] Totaal geladen:", allRecords.length, "records");
 }
 
 // ── FILTERS OPVULLEN ──────────────────────────────────────────────────────
