@@ -1,0 +1,935 @@
+<!DOCTYPE html>
+
+<html lang="nl">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Rekenmeester Oefenplatform</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <style>
+
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+
+    body { font-family: 'Inter', sans-serif; }
+
+    .animate-fade-in { animation: fadeIn 0.5s ease-out; }
+
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+    </style>
+
+</head>
+
+<body class="bg-slate-50 min-h-screen">
+    <!-- LOGIN SCHERM -->
+    <div id="login-screen" style="position:fixed;inset:0;z-index:9999;background:linear-gradient(135deg,#312e81,#4338ca);display:flex;align-items:center;justify-content:center;padding:20px;">
+      <div style="background:white;border-radius:24px;padding:2.5rem 2rem;width:100%;max-width:380px;box-shadow:0 25px 50px rgba(0,0,0,0.25);text-align:center;display:flex;flex-direction:column;gap:12px;">
+        <div style="font-size:3rem">🧮</div>
+        <h1 style="font-size:1.5rem;font-weight:900;color:#1f2937;margin:0;">Rekenmeester</h1>
+        <p style="color:#6b7280;font-size:.9rem;margin:0;">Voer je naam en code in</p>
+        <div id="klas-err" style="display:none;color:#dc2626;font-size:.85rem;font-weight:700;background:#fee2e2;border:1px solid #fca5a5;padding:8px 12px;border-radius:8px;"></div>
+        <input type="text" id="klas-naam" placeholder="Jouw voornaam"
+          style="width:100%;padding:14px;border:2px solid #e5e7eb;border-radius:12px;font-family:inherit;font-size:1rem;font-weight:600;text-align:center;outline:none;"
+          autocomplete="off" autocapitalize="words">
+        <input type="password" id="klas-code" placeholder="Jouw code"
+          style="width:100%;padding:14px;border:2px solid #e5e7eb;border-radius:12px;font-family:inherit;font-size:1rem;font-weight:600;text-align:center;outline:none;"
+          autocomplete="off">
+        <button id="login-btn"
+          style="width:100%;background:#4338ca;color:white;border:none;border-radius:12px;padding:14px;font-family:inherit;font-size:1rem;font-weight:700;cursor:pointer;">
+          Inloggen
+        </button>
+        <button id="gast-btn"
+          style="width:100%;background:transparent;border:2px solid #e5e7eb;border-radius:12px;padding:12px;font-family:inherit;font-size:.9rem;font-weight:700;color:#6b7280;cursor:pointer;">
+          Doorgaan als gast (geen opslag)
+        </button>
+        <div style="font-size:.75rem;color:#9ca3af;">
+          <a href="dashboard.html" style="color:#4338ca;font-weight:700;text-decoration:none;">Leerkracht? Klik hier</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- User badge (verborgen via style.display) -->
+    <div id="user-badge" style="display:none;align-items:center;gap:8px;background:#eef2ff;border:1px solid #c7d2fe;border-radius:10px;padding:6px 14px;font-size:.82rem;font-weight:700;color:#3730a3;width:fit-content;margin:12px auto 0;">
+      <span id="user-badge-naam"></span>
+      <button id="logout-btn" style="background:none;border:none;cursor:pointer;color:#94a3b8;font-size:.78rem;padding:3px 8px;border-left:1px solid #e2e8f0;margin-left:4px;font-family:inherit;">↩ Uitloggen</button>
+    </div>
+    <div id="gast-badge" style="display:none;background:#fefce8;border:1px solid #fde68a;border-radius:8px;padding:4px 10px;font-size:.75rem;font-weight:700;color:#d97706;margin:8px auto 0;width:fit-content;">👤 Gast – scores worden niet opgeslagen</div>
+
+
+
+
+<div id="app"></div>
+
+
+
+<script>
+
+// --- APP LOGICA ---
+
+let state = {
+
+    view: 'menu', // menu, quiz, results
+
+    category: null,
+
+    showTimer: true,
+
+    questions: [],
+
+    currentIndex: 0,
+
+    userAnswer: '',
+
+    timeLeft: 120,
+
+    isActive: false,
+
+    results: [],
+
+    timerInterval: null
+
+};
+
+
+
+const categories = [
+
+    { id: 'plusminus10', label: 'Optellen en aftrekken tot 10', range: 10 },
+
+    { id: 'plusminus20', label: 'Optellen en aftrekken tot 20', range: 20 },
+
+    { id: 'plusminus100', label: 'Optellen en aftrekken tot 100', range: 100 },
+
+    { id: 'tafels', label: 'De maaltafels', type: 'multiply' },
+
+    { id: 'deeltafels', label: 'De deeltafels', type: 'divide' },
+
+];
+
+
+
+function isBridgeOperation(a, b, op, range) {
+
+    if (range === 20) {
+
+    if (op === '+') return (a % 10) + (b % 10) >= 10 && a + b > 10;
+
+    if (op === '-') return (a % 10) < (b % 10) && a > 10;
+
+    }
+
+    if (range === 100) {
+
+    if (op === '+') return (a % 10) + (b % 10) >= 10;
+
+    if (op === '-') return (a % 10) < (b % 10);
+
+    }
+
+    return false;
+
+}
+
+
+
+function generateQuestion(cat) {
+
+    let a, b, op, ans;
+
+    const isPlus = Math.random() > 0.5;
+
+
+
+    if (cat.id.includes('plusminus')) {
+
+    op = isPlus ? '+' : '-';
+
+    if (cat.range === 10) {
+
+    if (isPlus) {
+
+    ans = Math.floor(Math.random() * 11);
+
+    a = Math.floor(Math.random() * (ans + 1));
+
+    b = ans - a;
+
+    } else {
+
+    a = Math.floor(Math.random() * 11);
+
+    b = Math.floor(Math.random() * (a + 1));
+
+    ans = a - b;
+
+    }
+
+    } else if (cat.range === 20) {
+
+    if (isPlus) {
+
+    a = Math.floor(Math.random() * 19) + 1;
+
+    b = Math.floor(Math.random() * (20 - a)) + 1;
+
+    ans = a + b;
+
+    } else {
+
+    a = Math.floor(Math.random() * 20) + 1;
+
+    b = Math.floor(Math.random() * a) + 1;
+
+    ans = a - b;
+
+    }
+
+    } else {
+
+    if (isPlus) {
+
+    a = Math.floor(Math.random() * 90) + 5;
+
+    b = Math.floor(Math.random() * (100 - a)) + 1;
+
+    ans = a + b;
+
+    } else {
+
+    a = Math.floor(Math.random() * 95) + 5;
+
+    b = Math.floor(Math.random() * a) + 1;
+
+    ans = a - b;
+
+    }
+
+    }
+
+    return {    
+
+    text: `${a} ${op} ${b}`,    
+
+    ans,    
+
+    meta: { a, b, op, range: cat.range, isBridge: isBridgeOperation(a, b, op, cat.range) }    
+
+    };
+
+    } else if (cat.type === 'multiply') {
+
+    a = Math.floor(Math.random() * 10) + 1;
+
+    b = Math.floor(Math.random() * 10) + 1;
+
+    return { text: `${a} x ${b}`, ans: a * b, meta: { a, b, type: 'tafel' } };
+
+    } else {
+
+    b = Math.floor(Math.random() * 10) + 1;
+
+    ans = Math.floor(Math.random() * 10) + 1;
+
+    a = b * ans;
+
+    return { text: `${a} : ${b}`, ans: ans, meta: { a, b, type: 'deeltafel' } };
+
+    }
+
+}
+
+
+
+// --- RENDER FUNCTIES ---
+
+
+
+function render() {
+
+    const app = document.getElementById('app');
+
+    if (state.view === 'menu') {
+
+    app.innerHTML = renderMenu();
+
+    } else if (state.view === 'quiz') {
+
+    app.innerHTML = renderQuiz();
+
+    document.getElementById('answer-input').focus();
+
+    } else if (state.view === 'results') {
+
+    app.innerHTML = renderResults();
+
+    // Opslaan na render — direct in render(), geen patches of MutationObservers
+    if (!state._fbSaved) {
+        state._fbSaved = true;
+        saveToFirestore();
+    }
+
+    }
+
+    lucide.createIcons();
+
+}
+
+
+
+function renderMenu() {
+
+    return `
+
+    <div class="max-w-2xl mx-auto p-6 animate-fade-in py-12">
+
+    <div class="text-center mb-10">
+
+    <h1 class="text-4xl font-bold text-slate-800 mb-2">Rekenmeester</h1>
+
+    <p class="text-slate-500">Kies een categorie en start de training van 2 minuten.</p>
+
+    </div>
+
+    <div class="grid gap-4 mb-8">
+
+    ${categories.map(cat => `
+
+    <button onclick="startQuiz('${cat.id}')" class="flex items-center justify-between p-5 bg-white border-2 border-slate-100 rounded-2xl hover:border-indigo-400 hover:shadow-lg transition-all text-left group">
+
+    <span class="text-lg font-medium text-slate-700">${cat.label}</span>
+
+    <i data-lucide="play" class="w-5 h-5 text-indigo-500 opacity-0 group-hover:opacity-100 transition-opacity"></i>
+
+    </button>
+
+    `).join('')}
+
+    </div>
+
+    <div class="bg-slate-100 p-6 rounded-2xl flex items-center justify-between">
+
+    <div class="flex items-center gap-3 text-slate-600 font-medium">
+
+    <i data-lucide="settings-2" class="w-5 h-5"></i>
+
+    <span>Instellingen</span>
+
+    </div>
+
+    <label class="flex items-center cursor-pointer">
+
+    <span class="mr-3 text-sm text-slate-500">Toon tijdsbalk</span>
+
+    <input type="checkbox" class="hidden" ${state.showTimer ? 'checked' : ''} onchange="toggleTimer()">
+
+    <div class="w-10 h-6 rounded-full transition-colors ${state.showTimer ? 'bg-indigo-500' : 'bg-slate-300'} relative">
+
+    <div class="absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition-transform ${state.showTimer ? 'translate-x-4' : ''}"></div>
+
+    </div>
+
+    </label>
+
+    </div>
+
+    </div>
+
+    `;
+
+}
+
+
+
+function renderQuiz() {
+
+    const progress = (state.timeLeft / 120) * 100;
+
+    const currentQ = state.questions[state.currentIndex];
+
+    return `
+
+    <div class="max-w-xl mx-auto p-6 h-screen flex flex-col justify-center animate-fade-in">
+
+    ${state.showTimer ? `
+
+    <div class="fixed top-0 left-0 w-full h-1.5 bg-slate-200">
+
+    <div class="h-full bg-indigo-500 transition-all duration-1000 ease-linear" style="width: ${progress}%"></div>
+
+    </div>
+
+    ` : ''}
+
+    <div class="text-center mb-12">
+
+    <p class="text-slate-400 text-sm uppercase tracking-widest mb-4">Oefening ${state.currentIndex + 1}</p>
+
+    <h2 class="text-7xl font-bold text-slate-800">${currentQ.text} = ?</h2>
+
+    </div>
+
+    <form onsubmit="handleAnswer(event)" class="flex flex-col gap-6">
+
+    <input id="answer-input" type="number" class="text-4xl text-center p-6 border-4 border-indigo-100 rounded-3xl focus:border-indigo-500 focus:outline-none" placeholder="..." required>
+
+    <button type="submit" class="bg-indigo-600 text-white py-4 rounded-2xl text-xl font-bold hover:bg-indigo-700 transition-all">
+
+    Controleren (Enter)
+
+    </button>
+
+    </form>
+
+    </div>
+
+    `;
+
+}
+
+
+
+function renderResults() {
+
+    const correctCount = state.results.filter(r => r.correct).length;
+
+    const wrongCount = state.results.length - correctCount;
+
+    const analysis = analyzeResults();
+
+    // Sorteer op meeste fouten voor de samenvatting
+    const slotsteSorted = [...analysis].filter(r => r.wrong > 0).sort((a,b) => b.wrong - a.wrong);
+    const foutenSamenvatting = slotsteSorted.length > 0
+        ? '<div style="background:#fff1f2;border:1px solid #fecdd3;border-radius:12px;padding:12px 16px;margin-bottom:16px;font-size:.88rem;font-weight:700;color:#be123c;">'
+          + '⚠️ Meeste fouten bij: '
+          + slotsteSorted.map(r => r.label + ' (' + r.wrong + 'x)').join(' · ')
+          + '</div>'
+        : '';
+
+
+
+    return `
+
+    <div class="max-w-3xl mx-auto p-6 animate-fade-in py-12">
+
+    <div class="text-center mb-8">
+
+    <h2 class="text-3xl font-bold text-slate-800">Resultaten</h2>
+
+    <p class="text-slate-500">${state.category.label}</p>
+
+    </div>
+
+    <div class="grid grid-cols-2 gap-4 mb-8">
+
+    <div class="bg-emerald-50 border border-emerald-100 p-6 rounded-3xl text-center">
+
+    <div class="text-emerald-600 font-bold text-4xl mb-1">${correctCount}</div>
+
+    <div class="text-emerald-700 font-medium text-sm">Juist</div>
+
+    </div>
+
+    <div class="bg-rose-50 border border-rose-100 p-6 rounded-3xl text-center">
+
+    <div class="text-rose-600 font-bold text-4xl mb-1">${wrongCount}</div>
+
+    <div class="text-rose-700 font-medium text-sm">Fout</div>
+
+    </div>
+
+    </div>
+
+    <div class="bg-white border-2 border-slate-100 rounded-3xl p-6 mb-8">
+
+    <h3 class="text-xl font-bold text-slate-800 mb-6 flex items-center gap-2">Uitgebreide Analyse</h3>
+
+    ${foutenSamenvatting}
+
+    <div class="overflow-x-auto">
+
+    <table class="w-full text-left">
+
+    <thead>
+
+    <tr class="border-b border-slate-100 text-xs text-slate-400 uppercase">
+
+    <th class="pb-3">Categorie</th>
+
+    <th class="pb-3 text-center">Totaal</th>
+
+    <th class="pb-3 text-center">Juist</th>
+
+    <th class="pb-3 text-center text-rose-500">Fout</th>
+
+    <th class="pb-3 text-right">Status</th>
+
+    </tr>
+
+    </thead>
+
+    <tbody class="divide-y divide-slate-50">
+
+    ${analysis.map(row => `
+
+    <tr>
+
+    <td class="py-4 font-medium">${row.label}</td>
+
+    <td class="py-4 text-center">${row.total}</td>
+
+    <td class="py-4 text-center text-emerald-600 font-bold">${row.correct}</td>
+
+    <td class="py-4 text-center text-rose-600 font-bold">${row.wrong}</td>
+
+    <td class="py-4 text-right">
+
+    <span class="px-3 py-1 rounded-full text-xs font-bold ${row.status === 'good' ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'}">
+
+    ${row.status === 'good' ? 'Goed' : 'Oefenen'}
+
+    </span>
+
+    </td>
+
+    </tr>
+
+    `).join('')}
+
+    </tbody>
+
+    </table>
+
+    </div>
+
+    </div>
+
+    <button onclick="state.view = 'menu'; render();" class="w-full bg-slate-800 text-white py-5 rounded-3xl font-bold hover:bg-slate-900 transition-colors">
+
+    Terug naar menu
+
+    </button>
+
+    <!-- Upload status (style.display — nooit classList) -->
+    <div id="upload-status" style="display:none;padding:10px 14px;border-radius:10px;border:2px solid;font-size:.85rem;font-weight:700;text-align:center;margin-top:12px;">
+      <span id="upload-spinner" style="display:inline-block;width:13px;height:13px;border:2px solid #e5e7eb;border-top-color:#4338ca;border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle;margin-right:6px;"></span>
+      <span id="upload-status-text">Bezig met opslaan...</span>
+    </div>
+    <style>@keyframes spin{to{transform:rotate(360deg)}}</style>
+
+    </div>
+
+    `;
+
+}
+
+
+
+// --- ACTIONS ---
+
+
+
+function toggleTimer() {
+
+    state.showTimer = !state.showTimer;
+
+    render();
+
+}
+
+
+
+function startQuiz(catId) {
+
+    state.category = categories.find(c => c.id === catId);
+
+    state.questions = [generateQuestion(state.category)];
+
+    state.currentIndex = 0;
+
+    state.results = [];
+
+    state._fbSaved = false; // Reset zodat nieuwe sessie opnieuw opgeslagen wordt
+
+    state.timeLeft = 120;
+
+    state.isActive = true;
+
+    state.view = 'quiz';
+
+    
+
+    render();
+
+
+
+    state.timerInterval = setInterval(() => {
+
+    state.timeLeft--;
+
+    if (state.timeLeft <= 0) {
+
+    clearInterval(state.timerInterval);
+
+    state.isActive = false;
+
+    state.view = 'results';
+
+    render();
+
+    } else if (state.view === 'quiz') {
+
+    const progress = (state.timeLeft / 120) * 100;
+
+    const bar = document.querySelector('.bg-indigo-500');
+
+    if (bar) bar.style.width = progress + '%';
+
+    }
+
+    }, 1000);
+
+}
+
+
+
+function handleAnswer(e) {
+
+    e.preventDefault();
+
+    const input = document.getElementById('answer-input');
+
+    const val = parseInt(input.value);
+
+    const currentQ = state.questions[state.currentIndex];
+
+    
+
+    state.results.push({
+
+    ...currentQ,
+
+    userAns: val,
+
+    correct: val === currentQ.ans
+
+    });
+
+
+
+    state.currentIndex++;
+
+    state.questions.push(generateQuestion(state.category));
+
+    render();
+
+}
+
+
+
+function analyzeResults() {
+
+    const analysis = [];
+
+    if (state.category.id.includes('plusminus')) {
+
+    const criteria = [
+
+    { label: 'Optellen zonder brug', filter: (r) => r.meta.op === '+' && !r.meta.isBridge },
+
+    { label: 'Optellen met brug', filter: (r) => r.meta.op === '+' && r.meta.isBridge },
+
+    { label: 'Aftrekken zonder brug', filter: (r) => r.meta.op === '-' && !r.meta.isBridge },
+
+    { label: 'Aftrekken met brug', filter: (r) => r.meta.op === '-' && r.meta.isBridge }
+
+    ];
+
+    criteria.forEach(c => {
+
+    const filtered = state.results.filter(c.filter);
+
+    if (filtered.length > 0) {
+
+    const correct = filtered.filter(f => f.correct).length;
+
+    analysis.push({
+
+    label: c.label,
+
+    total: filtered.length,
+
+    correct: correct,
+
+    wrong: filtered.length - correct,
+
+    status: (correct / filtered.length >= 0.8) ? 'good' : 'bad'
+
+    });
+
+    }
+
+    });
+
+    } else {
+
+    for (let i = 1; i <= 10; i++) {
+
+    const filtered = state.results.filter(r => r.meta.b === i);
+
+    if (filtered.length > 0) {
+
+    const correct = filtered.filter(f => f.correct).length;
+
+    analysis.push({
+
+    label: `Tafel van ${i}`,
+
+    total: filtered.length,
+
+    correct: correct,
+
+    wrong: filtered.length - correct,
+
+    status: (correct / filtered.length >= 0.8) ? 'good' : 'bad'
+
+    });
+
+    }
+
+    }
+
+    }
+
+    return analysis;
+
+}
+
+
+
+// render() wordt aangeroepen na login via openApp() — niet bij initialisatie
+
+</script>
+
+
+
+
+<!-- FIREBASE compat SDK — zelfde als alle andere apps -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script>
+firebase.initializeApp({
+  apiKey:"AIzaSyCnQDVVAlK6jE-PPUUediRJMTbN0xqrLDE",
+  authDomain:"klaswebsite-database.firebaseapp.com",
+  projectId:"klaswebsite-database",
+  storageBucket:"klaswebsite-database.firebasestorage.app",
+  messagingSenderId:"42912327282",
+  appId:"1:42912327282:web:f13f2c706f6c42c115c4eb"
+});
+var _db          = firebase.firestore();
+var _currentUser = null;
+var _isGuest     = false;
+var COL_NAME     = "hoofdrekenen_toets";
+
+// ── UPLOAD STATUS (style.display — nooit classList) ───────────────────────
+function setUploadStatus(type, msg) {
+  var box     = document.getElementById("upload-status");
+  var text    = document.getElementById("upload-status-text");
+  var spinner = document.getElementById("upload-spinner");
+  if (!box) return; // Kan ontbreken als we nog niet op results-view zijn
+  box.style.display    = "block";
+  spinner.style.display = (type === "loading") ? "inline-block" : "none";
+  if (type === "loading") {
+    box.style.background  = "#eef2ff";
+    box.style.borderColor = "#c7d2fe";
+    box.style.color       = "#3730a3";
+  } else if (type === "ok") {
+    box.style.background  = "#f0fdf4";
+    box.style.borderColor = "#86efac";
+    box.style.color       = "#15803d";
+  } else {
+    box.style.background  = "#fff1f2";
+    box.style.borderColor = "#fecdd3";
+    box.style.color       = "#be123c";
+  }
+  text.textContent = msg;
+  console.log("[hoofdrekenen saveToFirestore] " + type + ": " + msg);
+}
+
+// ── LOGIN (leerlingen uit Firestore — openApp gebruikt ALLEEN style.display) ─
+function klasLogin() {
+  var naam = (document.getElementById("klas-naam").value||"").trim().toLowerCase();
+  var code = (document.getElementById("klas-code").value||"").trim();
+  var err  = document.getElementById("klas-err");
+  err.style.display = "none";
+  if (!naam) { err.textContent="Vul je voornaam in."; err.style.display="block"; return; }
+  if (!code) { err.textContent="Vul je code in.";    err.style.display="block"; return; }
+
+  var btn = document.getElementById("login-btn");
+  btn.textContent = "Even wachten..."; btn.disabled = true;
+
+  _db.collection("leerlingen").doc(naam).get().then(function(doc) {
+    btn.textContent = "Inloggen"; btn.disabled = false;
+    if (!doc.exists) { err.textContent="Naam niet gevonden."; err.style.display="block"; return; }
+    var data = doc.data();
+    if (data.code !== code) { err.textContent="Verkeerde code."; err.style.display="block"; return; }
+    window._leerlingNaam = data.weergavenaam || (naam.charAt(0).toUpperCase() + naam.slice(1));
+    window._leerlingId   = naam;
+    _currentUser = { uid: naam, displayName: window._leerlingNaam };
+    _isGuest = false;
+    openApp(window._leerlingNaam, false);
+  }).catch(function(e) {
+    btn.textContent = "Inloggen"; btn.disabled = false;
+    err.textContent = "Fout: " + e.message; err.style.display = "block";
+  });
+}
+
+function klasGast() {
+  _isGuest = true; _currentUser = null;
+  window._leerlingId   = null;
+  window._leerlingNaam = "Gast";
+  openApp("Gast", true);
+}
+
+// openApp: ALLEEN style.display — nooit h()/s() of classList (vermijdt alle bekende bugs)
+function openApp(naam, isGast) {
+  document.getElementById("login-screen").style.display = "none";
+  if (isGast) {
+    document.getElementById("gast-badge").style.display  = "block";
+    document.getElementById("user-badge").style.display  = "none";
+  } else {
+    document.getElementById("user-badge-naam").textContent = naam;
+    document.getElementById("user-badge").style.display    = "flex";
+    document.getElementById("gast-badge").style.display    = "none";
+  }
+  // Nu pas het menu renderen — niet vóór login
+  render();
+}
+
+function doLogout() {
+  _currentUser = null; _isGuest = false;
+  window._leerlingId = null; window._leerlingNaam = null;
+  document.getElementById("login-screen").style.display = "flex";
+  document.getElementById("user-badge").style.display   = "none";
+  document.getElementById("gast-badge").style.display   = "none";
+  document.getElementById("klas-naam").value = "";
+  document.getElementById("klas-code").value = "";
+  document.getElementById("klas-err").style.display = "none";
+  document.getElementById("login-btn").disabled = false;
+  document.getElementById("login-btn").textContent = "Inloggen";
+  // Reset app naar menu
+  state.view = "menu";
+  state._fbSaved = false;
+}
+
+// ── OPSLAAN (alle modules — niet enkel toets) ─────────────────────────────
+// Foutenanalyse gebruikt analyzeResults() die al brug/niet-brug en tafelindeling doet
+async function saveToFirestore() {
+  if (_isGuest || !_currentUser) {
+    setUploadStatus("error", "❌ Niet opgeslagen: je speelt als gast.");
+    return;
+  }
+  if (!window._leerlingId) {
+    setUploadStatus("error", "❌ Geen leerling-ID. Log opnieuw in.");
+    return;
+  }
+
+  setUploadStatus("loading", "Bezig met opslaan...");
+
+  var catId   = state.category ? state.category.id : "onbekend";
+  var catLabel = state.category ? state.category.label : catId;
+  var results = state.results || [];
+  var total   = results.length;
+  var correct = results.filter(function(r){return r.correct;}).length;
+  var pct     = total > 0 ? Math.round((correct/total)*100) : 0;
+
+  // Foutenanalyse — gebruikt de gedetailleerde analyzeResults()
+  var analyse   = analyzeResults();
+  var foutenTelling = {};
+  var extraOefenen  = [];
+  analyse.filter(function(a){return a.wrong > 0;})
+    .sort(function(a,b){return b.wrong - a.wrong;})
+    .forEach(function(a) {
+      foutenTelling[a.label] = a.wrong;
+      extraOefenen.push(a.label + " (" + a.wrong + "x fout)");
+    });
+
+  // Tijd (120s - resterende tijd)
+  var gespeeldeSec = 120 - (state.timeLeft || 0);
+  var tijdStr = Math.floor(gespeeldeSec/60) + ":" + String(gespeeldeSec%60).padStart(2,"0");
+
+  var record = {
+    leerlingId:   window._leerlingId,
+    leerlingNaam: window._leerlingNaam || "Leerling",
+    mode:         catLabel,
+    score:        correct,
+    totalQ:       total,
+    percentage:   pct,
+    tijd:         tijdStr,
+    hintsGebruikt: 0,
+    timestamp:    firebase.firestore.FieldValue.serverTimestamp(),
+    foutenAnalyse: {
+      extraOefenen:       extraOefenen,
+      foutenPerCategorie: foutenTelling
+    },
+    vragen: results.map(function(r, i) {
+      return {
+        vraagNr:          i + 1,
+        vraag:            r.text || "",
+        categorie:        catLabel,
+        antwoordLeerling: r.userAns !== undefined ? String(r.userAns) : "(leeg)",
+        juistAntwoord:    r.ans !== undefined ? String(r.ans) : "",
+        isJuist:          r.correct || false,
+        hintGebruikt:     false,
+        punten:           r.correct ? 1 : 0,
+        tijdSeconden:     0
+      };
+    })
+  };
+
+  console.log("[hoofdrekenen saveToFirestore] Opslaan naar " + COL_NAME + ":", record);
+
+  try {
+    var docRef = await _db.collection(COL_NAME).add(record);
+
+    // Registry — dashboard ontdekt collection automatisch
+    await _db.collection("toets_registry").doc(COL_NAME).set({
+      naam:       "Hoofdrekenen",
+      collection: COL_NAME,
+      lastSeen:   firebase.firestore.FieldValue.serverTimestamp()
+    }, { merge: true });
+
+    setUploadStatus("ok", "✅ Score opgeslagen! (ID: " + docRef.id.substring(0,8) + "…)");
+    console.log("[hoofdrekenen saveToFirestore] Succes! ID:", docRef.id);
+  } catch(e) {
+    console.error("[hoofdrekenen saveToFirestore] Fout:", e.code, e.message);
+    var uitleg = e.message || "Onbekende fout";
+    if (e.code === "permission-denied") uitleg = "Geen schrijfrechten. Contacteer de leerkracht.";
+    else if (e.code === "unavailable")  uitleg = "Geen internetverbinding. Probeer opnieuw.";
+    setUploadStatus("error", "❌ Opslaan mislukt: " + uitleg);
+  }
+}
+
+// ── EVENT LISTENERS (één DOMContentLoaded — nooit split over script-blokken) ──
+document.addEventListener("DOMContentLoaded", function() {
+  document.getElementById("login-btn").addEventListener("click", klasLogin);
+  document.getElementById("gast-btn").addEventListener("click", klasGast);
+  document.getElementById("logout-btn").addEventListener("click", doLogout);
+  document.getElementById("klas-naam").addEventListener("keypress", function(e) {
+    if (e.key === "Enter") klasLogin();
+  });
+  document.getElementById("klas-code").addEventListener("keypress", function(e) {
+    if (e.key === "Enter") klasLogin();
+  });
+});
+</script>
+</body>
+
+</html>
