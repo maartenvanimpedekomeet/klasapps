@@ -9,9 +9,10 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
 <style>
+/* .hidden wordt NIET meer gebruikt voor JS-gestuurde show/hide (Tailwind !important conflict).
+   Gebruik style.display = 'none'/'block'/'flex' in plaats daarvan. */
 * { box-sizing: border-box; }
 body { font-family: 'Nunito', sans-serif; background: #f0f7ff; margin: 0; padding: 0; }
-.hidden { display: none !important; }
 
 /* ── LOGIN ── */
 .login-card { background:white; border-radius:24px; box-shadow:0 8px 32px rgba(59,130,246,0.12); }
@@ -110,42 +111,34 @@ body { font-family: 'Nunito', sans-serif; background: #f0f7ff; margin: 0; paddin
 <div class="max-w-2xl mx-auto">
 
 <!-- ══ LOGIN ══ -->
-<div id="v-login" style="position:fixed;inset:0;z-index:9999;background:linear-gradient(135deg,#1e3a5f,#2563eb);display:flex;align-items:center;justify-content:center;padding:20px;">
-  <div style="background:white;border-radius:24px;padding:2.5rem 2rem;width:100%;max-width:380px;box-shadow:0 25px 50px rgba(0,0,0,0.25);text-align:center;display:flex;flex-direction:column;gap:12px;">
+<div id="v-login" style="display:flex;align-items:center;justify-content:center;min-height:80vh;">
+  <div class="login-card p-8 text-center space-y-4 max-w-md w-full">
     <div style="font-size:3rem">📏</div>
     <h1 style="font-size:1.6rem;font-weight:900;color:#1e3a5f;margin:0">Lengtematen Oefenapp</h1>
     <p style="color:#64748b;font-size:.9rem;margin:0">Voer je naam en code in</p>
-    <div id="login-err" style="color:#dc2626;font-size:.85rem;font-weight:700;min-height:18px;display:none;"></div>
-    <input type="text" id="login-naam" placeholder="Jouw voornaam"
-      style="width:100%;padding:14px;border:2px solid #e2e8f0;border-radius:12px;font-family:inherit;font-size:1rem;font-weight:600;text-align:center;outline:none;"
-      autocomplete="off" autocapitalize="words">
-    <input type="password" id="login-code" placeholder="Jouw code"
-      style="width:100%;padding:14px;border:2px solid #e2e8f0;border-radius:12px;font-family:inherit;font-size:1rem;font-weight:600;text-align:center;outline:none;"
-      autocomplete="off">
-    <button onclick="loginMetCode()"
-      style="width:100%;background:#1e3a5f;color:white;border:none;border-radius:12px;padding:14px;font-family:inherit;font-size:1rem;font-weight:700;cursor:pointer;">
-      Inloggen
-    </button>
-    <button onclick="loginGuest()"
-      style="width:100%;background:transparent;border:2px solid #e2e8f0;border-radius:12px;padding:12px;font-family:inherit;font-size:.9rem;font-weight:700;color:#6b7280;cursor:pointer;">
-      Doorgaan als gast (geen opslag)
-    </button>
-    <div style="font-size:.75rem;color:#9ca3af;margin-top:4px;">
+    <div id="login-err" style="display:none;background:#fee2e2;border:1px solid #fca5a5;color:#b91c1c;padding:10px 14px;border-radius:10px;font-size:.85rem;font-weight:700;"></div>
+    <input type="text" id="klas-naam" class="form-input" placeholder="Jouw voornaam"
+      autocomplete="off" autocapitalize="words" style="text-align:center;font-size:1rem;font-weight:600;padding:14px;">
+    <input type="password" id="klas-code" class="form-input" placeholder="Jouw code"
+      autocomplete="off" style="text-align:center;font-size:1rem;font-weight:600;padding:14px;">
+    <button class="btn-primary" id="login-btn">Inloggen</button>
+    <button class="btn-secondary" id="gast-btn">👤 Doorgaan als gast (geen opslag)</button>
+    <div style="font-size:.75rem;color:#9ca3af;">
       <a href="dashboard.html" style="color:#1e3a5f;font-weight:700;text-decoration:none;">Leerkracht? Klik hier</a>
     </div>
   </div>
 </div>
 
-<!-- Badges -->
-<div id="fb-user-badge" class="hidden user-badge mt-3 mb-1">
+<!-- Badges (verborgen via style.display) -->
+<div id="fb-user-badge" style="display:none;align-items:center;gap:8px;background:#eff6ff;border:1.5px solid #bfdbfe;border-radius:10px;padding:5px 12px;margin-bottom:6px;width:fit-content;">
   <div class="badge-av" id="fb-init">?</div>
-  <div><div id="fb-uname" style="font-size:.85rem;font-weight:800;color:#1e293b"></div><div id="fb-uemail" style="font-size:.7rem;color:#94a3b8"></div></div>
+  <div><div id="fb-uname" style="font-size:.85rem;font-weight:800;color:#1e293b"></div></div>
   <button id="fb-logout" style="background:none;border:none;cursor:pointer;color:#94a3b8;font-size:.78rem;padding:3px 8px;border-left:1px solid #e2e8f0;margin-left:4px;font-family:'Nunito',sans-serif">↩ Uit</button>
 </div>
-<div id="fb-guest-badge" class="hidden" style="background:#fefce8;border:1.5px solid #fde68a;border-radius:8px;padding:4px 10px;font-size:.75rem;font-weight:800;color:#d97706;margin-bottom:6px;width:fit-content">👤 Gast – score niet opgeslagen</div>
+<div id="fb-guest-badge" style="display:none;background:#fefce8;border:1.5px solid #fde68a;border-radius:8px;padding:4px 10px;font-size:.75rem;font-weight:800;color:#d97706;margin-bottom:6px;width:fit-content">👤 Gast – score niet opgeslagen</div>
 
 <!-- ══ MENU ══ -->
-<div id="v-menu" class="hidden space-y-3 mt-2">
+<div id="v-menu" style="display:none;" class="space-y-3 mt-2">
   <div class="text-center py-3">
     <h1 style="font-size:1.9rem;font-weight:900;color:#1e3a5f;margin:0">📏 Lengtematen</h1>
     <p style="color:#64748b;font-weight:600;margin:4px 0 0">Kies een oefening:</p>
@@ -160,7 +153,7 @@ body { font-family: 'Nunito', sans-serif; background: #f0f7ff; margin: 0; paddin
 </div>
 
 <!-- ══ QUIZ ══ -->
-<div id="v-quiz" class="hidden mt-2">
+<div id="v-quiz" style="display:none;" class="mt-2">
   <div class="flex items-center justify-between py-2">
     <button id="stop-btn" style="background:#f1f5f9;border:none;border-radius:10px;padding:8px 14px;font-weight:800;cursor:pointer;font-family:'Nunito',sans-serif;color:#475569;font-size:.85rem">← Menu</button>
     <div id="q-mode-lbl" style="font-weight:900;color:#1e3a5f;font-size:.88rem"></div>
@@ -214,7 +207,7 @@ body { font-family: 'Nunito', sans-serif; background: #f0f7ff; margin: 0; paddin
 </div>
 
 <!-- ══ EINDSCHERM ══ -->
-<div id="v-end" class="hidden mt-4">
+<div id="v-end" style="display:none;" class="mt-4">
   <div class="quiz-card p-7 text-center space-y-4">
     <div id="end-emoji" style="font-size:4rem"></div>
     <h2 id="end-title" style="font-size:1.55rem;font-weight:900;color:#1e3a5f;margin:0"></h2>
@@ -222,7 +215,11 @@ body { font-family: 'Nunito', sans-serif; background: #f0f7ff; margin: 0; paddin
       <div class="stat-box"><div class="stat-lbl">Score</div><div id="end-score" style="font-size:1.9rem;font-weight:900;color:#2563eb"></div></div>
       <div class="stat-box"><div class="stat-lbl">Procent</div><div id="end-pct" style="font-size:1.9rem;font-weight:900"></div></div>
     </div>
-    <div id="end-save" class="hidden" style="font-size:.85rem;font-weight:700;padding:10px;border-radius:10px"></div>
+    <div id="upload-status" style="display:none;padding:10px 14px;border-radius:10px;border:2px solid;font-size:.85rem;font-weight:700;text-align:center;">
+      <span id="upload-spinner" style="display:inline-block;width:13px;height:13px;border:2px solid #e5e7eb;border-top-color:#2563eb;border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle;margin-right:6px;"></span>
+      <span id="upload-status-text">Bezig met opslaan...</span>
+    </div>
+    <style>@keyframes spin{to{transform:rotate(360deg)}}</style>
     <div id="end-analyse" class="hidden text-left space-y-2">
       <h3 style="font-weight:900;color:#1e3a5f;font-size:1rem;margin:0">Foutenanalyse:</h3>
       <div id="end-fouten" class="space-y-2 max-h-64 overflow-y-auto"></div>
@@ -236,6 +233,7 @@ body { font-family: 'Nunito', sans-serif; background: #f0f7ff; margin: 0; paddin
 
 </div><!-- /.max-w-2xl -->
 
+<!-- FIREBASE compat SDK — zelfde als alle andere apps -->
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 <script>
@@ -247,68 +245,198 @@ firebase.initializeApp({
   messagingSenderId:"42912327282",
   appId:"1:42912327282:web:f13f2c706f6c42c115c4eb"
 });
-var fbDb = firebase.firestore();
-var CU = null, GUEST = false;
+var _db          = firebase.firestore();
+var _currentUser = null;
+var _isGuest     = false;
+var COL_NAME     = "lengte_toets";
 
-function loginMetCode() {
-  var naam = (document.getElementById('login-naam').value||'').trim().toLowerCase();
-  var code = (document.getElementById('login-code').value||'').trim();
-  var errEl = document.getElementById('login-err');
-  errEl.style.display='none'; errEl.textContent='';
-  if (!naam) { errEl.textContent='Vul je voornaam in.'; errEl.style.display='block'; return; }
-  if (!code) { errEl.textContent='Vul je code in.'; errEl.style.display='block'; return; }
-  fbDb.collection('leerlingen').doc(naam).get().then(function(doc) {
-    if (!doc.exists) { errEl.textContent='Naam niet gevonden.'; errEl.style.display='block'; return; }
+// ── UPLOAD STATUS ──────────────────────────────────────────────────────────
+function setUploadStatus(type, msg) {
+  var box     = document.getElementById("upload-status");
+  var text    = document.getElementById("upload-status-text");
+  var spinner = document.getElementById("upload-spinner");
+  box.style.display    = "block";
+  spinner.style.display = (type === "loading") ? "inline-block" : "none";
+  if (type === "loading") {
+    box.style.background  = "#eff6ff";
+    box.style.borderColor = "#bfdbfe";
+    box.style.color       = "#2563eb";
+  } else if (type === "ok") {
+    box.style.background  = "#f0fdf4";
+    box.style.borderColor = "#86efac";
+    box.style.color       = "#15803d";
+  } else {
+    box.style.background  = "#fff1f2";
+    box.style.borderColor = "#fecdd3";
+    box.style.color       = "#be123c";
+  }
+  text.textContent = msg;
+  console.log("[lengte saveToFirestore] " + type + ": " + msg);
+}
+
+// ── LOGIN ──────────────────────────────────────────────────────────────────
+function klasLogin() {
+  var naam = (document.getElementById("klas-naam").value||"").trim().toLowerCase();
+  var code = (document.getElementById("klas-code").value||"").trim();
+  var err  = document.getElementById("login-err");
+  err.style.display = "none";
+  if (!naam) { err.textContent="Vul je voornaam in."; err.style.display="block"; return; }
+  if (!code) { err.textContent="Vul je code in.";    err.style.display="block"; return; }
+
+  var btn = document.getElementById("login-btn");
+  btn.textContent = "Even wachten..."; btn.disabled = true;
+
+  _db.collection("leerlingen").doc(naam).get().then(function(doc) {
+    btn.textContent = "Inloggen"; btn.disabled = false;
+    if (!doc.exists) { err.textContent="Naam niet gevonden."; err.style.display="block"; return; }
     var data = doc.data();
-    if (data.code !== code) { errEl.textContent='Verkeerde code.'; errEl.style.display='block'; return; }
+    if (data.code !== code) { err.textContent="Verkeerde code."; err.style.display="block"; return; }
     window._leerlingNaam = data.weergavenaam || naam;
     window._leerlingId   = naam;
-    CU = {uid: naam, displayName: data.weergavenaam};
-    GUEST = false;
-    document.getElementById('fb-init').textContent  = (data.weergavenaam||naam).charAt(0).toUpperCase();
-    document.getElementById('fb-uname').textContent = data.weergavenaam || naam;
-    document.getElementById('fb-uemail').textContent = '';
-    document.getElementById('v-login').style.display  = 'none';
-    document.getElementById('fb-user-badge').classList.remove('hidden');
-    document.getElementById('v-menu').classList.remove('hidden');
-  }).catch(function(e) { errEl.textContent='Fout: '+e.message; errEl.style.display='block'; });
+    _currentUser = { uid: naam, displayName: data.weergavenaam || naam };
+    _isGuest = false;
+    openApp(_currentUser.displayName, false);
+  }).catch(function(e) {
+    btn.textContent = "Inloggen"; btn.disabled = false;
+    err.textContent = "Fout: " + e.message; err.style.display = "block";
+  });
 }
 
-function loginGuest() {
-  GUEST = true; CU = null;
-  window._leerlingId = null; window._leerlingNaam = 'Gast';
-  document.getElementById('v-login').style.display = 'none';
-  var gb = document.getElementById('fb-guest-badge');
-  gb.textContent = '👤 Gast – score niet opgeslagen';
-  gb.classList.remove('hidden');
-  document.getElementById('v-menu').classList.remove('hidden');
+function klasGast() {
+  _isGuest = true; _currentUser = null;
+  window._leerlingId   = null;
+  window._leerlingNaam = "Gast";
+  openApp("Gast", true);
 }
 
-document.addEventListener('DOMContentLoaded', function() {
-  ['login-naam','login-code'].forEach(function(id) {
-    var el = document.getElementById(id);
-    if (el) el.addEventListener('keypress', function(e) { if(e.key==='Enter') loginMetCode(); });
+function openApp(naam, isGast) {
+  document.getElementById("v-login").style.display = "none";
+  if (isGast) {
+    document.getElementById("fb-guest-badge").style.display = "block";
+    document.getElementById("fb-user-badge").style.display  = "none";
+  } else {
+    document.getElementById("fb-init").textContent  = naam[0].toUpperCase();
+    document.getElementById("fb-uname").textContent = naam;
+    document.getElementById("fb-user-badge").style.display  = "flex";
+    document.getElementById("fb-guest-badge").style.display = "none";
+  }
+  document.getElementById("v-menu").style.display = "block";
+}
+
+function doLogout() {
+  _currentUser = null; _isGuest = false;
+  window._leerlingId = null; window._leerlingNaam = null;
+  document.getElementById("fb-user-badge").style.display  = "none";
+  document.getElementById("fb-guest-badge").style.display = "none";
+  document.getElementById("v-menu").style.display         = "none";
+  document.getElementById("klas-naam").value = "";
+  document.getElementById("klas-code").value = "";
+  document.getElementById("login-err").style.display = "none";
+  document.getElementById("v-login").style.display = "flex";
+}
+
+// ── OPSLAAN NAAR FIRESTORE + REGISTRY ─────────────────────────────────────
+async function saveToFirestore(score, total, pct, tijd, quizLog) {
+  if (_isGuest || !_currentUser) {
+    setUploadStatus("error", "❌ Niet opgeslagen: je speelt als gast.");
+    return;
+  }
+  if (!window._leerlingId) {
+    setUploadStatus("error", "❌ Geen leerling-ID. Log opnieuw in.");
+    return;
+  }
+
+  setUploadStatus("loading", "Bezig met opslaan...");
+
+  // Foutenanalyse per categorie
+  var foutenTelling = {};
+  (quizLog||[]).filter(function(h){return !h.isJuist;}).forEach(function(h) {
+    var cat = h.categorie || "Lengtematen";
+    foutenTelling[cat] = (foutenTelling[cat]||0) + 1;
+  });
+  var extraOefenen = Object.entries(foutenTelling)
+    .sort(function(a,b){return b[1]-a[1];})
+    .map(function(e){return e[0]+" ("+e[1]+"x fout)";});
+
+  var record = {
+    leerlingId:   window._leerlingId,
+    leerlingNaam: window._leerlingNaam || "Leerling",
+    mode:         "toets",
+    score:        score,
+    totalQ:       total,
+    percentage:   pct,
+    tijd:         tijd,
+    hintsGebruikt: 0,
+    timestamp:    firebase.firestore.FieldValue.serverTimestamp(),
+    foutenAnalyse: {
+      extraOefenen:       extraOefenen,
+      foutenPerCategorie: foutenTelling
+    },
+    vragen: (quizLog||[]).map(function(v, i) {
+      return {
+        vraagNr:          i + 1,
+        vraag:            v.formule            || "",
+        categorie:        v.categorie          || "Lengtematen",
+        antwoordLeerling: v.antwoordLeerling   || "(leeg)",
+        juistAntwoord:    v.juistAntwoord      || "",
+        isJuist:          v.isJuist            || false,
+        hintGebruikt:     false,
+        punten:           v.isJuist ? 1 : 0,
+        tijdSeconden:     0
+      };
+    })
+  };
+
+  console.log("[lengte saveToFirestore] Opslaan naar", COL_NAME, ":", record);
+
+  try {
+    var docRef = await _db.collection(COL_NAME).add(record);
+
+    // Registry bijwerken — dashboard ontdekt collection automatisch
+    await _db.collection("toets_registry").doc(COL_NAME).set({
+      naam:       "Lengtematen",
+      collection: COL_NAME,
+      lastSeen:   firebase.firestore.FieldValue.serverTimestamp()
+    }, { merge: true });
+
+    setUploadStatus("ok", "✅ Score opgeslagen! (ID: "+docRef.id.substring(0,8)+"…)");
+    console.log("[lengte saveToFirestore] Succes! ID:", docRef.id);
+  } catch(e) {
+    console.error("[lengte saveToFirestore] Fout:", e.code, e.message);
+    var uitleg = e.message || "Onbekende fout";
+    if (e.code === "permission-denied") uitleg = "Geen schrijfrechten. Contacteer de leerkracht.";
+    else if (e.code === "unavailable")  uitleg = "Geen internetverbinding. Probeer opnieuw.";
+    setUploadStatus("error", "❌ Opslaan mislukt: "+uitleg);
+  }
+}
+
+// ── EVENT LISTENERS (één DOMContentLoaded) ────────────────────────────────
+document.addEventListener("DOMContentLoaded", function() {
+  document.getElementById("login-btn").addEventListener("click", klasLogin);
+  document.getElementById("gast-btn").addEventListener("click", klasGast);
+  document.getElementById("fb-logout").addEventListener("click", doLogout);
+  document.getElementById("klas-naam").addEventListener("keypress", function(e) {
+    if (e.key === "Enter") klasLogin();
+  });
+  document.getElementById("klas-code").addEventListener("keypress", function(e) {
+    if (e.key === "Enter") klasLogin();
   });
 });
+</script>
 
-async function fbSave(rec) {
-  if (GUEST || !CU) return false;
-  try {
-    await fbDb.collection('lengte_toets').add({
-      leerlingId:   window._leerlingId,
-      leerlingNaam: window._leerlingNaam || 'Leerling',
-      timestamp:    firebase.firestore.FieldValue.serverTimestamp(),
-      ...rec
-    });
-    return true;
-  } catch(e) { console.error(e); return false; }
-}
-
+<script>
 // ── UTILS ─────────────────────────────────────────────────────────────────
 function $(id){return document.getElementById(id);}
-function s(id){var el=typeof id==="string"?$(id):id; if(el){el.classList.remove("hidden"); el.style.display='';} }
-function h(id){var el=typeof id==="string"?$(id):id; if(el){el.classList.add("hidden"); el.style.display='none';} }
-function shuffle(a){var b=[...a];for(var i=b.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));[b[i],b[j]]=[b[j],b[i]];}return b;}
+// s() en h() gebruiken style.display — NOOIT classList.hidden (Tailwind !important conflict)
+function s(id,disp){
+  const el=typeof id==="string"?$(id):id;
+  if(el){ el.style.display = disp||"block"; }
+}
+function h(id){
+  const el=typeof id==="string"?$(id):id;
+  if(el){ el.style.display = "none"; }
+}
+function shuffle(a){let b=[...a];for(let i=b.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[b[i],b[j]]=[b[j],b[i]];}return b;}
 function rnd(a,b){return Math.floor(Math.random()*(b-a+1))+a;}
 function pick(arr,n){return shuffle(arr).slice(0,n);}
 
@@ -552,17 +680,17 @@ let QS = {}; // quiz state
 document.querySelectorAll(".menu-card").forEach(c=>c.addEventListener("click",()=>startMode(c.dataset.mode)));
 $("stop-btn").onclick=()=>{stopQuiz();};
 $("end-retry").onclick=()=>startMode(QS.mode);
-$("end-menu").onclick=()=>{h("v-end");s("v-menu");};
+$("end-menu").onclick=()=>{h("v-end");s("v-menu","block");};
 $("tip-btn").onclick=()=>{
   const q=QS.questions[QS.idx];
-  if(q&&q.tip){$("q-tip").textContent="💡 "+q.tip;s("q-tip");}
+  if(q&&q.tip){$("q-tip").textContent="💡 "+q.tip;s("q-tip","block");}
 };
 $("check-btn").onclick=checkAnswer;
 $("next-btn").onclick=nextQ;
 $("q-inp1").addEventListener("keypress",e=>{if(e.key==="Enter")checkAnswer();});
 $("q-inp2").addEventListener("keypress",e=>{if(e.key==="Enter")checkAnswer();});
 
-function stopQuiz(){h("v-quiz");s("v-menu");}
+function stopQuiz(){h("v-quiz");s("v-menu","block");}
 
 function startMode(mode){
   const isToets = mode==="toets";
@@ -583,8 +711,8 @@ function startMode(mode){
     questions=buildToets();
   }
 
-  QS={ mode, questions, idx:0, score:0, history:[], isToets, startTime:new Date() };
-  h("v-menu"); h("v-end"); s("v-quiz");
+  QS={ mode, questions, idx:0, score:0, quizLog:[], isToets, startTime:new Date() };
+  h("v-menu"); h("v-end"); s("v-quiz","block");
   $("q-mode-lbl").textContent=MODES[mode].lbl;
   buildBullets();
   renderQ();
@@ -1242,7 +1370,7 @@ function showFB(ok,okMsg,errMsg){
 }
 
 function record(ok,vraag,juist,leerling,cat){
-  QS.history.push({vraagNr:QS.idx+1,formule:vraag,juistAntwoord:juist,antwoordLeerling:leerling,isJuist:ok,categorie:cat});
+  QS.quizLog.push({vraagNr:QS.idx+1,formule:vraag,juistAntwoord:juist,antwoordLeerling:leerling,isJuist:ok,categorie:cat});
   if(ok)QS.score++;
   updBullet(QS.idx,ok);
 }
@@ -1260,8 +1388,8 @@ function nextQ(){
 
 // ── EINDSCHERM ─────────────────────────────────────────────────────────────
 async function showEnd(){
-  h("v-quiz"); s("v-end");
-  const {score,questions,history,isToets,mode}=QS;
+  h("v-quiz"); s("v-end","block");
+  const {score,questions,quizLog,isToets,mode}=QS;
   const total=questions.length;
   const pct=Math.round((score/total)*100);
 
@@ -1273,10 +1401,15 @@ async function showEnd(){
 
   if(window.confetti&&pct>=75)window.confetti({particleCount:80,spread:70,origin:{y:.7}});
 
+  // Reset upload-status
+  h("upload-status");
+  $("upload-status-text").textContent="Bezig met opslaan...";
+  $("upload-spinner").style.display="inline-block";
+
   // Foutenanalyse
-  const fouten=history.filter(h2=>!h2.isJuist);
+  const fouten=quizLog.filter(h2=>!h2.isJuist);
   if(fouten.length>0){
-    s("end-analyse");
+    s("end-analyse","block");
     const list=$("end-fouten"); list.innerHTML="";
     fouten.forEach(f=>{
       const d=document.createElement("div");
@@ -1286,26 +1419,15 @@ async function showEnd(){
     });
   } else h("end-analyse");
 
-  // Opslaan (enkel toets)
-  const sb=$("end-save");
+  // Opslaan enkel bij toets
   if(isToets){
-    s(sb);
-    sb.textContent="⏳ Score opslaan...";
-    sb.style.cssText="background:#eff6ff;color:#2563eb;border-radius:10px;padding:10px;font-size:.85rem;font-weight:700;";
+    s("upload-status","block");
     const ms=new Date()-QS.startTime;
-    const m=Math.floor(ms/60000),ss=((ms%60000)/1000).toFixed(0);
-    const ok=await fbSave({
-      oefening:MODES.toets.save,
-      score,totaal:total,nauwkeurigheid:pct,
-      tijdsduur:`${String(m).padStart(2,"0")}:${String(ss).padStart(2,"0")}`,
-      vragen:history
-    });
-    sb.textContent=ok?"✅ Score opgeslagen in database!":(GUEST?"👤 Gast – score niet opgeslagen":"❌ Opslaan mislukt");
-    sb.style.background=ok?"#f0fdf4":GUEST?"#fefce8":"#fef2f2";
-    sb.style.color=ok?"#15803d":GUEST?"#d97706":"#b91c1c";
-  } else h(sb);
+    const m=Math.floor(ms/60000),ss=String(Math.floor((ms%60000)/1000)).padStart(2,"0");
+    const tijdStr=String(m).padStart(2,"0")+":"+ss;
+    await saveToFirestore(score, total, pct, tijdStr, quizLog);
+  }
 }
-
 
 </script>
 </body>
