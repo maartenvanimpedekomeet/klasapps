@@ -1,1684 +1,957 @@
-Trustpilot Star Icon
-1.6
-
-Claude finished the response
-Welcome, Maarten! I’m Claude.
-Bring me anything—a tough problem, a half-formed idea, something you need to write. We’ll figure it out together.
-
-Where do you want to start?
-
-Ik heb samen met gemini een hele hoop leer-apps en oefeningen gemaakt die ik gebruik op mijn google sites (via ingesloten code) maar het zou handig zijn als ik de resultaten van die apps (bij elke app krijgt de leerling op het einde een score + foutenanalyse) ergens kan opslaan en later bekijken. Nu vraag ik aan de leerlingen om steeds een screenshot naar mij te sturen van hun score maar ik zou graag hebben dat hun resultaten en vooruitgang automatisch ergens kan bijgehouden worden.
-Ter info; ik heb een firebase (ofzoiets), misschien kan dat ervoor gebruikt worden maar dan heb ik ook een app nodig om de resultaten te kunnen bekijken en opvolgen. Ik zag ook manieren om de score door te sturen naar een google sheets maar misschien zijn er nog betere methoden
-
-ik zou ook een extra foutenanalyse willen na het maken van oefeningen. ik zou dus willen dat alle vragen en het antwoord van leerling ook doorgestuurd worden naar de database zodat ik na verloop van tijd (als de leerlingen de oefeningen meerdere keren maken) nog een extra foutenanalyse kan laten lopen.
-
-Ik wil zo weinig mogelijk werk hebben, mijn leerlingen maken de oefeningen online en ik wil achteraf de resultaten en foutenanalyse kunnen bekijken en laten bekijken door ai zodat die een rapport voor mij kan genereren van wat goed en minder goed loopt
-
-Extra probleem: Hoe kan ik er voor zorgen dat het zeker mijn leerlingen zijn die de oefeningen maken en geen vreemde persoon? Mijn klaswebsite met de oefeningen staat gewoon online. Ter info: Mijn leerlingen hebben allen een google-mail adres van de school en werken op chromebooks ingelogd met hun schoolaccount
-
-Geef me enkele tips en bedenkingen bij mijn idee
-
-Show more
-23 mei
-Resultaten bijhouden van leer-apps op Google Sites
-Goed idee! Je hebt al de juiste instincten. Laat me de opties doorlopen en mijn aanbevelingen geven.
-
-Authenticatie: Google Sign-In is jouw oplossing
-Omdat je leerlingen allemaal een school-Google-account hebben, is dit eigenlijk perfect opgelost:
-
-Integreer Google Sign-In in je apps (één knop: "Inloggen met Google")
-Je kan instellen dat enkel accounts van jouw schooldomein (bv. @school.be) toegang krijgen
-De leerling hoeft niets extra te onthouden — ze zijn al ingelogd op hun Chromebook
-Je weet altijd wie de oefening maakte, wanneer, en hoe vaak
-Dit lost je authenticatieprobleem volledig op én koppelt elke score automatisch aan de juiste leerling.
-
-Firebase: al het werk voor jou gedaan
-Je Firebase-keuze is uitstekend. De combinatie Firebase Authentication + Firestore is precies wat je nodig hebt:
-
-Firebase Authentication — regelt de Google Sign-In, gratis, geen server nodig
-
-Firestore (database) — sla per oefening op:
-
-Leerlingnaam + e-mail
-Datum/tijd
-Score
-Alle vragen + antwoorden van de leerling (voor foutenanalyse)
-Welke oefening het was
-Voordelen voor jou: volledig gratis voor kleine schalen, werkt rechtstreeks vanuit je HTML/JS-apps zonder backend, en veilig via beveiligingsregels.
-
-Google Sheets: handig maar beperkter
-Scores doorsturen naar Sheets via Google Apps Script kan, maar heeft nadelen:
-
-Firebase	Google Sheets
-Authenticatie	✅ Ingebouwd	❌ Moeilijk
-Foutenanalyse opslaan	✅ Eenvoudig	⚠️ Omslachtig
-Leesbaar dashboard	✅ Maakbaar	✅ Direct
-AI-rapport genereren	✅ Ideaal	⚠️ Mogelijk
-Onderhoud	Minimaal	Meer werk
-Sheets is verleidelijk omdat je het kent, maar voor wat jij wil (rijke data + AI-analyse) is Firebase beter.
-
-Workflow die ik zou voorstellen
-Leerling opent oefening
-        ↓
-Google Sign-In (automatisch via schoolaccount)
-        ↓
-Maakt oefening
-        ↓
-Score + alle vragen/antwoorden → Firestore
-        ↓
-Jij opent dashboard → ziet resultaten per leerling/klas
-        ↓
-"Genereer rapport" → stuurt data naar Claude API → rapport klaar
-Praktische aanpak
-Stap 1 — Firebase project opzetten (al gedaan?) + Google Sign-In activeren met domeinfilter
-
-Stap 2 — Kleine JS-snippet toevoegen aan elke bestaande app die na afloop de data naar Firestore stuurt. Gemini kan je hierbij helpen, het is telkens ~20 regels code.
-
-Stap 3 — Eén apart leerkrachtendashboard (aparte webpagina, beveiligd) waar jij resultaten ziet, filtert per klas/leerling/oefening, en een AI-rapport kan aanvragen.
-
-Belangrijkste bedenkingen
-GDPR: Scores van leerlingen zijn persoonsgegevens. Zorg dat je schooldirectie/ICT-coördinator dit weet en akkoord is. Firebase slaat data op in de VS tenzij je de Europese regio instelt — dat is een instelling bij aanmaken.
-Offline: Firestore werkt ook offline en synct later — handig als een leerling een slechte verbinding heeft.
-Gemini als bouwpartner: Je kan Gemini de volledige Firebase-integratiecode laten schrijven per app. Als je één app laat werken, is de rest kopieerwerk.
-Wil je dat ik een concreet voorbeeld maak van hoe zo'n score-opslag snippet eruitziet, of een opzet voor het leerkrachtendashboard?
-
-
-<!DOCTYPE html> <html lang="nl"> <head> <meta charset="UTF-8"> <meta name="viewport" content="width=device-width, initial-scale=1.0"> <title>Math Core: Operation 20</title> <script src="https://cdn.tailwindcss.com"></script> <script src="https://cdn.jsdelivr.net/npm/canvas-confet
-
-pasted
-
-Dit is de code voor mijn firebase database:
-
-Firebase multiplayer games - google sites - multiplayer
-
-// Import the functions you need from the SDKs you need
-import { initializeApp } from "firebase/app";
-import { getAnalytics } from "firebase/analytics";
-// TODO: Add SDKs for Firebase products that you want to use
-// https://firebase.google.com/docs/web/setup#available-libraries
-
-// Your web app's Firebase configuration
-// For Firebase JS SDK v7.20.0 and later, measurementId is optional
-const firebaseConfig = {
-  apiKey: "AIzaSyAw_hyqbNXhG-PgXUt3AgFa5T061rPE6CI",
-  authDomain: "tafelsarcade.firebaseapp.com",
-  projectId: "tafelsarcade",
-  storageBucket: "tafelsarcade.firebasestorage.app",
-  messagingSenderId: "691391307663",
-  appId: "1:691391307663:web:bd09ff06d60a4d0136f5fa",
-  measurementId: "G-ES92H97BP5"
-};
-
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
-const analytics = getAnalytics(app);
-
-Dit is de code van 1 van mijn webapps die ik ingesloten heb op mijn google sites:
-
-Probeer er nu voor te zorgen dat mijn leerlingen moeten inloggen met hun google account en dat ik nadien hun scores kan bekijk in de database. 
-Het zou ook handig zijn als ik elke vraag en hun antwoord achteraf kan bekijken en kan laten analyseren. (dus niet enkel de score)
-
-Show more
-23 mei
-Ik ga je app omschrijven naar Firebase + Google Sign-In. Laat me eerst de frontend-design skill lezen voor de styling.
-
-
-Reading frontend design skill
-Reading frontend design skill
-Nu bouw ik de twee bestanden: de aangepaste app + een leerkrachtendashboard.
-
-
-MathCore app with Firebase Auth + Firestore
-MathCore app with Firebase Auth + Firestore
-Nu het leerkrachtendashboard:
-
-
-Created a file, read a file
-Created a file, read a file
-Hier zijn je twee bestanden. Wat er in zit en wat je nog moet doen:
-
-Wat er veranderd is
-App (mathcore-op20-firebase.html)
-
-Google Sign-In vervangt het naamveld. Enkel @bsbodebrug.be accounts worden toegelaten — alle andere worden automatisch uitgelogd.
-De naam en avatar van de leerling worden automatisch ingevuld vanuit hun schoolaccount.
-Firestore vervangt Google Sheets. Per oefening wordt opgeslagen: naam, e-mail, klas, score, tijdsduur, niveauscores én elke individuele vraag met het antwoord van de leerling.
-Dashboard (leerkrachtendashboard.html)
-
-Zelfde Google Sign-In beveiliging (enkel jouw schooldomein).
-Overzichtstabel met alle resultaten, filterbaar op klas, naam en min. score.
-Statistieken bovenaan: aantal resultaten, leerlingen, gemiddelde score, meest gemaakte fout.
-Detailpanel per resultaat: alle 20 vragen met het antwoord van de leerling.
-AI-foutenanalyse knop: stuurt de volledige data naar Claude en geeft je een rapport met sterke punten, patronen in fouten en een aanbeveling.
-Wat je zelf nog moet instellen
-1. Firebase Firestore beveiligingsregels — open je Firebase Console → Firestore → Rules en plak dit:
-
-rules_version = '2';
-service cloud.firestore {
-  match /databases/{database}/documents {
-    match /resultaten/{doc} {
-      allow create: if request.auth != null 
-                    && request.auth.token.email.matches('.*@bsbodebrug.be');
-      allow read: if request.auth != null
-                  && request.auth.token.email.matches('.*@bsbodebrug.be');
-    }
-  }
-}
-2. Firebase Authentication — activeer "Google" als sign-in methode in je Firebase Console → Authentication → Sign-in methods.
-
-3. AI-analyse in het dashboard — de CLAUDE_API_URL variabele bovenaan het dashboard-script wijst naar de Anthropic API. Omdat een API-sleutel nodig is en je die niet publiek wil zetten, zijn er twee opties: een kleine proxy op bijv. Google Cloud Functions, of het dashboard draait lokaal/op een beveiligde pagina. Wil je hiervoor ook hulp?
-
-
-Mathcore op20 firebase
-Code · HTML 
-
-Leerkrachtendashboard
-Code · HTML 
-Als ik bij Mathcore:OP20 op 'inloggen met schoolaccount' klikt gebeurt er niets. 
-Zorg trouwens ook dat kinderen die niet op onze school zitten het spel ook kunnen spelen maar zorg dat hun score niet doorgestuurd wordt naar de database
-
-09:16
-Het probleem is dat de confetti-import via ES module niet werkt samen met de CDN-versie. Ik fix dat én voeg de "gast modus" toe.
-
-
-Viewed 2 files
-Viewed 2 files
-De twee problemen zijn duidelijk: de confetti-import werkt niet als ES module, en de domeinbeperking blokkeert inloggen volledig. Ik herschrijf het bestand volledig met beide fixes.
-
-
-Ran a command, read a file
-Ran a command, read a file
-Twee fixes + de gastmodus zitten er nu in. Wat er veranderd is:
-
-Oorzaak van het probleem: confetti werd tegelijk via <script src> én als ES module import geladen — dat botste. De import is verwijderd, confetti wordt nu gewoon via window.confetti aangeroepen vanuit het module-script, wat correct werkt.
-
-Gast-modus werkt nu zo:
-
-Op het loginscherm staat een tweede optie: naam invullen + "Spelen als gast"
-Gasten spelen volledig normaal, met dezelfde oefeningen en feedback
-Na afloop krijgen ze een amber-melding: "Je speelde als gast – score niet opgeslagen"
-Er wordt niets naar Firestore gestuurd voor gasten
-Leerlingen met een schoolaccount krijgen de groene "Opgeslagen in database!" melding
-Wat betreft inloggen: de knop werkt nu correct. Let op dat Google Sign-In via een popup werkt, dus als de browser popups blokkeert voor jouw Google Sites-pagina moet je die toestaan. Dat is de meest voorkomende reden waarom de knop "niets doet" bij insluitingen in iframes — je kan de app ook als aparte pagina hosten in plaats van in te sluiten als dat problemen blijft geven.
-
-
-Mathcore op20 firebase
-Code · HTML 
-Ik wil hiervoor misschien toch eerst een 2de firebase database opmaken. Help me doorheen het proces.
-
-09:22
-Hier is een stap-voor-stap gids om een nieuwe Firebase database op te zetten.
-
-Stap 1 – Nieuw Firebase project aanmaken
-Ga naar console.firebase.google.com
-Klik op "Add project" (of "Project toevoegen")
-Geef het project een naam, bv. mathcore-resultaten
-Google Analytics: mag je uitschakelen, niet nodig voor dit project
-Klik "Create project" → wacht even tot het klaar is
-Stap 2 – Web-app registreren
-Op de projectpagina klik je op het </> icoontje (Web app)
-Geef de app een naam, bv. mathcore-web
-Firebase Hosting: vinkje laten staan op uit (niet nodig)
-Klik "Register app"
-Je krijgt nu een blok code te zien met firebaseConfig — kopieer dit en bewaar het, je hebt het straks nodig
-Stap 3 – Authentication inschakelen
-Klik links in het menu op "Authentication"
-Klik "Get started"
-Ga naar het tabblad "Sign-in method"
-Klik op "Google" → zet de toggle op Enabled
-Vul bij "Project support email" je eigen e-mailadres in
-Klik "Save"
-Stap 4 – Firestore database aanmaken
-Klik links op "Firestore Database"
-Klik "Create database"
-Kies "Start in production mode" (we schrijven zelf de regels)
-Kies als locatie: eur3 (europe-west) — dit is België/Europa, belangrijk voor GDPR
-Klik "Enable"
-Stap 5 – Beveiligingsregels instellen
-Na het aanmaken kom je op de Firestore-pagina. Klik op het tabblad "Rules" en vervang alles door:
-
-rules_version = '2';
-service cloud.firestore {
-  match /databases/{database}/documents {
-    match /resultaten/{doc} {
-      // Leerling mag zijn eigen resultaat schrijven (enkel schoolaccount)
-      allow create: if request.auth != null
-                    && request.auth.token.email.matches('.*@bsbodebrug\\.be');
-      // Alleen ingelogde schoolaccounts mogen lezen (jij + leerlingen)
-      allow read: if request.auth != null
-                  && request.auth.token.email.matches('.*@bsbodebrug\\.be');
-    }
-  }
-}
-Klik "Publish".
-
-Stap 6 – Authorized domains instellen
-Zodat Google Sign-In werkt op jouw Google Sites-pagina:
-
-Ga naar Authentication → Settings → Authorized domains
-Klik "Add domain"
-Voeg toe: sites.google.com
-Klik "Add"
-Stap 7 – Config in je app plakken
-Open mathcore-op20-firebase.html en zoek dit stuk bovenaan het script:
-
-javascript
-const firebaseConfig = {
-    apiKey:            "AIzaSyAw_hyq...",   // ← oude config
-    ...
-};
-Vervang dat volledig door de nieuwe firebaseConfig die je in stap 2 gekopieerd hebt. Ziet er zo uit:
-
-javascript
-const firebaseConfig = {
-    apiKey:            "AIzaSy...",
-    authDomain:        "mathcore-resultaten.firebaseapp.com",
-    projectId:         "mathcore-resultaten",
-    storageBucket:     "mathcore-resultaten.appspot.com",
-    messagingSenderId: "123456789",
-    appId:             "1:123456789:web:abc..."
-};
-Doe hetzelfde in leerkrachtendashboard.html.
-
-Eens je de nieuwe config hebt, stuur die gerust door en ik pas de bestanden automatisch aan. Of als je ergens vastloopt tijdens een van de stappen, laat het weten!
-
-Alles tot en met stap 6 is gelukt:
-// Import the functions you need from the SDKs you need
-import { initializeApp } from "firebase/app";
-import { getAnalytics } from "firebase/analytics";
-// TODO: Add SDKs for Firebase products that you want to use
-// https://firebase.google.com/docs/web/setup#available-libraries
-
-// Your web app's Firebase configuration
-// For Firebase JS SDK v7.20.0 and later, measurementId is optional
-const firebaseConfig = {
-  apiKey: "AIzaSyCnQDVVAlK6jE-PPUUediRJMTbN0xqrLDE",
-  authDomain: "klaswebsite-database.firebaseapp.com",
-  projectId: "klaswebsite-database",
-  storageBucket: "klaswebsite-database.firebasestorage.app",
-  messagingSenderId: "42912327282",
-  appId: "1:42912327282:web:f13f2c706f6c42c115c4eb",
-  measurementId: "G-V5MC9BY19Q"
-};
-
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
-const analytics = getAnalytics(app);
-
-Pas jij nu de app aan aub?
-
-Show more
-09:33
-
-Viewed 2 files, ran a command, edited a file
-Viewed 2 files, ran a command, edited a file
-Nu het dashboard:
-
-
-Ran a command, viewed a file, edited a file
-Ran a command, viewed a file, edited a file
-Beide bestanden zijn bijgewerkt naar je nieuwe klaswebsite-database project. De oude tafelsarcade config is volledig vervangen in zowel de app als het dashboard.
-
-Snelle test om te controleren of alles werkt:
-
-Open mathcore-op20-firebase.html in je browser
-Klik op "Inloggen met schoolaccount" — er zou nu een Google-popup moeten verschijnen
-Log in met je eigen @bsbodebrug.be account
-Maak de oefening volledig af
-Ga naar je Firebase Console → Firestore Database → je zou een document moeten zien verschijnen onder de collectie resultaten
-Als de popup nog steeds niet opent, is dat waarschijnlijk omdat de browser popups blokkeert voor die pagina — je ziet dan een klein icoontje rechts in de adresbalk om het toe te staan.
-
-
-Mathcore op20 firebase
-Code · HTML 
-
-Leerkrachtendashboard
-Code · HTML 
-Als ik op het voorbaald van de app hiernaast klik op 'inloggen met schoolaccount' gebeurt er niets, als ik klik op spelen als gast gebeurt er ook niets. Is dit normaal?
-
-09:35
-Ja, dat is volledig normaal! De preview hier in Claude werkt in een beveiligd iframe dat geen verbinding mag maken met Firebase of Google — dus knoppen die netwerk- of popupverkeer nodig hebben doen niets in de preview.
-
-Zo test je de app correct:
-
-Download het bestand via de link hierboven
-Sla het op je computer op
-Open het bestand dubbelklik in je browser (Chrome, Edge...)
-Daar werkt alles wél — Google popup, opslaan in Firebase, confetti, alles
-Voor de gastmodus zou zelfs een lokale test al meteen moeten werken zonder Firebase. De Google Sign-In heeft wel internet nodig, maar dat heeft je browser gewoon als je het lokaal opent.
-
-Eens je het lokaal getest hebt en wil inbouwen in Google Sites: plak de volledige HTML-code in een "Insluiten" blok op je Google Sites pagina. Let er dan op dat je in de Firebase Console onder Authentication → Settings → Authorized domains ook sites.google.com hebt toegevoegd (dat deed je al in stap 6), anders werkt de Google login niet vanuit Sites.
-
-Als ik het start vanaf mijn computer dan krijg ik de error: Inloggen mislukt: Firebase: Error (auth/unauthorized-domain).
-
-09:37
-Dat is een bekende Firebase-fout. Je lokale bestand draait op file:// en dat domein staat niet in je Firebase whitelist. Makkelijk op te lossen:
-
-Ga naar je Firebase Console:
-
-Klik links op Authentication
-Klik op het tabblad Settings
-Scroll naar Authorized domains
-Klik "Add domain"
-Voeg toe: localhost
-Klik "Add"
-Daarna in je browser het bestand niet openen via dubbelklik (dat geeft file://), maar via een lokale server. Dat klinkt ingewikkeld maar is heel simpel:
-
-Makkelijkste manier — VS Code:
-
-Als je VS Code hebt, installeer de extensie "Live Server"
-Rechtsklik op je HTML-bestand → "Open with Live Server"
-De browser opent op http://localhost:5500/... → Firebase accepteert dit
-Alternatief — Python (als je dat hebt):
-
-cd map-waar-je-bestand-staat
-python -m http.server 8000
-Dan surfen naar http://localhost:8000/mathcore-op20-firebase.html
-
-Voor de uiteindelijke versie op Google Sites heb je dit niet nodig — daar werkt het gewoon want sites.google.com staat al in je authorized domains. Lokaal testen is enkel voor jezelf om te controleren.
-
-dat is te ingewikkeld. Leg me uit hoe ik die hml file nu op mijn google sites werkend krijg
-
-09:38
-Heel simpel, volg deze stappen:
-
-Stap 1 – Open je HTML-bestand
-
-Open mathcore-op20-firebase.html in een teksteditor (Kladblok, Notepad, of VS Code). Selecteer alles (Ctrl+A) en kopieer (Ctrl+C).
-
-Stap 2 – Ga naar je Google Sites pagina
-
-Open je Google Sites en ga naar de pagina waar je de app wil plaatsen
-Klik rechtsboven op het potloodpictogram om te bewerken
-Stap 3 – Voeg een "Insluiten" blok toe
-
-Klik rechts in het paneel op "Insluiten" (of "Embed")
-Klik op het tabblad "Code insluiten"
-Plak je gekopieerde HTML-code daar in (Ctrl+V)
-Klik "Volgende" en dan "Invoegen"
-Stap 4 – Publiceer
-
-Klik rechtsboven op "Publiceren" — en de app staat live op je Google Sites.
-
-Belangrijk: Google Sites voert de code uit vanaf sites.google.com, en dat domein heb je al toegevoegd aan Firebase in stap 6. Dus de Google login zou daar gewoon moeten werken.
-
-Probeer het en laat weten wat er gebeurt!
-
-Ik heb het op mijn google sites geplakt maar ik krijg nog steeds de error:
-Inloggen mislukt: Firebase: Error (auth/unauthorized-domain).
-
-Dit is de website waarop de app nu staat:
-https://sites.google.com/bsbodebrug.be/meestermaarten/test
-
-Als gast inloggen lijkt wel te lukken
-
-09:51
-Het probleem is dat je site draait op bsbodebrug.be als subdomein, niet op het gewone sites.google.com. Dat specifieke domein moet je nog toevoegen.
-
-Ga naar Firebase Console:
-
-Authentication → Settings → Authorized domains
-Klik "Add domain"
-Voeg toe: sites.google.com (als dat er nog niet staat)
-Voeg ook toe: bsbodebrug.be
-Klik telkens op "Add"
-Het exacte domein dat Firebase ziet is bsbodebrug.be omdat je school een aangepast domein heeft ingesteld op Google Sites. Dat maakt het iets anders dan een gewone sites.google.com URL.
-
-Probeer daarna de pagina te herladen en opnieuw in te loggen!
-
-Inloggen mislukt: Firebase: Error (auth/unauthorized-domain).
-
-Dit is de website waarop de app staat: https://sites.google.com/bsbodebrug.be/meestermaarten/test
-
-Als ik op de knop 'inloggen met schoolaccount' klik zie ik snel een popup verschijnen maar die verdwijnt meteen weer en dan krijg ik de error 'inloggen mislukt'. 
-
-Inloggen als gast lijkt wel te werken
-
-09:52
-Het probleem is dat Google Sites je HTML insluit in een iframe en Firebase's signInWithPopup werkt niet goed in iframes. De oplossing is overschakelen naar signInWithRedirect — de gebruiker wordt dan even doorgestuurd naar Google en komt terug op de pagina.
-
-
-Viewed 4 files, edited 3 files, read a file
-Viewed 4 files, edited 3 files, read a file
-Gedaan! Het verschil is belangrijk om te begrijpen:
-
-Vroeger: popup-venster → werkt niet in Google Sites iframes
-Nu: redirect → de pagina stuurt de leerling even door naar Google, en komt daarna automatisch terug op de oefening met de login afgehandeld
-Wat de leerling nu ziet:
-
-Klik op "Inloggen met schoolaccount"
-De pagina gaat even naar Google (account kiezen)
-Google stuurt terug naar de oefening
-Ze zijn ingelogd en kunnen starten
-Kopieer de nieuwe code opnieuw naar je Google Sites pagina (de code is veranderd), publiceer, en probeer opnieuw!
-
-
-Mathcore op20 firebase
-Code · HTML 
-Dit lukt niet: Inloggen mislukt: Firebase: Error (auth/unauthorized-domain).
-Ik zie ook geen pagina van google verschijnen
-
-09:56
-Het probleem zit hem in Google Sites zelf — dat blokkeert alle redirects vanuit iframes. Dit is een fundamentele beperking van Google Sites die we niet kunnen omzeilen met code.
-
-De enige echte oplossing: de app op een aparte pagina hosten, buiten het iframe.
-
-De makkelijkste gratis optie voor jou is GitHub Pages. Geen code kennis nodig, volledig gratis.
-
-Stap 1 – GitHub account aanmaken
-Ga naar github.com → klik "Sign up" → maak een gratis account aan.
-
-Stap 2 – Nieuw repository aanmaken
-Klik rechtsboven op het + icoontje → "New repository"
-Geef het een naam, bv. mathcore
-Zet op Public
-Vink aan: "Add a README file"
-Klik "Create repository"
-Stap 3 – HTML bestand uploaden
-Klik op "Add file" → "Upload files"
-Sleep je mathcore-op20-firebase.html bestand daarheen
-Hernoem het bestand naar index.html (belangrijk!)
-Klik "Commit changes"
-Stap 4 – GitHub Pages inschakelen
-Klik op "Settings" (tandwieltje bovenaan)
-Klik links op "Pages"
-Onder "Branch": kies main → klik "Save"
-Wacht 1-2 minuten → je app staat live op: https://jouwgebruikersnaam.github.io/mathcore/
-Stap 5 – Dat domein toevoegen aan Firebase
-Firebase Console → Authentication → Settings → Authorized domains
-Voeg toe: jouwgebruikersnaam.github.io
-Stap 6 – Linken vanuit Google Sites
-In plaats van de code in te sluiten, zet je gewoon een knop of link op je Google Sites pagina die naar de GitHub Pages URL verwijst. De app opent dan in een apart tabblad — en daar werkt alles perfect.
-
-Wil je hulp bij een van deze stappen?
-
-1779612949728_image.png
-Wat is de link?
-
-10:55
-Ik zie dat GitHub Pages nog "queued" staat — het is nog niet helemaal klaar. Wacht nog 1-2 minuutjes en je link wordt:
-
-https://maartenvanimpedekomeet.github.io/test1/
-
-Controleer of het klaar is via Settings → Pages — daar verschijnt een groene balk met de link van zodra het live is.
-
-Vergeet daarna niet die URL toe te voegen aan Firebase: Authentication → Settings → Authorized domains → Add domain → maartenvanimedekomeet.github.io
-
-Dat lijkt te werken! Hoe kan ik nu de scores bekijken?
-
-10:59
-Top! Nu moet je het leerkrachtendashboard ook op GitHub Pages zetten.
-
-Stap 1 – Dashboard uploaden naar GitHub
-Ga naar je repository op GitHub: github.com/maartenvanimpedekomeet/test1
-Klik op "Add file" → "Upload files"
-Upload het bestand leerkrachtendashboard.html
-Klik "Commit changes"
-Stap 2 – Dashboard openen
-Je dashboard is dan bereikbaar op:
-
-https://maartenvanimpedekomeet.github.io/test1/leerkrachtendashboard.html
-
-Stap 3 – Inloggen op het dashboard
-Log in met je eigen @bsbodebrug.be account — je ziet dan automatisch alle resultaten van je leerlingen verschijnen.
-
-Laat weten als het werkt! Dan kunnen we daarna ook de AI-foutenanalyse activeren zodat je met één klik een rapport kan genereren per leerling.
-
-Super!
-Dat lijkt al te werken!
-
-Je moet wel nog enkele dingen aanpassen:
-
-het leerkrachtendashboard mag enkel toegankelijk zijn voor maarten.vanimpe@bsbodebrug.be
-zorg er bij de apps voor dat de leerlingen geen klas moeten aanduiden, door in te loggen met hun google account is dat niet meer nodig
-zorg dat er in het leerlingendashboard bij elke ingediende score ook meteen een korte foutenanalyse staat van de score. (max 2 zinnen)
-verwijder in het dashboard de klassen gezien dit toch niet nodig is.
-zorg dat in het dashboard ook zichtbaar is van welke oefening de resultaten afkomstig zijn. Nu zie ik enkel een score. De bedoeling is dat ik ongeveer 50 verschillende apps ga publiceren en dat alle apps hun score doorsturen. Ik wil achteraf makkelijk kunnen sorteren ahv de app en misschien ook aan de hand van het vak (wiskunde / nederlands / wo / ...)
-Show more
-11:07
-Veel aanpassingen, ik doe ze allemaal in één keer.
-
-
-Viewed 3 files
-Viewed 3 files
-Nu de app aanpassen (klas verwijderen, vak toevoegen aan record):
-
-
-Ran 3 commands, edited a file
-Ran 3 commands, edited a file
-Nu het dashboard — veel meer werk. Ik herschrijf het volledig:
-
-
-Ran a command, read a file
-Ran a command, read a file
-Beide bestanden zijn klaar. Overzicht van alle wijzigingen:
-
-App (mathcore-op20-firebase.html)
-
-Klassenkeuzelijst volledig verwijderd — leerlingen starten meteen na inloggen
-Veld vak: "Wiskunde" wordt automatisch meegestuurd naar de database — bij elke nieuwe app pas je dit aan naar het juiste vak
-Dashboard (leerkrachtendashboard.html)
-
-Enkel maarten.vanimpe@bsbodebrug.be kan inloggen — iedereen anders wordt meteen uitgelogd
-Klassen volledig verwijderd
-Kolommen Vak en Oefening toegevoegd aan de tabel
-Filter op vak én op oefening (vult zich automatisch in op basis van de data)
-Korte foutenanalyse staat nu rechtstreeks in elke rij van de tabel (max 2 zinnen, geen AI nodig)
-Klik je op een rij → detail panel opent met alle vragen én een knop voor een uitgebreid AI-rapport
-Belangrijk voor je volgende apps: in elke nieuwe app die je maakt, verander je twee regels in de Firestore-opslag:
-
-javascript
-oefening: "MathCore OP20",   // ← naam van de oefening
-vak:       "Wiskunde",        // ← Wiskunde / Nederlands / WO / Frans / Andere
-Zo kan je in het dashboard altijd filteren per vak of per oefening.
-
-Upload beide bestanden naar GitHub om ze live te zetten!
-
-
-Mathcore op20 firebase
-Code · HTML 
-
-Leerkrachtendashboard
-Code · HTML 
-De mathcore app: lijkt goed te werken; ik moet inderdaad geen klas meer ingeven! Super!
-
-Het leerkrachtendashboard:
-
-bovenaan kan ik nog steeds zoeken op 'klassen' dus dat mag weg. Laat mij zoeken / sorteren op: naam / vak / oefening / schooljaar (van september tot september: dus bv schooljaar 2025-2026) / min score in % / max score in %
-ik zie in het dashboard ook geen korte foutenanalyse bij de toetsen die al gemaakt zijn. Ik zie enkel:DATUM leerling KLAS SCORE tijd FOUTEN. Ik wil dat er onderaan een kort tekstje komt zoals bv: zeer goed / nog veel fouten bij het aftrekken zonder brug / lagere score dan klasgenoten / hoogste score van de klas / ....
-11:54
-Ik pas het dashboard aan met alle gewenste wijzigingen.
-
-
-Viewed 2 files
-Viewed 2 files
-Het dashboard ziet er al goed uit qua structuur — de filters voor schooljaar, min/max score staan er al in, en de korteFoutenanalyse functie bestaat ook al. Het probleem is dat de tabel de kolom "Korte analyse" toont maar de logica in het midden van het bestand werd afgekapt. Ik lees dat deel nu:
-
-
-Read truncated middle section
-Read truncated middle section
-Het dashboard is eigenlijk al correct — de logica staat er in. Het probleem is dat de vorige versie op GitHub nog de oude code heeft zonder de analyse-kolom. Ik hoef alleen de HTML-tabelheader te controleren — die toont nog "KLAS" in de oude versie. Laat me controleren wat er nu exact in de tabelheader staat:
-
-
-Check table headers in current file
-Check table headers in current file
-Het bestand is al correct — geen klas, wel korte analyse. Het probleem is gewoon dat je de oude versie nog op GitHub hebt staan. Je moet het nieuwe bestand opnieuw uploaden. Maar laat me eerst ook de filterrij nog eens checken — ik zag dat "filter-score" nog in de code zat maar nu "filter-min" en "filter-max" zijn:
-
-
-Check filters HTML
-Check filters HTML
-Het bestand is al volledig correct! Geen "Klas" filter, alle gewenste filters aanwezig, korte analyse in de tabel. Het probleem is simpelweg dat je de oude versie op GitHub hebt staan. Je hoeft alleen het bestand opnieuw te uploaden.
-
-
-Presented file
-Presented file
-Download dit bestand en upload het opnieuw naar GitHub ter vervanging van de oude versie:
-
-Ga naar github.com/maartenvanimpedekomeet/test1
-Klik op leerkrachtendashboard.html
-Klik op het potloodicoontje (Edit) rechtsboven
-Klik op "..." → "Delete file" — of beter: klik op "Upload files", sleep het nieuwe bestand erin, en GitHub vervangt het automatisch
-Klik "Commit changes"
-Na 1-2 minuten is de nieuwe versie live met:
-
-Filters: naam / vak / oefening / schooljaar / min% / max% — geen klas meer
-Schooljaar wordt automatisch berekend vanuit de datum (sept→aug)
-Korte analyse per rij: bv. "Lage score — veel moeilijkheden bij deze oefening. Scoort 15% onder het klasgemiddelde (72%)." of "Foutloze score én de hoogste van de klas!"
-De analyse vergelijkt ook automatisch met klasgenoten die dezelfde oefening maakten
-
-Leerkrachtendashboard
-Code · HTML 
-Super!
-Dit hier is de oefening die ik gemaakt had rond gewicht. 
-Zet deze ook om zoals de oefening hierboven zodat de scores ed in het dashboard komen.
-Zorg dat elk onderdeel in een aparte categorie in het dashboard komt te staan:
-wiskunde - gewicht:aflezen
-wiskunde - gewicht: maten herleiden
-wiskunde - gewicht: optellen en aftrekken
-wiskunde - gewicht : bruto netto tarra
-wiskunde - gewicht: toets (mix)
-
-Ik zal de code die je maakt dan ook uploaden naar github. 
-Zorg er opnieuw voor dat leerlingen moeten inloggen en dat gast-gebruikers niet worden opgeslagen in de database.
-
-Show more
-15:16
-Kan je de code van de gewicht-oefening hier plakken of uploaden? Dan pas ik die aan met Firebase login, de juiste categorieën en alles wat nodig is.
-
-
-<!DOCTYPE html> <html lang="nl"> <head> <meta charset="UTF-8"> <meta name="viewport" content="width=device-width, initial-scale=1.0"> <title>De Gewichten Trainer</title> <script src="https://cdn.tailwindcss.com"></script> <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@
-
-pasted
-
-15:16
-Ik ga deze app omzetten met Firebase login, gast-modus en de juiste categorieën. Dit is een grote omzetting dus ik doe het zorgvuldig.
-
-
-Ran a command, read a file
-Ran a command, read a file
-Klaar! Upload dit bestand naar GitHub naast je andere bestanden. Wat er in zit:
-
-Login — zelfde systeem als MathCore: schoolaccount via Google redirect, of naam invullen en als gast spelen. Gasten zien hun score maar er wordt niets opgeslagen.
-
-5 aparte categorieën in het dashboard — elke modus stuurt een andere naam door als oefening:
-
-Wiskunde - Gewicht: Aflezen
-Wiskunde - Gewicht: Maten Herleiden
-Wiskunde - Gewicht: Optellen en Aftrekken
-Wiskunde - Gewicht: Bruto Netto Tarra
-Wiskunde - Gewicht: Toets (Mix)
-Het vak is altijd Wiskunde, dus in het dashboard kan je filteren op vak → Wiskunde, en daarna op oefening om precies te zien wie welke deeltoets maakte. Elke individuele vraag wordt ook volledig opgeslagen met het antwoord van de leerling, of er een hint gebruikt werd, en hoeveel tijd de leerling nam per vraag.
-
-Voor toekomstige apps — het patroon is nu duidelijk. In elke nieuwe app verander je enkel:
-
-javascript
-vak:      "Wiskunde",           // of Nederlands / WO / Frans
-oefening: "Naam van de oefening"
-
-Gewichten trainer firebase
-Code · HTML 
-
-Cijferen-met-kommagetallen.html
-html
-
-Pas nu deze app rond cijferen met kommagetallen aan zoals hierboven
-
-login-view toevoegen (schoolaccount + gast)
-de oefeningen behouden zoals ze zijn (qua inhoud, uitzicht, werking, ...)
-Firebase module script integreren
-sessietellers toevoegen
-per oefening detailhistoriek toevoegen
-opslag naar collectie resultaten
-oefeningnaam dynamisch op basis van gekozen modus
-alleen @bsbodebrug.be opslaan
-gastmodus zonder opslag
-Show less
-22:16
-Laat me eerst de app lezen.
-
-
-Viewed 3 files
-Viewed 3 files
-Nu heb ik alles. De app heeft al een Firebase-structuur maar met placeholder config en signInWithPopup. Ik vervang die volledig met de juiste config, signInWithRedirect, gast-flow zonder opslag, en sla correct op met vak/oefening velden die het dashboard verwacht.
-
-
-Ran a command, read a file
-Ran a command, read a file
-Klaar! Upload dit naar GitHub. Hier is een overzicht van alle wijzigingen:
-
-Login — signInWithPopup vervangen door signInWithRedirect (werkt in Google Sites). Gast-login vraagt nu eerst een naam. Vreemd domein → meteen uitgelogd met foutmelding.
-
-Navbar — bij een gast verschijnt een amber badge met de gekozen naam. Bij een schoolleerling verschijnt de gewone profielbadge.
-
-Sessietellers — vragenMatrix registreert per som: formule, antwoord leerling, juist antwoord, juist/fout, en denktijd in seconden.
-
-Opslag in Firestore — enkel voor @bsbodebrug.be accounts. De record bevat:
-
-vak: "Wiskunde" en oefening: "Wiskunde - Cijferen: ..." zodat het dashboard correct filtert
-score, totaal, nauwkeurigheid, tijdsduur — zelfde structuur als de andere apps
-vragen[] — de volledige detailhistoriek per som, leesbaar door de AI-analyse in het dashboard
-5 aparte oefeningen in het dashboard:
-
-Wiskunde - Cijferen: Optellen zonder overschrijding
-Wiskunde - Cijferen: Optellen met overschrijding
-Wiskunde - Cijferen: Aftrekken zonder ontlenen
-Wiskunde - Cijferen: Aftrekken met ontlenen
-Wiskunde - Cijferen: Mix (alles door elkaar)
-
-Cijferen kommagetallen firebase
-Code · HTML 
-
-Cijferen kommagetallen.html
-html
-
-Sorry, dit was de verkeerde versie van de app. Ik wil dat je deze aanpast.
-5 aparte oefeningen in het dashboard:
-
-Wiskunde - Cijferen: Optellen zonder overschrijding
-Wiskunde - Cijferen: Optellen met overschrijding
-Wiskunde - Cijferen: Aftrekken zonder ontlenen
-Wiskunde - Cijferen: Aftrekken met ontlenen
-Wiskunde - Cijferen: Mix (alles door elkaar)
-
-login-view toevoegen (schoolaccount + gast)
-de oefeningen behouden zoals ze zijn (qua inhoud, uitzicht, werking, ...)
-Firebase module script integreren
-sessietellers toevoegen
-per oefening detailhistoriek toevoegen
-opslag naar collectie resultaten
-oefeningnaam dynamisch op basis van gekozen modus
-alleen @bsbodebrug.be opslaan
-gastmodus zonder opslag
-Show more
-22:23
-
-Read the new cijferen app
-Read the new cijferen app
-Dit is een HTML-bestand dat als tekst opgeslagen is (HTML-entiteiten zoals &lt; in plaats van echte code). Ik lees het truncated deel ook en extraheer dan de echte code.
-
-
-Viewed 3 files
-Viewed 3 files
-Nu heb ik alles. Dit is de originele simpele versie (geen Tailwind, eigen CSS, plain JS). Ik bouw die nu exact na met Firebase toegevoegd.
-
-
-Write complete cijferen app preserving original design + adding Firebase
-Write complete cijferen app preserving original design + adding Firebase
-
-You are out of free messages until 3:10 AM
-Get more
-
-
-
-
-Claude is AI and can make mistakes. Please double-check responses.
-
-
-raw
-Cijferen kommagetallen firebase · HTML
 <!DOCTYPE html>
 <html lang="nl">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cijferen met Kommagetallen</title>
+    <title>Cijferend Optellen en Aftrekken met Kommagetallen</title>
     <style>
-        :root {
-            --primary-color: #2196F3;
-            --secondary-color: #FFC107;
-            --success-color: #4CAF50;
-            --error-color: #F44336;
-            --bg-color: #f8f9fa;
-            --grid-border: #999;
-            --color-h: rgba(156,39,176,0.1);
-            --color-t: rgba(255,152,0,0.1);
-            --color-E: rgba(255,235,59,0.2);
-            --color-T: rgba(76,175,80,0.2);
-            --color-H: rgba(33,150,243,0.2);
-            --color-D: rgba(244,67,54,0.2);
-        }
- 
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: var(--bg-color);
-            display: flex;
-            justify-content: center;
-            align-items: flex-start;
-            min-height: 100vh;
-            margin: 0;
-            padding: 20px;
-            box-sizing: border-box;
-        }
- 
-        .container {
-            background: white;
-            padding: 30px;
-            border-radius: 20px;
-            box-shadow: 0 15px 35px rgba(0,0,0,0.1);
-            width: 100%;
-            max-width: 850px;
-            text-align: center;
-        }
- 
-        h1 { color: #2c3e50; margin-bottom: 20px; font-size: 1.6rem; }
- 
-        /* ── LOGIN SCHERM ── */
-        #loginSectie {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 16px;
-            padding: 20px 0;
-        }
-        .login-icon {
-            font-size: 3rem;
-            background: #e3f2fd;
-            border-radius: 20px;
-            width: 80px; height: 80px;
-            display: flex; align-items: center; justify-content: center;
-            margin: 0 auto 10px;
-        }
-        .login-subtitle {
-            color: #546e7a;
-            font-size: 0.95rem;
-            max-width: 380px;
-            line-height: 1.5;
-        }
-        .btn-google {
-            background: #2c3e50;
-            color: white;
-            border: none;
-            border-radius: 12px;
-            padding: 14px 28px;
-            font-size: 1rem;
-            font-weight: bold;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            transition: background 0.2s;
-            width: 100%;
-            max-width: 360px;
-            justify-content: center;
-        }
-        .btn-google:hover { background: #1a252f; }
-        .divider {
-            display: flex; align-items: center; gap: 12px;
-            color: #aaa; font-size: 0.85rem; width: 100%; max-width: 360px;
-        }
-        .divider::before,.divider::after { content:''; flex:1; height:1px; background:#e0e0e0; }
-        .gast-box {
-            background: #f9f9f9;
-            border: 1px solid #e0e0e0;
-            border-radius: 12px;
-            padding: 16px;
-            width: 100%; max-width: 360px;
-            text-align: left;
-            box-sizing: border-box;
-        }
-        .gast-box label { font-size: 0.75rem; font-weight: bold; color: #888; text-transform: uppercase; letter-spacing: 0.05em; display: block; margin-bottom: 6px; }
-        .gast-box input {
-            width: 100%; padding: 10px 14px;
-            border: 1px solid #ddd; border-radius: 8px;
-            font-size: 0.95rem; font-weight: 600;
-            box-sizing: border-box; outline: none;
-        }
-        .gast-box input:focus { border-color: #FFC107; }
-        .btn-gast {
-            background: #eceff1; color: #546e7a;
-            border: none; border-radius: 12px;
-            padding: 12px 28px; font-size: 0.95rem; font-weight: 600;
-            cursor: pointer; transition: background 0.2s;
-            width: 100%; max-width: 360px;
-        }
-        .btn-gast:hover { background: #cfd8dc; }
-        #auth-error {
-            background: #ffebee; border: 1px solid #ffcdd2;
-            color: #c62828; border-radius: 10px;
-            padding: 10px 16px; font-size: 0.85rem; font-weight: 600;
-            display: none; max-width: 360px; width: 100%;
-        }
- 
-        /* ── GEBRUIKERSBADGE ── */
-        #userBadge {
-            display: none;
-            align-items: center;
-            gap: 10px;
-            background: #f1f8ff;
-            border: 1px solid #d0e8ff;
-            border-radius: 12px;
-            padding: 8px 16px;
-            margin: 0 auto 20px;
-            width: fit-content;
-        }
-        #userBadge .avatar {
-            width: 32px; height: 32px;
-            background: var(--primary-color);
-            border-radius: 8px;
-            color: white; font-weight: bold; font-size: 0.85rem;
-            display: flex; align-items: center; justify-content: center;
-        }
-        #userBadge .info { text-align: left; }
-        #userBadge .info .name { font-weight: bold; font-size: 0.9rem; color: #2c3e50; }
-        #userBadge .info .email { font-size: 0.75rem; color: #888; }
-        #userBadge .btn-logout {
-            background: none; border: none; cursor: pointer;
-            color: #aaa; font-size: 0.85rem; padding: 4px 8px;
-            border-left: 1px solid #ddd; margin-left: 4px;
-        }
-        #userBadge .btn-logout:hover { color: #e53935; }
-        #gastBadge {
-            display: none;
-            background: #fff8e1; border: 1px solid #ffe082;
-            border-radius: 10px; padding: 6px 14px;
-            font-size: 0.8rem; font-weight: bold; color: #f57c00;
-            margin: 0 auto 20px; width: fit-content;
-        }
- 
-        /* ── PROGRESS / HARTEN ── */
-        #progressContainer { display: none; flex-direction: column; align-items: center; margin-bottom: 25px; gap: 8px; }
-        #niveauLabel { font-size: 0.85rem; font-weight: bold; color: #555; background: #eceff1; padding: 6px 16px; border-radius: 25px; text-transform: uppercase; }
-        #progressSectie { display: flex; justify-content: center; gap: 12px; font-size: 2.2rem; }
-        .heart { color: #e0e0e0; transition: color 0.3s, transform 0.2s; }
-        .heart.filled { color: #ff4081; transform: scale(1.1); }
- 
-        /* ── MENU ── */
-        #menuSectie { display: flex; flex-direction: column; gap: 12px; }
-        #eindSectie { display: none; flex-direction: column; gap: 12px; }
- 
-        .menu-btn {
-            padding: 18px; font-size: 1.05rem;
-            background: white; border: 2px solid var(--primary-color);
-            color: var(--primary-color); border-radius: 12px;
-            cursor: pointer; transition: all 0.2s;
-            text-align: left; display: flex; align-items: center; gap: 15px;
-        }
-        .menu-btn:hover { background: var(--primary-color); color: white; transform: translateY(-2px); }
- 
-        /* ── OEFENING ── */
-        #oefeningSectie { display: none; }
- 
-        .opgave-box { background: #e3f2fd; padding: 25px; border-radius: 15px; margin-bottom: 30px; border: 2px dashed #90caf9; }
-        .instruction { font-size: 1.1rem; color: #455a64; margin-bottom: 15px; font-weight: 500; min-height: 1.5em; }
-        .opgave-display { font-size: 2.5rem; font-weight: 700; user-select: none; display: flex; justify-content: center; align-items: center; gap: 12px; flex-wrap: wrap; color: #1a237e; }
-        .number-group { display: flex; align-items: center; }
-        .digit { cursor: pointer; padding: 2px 5px; border-radius: 6px; transition: all 0.2s; border: 2px solid transparent; }
-        .digit:hover { background: #bbdefb; border-color: #64b5f6; }
-        .digit.selected { background: var(--secondary-color) !important; border-color: #fbc02d !important; color: #000; }
-        .comma-static { padding: 0 2px; }
- 
-        #cijferSectie { display: none; margin-top: 25px; animation: fadeIn 0.6s ease; }
-        @keyframes fadeIn { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
- 
-        .cijfer-table { margin: 0 auto; border-collapse: collapse; }
-        .cijfer-table td { width: 50px; height: 50px; border: 1px solid var(--grid-border); position: relative; padding: 0; text-align: center; }
- 
-        .col-D { background-color: var(--color-D); }
-        .col-H { background-color: var(--color-H); }
-        .col-T { background-color: var(--color-T); }
-        .col-E { background-color: var(--color-E); }
-        .col-komma { background-color: #fff; width: 20px !important; border: none !important; font-weight: bold; font-size: 1.8rem; }
-        .col-tienden { background-color: var(--color-t); }
-        .col-honderdsten { background-color: var(--color-h); }
- 
-        .carry-row { height: 60px !important; display: none; }
-        .carry-row td { border: none !important; }
-        .carry-row input { width: 38px; height: 38px; border-radius: 50%; border: 2px solid #bbb; color: #d84315; font-weight: bold; text-align: center; background: white; font-size: 1rem; outline: none; }
- 
-        .input-cell { width: 100%; height: 100%; border: none; text-align: center; font-size: 1.4rem; background: transparent; outline: none; color: #333; }
-        .input-cell:focus { background-color: rgba(255,255,255,0.5); }
-        .result-row { border-top: 4px solid #2c3e50; visibility: hidden; }
-        .operator-cell { font-size: 1.8rem; font-weight: bold; border: none !important; width: 40px !important; }
- 
-        .btn-group { margin-top: 35px; display: flex; gap: 15px; justify-content: center; }
-        button { padding: 14px 30px; font-size: 1.1rem; border: none; border-radius: 10px; cursor: pointer; font-weight: bold; transition: transform 0.1s, background 0.2s; }
-        button:active { transform: scale(0.98); }
-        .btn-check { background: var(--success-color); color: white; }
-        .btn-next { background: var(--primary-color); color: white; display: none; }
-        .btn-stop { background: #eceff1; color: #546e7a; font-size: 0.85rem; padding: 8px 18px; margin-bottom: 10px; }
-        .btn-stop:hover { background: #ffebee; color: #e53935; }
- 
-        #feedback { margin-top: 25px; font-weight: bold; font-size: 1.1rem; min-height: 30px; }
- 
-        .is-correct { background-color: #c8e6c9 !important; }
-        .is-wrong   { background-color: #ffcdd2 !important; }
- 
-        .stats-box { background: #f1f8ff; padding: 25px; border-radius: 15px; margin: 20px 0; text-align: left; border: 1px solid #d0d7de; line-height: 2; }
- 
-        /* Upload status */
-        #db-status-box {
-            background: #f5f5f5; border: 1px solid #e0e0e0;
-            border-radius: 12px; padding: 14px;
-            font-size: 0.85rem; font-weight: 600;
-            display: flex; align-items: center; justify-content: center; gap: 8px;
-            color: #888; margin: 10px 0;
-        }
-        /* ── LOGIN ── */
-        #login-screen {
-            position:fixed; inset:0; z-index:9999;
-            background:linear-gradient(135deg,#4338ca 0%,#6d28d9 60%,#7c3aed 100%);
-            display:flex; align-items:center; justify-content:center; padding:20px;
-        }
-        #login-screen.hidden { display:none!important; }
-        .login-card {
-            background:white; border-radius:2rem; padding:2.5rem 2rem;
-            width:100%; max-width:380px;
-            box-shadow:0 25px 50px rgba(0,0,0,0.25); text-align:center;
-        }
-        .login-logo {
-            width:80px; height:80px; background:#ede9fe; border-radius:1.5rem;
-            display:flex; align-items:center; justify-content:center;
-            margin:0 auto 1.25rem; font-size:2.5rem;
-            box-shadow:0 4px 16px rgba(99,102,241,0.2);
-        }
-        .login-input {
-            width:100%; padding:14px 16px; border:2px solid #e5e7eb; border-radius:1rem;
-            font-family:inherit; font-size:1rem; font-weight:600; color:#374151;
-            margin-bottom:10px; outline:none; transition:border-color .2s; text-align:center;
-        }
-        .login-input:focus { border-color:#6d28d9; }
-        .login-input.err { border-color:#dc2626; background:#fef2f2; animation:loginShake .4s; }
-        @keyframes loginShake{0%,100%{transform:translateX(0)}25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
-        .btn-login {
-            width:100%; background:#6d28d9; color:white; border:none; border-radius:1rem;
-            padding:14px; font-family:inherit; font-size:1rem; font-weight:700;
-            cursor:pointer; transition:all .2s; margin-bottom:10px;
-        }
-        .btn-login:hover { background:#5b21b6; }
-        .btn-login:disabled { opacity:.6; cursor:not-allowed; }
-        .login-error { color:#dc2626; font-size:.85rem; font-weight:700; min-height:20px; margin-bottom:8px; }
-        .btn-guest {
-            width:100%; background:transparent; border:2px solid #d1d5db; border-radius:1rem;
-            padding:12px; font-family:inherit; font-size:.9rem; font-weight:700;
-            color:#6b7280; cursor:pointer; transition:all .2s;
-        }
-        .btn-guest:hover { border-color:#9ca3af; color:#374151; }
-        .teacher-link { margin-top:14px; font-size:.75rem; color:#9ca3af; }
-        .teacher-link a { color:#6d28d9; text-decoration:none; font-weight:700; }
+    :root {
+    --primary-color: #2196F3;
+    --secondary-color: #FFC107;
+    --success-color: #4CAF50;
+    --error-color: #F44336;
+    --bg-color: #f0f2f5;
+    --grid-border: #999;
+    
+    /* Kolom Kleuren */
+    --color-E: rgba(255, 235, 59, 0.15);    /* Geel (Eenheden) */
+    --color-T: rgba(76, 175, 80, 0.15);     /* Groen (Tientallen) */
+    --color-H: rgba(33, 150, 243, 0.15);    /* Blauw (Honderdtallen) */
+    --color-D: rgba(244, 67, 54, 0.15);     /* Rood (Duizendtallen) */
+    --color-t: rgba(156, 39, 176, 0.12);    /* Paars (Tienden) */
+    --color-h: rgba(233, 30, 99, 0.12);     /* Roze (Honderdsten) */
+    }
+
+    body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: var(--bg-color);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    margin: 0;
+    padding: 20px;
+    }
+
+    .container {
+    background: white;
+    padding: 30px;
+    border-radius: 15px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+    width: 100%;
+    max-width: 700px;
+    text-align: center;
+    }
+
+    h1 { color: #333; margin-bottom: 20px; font-size: 1.5rem; }
+
+    /* Hartjes & Niveau Progressie */
+    #progressContainer {
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    margin-bottom: 20px;
+    gap: 5px;
+    }
+
+    #niveauLabel {
+    font-size: 0.9rem;
+    font-weight: bold;
+    color: #666;
+    background: #eee;
+    padding: 4px 12px;
+    border-radius: 20px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    }
+
+    #progressSectie {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    font-size: 2rem;
+    }
+    .heart { color: #ccc; transition: color 0.3s; }
+    .heart.filled { color: #e91e63; }
+
+    /* Menu Stijl */
+    #menuSectie, #eindSectie {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    }
+
+    #eindSectie { display: none; }
+
+    .menu-btn {
+    padding: 15px;
+    font-size: 1rem;
+    background: white;
+    border: 2px solid var(--primary-color);
+    color: var(--primary-color);
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: left;
+    }
+
+    .menu-btn:hover {
+    background: var(--primary-color);
+    color: white;
+    }
+
+    /* Opgave Stijl */
+    #oefeningSectie { display: none; }
+
+    .opgave-box {
+    background: #e3f2fd;
+    padding: 20px;
+    border-radius: 10px;
+    margin-bottom: 25px;
+    border: 2px dashed var(--primary-color);
+    }
+
+    .instruction {
+    font-size: 1rem;
+    color: #555;
+    margin-bottom: 15px;
+    line-height: 1.4;
+    }
+
+    .opgave-display {
+    font-size: 2.2rem;
+    font-weight: bold;
+    letter-spacing: 2px;
+    user-select: none;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    }
+
+    .number-group { display: flex; align-items: center; }
+
+    .digit {
+    cursor: pointer;
+    padding: 2px 6px;
+    border-radius: 5px;
+    transition: all 0.2s;
+    border: 2px solid transparent;
+    display: inline-block;
+    }
+
+    .digit:hover {
+    background: #bbdefb;
+    border-color: #90caf9;
+    }
+
+    .digit.selected {
+    background: var(--secondary-color) !important;
+    border-color: #ffa000 !important;
+    }
+
+    .comma-separator {
+    color: #e53935;
+    font-weight: 1000;
+    padding: 0 4px;
+    }
+
+    /* Schema Stijl */
+    #cijferSectie {
+    display: none;
+    margin-top: 20px;
+    animation: slideDown 0.5s ease-out;
+    }
+
+    @keyframes slideDown {
+    from { opacity: 0; transform: translateY(-20px); }
+    to { opacity: 1; transform: translateY(0); }
+    }
+
+    .cijfer-table {
+    margin: 0 auto;
+    border-collapse: collapse;
+    }
+
+    .cijfer-table td {
+    width: 48px;
+    height: 48px;
+    border: 1px solid var(--grid-border);
+    position: relative;
+    padding: 0;
+    }
+
+    /* Kolom Specifieke Achtergronden */
+    .col-D { background-color: var(--color-D); }
+    .col-H { background-color: var(--color-H); }
+    .col-T { background-color: var(--color-T); }
+    .col-E { background-color: var(--color-E); }
+    .col-t { background-color: var(--color-t); }
+    .col-h { background-color: var(--color-h); }
+
+    /* Kommakolom Stijl */
+    .comma-col {
+    border: none !important;
+    width: 16px !important;
+    text-align: center;
+    font-weight: 1000;
+    font-size: 1.8rem;
+    color: #e53935;
+    user-select: none;
+    }
+
+    /* Onthoudrij Stijl (Cirkels) */
+    .carry-row { height: 60px !important; }
+    .carry-row td {    
+    border: none !important;    
+    vertical-align: middle;
+    }
+    .carry-row input {    
+    width: 36px;    
+    height: 36px;    
+    border-radius: 50%;    
+    border: 2px solid var(--grid-border);
+    color: #e65100;    
+    font-weight: bold;    
+    font-size: 0.95rem;
+    background: white;
+    transition: border-color 0.2s;
+    text-align: center;
+    padding: 0;
+    display: inline-block;
+    }
+    .carry-row input:focus {
+    border-color: var(--primary-color);
+    background: white;
+    }
+
+    .input-cell {
+    width: 100%; height: 100%; border: none;
+    text-align: center; font-size: 1.3rem;
+    background: transparent; outline: none;
+    font-weight: bold;
+    }
+
+    .input-cell:focus { background: rgba(255, 255, 255, 0.5); }
+    .result-row { border-top: 3px solid #333; }
+    .operator-cell { font-size: 1.5rem; font-weight: bold; border: none !important; width: 30px !important; }
+
+    .btn-group { margin-top: 30px; display: flex; gap: 10px; justify-content: center; }
+
+    button {
+    padding: 12px 25px; font-size: 1rem;
+    border: none; border-radius: 8px;
+    cursor: pointer; transition: background 0.2s;
+    }
+
+    .btn-check { background: var(--success-color); color: white; }
+    .btn-next { background: var(--primary-color); color: white; display: none; }
+
+    #feedback { margin-top: 20px; font-weight: bold; min-height: 24px; }
+
+    .stats-box {
+    background: #f8f9fa;
+    padding: 20px;
+    border-radius: 10px;
+    margin: 20px 0;
+    text-align: left;
+    font-size: 1.1rem;
+    }
+
+    .correct-answer {
+    color: var(--success-color);
+    font-size: 1.2rem;
+    margin-top: 5px;
+    }
     </style>
 </head>
 <body>
-    <!-- LOGIN SCREEN -->
-    <div id="login-screen">
-      <div class="login-card">
-        <div class="login-logo">🔢</div>
-        <h1 style="font-size:1.6rem;font-weight:800;color:#1f2937;margin-bottom:6px;">Cijferen</h1>
-        <p style="font-size:.85rem;color:#6b7280;margin-bottom:1.25rem;">Voer je naam en code in</p>
-        <input class="login-input" id="login-naam" type="text" placeholder="Jouw voornaam" autocomplete="off" autocapitalize="words">
-        <input class="login-input" id="login-code" type="password" placeholder="Jouw code" autocomplete="off">
-        <div class="login-error" id="login-error"></div>
-        <button class="btn-login" id="btn-login" onclick="loginMetCode()">Inloggen</button>
-        <button class="btn-guest" onclick="loginGuest()">Doorgaan als gast (geen opslag)</button>
-        <div class="teacher-link"><a href="dashboard.html">Leerkracht? Klik hier</a></div>
-      </div>
+<!-- LOGIN SCHERM -->
+<div id="login-screen" style="position:fixed;inset:0;z-index:9999;background:linear-gradient(135deg,#1565c0,#1976d2);display:flex;align-items:center;justify-content:center;padding:20px;">
+  <div style="background:white;border-radius:24px;padding:2.5rem 2rem;width:100%;max-width:380px;box-shadow:0 25px 50px rgba(0,0,0,0.25);text-align:center;display:flex;flex-direction:column;gap:12px;">
+    <div style="font-size:3rem">🔢</div>
+    <h1 style="font-size:1.5rem;font-weight:900;color:#1f2937;margin:0;">Cijferen — Kommagetallen</h1>
+    <p style="color:#6b7280;font-size:.9rem;margin:0;">Voer je naam en code in</p>
+    <div id="klas-err" style="display:none;color:#dc2626;font-size:.85rem;font-weight:700;background:#fee2e2;border:1px solid #fca5a5;padding:8px 12px;border-radius:8px;"></div>
+    <input type="text" id="klas-naam" placeholder="Jouw voornaam"
+      style="width:100%;padding:14px;border:2px solid #e5e7eb;border-radius:12px;font-family:inherit;font-size:1rem;font-weight:600;text-align:center;outline:none;"
+      autocomplete="off" autocapitalize="words">
+    <input type="password" id="klas-code" placeholder="Jouw code"
+      style="width:100%;padding:14px;border:2px solid #e5e7eb;border-radius:12px;font-family:inherit;font-size:1rem;font-weight:600;text-align:center;outline:none;"
+      autocomplete="off">
+    <button id="login-btn"
+      style="width:100%;background:#1976d2;color:white;border:none;border-radius:12px;padding:14px;font-family:inherit;font-size:1rem;font-weight:700;cursor:pointer;">
+      Inloggen
+    </button>
+    <button id="gast-btn"
+      style="width:100%;background:transparent;border:2px solid #e5e7eb;border-radius:12px;padding:12px;font-family:inherit;font-size:.9rem;font-weight:700;color:#6b7280;cursor:pointer;">
+      Doorgaan als gast (geen opslag)
+    </button>
+    <div style="font-size:.75rem;color:#9ca3af;">
+      <a href="dashboard.html" style="color:#1976d2;font-weight:700;text-decoration:none;">Leerkracht? Klik hier</a>
     </div>
+  </div>
+</div>
+
+<div id="mainContainer" style="display:none;">
 <div class="container">
-    <h1>Cijferen met Kommagetallen</h1>
- 
-    <!-- ── LOGIN SECTIE ── -->
-    <div id="loginSectie">
-        <div class="login-icon">🔐</div>
-        <p class="login-subtitle">Meld je aan met je schoolaccount om je scores op te slaan, of speel als gast.</p>
- 
-        <button class="btn-google" id="google-login-btn">
-            <svg width="20" height="20" viewBox="0 0 48 48">
-                <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
-                <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
-                <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
-                <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.31-8.16 2.31-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
-            </svg>
-            Inloggen met Google Schoolaccount
-        </button>
- 
-        <div class="divider">of</div>
- 
-        <div class="gast-box">
-            <label>Naam (gast)</label>
-            <input type="text" id="guest-name-input" placeholder="Bv. Milan">
-        </div>
-        <button class="btn-gast" id="guest-login-btn">👤 Spelen als gast (scores niet bewaard)</button>
-        <div id="auth-error"></div>
-    </div>
- 
-    <!-- ── GEBRUIKERSBADGE (zichtbaar na login) ── -->
-    <div id="userBadge">
-        <div class="avatar" id="user-initials">?</div>
-        <div class="info">
-            <div class="name" id="user-display-name">-</div>
-            <div class="email" id="user-email-nav">-</div>
-        </div>
-        <button class="btn-logout" id="logout-btn" title="Uitloggen">⬅ Uitloggen</button>
-    </div>
-    <div id="gastBadge">👤 Gastmodus – scores worden niet opgeslagen</div>
- 
-    <!-- ── PROGRESS / HARTEN ── -->
+
+    <!-- Hartjes & Niveau Progressie -->
     <div id="progressContainer">
-        <div id="niveauLabel">Niveau</div>
-        <div id="progressSectie">
-            <span class="heart" id="h1">♥</span>
-            <span class="heart" id="h2">♥</span>
-            <span class="heart" id="h3">♥</span>
-            <span class="heart" id="h4">♥</span>
-            <span class="heart" id="h5">♥</span>
-        </div>
+    <div id="niveauLabel">Gekozen niveau</div>
+    <div id="progressSectie">
+    <span class="heart" id="h1">♥</span>
+    <span class="heart" id="h2">♥</span>
+    <span class="heart" id="h3">♥</span>
+    <span class="heart" id="h4">♥</span>
+    <span class="heart" id="h5">♥</span>
     </div>
- 
-    <!-- ── MENU ── -->
-    <div id="menuSectie" style="display:none;">
-        <button class="menu-btn" id="btn-m1"><span>➕</span> Optellen zonder overschrijding</button>
-        <button class="menu-btn" id="btn-m2"><span>➕</span> Optellen met overschrijding</button>
-        <button class="menu-btn" id="btn-m3"><span>➖</span> Aftrekken zonder ontlenen</button>
-        <button class="menu-btn" id="btn-m4"><span>➖</span> Aftrekken met ontlenen</button>
-        <button class="menu-btn" id="btn-m5"><span>🔀</span> Alles door elkaar</button>
     </div>
- 
-    <!-- ── OEFENING ── -->
+
+    <!-- Hoofdmenu -->
+    <div id="menuSectie">
+    <h1>Wat wil je oefenen? (Kommagetallen)</h1>
+    <button class="menu-btn" onclick="stelModusIn(1, 'Optellen zonder overschrijding')">➕ Optellen zonder overschrijding</button>
+    <button class="menu-btn" onclick="stelModusIn(2, 'Optellen met overschrijding')">➕ Optellen met overschrijding</button>
+    <button class="menu-btn" onclick="stelModusIn(3, 'Aftrekken zonder ontlenen')">➖ Aftrekken zonder ontlenen</button>
+    <button class="menu-btn" onclick="stelModusIn(4, 'Aftrekken met ontlenen')">➖ Aftrekken met ontlenen</button>
+    <button class="menu-btn" onclick="stelModusIn(5, 'Aftrekken met ontlenen (met nullen)')">➖ Aftrekken met ontlenen (met nullen)</button>
+    <button class="menu-btn" onclick="stelModusIn(6, 'Alles door elkaar')">🔀 Alles door elkaar</button>
+    </div>
+
+    <!-- Oefenscherm -->
     <div id="oefeningSectie">
-        <button class="btn-stop" id="btn-stop">← Terug naar menu</button>
-        <div class="opgave-box">
-            <div class="instruction" id="instructieTekst">Duid de <b>eenheden</b> aan van beide getallen.</div>
-            <div class="opgave-display" id="opgaveDisplay"></div>
-        </div>
- 
-        <div id="cijferSectie">
-            <table class="cijfer-table">
-                <tr class="carry-row" id="carryRow">
-                    <td></td>
-                    <td class="col-D"><input type="text" maxlength="2" id="carryD"></td>
-                    <td class="col-H"><input type="text" maxlength="2" id="carryH"></td>
-                    <td class="col-T"><input type="text" maxlength="2" id="carryT"></td>
-                    <td class="col-E"><input type="text" maxlength="2" id="carryE"></td>
-                    <td class="col-komma"></td>
-                    <td class="col-tienden"><input type="text" maxlength="2" id="carryt"></td>
-                    <td class="col-honderdsten"><input type="text" maxlength="2" id="carryh"></td>
-                </tr>
-                <tr id="row1">
-                    <td class="operator-cell"></td>
-                    <td class="col-D"><input type="text" maxlength="1" class="input-cell" id="r1D"></td>
-                    <td class="col-H"><input type="text" maxlength="1" class="input-cell" id="r1H"></td>
-                    <td class="col-T"><input type="text" maxlength="1" class="input-cell" id="r1T"></td>
-                    <td class="col-E"><input type="text" maxlength="1" class="input-cell" id="r1E"></td>
-                    <td class="col-komma">,</td>
-                    <td class="col-tienden"><input type="text" maxlength="1" class="input-cell" id="r1t"></td>
-                    <td class="col-honderdsten"><input type="text" maxlength="1" class="input-cell" id="r1h"></td>
-                </tr>
-                <tr id="row2">
-                    <td class="operator-cell" id="opTeken">+</td>
-                    <td class="col-D"><input type="text" maxlength="1" class="input-cell" id="r2D"></td>
-                    <td class="col-H"><input type="text" maxlength="1" class="input-cell" id="r2H"></td>
-                    <td class="col-T"><input type="text" maxlength="1" class="input-cell" id="r2T"></td>
-                    <td class="col-E"><input type="text" maxlength="1" class="input-cell" id="r2E"></td>
-                    <td class="col-komma">,</td>
-                    <td class="col-tienden"><input type="text" maxlength="1" class="input-cell" id="r2t"></td>
-                    <td class="col-honderdsten"><input type="text" maxlength="1" class="input-cell" id="r2h"></td>
-                </tr>
-                <tr class="result-row" id="resultRow">
-                    <td></td>
-                    <td class="col-D"><input type="text" maxlength="1" class="input-cell" id="ansD"></td>
-                    <td class="col-H"><input type="text" maxlength="1" class="input-cell" id="ansH"></td>
-                    <td class="col-T"><input type="text" maxlength="1" class="input-cell" id="ansT"></td>
-                    <td class="col-E"><input type="text" maxlength="1" class="input-cell" id="ansE"></td>
-                    <td class="col-komma">,</td>
-                    <td class="col-tienden"><input type="text" maxlength="1" class="input-cell" id="anst"></td>
-                    <td class="col-honderdsten"><input type="text" maxlength="1" class="input-cell" id="ansh"></td>
-                </tr>
-            </table>
-            <div id="feedback"></div>
-            <div class="btn-group">
-                <button class="btn-check" id="btnCheck">Nakijken</button>
-                <button class="btn-next" id="btnNext">Volgende oefening</button>
-            </div>
-        </div>
+    <h1 id="oefeningTitel">Cijferen</h1>
+    <div class="opgave-box">
+    <div class="instruction" id="instructieTekst">
+    Klik op de <b>eenheden</b> van beide getallen.
     </div>
- 
-    <!-- ── EIND SECTIE ── -->
+    <div class="opgave-display" id="opgaveDisplay"></div>
+    </div>
+
+    <div id="cijferSectie">
+    <table class="cijfer-table">
+    <thead>
+      <tr style="font-weight: bold; text-align: center; font-size: 0.85rem; color: #555; border: none;">
+        <td style="border:none"></td>
+        <td class="col-D" style="border:none">D</td>
+        <td class="col-H" style="border:none">H</td>
+        <td class="col-T" style="border:none">T</td>
+        <td class="col-E" style="border:none">E</td>
+        <td style="border:none; width: 16px;"></td>
+        <td class="col-t" style="border:none">t</td>
+        <td class="col-h" style="border:none">h</td>
+      </tr>
+    </thead>
+    <!-- Onthoudrij (Cirkels voor Ijsbergrekenen) -->
+    <tr class="carry-row">
+    <td style="border:none"></td>
+    <td class="col-D"><input type="text" maxlength="2" class="carry-input" id="carryD"></td>
+    <td class="col-H"><input type="text" maxlength="2" class="carry-input" id="carryH"></td>
+    <td class="col-T"><input type="text" maxlength="2" class="carry-input" id="carryT"></td>
+    <td class="col-E"><input type="text" maxlength="2" class="carry-input" id="carryE"></td>
+    <td class="comma-col" style="opacity: 0;">,</td>
+    <td class="col-t"><input type="text" maxlength="2" class="carry-input" id="carry_t"></td>
+    <td class="col-h"><input type="text" maxlength="2" class="carry-input" id="carry_h"></td>
+    </tr>
+    <tr>
+    <td class="operator-cell"></td>
+    <td class="col-D"><input type="text" maxlength="1" class="input-cell" id="r1D"></td>
+    <td class="col-H"><input type="text" maxlength="1" class="input-cell" id="r1H"></td>
+    <td class="col-T"><input type="text" maxlength="1" class="input-cell" id="r1T"></td>
+    <td class="col-E"><input type="text" maxlength="1" class="input-cell" id="r1E"></td>
+    <td class="comma-col">,</td>
+    <td class="col-t"><input type="text" maxlength="1" class="input-cell" id="r1_t"></td>
+    <td class="col-h"><input type="text" maxlength="1" class="input-cell" id="r1_h"></td>
+    </tr>
+    <tr>
+    <td class="operator-cell" id="opTeken">+</td>
+    <td class="col-D"><input type="text" maxlength="1" class="input-cell" id="r2D"></td>
+    <td class="col-H"><input type="text" maxlength="1" class="input-cell" id="r2H"></td>
+    <td class="col-T"><input type="text" maxlength="1" class="input-cell" id="r2T"></td>
+    <td class="col-E"><input type="text" maxlength="1" class="input-cell" id="r2E"></td>
+    <td class="comma-col">,</td>
+    <td class="col-t"><input type="text" maxlength="1" class="input-cell" id="r2_t"></td>
+    <td class="col-h"><input type="text" maxlength="1" class="input-cell" id="r2_h"></td>
+    </tr>
+    <tr class="result-row">
+    <td style="border:none"></td>
+    <td class="col-D"><input type="text" maxlength="1" class="input-cell" id="ansD"></td>
+    <td class="col-H"><input type="text" maxlength="1" class="input-cell" id="ansH"></td>
+    <td class="col-T"><input type="text" maxlength="1" class="input-cell" id="ansT"></td>
+    <td class="col-E"><input type="text" maxlength="1" class="input-cell" id="ansE"></td>
+    <td class="comma-col">,</td>
+    <td class="col-t"><input type="text" maxlength="1" class="input-cell" id="ans_t"></td>
+    <td class="col-h"><input type="text" maxlength="1" class="input-cell" id="ans_h"></td>
+    </tr>
+    </table>
+
+    <div id="feedback"></div>
+
+    <div class="btn-group">
+    <button class="btn-check" id="btnCheck" onclick="valideerOplossing()">Nakijken</button>
+    <button class="btn-next" id="btnNext" onclick="volgendeOefening()">Volgende oefening</button>
+    </div>
+    </div>
+    </div>
+
+    <!-- Eindscherm -->
     <div id="eindSectie">
-        <h1>Heel goed gedaan! 🌟</h1>
-        <div class="stats-box" id="statsDisplay"></div>
-        <div id="db-status-box">⏳ Bezig...</div>
-        <button class="menu-btn" style="justify-content:center" id="btn-terug-menu">Terug naar het menu</button>
+    <h1>Goed gewerkt! 🌟</h1>
+    <div class="stats-box" id="statsDisplay"></div>
+    <!-- Upload status (style.display — nooit klassen wisselen) -->
+    <div id="upload-status" style="display:none;padding:10px 16px;border-radius:10px;border:2px solid;font-size:.85rem;font-weight:700;text-align:center;margin-bottom:12px;">
+      <span id="upload-spinner" style="display:inline-block;width:13px;height:13px;border:2px solid #e5e7eb;border-top-color:#1976d2;border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle;margin-right:6px;"></span>
+      <span id="upload-status-text">Bezig met opslaan...</span>
+    </div>
+    <style>@keyframes spin{to{transform:rotate(360deg)}}</style>
+    <button class="menu-btn" style="text-align:center" onclick="stopOefening()">Terug naar menu</button>
     </div>
 </div>
- 
-<!-- ── FIREBASE MODULE SCRIPT ── -->
-<script type="module">
-import { initializeApp }   from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getAuth, GoogleAuthProvider, signInWithRedirect, getRedirectResult, signOut, onAuthStateChanged }
-    from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-import { getFirestore, collection, addDoc, serverTimestamp }
-    from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
- 
-// ── CONFIG ────────────────────────────────────────────────────────────────────
-const firebaseConfig = {
-    apiKey:            "AIzaSyCnQDVVAlK6jE-PPUUediRJMTbN0xqrLDE",
-    authDomain:        "klaswebsite-database.firebaseapp.com",
-    projectId:         "klaswebsite-database",
-    storageBucket:     "klaswebsite-database.firebasestorage.app",
-    messagingSenderId: "42912327282",
-    appId:             "1:42912327282:web:f13f2c706f6c42c115c4eb",
-    measurementId:     "G-V5MC9BY19Q"
-};
-const ALLOWED_DOMAIN = "bsbodebrug.be";
- 
-const fbApp = initializeApp(firebaseConfig);
-const auth  = getAuth(fbApp);
-const db    = getFirestore(fbApp);
- 
-// ── STAAT ─────────────────────────────────────────────────────────────────────
-let currentUser   = null;
-let isGuest       = false;
- 
-let gekozenModus  = 0;
-let gekozenLabel  = "";
-let getal1, getal2, isPlus;
-let e1Gevonden    = false;
-let e2Gevonden    = false;
-let huidigeOefeningFoutGeweest = false;
-let stap          = 1;
-let juisteOefeningen          = 0;
-let fouteOefeningenInSessie   = 0;
-let startTime, vraagStartTime;
-let vragenMatrix  = [];   // detailhistoriek per vraag
- 
-const kolomIds    = ['D','H','T','E','t','h'];
- 
-const modusLabels = {
-    1: "Wiskunde - Cijferen: Optellen zonder overschrijding",
-    2: "Wiskunde - Cijferen: Optellen met overschrijding",
-    3: "Wiskunde - Cijferen: Aftrekken zonder ontlenen",
-    4: "Wiskunde - Cijferen: Aftrekken met ontlenen",
-    5: "Wiskunde - Cijferen: Mix (alles door elkaar)"
-};
- 
-// ── VIEWS ─────────────────────────────────────────────────────────────────────
-function showLogin() {
-    document.getElementById("loginSectie").style.display  = "flex";
-    document.getElementById("menuSectie").style.display   = "none";
-    document.getElementById("oefeningSectie").style.display = "none";
-    document.getElementById("eindSectie").style.display   = "none";
-    document.getElementById("progressContainer").style.display = "none";
-    document.getElementById("userBadge").style.display    = "none";
-    document.getElementById("gastBadge").style.display    = "none";
-}
- 
-function showMenu() {
-    document.getElementById("loginSectie").style.display  = "none";
-    document.getElementById("menuSectie").style.display   = "flex";
-    document.getElementById("oefeningSectie").style.display = "none";
-    document.getElementById("eindSectie").style.display   = "none";
-    document.getElementById("progressContainer").style.display = "none";
-}
- 
-function showOefening() {
-    document.getElementById("oefeningSectie").style.display = "block";
-    document.getElementById("menuSectie").style.display   = "none";
-    document.getElementById("eindSectie").style.display   = "none";
-    document.getElementById("progressContainer").style.display = "flex";
-}
- 
-function showEinde() {
-    document.getElementById("oefeningSectie").style.display = "none";
-    document.getElementById("eindSectie").style.display   = "flex";
-    document.getElementById("progressContainer").style.display = "none";
-}
- 
-// ── AUTH ──────────────────────────────────────────────────────────────────────
-getRedirectResult(auth).catch(e => showAuthError(e.message));
- 
-onAuthStateChanged(auth, user => {
-    if (user) {
-        if (!user.email.endsWith("@" + ALLOWED_DOMAIN)) {
-            signOut(auth);
-            showAuthError(`Enkel @${ALLOWED_DOMAIN} schoolaccounts worden opgeslagen. Gebruik je schoolaccount of speel als gast.`);
-            return;
-        }
-        isGuest     = false;
-        currentUser = user;
-        updateBadge();
-        showMenu();
-    } else {
-        if (!isGuest) {
-            currentUser = null;
-            showLogin();
-        }
-    }
-});
- 
-document.getElementById("google-login-btn").addEventListener("click", async () => {
-    const provider = new GoogleAuthProvider();
-    provider.setCustomParameters({ hd: ALLOWED_DOMAIN });
-    try { await signInWithRedirect(auth, provider); }
-    catch(e) { showAuthError(e.message); }
-});
- 
-document.getElementById("guest-login-btn").addEventListener("click", () => {
-    const naam = document.getElementById("guest-name-input").value.trim();
-    if (!naam) {
-        document.getElementById("guest-name-input").style.borderColor = "var(--error-color)";
-        document.getElementById("guest-name-input").focus();
-        return;
-    }
-    isGuest     = true;
-    currentUser = null;
-    document.getElementById("userBadge").style.display  = "none";
-    document.getElementById("gastBadge").style.display  = "block";
-    document.getElementById("gastBadge").textContent    = `👤 Gast: ${naam} – scores niet opgeslagen`;
-    showMenu();
-});
- 
-document.getElementById("guest-name-input").addEventListener("input", function() {
-    this.style.borderColor = "";
-});
- 
-document.getElementById("logout-btn").addEventListener("click", async () => {
-    isGuest = false; currentUser = null;
-    await signOut(auth);
-    document.getElementById("userBadge").style.display = "none";
-    showLogin();
-});
- 
-function updateBadge() {
-    if (!currentUser) return;
-    document.getElementById("userBadge").style.display = "flex";
-    document.getElementById("gastBadge").style.display = "none";
-    document.getElementById("user-display-name").textContent = currentUser.displayName || "Leerling";
-    document.getElementById("user-email-nav").textContent    = currentUser.email;
-    const ini = (currentUser.displayName || "L").split(" ").map(n=>n[0]).join("").toUpperCase().substring(0,2);
-    document.getElementById("user-initials").textContent = ini;
-}
- 
-function showAuthError(msg) {
-    const el = document.getElementById("auth-error");
-    el.textContent = msg; el.style.display = "block";
-}
- 
-// ── MENU KNOPPEN ──────────────────────────────────────────────────────────────
-document.getElementById("btn-m1").addEventListener("click", () => stelModusIn(1));
-document.getElementById("btn-m2").addEventListener("click", () => stelModusIn(2));
-document.getElementById("btn-m3").addEventListener("click", () => stelModusIn(3));
-document.getElementById("btn-m4").addEventListener("click", () => stelModusIn(4));
-document.getElementById("btn-m5").addEventListener("click", () => stelModusIn(5));
-document.getElementById("btn-stop").addEventListener("click",       stopOefening);
-document.getElementById("btn-terug-menu").addEventListener("click", stopOefening);
-document.getElementById("btnCheck").addEventListener("click",       valideerStap);
-document.getElementById("btnNext").addEventListener("click",        volgendeOefening);
- 
-// ── OEFENING STARTEN ─────────────────────────────────────────────────────────
-function stelModusIn(modus) {
-    gekozenModus             = modus;
-    gekozenLabel             = modusLabels[modus];
-    juisteOefeningen         = 0;
-    fouteOefeningenInSessie  = 0;
-    vragenMatrix             = [];
-    startTime                = new Date();
- 
-    document.getElementById("niveauLabel").innerText = gekozenLabel.split(": ")[1] || gekozenLabel;
-    showOefening();
+
+<script>
+    let gekozenModus = 0;
+    let gekozenLabel = "";
+    let getal1, getal2, isPlus, eenheid1Gevonden, eenheid2Gevonden;
+    
+    // Statistieken
+    let juisteOefeningen = 0;
+    let fouteOefeningenInSessie = 0;
+    let huidigeOefeningFoutGeweest = false;
+    let startTime;
+
+    function stelModusIn(modus, label) {
+    gekozenModus = modus;
+    gekozenLabel = label;
+    juisteOefeningen = 0;
+    fouteOefeningenInSessie = 0;
+    startTime = new Date();
+    window._vragenLog = []; // reset vragenlog voor nieuwe sessie
+    
+    document.getElementById('niveauLabel').innerText = label;
+    document.getElementById('menuSectie').style.display = 'none';
+    document.getElementById('eindSectie').style.display = 'none';
+    document.getElementById('oefeningSectie').style.display = 'block';
+    document.getElementById('progressContainer').style.display = 'flex';
+    
     updateHearts();
     genereerSom();
-}
- 
-function stopOefening() {
-    showMenu();
-}
- 
-// ── HARTEN ───────────────────────────────────────────────────────────────────
-function updateHearts() {
-    for(let i=1;i<=5;i++) {
-        document.getElementById("h"+i).classList.toggle("filled", i<=juisteOefeningen);
     }
-}
- 
-// ── GETALLEN GENEREREN ────────────────────────────────────────────────────────
-function randomKommaGetal(min, max) {
-    const dec = [0,1,2][Math.floor(Math.random()*3)];
-    return (Math.random()*(max-min)+min).toFixed(dec);
-}
- 
-function genereerVeilig(g1, optellen) {
-    let s1 = parseFloat(g1).toFixed(2).replace(".","").padStart(6,"0");
-    let res = "";
-    for(let c of s1) {
-        let d = parseInt(c);
-        res += optellen ? Math.floor(Math.random()*(9-d)) : Math.floor(Math.random()*(d+1));
+
+    function updateHearts() {
+    for(let i=1; i<=5; i++) {
+    document.getElementById('h'+i).classList.remove('filled');
+    if(i <= juisteOefeningen) document.getElementById('h'+i).classList.add('filled');
     }
-    return (parseInt(res)/100).toFixed(Math.floor(Math.random()*3));
-}
- 
-// ── SOM GENEREREN ─────────────────────────────────────────────────────────────
-function genereerSom() {
-    e1Gevonden = false; e2Gevonden = false;
-    huidigeOefeningFoutGeweest = false;
-    stap = 1;
-    vraagStartTime = new Date();
- 
-    let modus = gekozenModus===5 ? Math.floor(Math.random()*4)+1 : gekozenModus;
- 
-    if      (modus===1) { getal1=randomKommaGetal(100,5000);  getal2=genereerVeilig(getal1,true);  isPlus=true; }
-    else if (modus===2) { getal1=randomKommaGetal(100,4500);  getal2=randomKommaGetal(100,4500);   isPlus=true; }
-    else if (modus===3) { getal1=randomKommaGetal(5000,9999); getal2=genereerVeilig(getal1,false); isPlus=false; }
-    else if (modus===4) { getal1=randomKommaGetal(2000,8000); getal2=randomKommaGetal(100,parseFloat(getal1)-50); isPlus=false; }
- 
-    document.getElementById("cijferSectie").style.display = "none";
-    document.getElementById("btnCheck").style.display     = "inline-block";
-    document.getElementById("btnNext").style.display      = "none";
-    document.getElementById("instructieTekst").innerHTML  = "Duid de <b>eenheden</b> aan van beide getallen.";
-    document.getElementById("feedback").innerHTML         = "";
-    document.getElementById("opTeken").innerText          = isPlus ? "+" : "-";
-    document.getElementById("carryRow").style.display     = "none";
-    document.getElementById("resultRow").style.visibility = "hidden";
- 
-    document.querySelectorAll("input").forEach(el => {
-        el.value = ""; el.disabled = false;
-        el.classList.remove("is-correct","is-wrong");
-    });
-    renderOpgave();
-}
- 
-// ── OPGAVE RENDEREN ───────────────────────────────────────────────────────────
-function getEenheidIndex(numStr) {
-    let k = numStr.indexOf(".");
-    return k===-1 ? numStr.length-1 : k-1;
-}
- 
-function renderOpgave() {
-    const display = document.getElementById("opgaveDisplay");
-    display.innerHTML = "";
- 
-    const createGroup = (numStr, id) => {
-        const group = document.createElement("div");
-        group.className = "number-group";
-        const eIdx = getEenheidIndex(numStr);
-        numStr.split("").forEach((c,i) => {
-            const span = document.createElement("span");
-            if (c===".") {
-                span.innerText = ","; span.className = "comma-static";
-            } else {
-                span.innerText = c; span.className = "digit";
-                span.onclick = function() {
-                    if (stap!==1) return;
-                    if (i===eIdx) {
-                        this.classList.add("selected");
-                        if (id===1) e1Gevonden=true; else e2Gevonden=true;
-                        if (e1Gevonden && e2Gevonden) { stap=2; activeerInvullen(); }
-                    } else {
-                        this.style.borderColor = "var(--error-color)";
-                        setTimeout(()=>this.style.borderColor="transparent",500);
-                    }
-                };
-            }
-            group.appendChild(span);
-        });
-        return group;
-    };
- 
-    display.appendChild(createGroup(getal1.toString(),1));
-    const op=document.createElement("span"); op.innerText=isPlus?"+":" -"; op.style.margin="0 20px";
-    display.appendChild(op);
-    display.appendChild(createGroup(getal2.toString(),2));
-    const eq=document.createElement("span"); eq.innerText=" = ?";
-    display.appendChild(eq);
-}
- 
-function activeerInvullen() {
-    document.getElementById("cijferSectie").style.display = "block";
-    document.getElementById("instructieTekst").innerHTML  = "Schrijf de getallen nu <b>juist</b> in de tabel. Vergeet de hulpnullen niet!";
-    document.getElementById("feedback").innerHTML         = "";
-}
- 
-// ── VALIDATIE ─────────────────────────────────────────────────────────────────
-function getVerwachteTabelCijfers(getal) {
-    let [heel,dec] = parseFloat(getal).toFixed(2).split(".");
-    heel = heel.padStart(4," "); dec = dec.padEnd(2,"0");
-    return { D:heel[0].trim(), H:heel[1].trim(), T:heel[2].trim(), E:heel[3].trim(), t:dec[0], h:dec[1] };
-}
- 
-function valideerStap() {
-    if      (stap===2) valideerTabelInvulling();
-    else if (stap===3) valideerBerekening();
-}
- 
-function valideerTabelInvulling() {
-    const v1=getVerwachteTabelCijfers(getal1), v2=getVerwachteTabelCijfers(getal2);
-    let allesCorrect=true;
-    kolomIds.forEach(k => {
-        const i1=document.getElementById("r1"+k), i2=document.getElementById("r2"+k);
-        if (i1.value!==v1[k]) { allesCorrect=false; i1.classList.add("is-wrong"); }
-        else                   { i1.classList.remove("is-wrong"); i1.classList.add("is-correct"); }
-        if (i2.value!==v2[k]) { allesCorrect=false; i2.classList.add("is-wrong"); }
-        else                   { i2.classList.remove("is-wrong"); i2.classList.add("is-correct"); }
-    });
-    if (allesCorrect) {
-        stap=3;
-        document.getElementById("instructieTekst").innerHTML = "<b>Perfect!</b> Reken nu de oefening uit. Gebruik de onthoud-vakjes indien nodig.";
-        document.getElementById("feedback").innerHTML        = `<span style="color:var(--success-color)">Tabel staat goed! Nu cijferen.</span>`;
-        document.getElementById("carryRow").style.display   = "table-row";
-        document.getElementById("resultRow").style.visibility = "visible";
-        document.querySelectorAll("#row1 input, #row2 input").forEach(el=>el.disabled=true);
-    } else {
-        document.getElementById("feedback").innerHTML = `<span style="color:var(--error-color)">Sommige cijfers staan nog niet op de juiste plaats. Kijk goed naar de eenheden!</span>`;
     }
-}
- 
-function valideerBerekening() {
-    const d  = document.getElementById("ansD").value||"0";
-    const hh = document.getElementById("ansH").value||"0";
-    const tt = document.getElementById("ansT").value||"0";
-    const e  = document.getElementById("ansE").value||"0";
-    const ti = document.getElementById("anst").value||"0";
-    const ho = document.getElementById("ansh").value||"0";
- 
-    if (document.getElementById("anst").value==="" && document.getElementById("ansh").value==="") {
-        document.getElementById("feedback").innerHTML=`<span style="color:var(--error-color)">Vul de uitkomst in!</span>`;
-        return;
+
+    function stopOefening() {
+    document.getElementById('menuSectie').style.display = 'flex';
+    document.getElementById('oefeningSectie').style.display = 'none';
+    document.getElementById('eindSectie').style.display = 'none';
+    document.getElementById('progressContainer').style.display = 'none';
     }
- 
-    const gokNummer = `${d}${hh}${tt}${e}.${ti}${ho}`;
-    const gok       = parseFloat(gokNummer);
-    const correct   = isPlus
-        ? parseFloat(getal1)+parseFloat(getal2)
-        : parseFloat(getal1)-parseFloat(getal2);
-    const isJuist   = Math.abs(gok-correct)<0.001;
-    const denktijd  = Math.round((new Date()-vraagStartTime)/1000);
-    const fb        = document.getElementById("feedback");
- 
-    // Sessieteller + detailhistoriek
-    vragenMatrix.push({
-        vraagNummer:     vragenMatrix.length+1,
-        formule:         `${getal1} ${isPlus?"+":"-"} ${getal2}`,
-        antwoordLeerling:gokNummer,
-        juistAntwoord:   correct.toFixed(2),
-        isJuist,
-        denktijdSeconden:denktijd
-    });
- 
-    if (isJuist) {
-        juisteOefeningen++;
-        updateHearts();
-        fb.innerHTML = `<span style="color:var(--success-color)">🎉 Schitterend! Helemaal juist uitgerekend.</span>`;
-    } else {
-        if(!huidigeOefeningFoutGeweest) { fouteOefeningenInSessie++; huidigeOefeningFoutGeweest=true; }
-        fb.innerHTML = `
-            <div style="color:var(--error-color)">❌ De uitkomst klopt niet helemaal.</div>
-            <div style="color:#2c3e50;font-size:1.1rem;margin-top:5px">Het juiste antwoord is: <b>${correct.toFixed(2).replace(".",",")}</b></div>`;
-    }
- 
-    document.getElementById("btnCheck").style.display = "none";
-    document.getElementById("btnNext").style.display  = "inline-block";
-    document.querySelectorAll("input").forEach(el=>el.disabled=true);
-}
- 
-// ── VOLGENDE / AFSLUITEN ──────────────────────────────────────────────────────
-function volgendeOefening() {
-    if (juisteOefeningen>=5) sluitSessieAfEnSlaOp();
-    else genereerSom();
-}
- 
-// ── SESSIE OPSLAAN ────────────────────────────────────────────────────────────
-async function sluitSessieAfEnSlaOp() {
-    const endTime   = new Date();
-    const timeDiff  = Math.floor((endTime-startTime)/1000);
-    const totalQ    = vragenMatrix.length;
-    const correctQ  = vragenMatrix.filter(v=>v.isJuist).length;
-    const nauwkeurig= totalQ>0 ? Math.round((correctQ/totalQ)*100) : 0;
-    const mins      = Math.floor(timeDiff/60);
-    const secs      = timeDiff%60;
- 
-    showEinde();
- 
-    document.getElementById("statsDisplay").innerHTML = `
-        <p>📂 <b>Niveau:</b> ${gekozenLabel.split(": ")[1]||gekozenLabel}</p>
-        <p>📝 <b>Sommen gemaakt:</b> ${totalQ}</p>
-        <p>✅ <b>Juist:</b> ${correctQ}/${totalQ} (${nauwkeurig}%)</p>
-        <p>🕒 <b>Tijd:</b> ${mins}m ${secs}s</p>
-        <p>⚠️ <b>Fouten gemaakt:</b> ${fouteOefeningenInSessie}</p>
+
+    function toonEindscherm() {
+    const endTime = new Date();
+    const timeDiff = Math.floor((endTime - startTime) / 1000);
+    const minuten = Math.floor(timeDiff / 60);
+    const seconden = timeDiff % 60;
+    const tijdStr = String(minuten).padStart(2,'0') + ':' + String(seconden).padStart(2,'0');
+
+    document.getElementById('oefeningSectie').style.display = 'none';
+    document.getElementById('eindSectie').style.display = 'flex';
+    document.getElementById('progressContainer').style.display = 'none';
+
+    document.getElementById('statsDisplay').innerHTML = `
+    <p>📊 <b>Niveau:</b> ${gekozenLabel}</p>
+    <p>⏱ <b>Tijd:</b> ${minuten}m ${seconden}s</p>
+    <p>✅ <b>Juist:</b> ${juisteOefeningen}</p>
+    <p>❌ <b>Fouten gemaakt:</b> ${fouteOefeningenInSessie}</p>
     `;
- 
-    const statusBox = document.getElementById("db-status-box");
- 
-    // Gast → niet opslaan
-    if (isGuest) {
-        statusBox.innerHTML  = "👤 Gastmodus: resultaten worden niet opgeslagen.";
-        statusBox.style.background = "#fff8e1";
-        statusBox.style.borderColor= "#ffe082";
-        statusBox.style.color      = "#f57c00";
-        return;
+
+    // Reset upload-status
+    document.getElementById('upload-status').style.display = 'none';
+    document.getElementById('upload-status-text').textContent = 'Bezig met opslaan...';
+    document.getElementById('upload-spinner').style.display = 'inline-block';
+
+    // Enkel opslaan bij modus 6 (alles door elkaar = toets) of bij alle modi?
+    // Opslaan bij ELKE afgeronde sessie (5 juist) voor een ingelogde leerling
+    saveToFirestore(juisteOefeningen, 5, Math.round(juisteOefeningen/5*100), tijdStr, gekozenModus, gekozenLabel, fouteOefeningenInSessie, window._vragenLog || []);
     }
- 
-    // Schoolleerling → opslaan
-    statusBox.innerHTML  = "⏳ Resultaten verzenden naar database...";
-    statusBox.style.background = "#e3f2fd";
-    statusBox.style.borderColor= "#90caf9";
-    statusBox.style.color      = "#1565c0";
- 
-    const tijdsduur = `${mins.toString().padStart(2,"0")}:${secs.toString().padStart(2,"0")}`;
- 
-    const record = {
-        // Leerling
-        uid:         currentUser.uid,
-        email:       currentUser.email,
-        displayName: currentUser.displayName || currentUser.email,
-        photoURL:    currentUser.photoURL || null,
- 
-        // Oefening — compatibel met dashboard
-        vak:         "Wiskunde",
-        oefening:    gekozenLabel,
- 
-        // Score
-        score:          correctQ,
-        totaal:         totalQ,
-        nauwkeurigheid: nauwkeurig,
-        tijdsduur,
-        foutenHersteld: fouteOefeningenInSessie,
- 
-        // Detailhistoriek per vraag
-        vragen: vragenMatrix.map(v => ({
-            vraagNr:          v.vraagNummer,
-            formule:          v.formule,
-            categorie:        gekozenLabel,
-            antwoordLeerling: v.antwoordLeerling,
-            juistAntwoord:    v.juistAntwoord,
-            isJuist:          v.isJuist,
-            tijdSeconden:     v.denktijdSeconden
-        })),
- 
-        timestamp: serverTimestamp()
+
+    function formatDutchDecimal(num) {
+        return num.toFixed(2).replace('.', ',').replace(/,00$/, '').replace(/,(\d)0$/, ',$1');
+    }
+
+    function genereerSom() {
+    eenheid1Gevonden = false;
+    eenheid2Gevonden = false;
+    huidigeOefeningFoutGeweest = false;
+    
+    let modus = gekozenModus === 6 ? Math.floor(Math.random() * 5) + 1 : gekozenModus;
+    
+    if (modus === 1) {
+        // Optellen zonder overschrijding
+        // We genereren de getallen zo dat de som per kolom < 10 is.
+        // D, H, T, E, t, h
+        let d1 = Math.floor(Math.random() * 5);
+        let d2 = Math.floor(Math.random() * (5 - d1));
+        
+        let h1 = Math.floor(Math.random() * 5);
+        let h2 = Math.floor(Math.random() * (10 - h1));
+        
+        let t1 = Math.floor(Math.random() * 5);
+        let t2 = Math.floor(Math.random() * (10 - t1));
+        
+        let e1 = Math.floor(Math.random() * 8) + 1;
+        let e2 = Math.floor(Math.random() * (10 - e1));
+        
+        // Tenminste één getal moet een kommagetal zijn
+        let decSelection = Math.random() < 0.5 ? 1 : (Math.random() < 0.5 ? 2 : 3); // 1 = g1 heeft dec, 2 = g2 heeft dec, 3 = beide
+        
+        let tiende1 = (decSelection === 1 || decSelection === 3) ? Math.floor(Math.random() * 8) : 0;
+        let tiende2 = (decSelection === 2 || decSelection === 3) ? Math.floor(Math.random() * (10 - tiende1)) : 0;
+        
+        let honderdste1 = (decSelection === 1 || decSelection === 3) ? Math.floor(Math.random() * 8) : 0;
+        let honderdste2 = (decSelection === 2 || decSelection === 3) ? Math.floor(Math.random() * (10 - honderdste1)) : 0;
+        
+        // Zorg dat er tenminste één decimaal is
+        if (tiende1 === 0 && tiende2 === 0 && honderdste1 === 0 && honderdste2 === 0) {
+            tiende1 = 4;
+            tiende2 = 3;
+        }
+
+        getal1 = parseFloat(`${d1*1000 + h1*100 + t1*10 + e1}.${tiende1}${honderdste1}`);
+        getal2 = parseFloat(`${d2*1000 + h2*100 + t2*10 + e2}.${tiende2}${honderdste2}`);
+        isPlus = true;
+
+    } else if (modus === 2) {
+        // Optellen met overschrijding
+        let poging = 0;
+        do {
+            // Zorg voor minstens één kommagetal en mogelijke ongelijke decimalen
+            let dec1 = Math.floor(Math.random() * 3); // 0, 1 of 2 decimalen
+            let dec2 = Math.floor(Math.random() * 2) + 1; // 1 of 2 decimalen (altijd dec)
+            getal1 = parseFloat((Math.random() * 8000 + 100).toFixed(dec1));
+            getal2 = parseFloat((Math.random() * 1500 + 10).toFixed(dec2));
+            poging++;
+        } while (poging < 20 && !heeftOptelOverschrijding(getal1, getal2));
+        isPlus = true;
+
+    } else if (modus === 3) {
+        // Aftrekken zonder ontlenen
+        // We bouwen g1 en g2 zodanig dat d1 >= d2 voor elke kolom.
+        let d1 = Math.floor(Math.random() * 8) + 1;
+        let d2 = Math.floor(Math.random() * d1);
+        
+        let h1 = Math.floor(Math.random() * 9);
+        let h2 = Math.floor(Math.random() * (h1 + 1));
+        
+        let t1 = Math.floor(Math.random() * 9);
+        let t2 = Math.floor(Math.random() * (t1 + 1));
+        
+        let e1 = Math.floor(Math.random() * 8) + 1;
+        let e2 = Math.floor(Math.random() * (e1 + 1));
+        
+        let decSelection = Math.random() < 0.5 ? 1 : (Math.random() < 0.5 ? 2 : 3);
+        let tiende1 = (decSelection === 1 || decSelection === 3) ? Math.floor(Math.random() * 9) : 0;
+        let tiende2 = (decSelection === 2 || decSelection === 3) ? Math.floor(Math.random() * (tiende1 + 1)) : 0;
+        
+        let honderdste1 = (decSelection === 1 || decSelection === 3) ? Math.floor(Math.random() * 9) : 0;
+        let honderdste2 = (decSelection === 2 || decSelection === 3) ? Math.floor(Math.random() * (honderdste1 + 1)) : 0;
+        
+        if (tiende1 === 0 && tiende2 === 0 && honderdste1 === 0 && honderdste2 === 0) {
+            tiende1 = 8;
+            tiende2 = 3;
+        }
+
+        getal1 = parseFloat(`${d1*1000 + h1*100 + t1*10 + e1}.${tiende1}${honderdste1}`);
+        getal2 = parseFloat(`${d2*1000 + h2*100 + t2*10 + e2}.${tiende2}${honderdste2}`);
+        isPlus = false;
+
+    } else if (modus === 4) {
+        // Aftrekken met ontlenen (zonder specifieke nullen op g1)
+        let poging = 0;
+        do {
+            let dec1 = Math.floor(Math.random() * 3);
+            let dec2 = Math.floor(Math.random() * 2) + 1;
+            getal1 = parseFloat((Math.random() * 7000 + 500).toFixed(dec1));
+            getal2 = parseFloat((Math.random() * (getal1 - 100) + 10).toFixed(dec2));
+            poging++;
+        } while (poging < 20 && (!heeftAftrekOntlening(getal1, getal2) || getal1.toString().includes('0')));
+        isPlus = false;
+
+    } else if (modus === 5) {
+        // Aftrekken met ontlenen (met nullen in g1)
+        const templates = [
+            { g1: 500, dec1: 0, g2Max: 120, dec2: 2 },
+            { g1: 300.05, dec1: 2, g2Max: 98, dec2: 1 },
+            { g1: 1000, dec1: 0, g2Max: 450, dec2: 2 },
+            { g1: 604.02, dec1: 2, g2Max: 185, dec2: 2 },
+            { g1: 800.3, dec1: 1, g2Max: 245, dec2: 2 }
+        ];
+        let t = templates[Math.floor(Math.random() * templates.length)];
+        getal1 = t.g1;
+        getal2 = parseFloat((Math.random() * t.g2Max + 15).toFixed(t.dec2));
+        isPlus = false;
+    }
+
+    document.getElementById('cijferSectie').style.display = 'none';
+    document.getElementById('btnCheck').style.display = 'inline-block';
+    document.getElementById('btnNext').style.display = 'none';
+    document.getElementById('instructieTekst').innerHTML = "Klik op de <b>eenheden</b> van beide getallen om te starten.";
+    document.getElementById('feedback').innerHTML = "";
+    document.getElementById('opTeken').innerText = isPlus ? "+" : "-";
+    
+    // Wis alle invoervelden
+    document.querySelectorAll('input').forEach(el => {
+    el.value = "";
+    el.disabled = false;
+    });
+
+    renderOpgave();
+    }
+
+    // Helpers voor carry/borrow check
+    function heeftOptelOverschrijding(g1, g2) {
+        let s1 = g1.toFixed(2).replace('.', '');
+        let s2 = g2.toFixed(2).replace('.', '');
+        let maxLen = Math.max(s1.length, s2.length);
+        s1 = s1.padStart(maxLen, '0');
+        s2 = s2.padStart(maxLen, '0');
+        let carry = 0;
+        for (let i = maxLen - 1; i >= 0; i--) {
+            let sum = parseInt(s1[i]) + parseInt(s2[i]) + carry;
+            if (sum >= 10) return true;
+            carry = Math.floor(sum / 10);
+        }
+        return false;
+    }
+
+    function heeftAftrekOntlening(g1, g2) {
+        if (g1 <= g2) return false;
+        let s1 = g1.toFixed(2).replace('.', '');
+        let s2 = g2.toFixed(2).replace('.', '');
+        let maxLen = Math.max(s1.length, s2.length);
+        s1 = s1.padStart(maxLen, '0');
+        s2 = s2.padStart(maxLen, '0');
+        for (let i = maxLen - 1; i >= 0; i--) {
+            if (parseInt(s1[i]) < parseInt(s2[i])) return true;
+        }
+        return false;
+    }
+
+    function renderOpgave() {
+    const display = document.getElementById('opgaveDisplay');
+    display.innerHTML = "";
+
+    const createGroup = (num, id) => {
+    const group = document.createElement('div');
+    group.className = 'number-group';
+    const s = formatDutchDecimal(num);
+    const commaIdx = s.indexOf(',');
+    // De eenheid is het cijfer net vóór de komma, of het laatste cijfer als er geen komma is.
+    const unitIdx = commaIdx !== -1 ? commaIdx - 1 : s.length - 1;
+
+    s.split('').forEach((c, i) => {
+    const span = document.createElement('span');
+    span.innerText = c;
+    if (c === ',') {
+        span.className = 'comma-separator';
+        group.appendChild(span);
+    } else {
+        span.className = 'digit';
+        span.onclick = function() {
+        if (i === unitIdx) {
+        this.classList.add('selected');
+        if (id === 1) eenheid1Gevonden = true; else eenheid2Gevonden = true;
+        if (eenheid1Gevonden && eenheid2Gevonden) activeerSchema();
+        } else {
+        this.style.borderColor = "var(--error-color)";
+        setTimeout(() => this.style.borderColor = "transparent", 500);
+        }
+        };
+        group.appendChild(span);
+    }
+    });
+    return group;
     };
- 
-    try {
-        await addDoc(collection(db,"resultaten"), record);
-        statusBox.innerHTML  = "✅ Resultaten veilig bewaard voor de leerkracht!";
-        statusBox.style.background = "#e8f5e9";
-        statusBox.style.borderColor= "#a5d6a7";
-        statusBox.style.color      = "#2e7d32";
-    } catch(err) {
-        statusBox.innerHTML  = "❌ Opslaan mislukt: " + err.message;
-        statusBox.style.background = "#ffebee";
-        statusBox.style.borderColor= "#ffcdd2";
-        statusBox.style.color      = "#c62828";
+
+    display.appendChild(createGroup(getal1, 1));
+    const op = document.createElement('span');
+    op.innerText = isPlus ? "+" : "-";
+    op.style.margin = "0 15px";
+    display.appendChild(op);
+    display.appendChild(createGroup(getal2, 2));
+    const eq = document.createElement('span');
+    eq.innerText = " = ?";
+    eq.style.marginLeft = "10px";
+    display.appendChild(eq);
     }
-}
+
+    function activeerSchema() {
+    document.getElementById('cijferSectie').style.display = 'block';
+    document.getElementById('instructieTekst').innerHTML = "<b>Goed zo!</b> Vul nu het schema in.";
+    }
+
+    function valideerOplossing() {
+    const d = document.getElementById('ansD').value.trim() || "";
+    const h = document.getElementById('ansH').value.trim() || "";
+    const t = document.getElementById('ansT').value.trim() || "";
+    const e = document.getElementById('ansE').value.trim() || "";
+    const tienden = document.getElementById('ans_t').value.trim() || "";
+    const honderdsten = document.getElementById('ans_h').value.trim() || "";
+    
+    if (e === "" && tienden === "" && honderdsten === "") {
+    document.getElementById('feedback').innerText = "Vul eerst het antwoord in!";
+    return;
+    }
+
+    // Bouw de invoer om naar een float kommagetal
+    const intPart = (d || "0") + (h || "0") + (t || "0") + (e || "0");
+    const decPart = (tienden || "0") + (honderdsten || "0");
+    const gok = parseFloat(intPart + "." + decPart);
+
+    const correct = isPlus ? (getal1 + getal2) : (getal1 - getal2);
+    
+    // Vergelijk afgerond tot 2 decimalen om float precision issues te voorkomen
+    const roundedCorrect = Math.round(correct * 100) / 100;
+    const roundedGok = Math.round(gok * 100) / 100;
+
+    const fb = document.getElementById('feedback');
+
+    if (roundedGok === roundedCorrect) {
+    juisteOefeningen++;
+    updateHearts();
+    fb.innerHTML = "<span style='color:var(--success-color)'>🎉 Helemaal juist!</span>";
+    if (!window._vragenLog) window._vragenLog = [];
+    window._vragenLog.push({ vraag: formatDutchDecimal(getal1)+" "+(isPlus?"+":"-")+" "+formatDutchDecimal(getal2), antwoord: formatDutchDecimal(roundedGok), juist: formatDutchDecimal(roundedCorrect), isJuist: true });
+    
+    document.getElementById('btnCheck').style.display = 'none';
+    document.getElementById('btnNext').style.display = 'inline-block';
+
+    } else {
+    if(!huidigeOefeningFoutGeweest) {
+    fouteOefeningenInSessie++;
+    huidigeOefeningFoutGeweest = true;
+    }
+    if (!window._vragenLog) window._vragenLog = [];
+    window._vragenLog.push({ vraag: formatDutchDecimal(getal1)+" "+(isPlus?"+":"-")+" "+formatDutchDecimal(getal2), antwoord: formatDutchDecimal(roundedGok), juist: formatDutchDecimal(roundedCorrect), isJuist: false });
+    
+    fb.innerHTML = `
+    <div style='color:var(--error-color)'>❌ Dat is niet juist.</div>
+    <div class='correct-answer'>De juiste oplossing is: <b>${formatDutchDecimal(correct)}</b></div>
+    `;
+    
+    // Blokkeer input na fout om verwarring te voorkomen
+    document.querySelectorAll('.input-cell').forEach(el => el.disabled = true);
+    
+    document.getElementById('btnCheck').style.display = 'none';
+    document.getElementById('btnNext').style.display = 'inline-block';
+    }
+    }
+
+    function volgendeOefening() {
+    if (juisteOefeningen >= 5) {
+    toonEindscherm();
+    } else {
+    genereerSom();
+    }
+    }
 </script>
-    <script>
-    function afterLogin(naam) {
-        document.getElementById('login-screen').classList.add('hidden');
-        // Try common user display elements
-        var nb = document.getElementById('user-badge') || document.getElementById('user-bar');
-        if (nb) { nb.classList.add('show'); nb.style.display='flex'; }
-        var na = document.getElementById('user-avatar') || document.getElementById('u-av') || document.getElementById('user-avatar-nav');
-        if (na) na.textContent = naam ? naam[0].toUpperCase() : '👤';
-        var nn = document.getElementById('user-name') || document.getElementById('u-nm') || document.getElementById('user-name-nav');
-        if (nn) nn.textContent = naam;
-        var nr = document.getElementById('u-rl');
-        if (nr) nr.textContent = window._isGuest ? 'Gast' : '';
-    }
-    </script>
+
+</div><!-- /mainContainer -->
+
+<!-- FIREBASE compat SDK -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script>
+firebase.initializeApp({
+  apiKey:"AIzaSyCnQDVVAlK6jE-PPUUediRJMTbN0xqrLDE",
+  authDomain:"klaswebsite-database.firebaseapp.com",
+  projectId:"klaswebsite-database",
+  storageBucket:"klaswebsite-database.firebasestorage.app",
+  messagingSenderId:"42912327282",
+  appId:"1:42912327282:web:f13f2c706f6c42c115c4eb"
+});
+var _db          = firebase.firestore();
+var _currentUser = null;
+var _isGuest     = false;
+var COL_NAME     = "cijferen_komma_toets"; // dashboard pikt dit automatisch op via registry
+
+// ── UPLOAD STATUS ──────────────────────────────────────────────────────────
+function setUploadStatus(type, msg) {
+  var box     = document.getElementById("upload-status");
+  var text    = document.getElementById("upload-status-text");
+  var spinner = document.getElementById("upload-spinner");
+  box.style.display    = "block";
+  spinner.style.display = (type === "loading") ? "inline-block" : "none";
+  if (type === "loading") {
+    box.style.background  = "#f8fafc";
+    box.style.borderColor = "#cbd5e1";
+    box.style.color       = "#475569";
+  } else if (type === "ok") {
+    box.style.background  = "#f0fdf4";
+    box.style.borderColor = "#86efac";
+    box.style.color       = "#15803d";
+  } else {
+    box.style.background  = "#fff1f2";
+    box.style.borderColor = "#fecdd3";
+    box.style.color       = "#be123c";
+  }
+  text.textContent = msg;
+  console.log("[cijferen saveToFirestore] " + type + ": " + msg);
+}
+
+// ── LOGIN ──────────────────────────────────────────────────────────────────
+function klasLogin() {
+  var naam = (document.getElementById("klas-naam").value||"").trim().toLowerCase();
+  var code = (document.getElementById("klas-code").value||"").trim();
+  var err  = document.getElementById("klas-err");
+  err.style.display = "none";
+  if (!naam) { err.textContent = "Vul je voornaam in."; err.style.display = "block"; return; }
+  if (!code) { err.textContent = "Vul je code in.";    err.style.display = "block"; return; }
+
+  var btn = document.getElementById("login-btn");
+  btn.textContent = "Even wachten..."; btn.disabled = true;
+
+  _db.collection("leerlingen").doc(naam).get().then(function(doc) {
+    btn.textContent = "Inloggen"; btn.disabled = false;
+    if (!doc.exists) { err.textContent = "Naam niet gevonden."; err.style.display = "block"; return; }
+    var data = doc.data();
+    if (data.code !== code) { err.textContent = "Verkeerde code."; err.style.display = "block"; return; }
+    window._leerlingNaam = data.weergavenaam || naam;
+    window._leerlingId   = naam;
+    _currentUser = { uid: naam, displayName: data.weergavenaam || naam };
+    _isGuest = false;
+    openApp(_currentUser.displayName, false);
+  }).catch(function(e) {
+    btn.textContent = "Inloggen"; btn.disabled = false;
+    err.textContent = "Fout: " + e.message; err.style.display = "block";
+  });
+}
+
+function klasGast() {
+  _isGuest = true; _currentUser = null;
+  window._leerlingId   = null;
+  window._leerlingNaam = "Gast";
+  openApp("Gast", true);
+}
+
+function openApp(naam, isGast) {
+  document.getElementById("login-screen").style.display = "none";
+  document.getElementById("mainContainer").style.display = "block";
+}
+
+function doSignOut() {
+  _currentUser = null; _isGuest = false;
+  window._leerlingId = null; window._leerlingNaam = null;
+  document.getElementById("mainContainer").style.display = "none";
+  document.getElementById("login-screen").style.display  = "flex";
+  document.getElementById("klas-naam").value = "";
+  document.getElementById("klas-code").value = "";
+  document.getElementById("klas-err").style.display = "none";
+  // Terug naar menu
+  document.getElementById('menuSectie').style.display = 'flex';
+  document.getElementById('oefeningSectie').style.display = 'none';
+  document.getElementById('eindSectie').style.display = 'none';
+  document.getElementById('progressContainer').style.display = 'none';
+}
+
+// ── OPSLAAN NAAR FIRESTORE + REGISTRY ─────────────────────────────────────
+// De registry-write zorgt ervoor dat het dashboard deze collection
+// automatisch ontdekt — nooit meer manueel COLLECTION_LABELS aanpassen.
+async function saveToFirestore(score, totalQ, pct, tijd, modus, label, fouten, vragenLog) {
+  if (_isGuest || !_currentUser) {
+    setUploadStatus("error", "❌ Niet opgeslagen: je speelt als gast.");
+    return;
+  }
+  if (!window._leerlingId) {
+    setUploadStatus("error", "❌ Geen leerling-ID. Log opnieuw in.");
+    return;
+  }
+
+  setUploadStatus("loading", "Bezig met opslaan...");
+
+  var modusLabels = {
+    1:"Optellen zonder overschrijding",
+    2:"Optellen met overschrijding",
+    3:"Aftrekken zonder ontlenen",
+    4:"Aftrekken met ontlenen",
+    5:"Aftrekken met ontlenen (nullen)",
+    6:"Alles door elkaar"
+  };
+  var modusNaam = modusLabels[modus] || label;
+
+  var foutenTelling = fouten > 0 ? { [modusNaam]: fouten } : {};
+  var extraOefenen  = fouten > 0 ? [modusNaam + " (" + fouten + "x fout)"] : [];
+
+  var record = {
+    leerlingId:   window._leerlingId,
+    leerlingNaam: window._leerlingNaam || "Leerling",
+    mode:         modusNaam,
+    score:        score,
+    totalQ:       totalQ,
+    percentage:   pct,
+    tijd:         tijd,
+    hintsGebruikt: 0,
+    timestamp:    firebase.firestore.FieldValue.serverTimestamp(),
+    foutenAnalyse: {
+      extraOefenen:       extraOefenen,
+      foutenPerCategorie: foutenTelling
+    },
+    vragen: (vragenLog||[]).map(function(v, i) {
+      return {
+        vraagNr:          i + 1,
+        vraag:            v.vraag            || "",
+        categorie:        modusNaam,
+        antwoordLeerling: v.antwoord         || "(leeg)",
+        juistAntwoord:    v.juist            || "",
+        isJuist:          v.isJuist          || false,
+        hintGebruikt:     false,
+        punten:           v.isJuist ? 1 : 0,
+        tijdSeconden:     0
+      };
+    })
+  };
+
+  console.log("[cijferen saveToFirestore] Opslaan naar " + COL_NAME + ":", record);
+
+  try {
+    // 1. Score opslaan in eigen collection
+    var docRef = await _db.collection(COL_NAME).add(record);
+    console.log("[cijferen saveToFirestore] Succes! ID:", docRef.id);
+
+    // 2. Registry bijwerken — dashboard leest dit en ontdekt de collection automatisch
+    await _db.collection("toets_registry").doc(COL_NAME).set({
+      naam:        "Cijferen (Kommagetallen)",
+      collection:  COL_NAME,
+      lastSeen:    firebase.firestore.FieldValue.serverTimestamp()
+    }, { merge: true });
+
+    setUploadStatus("ok", "✅ Score opgeslagen! (ID: " + docRef.id.substring(0,8) + "…)");
+  } catch(e) {
+    console.error("[cijferen saveToFirestore] Fout:", e.code, e.message);
+    var uitleg = e.message || "Onbekende fout";
+    if (e.code === "permission-denied") uitleg = "Geen schrijfrechten. Contacteer de leerkracht.";
+    else if (e.code === "unavailable")  uitleg = "Geen internetverbinding. Probeer opnieuw.";
+    setUploadStatus("error", "❌ Opslaan mislukt: " + uitleg);
+  }
+}
+
+// ── EVENT LISTENERS ────────────────────────────────────────────────────────
+document.addEventListener("DOMContentLoaded", function() {
+  document.getElementById("login-btn").addEventListener("click", klasLogin);
+  document.getElementById("gast-btn").addEventListener("click", klasGast);
+  document.getElementById("klas-naam").addEventListener("keypress", function(e) {
+    if (e.key === "Enter") klasLogin();
+  });
+  document.getElementById("klas-code").addEventListener("keypress", function(e) {
+    if (e.key === "Enter") klasLogin();
+  });
+});
+</script>
 </body>
 </html>
- 
-
-
-
-
-
-
