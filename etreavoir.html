@@ -1,0 +1,748 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>être & avoir — Frans</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<style>
+  body { font-family: 'Plus Jakarta Sans', sans-serif; }
+  .hidden { display: none !important; }
+  .card-anim { transition: transform .18s, box-shadow .18s; }
+  .card-anim:hover { transform: translateY(-3px); box-shadow: 0 10px 24px rgba(0,0,0,0.08); }
+</style>
+</head>
+<body class="bg-slate-50 min-h-screen pb-20">
+
+<!-- ══════════════════════════════════════════════
+     LOGIN OVERLAY  (zelfde patroon als Gewicht)
+══════════════════════════════════════════════ -->
+<div id="klas-login" style="position:fixed;inset:0;z-index:9999;background:linear-gradient(135deg,#1e3a5f,#1d4ed8);display:flex;align-items:center;justify-content:center;padding:20px;">
+  <div style="background:white;border-radius:24px;padding:2.5rem 2rem;width:100%;max-width:380px;box-shadow:0 25px 50px rgba(0,0,0,0.25);text-align:center;display:flex;flex-direction:column;gap:12px;">
+    <div style="font-size:3rem;">🇫🇷</div>
+    <h1 style="font-size:1.5rem;font-weight:900;color:#1f2937;margin:0;">être &amp; avoir</h1>
+    <p style="color:#6b7280;font-size:.9rem;margin:0;">Voer je naam en code in</p>
+    <div id="klas-err" style="color:#dc2626;font-size:.85rem;font-weight:700;min-height:18px;display:none;"></div>
+    <input type="text"     id="klas-naam" placeholder="Jouw voornaam" autocomplete="off" autocapitalize="words"
+      style="width:100%;padding:14px;border:2px solid #e5e7eb;border-radius:12px;font-family:inherit;font-size:1rem;font-weight:600;text-align:center;outline:none;">
+    <input type="password" id="klas-code" placeholder="Jouw code" autocomplete="off"
+      style="width:100%;padding:14px;border:2px solid #e5e7eb;border-radius:12px;font-family:inherit;font-size:1rem;font-weight:600;text-align:center;outline:none;">
+    <button onclick="klasLogin()" style="width:100%;background:#1e3a5f;color:white;border:none;border-radius:12px;padding:14px;font-family:inherit;font-size:1rem;font-weight:700;cursor:pointer;">Inloggen</button>
+    <button onclick="klasGast()"  style="width:100%;background:transparent;border:2px solid #e5e7eb;border-radius:12px;padding:12px;font-family:inherit;font-size:.9rem;font-weight:700;color:#6b7280;cursor:pointer;">Doorgaan als gast (geen opslag)</button>
+    <div style="font-size:.75rem;color:#9ca3af;"><a href="dashboard.html" style="color:#1e3a5f;font-weight:700;text-decoration:none;">Leerkracht? Klik hier</a></div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     NAVIGATIEBALK
+══════════════════════════════════════════════ -->
+<nav class="bg-white border-b border-slate-100 shadow-sm sticky top-0 z-40 px-4 py-3">
+  <div class="max-w-2xl mx-auto flex justify-between items-center">
+    <div class="flex items-center gap-3">
+      <div class="bg-blue-600 text-white p-2 rounded-xl shadow-md text-lg">🇫🇷</div>
+      <div>
+        <span class="text-xs font-bold text-blue-600 uppercase tracking-wider block">Frans</span>
+        <h1 class="text-base font-bold text-slate-800 leading-tight">être &amp; avoir</h1>
+      </div>
+    </div>
+    <div id="user-badge" class="hidden items-center gap-2">
+      <div id="user-avatar-circle" style="width:34px;height:34px;border-radius:50%;background:#dbeafe;display:flex;align-items:center;justify-content:center;font-weight:900;color:#1d4ed8;font-size:.95rem;flex-shrink:0;">?</div>
+      <div class="text-left">
+        <p id="user-name-nav" class="text-sm font-bold text-slate-800 leading-none"></p>
+        <p id="guest-label-nav" class="hidden text-[10px] font-bold text-amber-500">GAST</p>
+      </div>
+      <button id="signout-btn" class="text-[11px] text-slate-400 hover:text-rose-500 border border-slate-200 px-2 py-1 rounded-lg transition">
+        <i class="fa-solid fa-right-from-bracket"></i>
+      </button>
+    </div>
+  </div>
+</nav>
+
+<!-- ══════════════════════════════════════════════
+     HOOFD APP
+══════════════════════════════════════════════ -->
+<div id="app" class="max-w-2xl mx-auto p-4 py-8 space-y-6">
+
+  <!-- ── KEUZEMENU ── -->
+  <div id="menu-view">
+    <!-- Gastbanner -->
+    <div id="guest-banner" class="hidden mb-4 bg-amber-50 border border-amber-200 text-amber-700 text-sm font-semibold p-3 rounded-2xl text-center">
+      <i class="fa-solid fa-user-secret mr-1"></i> Je bent aangemeld als <strong>gast</strong> — scores worden <strong>niet</strong> opgeslagen.
+    </div>
+
+    <!-- Koptekst -->
+    <div class="bg-white rounded-3xl shadow-xl p-8 border border-slate-100 text-center mb-6">
+      <div class="inline-flex p-3 bg-blue-100 rounded-2xl mb-3 text-3xl">🇫🇷</div>
+      <h2 class="text-2xl font-extrabold text-slate-800">être &amp; avoir</h2>
+      <p class="text-slate-500 text-sm mt-1">Kies een module hieronder</p>
+    </div>
+
+    <!-- 3 modulekaarten -->
+    <div class="grid grid-cols-1 gap-4">
+
+      <!-- SPIEKBRIEFJE -->
+      <button onclick="toonSpiekbriefje()" class="card-anim bg-white p-5 rounded-2xl border-2 border-slate-100 hover:border-blue-400 text-left flex items-center gap-4 transition-all shadow-sm">
+        <div class="w-12 h-12 bg-blue-50 text-blue-500 rounded-xl flex items-center justify-center text-xl flex-shrink-0">📖</div>
+        <div>
+          <h3 class="font-extrabold text-slate-800">Spiekbriefje</h3>
+          <p class="text-xs text-slate-400 mt-0.5">Bekijk alle vervoegingen van être en avoir</p>
+        </div>
+        <div class="ml-auto text-slate-300 text-lg">›</div>
+      </button>
+
+      <!-- OEFENEN -->
+      <button onclick="startModule('oefenen')" class="card-anim bg-white p-5 rounded-2xl border-2 border-slate-100 hover:border-emerald-400 text-left flex items-center gap-4 transition-all shadow-sm">
+        <div class="w-12 h-12 bg-emerald-50 text-emerald-500 rounded-xl flex items-center justify-center text-xl flex-shrink-0">✏️</div>
+        <div>
+          <h3 class="font-extrabold text-slate-800">Oefenen</h3>
+          <p class="text-xs text-slate-400 mt-0.5">15 willekeurige vragen · score niet bewaard</p>
+        </div>
+        <div class="ml-auto text-slate-300 text-lg">›</div>
+      </button>
+
+      <!-- TOETS -->
+      <button onclick="startModule('toets')" class="card-anim bg-white p-5 rounded-2xl border-2 border-slate-100 hover:border-indigo-400 text-left flex items-center gap-4 transition-all shadow-sm">
+        <div class="w-12 h-12 bg-indigo-50 text-indigo-500 rounded-xl flex items-center justify-center text-xl flex-shrink-0">📝</div>
+        <div>
+          <h3 class="font-extrabold text-slate-800">Toets</h3>
+          <p class="text-xs text-slate-400 mt-0.5">15 willekeurige vragen · score wordt opgeslagen</p>
+        </div>
+        <div class="ml-auto text-slate-300 text-lg">›</div>
+      </button>
+
+    </div>
+  </div>
+
+  <!-- ── SPIEKBRIEFJE VIEW ── -->
+  <div id="spiek-view" class="hidden space-y-4">
+    <button onclick="showView('menu-view')" class="flex items-center gap-2 text-sm font-bold text-slate-500 hover:text-blue-600 transition-colors">
+      <i class="fa-solid fa-arrow-left"></i> Terug naar menu
+    </button>
+    <div class="bg-white rounded-3xl shadow-lg p-6 border border-slate-100">
+      <h3 class="text-lg font-extrabold text-slate-800 mb-4">📖 Spiekbriefje</h3>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+        <!-- être -->
+        <div class="bg-blue-50 p-4 rounded-2xl">
+          <h4 class="font-extrabold text-blue-700 border-b border-blue-200 mb-3 pb-1">être (zijn)</h4>
+          <ul class="text-sm space-y-1.5 text-blue-900">
+            <li><strong>je suis</strong> <span class="text-blue-500 italic">— ik ben</span></li>
+            <li><strong>tu es</strong> <span class="text-blue-500 italic">— jij bent</span></li>
+            <li><strong>il est</strong> <span class="text-blue-500 italic">— hij is</span></li>
+            <li><strong>elle est</strong> <span class="text-blue-500 italic">— zij is</span></li>
+            <li><strong>on est</strong> <span class="text-blue-500 italic">— men is</span></li>
+            <li><strong>nous sommes</strong> <span class="text-blue-500 italic">— wij zijn</span></li>
+            <li><strong>vous êtes</strong> <span class="text-blue-500 italic">— jullie zijn / u bent</span></li>
+            <li><strong>ils sont</strong> <span class="text-blue-500 italic">— zij zijn (m)</span></li>
+            <li><strong>elles sont</strong> <span class="text-blue-500 italic">— zij zijn (v)</span></li>
+          </ul>
+        </div>
+        <!-- avoir -->
+        <div class="bg-amber-50 p-4 rounded-2xl">
+          <h4 class="font-extrabold text-amber-700 border-b border-amber-200 mb-3 pb-1">avoir (hebben)</h4>
+          <ul class="text-sm space-y-1.5 text-amber-900">
+            <li><strong>j'ai</strong> <span class="text-amber-600 italic">— ik heb</span></li>
+            <li><strong>tu as</strong> <span class="text-amber-600 italic">— jij hebt</span></li>
+            <li><strong>il a</strong> <span class="text-amber-600 italic">— hij heeft</span></li>
+            <li><strong>elle a</strong> <span class="text-amber-600 italic">— zij heeft</span></li>
+            <li><strong>on a</strong> <span class="text-amber-600 italic">— men heeft</span></li>
+            <li><strong>nous avons</strong> <span class="text-amber-600 italic">— wij hebben</span></li>
+            <li><strong>vous avez</strong> <span class="text-amber-600 italic">— jullie hebben / u heeft</span></li>
+            <li><strong>ils ont</strong> <span class="text-amber-600 italic">— zij hebben (m)</span></li>
+            <li><strong>elles ont</strong> <span class="text-amber-600 italic">— zij hebben (v)</span></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── WERKWOORD-KEUZE VOOR OEFENEN/TOETS ── -->
+  <div id="keuze-view" class="hidden space-y-4">
+    <button onclick="showView('menu-view')" class="flex items-center gap-2 text-sm font-bold text-slate-500 hover:text-blue-600 transition-colors">
+      <i class="fa-solid fa-arrow-left"></i> Terug naar menu
+    </button>
+    <div class="bg-white rounded-3xl shadow-xl p-8 border border-slate-100">
+      <div class="text-center mb-6">
+        <div id="keuze-icon" class="inline-flex p-3 rounded-2xl mb-3 text-2xl bg-emerald-50">✏️</div>
+        <h2 id="keuze-titel" class="text-xl font-extrabold text-slate-800">Oefenen</h2>
+        <p class="text-slate-500 text-sm mt-1">Welke werkwoorden wil je oefenen?</p>
+      </div>
+      <div class="grid grid-cols-2 gap-3 mb-6">
+        <label class="cursor-pointer">
+          <input type="checkbox" id="check-etre" value="etre" checked class="hidden peer">
+          <div class="p-4 rounded-2xl border-2 transition-all flex flex-col items-center peer-checked:border-blue-500 peer-checked:bg-blue-50 border-slate-100 hover:border-slate-300">
+            <span class="font-extrabold text-lg">être</span>
+            <span class="text-xs text-slate-500 italic">(zijn)</span>
+          </div>
+        </label>
+        <label class="cursor-pointer">
+          <input type="checkbox" id="check-avoir" value="avoir" checked class="hidden peer">
+          <div class="p-4 rounded-2xl border-2 transition-all flex flex-col items-center peer-checked:border-amber-500 peer-checked:bg-amber-50 border-slate-100 hover:border-slate-300">
+            <span class="font-extrabold text-lg">avoir</span>
+            <span class="text-xs text-slate-500 italic">(hebben)</span>
+          </div>
+        </label>
+      </div>
+      <button onclick="bevestigKeuze()" class="w-full bg-slate-900 text-white py-4 rounded-2xl font-extrabold text-lg hover:bg-black transition-all shadow-lg">
+        Start →
+      </button>
+      <div id="keuze-err" class="hidden mt-3 text-center text-red-500 text-sm font-bold"></div>
+    </div>
+  </div>
+
+  <!-- ── QUIZ SCHERM ── -->
+  <div id="quiz-view" class="hidden">
+    <div class="bg-white rounded-3xl shadow-xl overflow-hidden border border-slate-100">
+      <!-- Progress bar -->
+      <div class="h-2 bg-slate-100 w-full">
+        <div id="progress-bar" class="h-full bg-blue-500 transition-all duration-300" style="width:0%"></div>
+      </div>
+      <div class="p-6 md:p-8">
+        <!-- Header -->
+        <div class="flex justify-between items-center mb-6">
+          <button onclick="bevestigStoppen()" class="text-sm font-bold text-slate-400 hover:text-red-500 flex items-center gap-1 transition-colors">
+            <i class="fa-solid fa-arrow-left"></i> Stop
+          </button>
+          <span id="question-counter" class="px-3 py-1 bg-slate-100 rounded-full text-slate-600 text-sm font-bold">Vraag 1 / 15</span>
+          <span id="mode-badge" class="text-xs font-extrabold px-2 py-1 rounded-lg bg-blue-100 text-blue-700 uppercase tracking-wide">Oefenen</span>
+        </div>
+        <!-- Vraag -->
+        <div class="text-center mb-8">
+          <span id="direction-label" class="text-slate-400 text-xs uppercase font-bold tracking-wider">Vertaal naar het Nederlands</span>
+          <div class="mt-1">
+            <span id="verb-label" class="text-xs font-extrabold uppercase tracking-widest text-blue-500">être</span>
+          </div>
+          <h2 id="prompt-text" class="text-4xl font-extrabold text-slate-800 mt-3">...</h2>
+        </div>
+        <!-- Input + feedback -->
+        <div class="space-y-4">
+          <input id="user-input" type="text" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
+            class="w-full p-5 text-center text-xl font-bold rounded-2xl border-2 outline-none transition-all border-slate-200 focus:border-blue-500 shadow-sm"
+            placeholder="Typ je antwoord...">
+          <div id="feedback-area" class="hidden">
+            <div id="feedback-box" class="p-4 rounded-2xl mb-3 flex items-center gap-3 font-bold text-sm"></div>
+          </div>
+          <button id="action-btn" onclick="handleAction()"
+            class="w-full bg-blue-600 text-white py-4 rounded-2xl font-extrabold text-lg shadow-md hover:bg-blue-700 transition-all">
+            Controleer
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── STOP-BEVESTIGING MODAL ── -->
+  <div id="stop-modal" class="hidden fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+    <div class="bg-white rounded-3xl p-8 max-w-sm w-full text-center shadow-2xl space-y-5">
+      <div class="text-4xl">⚠️</div>
+      <h3 class="text-xl font-extrabold text-slate-800">Stoppen?</h3>
+      <p class="text-slate-500 text-sm">Je voortgang gaat verloren.</p>
+      <div class="flex gap-3">
+        <button onclick="document.getElementById('stop-modal').classList.add('hidden')"
+          class="flex-1 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl transition-all">Doorgaan</button>
+        <button onclick="naarMenu()"
+          class="flex-1 py-3 bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl transition-all">Stoppen</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── RESULTATEN SCHERM ── -->
+  <div id="result-view" class="hidden space-y-5">
+    <div class="bg-white rounded-3xl shadow-xl p-8 text-center border border-slate-100 space-y-6">
+      <div class="text-6xl" id="result-emoji">🎉</div>
+      <div>
+        <h2 class="text-3xl font-extrabold text-slate-800">Klaar!</h2>
+        <p class="text-slate-500 text-sm mt-1" id="result-subtitel">Je hebt de oefening voltooid.</p>
+      </div>
+      <div class="grid grid-cols-2 gap-4">
+        <div class="bg-blue-50 p-5 rounded-2xl border border-blue-100">
+          <span id="score-text"  class="block text-3xl font-extrabold text-blue-600">0/0</span>
+          <span class="text-xs text-blue-500 font-bold uppercase tracking-wide">Juist</span>
+        </div>
+        <div class="bg-slate-50 p-5 rounded-2xl border border-slate-100">
+          <span id="percent-text" class="block text-3xl font-extrabold text-slate-700">0%</span>
+          <span class="text-xs text-slate-400 font-bold uppercase tracking-wide">Score</span>
+        </div>
+      </div>
+      <!-- Opslag-status (alleen bij toets) -->
+      <div id="upload-status" style="display:none;" class="p-4 rounded-2xl border text-sm font-semibold text-center max-w-sm mx-auto">
+        <i id="upload-spinner" class="fa-solid fa-spinner fa-spin text-indigo-500 text-base mr-2"></i>
+        <span id="upload-status-text">Bezig met opslaan...</span>
+      </div>
+      <!-- Gast-notitie -->
+      <div id="guest-result-note" style="display:none;" class="bg-amber-50 border border-amber-200 text-amber-700 text-xs p-3 rounded-2xl max-w-xs mx-auto">
+        <i class="fa-solid fa-user-secret mr-1"></i> Je speelde als gast. Score is <strong>niet</strong> opgeslagen.
+      </div>
+    </div>
+
+    <!-- Foutenlijst -->
+    <div class="bg-white rounded-3xl shadow-xl p-8 border border-slate-100 space-y-4">
+      <h3 class="text-xl font-extrabold text-slate-800">📋 Overzicht</h3>
+      <div id="error-list" class="space-y-3"></div>
+      <button onclick="naarMenu()" class="w-full mt-4 bg-slate-900 text-white py-4 rounded-2xl font-extrabold text-lg hover:bg-black transition-all shadow-md">
+        Terug naar menu
+      </button>
+    </div>
+  </div>
+
+</div><!-- /#app -->
+
+<!-- ══════════════════════════════════════════════
+     FIREBASE  (compat — GEEN type="module"!)
+══════════════════════════════════════════════ -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script>
+firebase.initializeApp({
+  apiKey:            "AIzaSyCnQDVVAlK6jE-PPUUediRJMTbN0xqrLDE",
+  authDomain:        "klaswebsite-database.firebaseapp.com",
+  projectId:         "klaswebsite-database",
+  storageBucket:     "klaswebsite-database.firebasestorage.app",
+  messagingSenderId: "42912327282",
+  appId:             "1:42912327282:web:f13f2c706f6c42c115c4eb"
+});
+var _db = firebase.firestore();
+
+// ── GLOBALE STAAT  (var, niet let/const — geen scope-problemen met onclick) ──
+var currentUser  = null;
+var isGuest      = false;
+var currentMode  = "";      // "oefenen" of "toets"
+
+// Quiz-staat
+var questions    = [];
+var currentIndex = 0;
+var score        = 0;
+var history      = [];
+var quizState    = "answering";  // "answering" | "feedback"
+
+// ── WERKWOORDEN DATA ──────────────────────────────────────────────────────
+var VERBS = {
+  etre: {
+    name: "être",
+    conjugations: [
+      { pr: "je",    c: "suis",   tr: "ik ben",             cat: "être" },
+      { pr: "tu",    c: "es",     tr: "jij bent",           cat: "être" },
+      { pr: "il",    c: "est",    tr: "hij is",             cat: "être" },
+      { pr: "elle",  c: "est",    tr: "zij is",             cat: "être" },
+      { pr: "on",    c: "est",    tr: "men is",             cat: "être" },
+      { pr: "nous",  c: "sommes", tr: "wij zijn",           cat: "être" },
+      { pr: "vous",  c: "êtes",   tr: "jullie zijn / u bent", cat: "être" },
+      { pr: "ils",   c: "sont",   tr: "zij zijn (m)",       cat: "être" },
+      { pr: "elles", c: "sont",   tr: "zij zijn (v)",       cat: "être" }
+    ]
+  },
+  avoir: {
+    name: "avoir",
+    conjugations: [
+      { pr: "j'",    c: "ai",     tr: "ik heb",               cat: "avoir" },
+      { pr: "tu",    c: "as",     tr: "jij hebt",             cat: "avoir" },
+      { pr: "il",    c: "a",      tr: "hij heeft",            cat: "avoir" },
+      { pr: "elle",  c: "a",      tr: "zij heeft",            cat: "avoir" },
+      { pr: "on",    c: "a",      tr: "men heeft",            cat: "avoir" },
+      { pr: "nous",  c: "avons",  tr: "wij hebben",           cat: "avoir" },
+      { pr: "vous",  c: "avez",   tr: "jullie hebben / u heeft", cat: "avoir" },
+      { pr: "ils",   c: "ont",    tr: "zij hebben (m)",       cat: "avoir" },
+      { pr: "elles", c: "ont",    tr: "zij hebben (v)",       cat: "avoir" }
+    ]
+  }
+};
+
+// ── LOGIN ─────────────────────────────────────────────────────────────────
+function klasLogin() {
+  var naam = (document.getElementById("klas-naam").value || "").trim().toLowerCase();
+  var code = (document.getElementById("klas-code").value || "").trim();
+  var err  = document.getElementById("klas-err");
+  err.style.display = "none";
+
+  if (!naam) { err.textContent = "Vul je voornaam in."; err.style.display = "block"; return; }
+  if (!code) { err.textContent = "Vul je code in.";     err.style.display = "block"; return; }
+
+  _db.collection("leerlingen").doc(naam).get()
+    .then(function(doc) {
+      if (!doc.exists) { err.textContent = "Naam niet gevonden."; err.style.display = "block"; return; }
+      var data = doc.data();
+      if (data.code !== code) { err.textContent = "Verkeerde code."; err.style.display = "block"; return; }
+      currentUser = { uid: naam, displayName: data.weergavenaam || naam };
+      isGuest = false;
+      window._leerlingId   = naam;
+      window._leerlingNaam = data.weergavenaam || naam;
+      afterLogin();
+    })
+    .catch(function(e) { err.textContent = "Fout: " + e.message; err.style.display = "block"; });
+}
+
+function klasGast() {
+  currentUser = null;
+  isGuest     = true;
+  window._leerlingId   = null;
+  window._leerlingNaam = "Gast";
+  afterLogin();
+}
+
+function afterLogin() {
+  document.getElementById("klas-login").style.display = "none";
+  // Nav badge
+  var badge = document.getElementById("user-badge");
+  badge.style.display = "flex";
+  var displayNaam = isGuest ? "Gast" : (window._leerlingNaam || "?");
+  document.getElementById("user-name-nav").textContent = displayNaam;
+  document.getElementById("user-avatar-circle").textContent = displayNaam[0].toUpperCase();
+  if (isGuest) document.getElementById("guest-label-nav").classList.remove("hidden");
+  // Gastbanner
+  if (isGuest) document.getElementById("guest-banner").classList.remove("hidden");
+  showView("menu-view");
+}
+
+function doLogout() {
+  currentUser = null; isGuest = false;
+  window._leerlingId = null; window._leerlingNaam = null;
+  // Reset login-formulier
+  document.getElementById("klas-naam").value = "";
+  document.getElementById("klas-code").value = "";
+  document.getElementById("klas-err").style.display = "none";
+  document.getElementById("user-badge").style.display = "none";
+  document.getElementById("guest-label-nav").classList.add("hidden");
+  document.getElementById("guest-banner").classList.add("hidden");
+  document.getElementById("klas-login").style.display = "flex";
+}
+
+// ── VIEWS ─────────────────────────────────────────────────────────────────
+function showView(id) {
+  var views = ["menu-view", "spiek-view", "keuze-view", "quiz-view", "result-view"];
+  views.forEach(function(v) { document.getElementById(v).classList.add("hidden"); });
+  document.getElementById(id).classList.remove("hidden");
+}
+
+function toonSpiekbriefje() { showView("spiek-view"); }
+
+// ── MODULE KIEZEN ─────────────────────────────────────────────────────────
+function startModule(mode) {
+  currentMode = mode;
+  // Pas keuze-scherm aan op basis van mode
+  if (mode === "toets") {
+    document.getElementById("keuze-icon").textContent    = "📝";
+    document.getElementById("keuze-icon").className      = "inline-flex p-3 rounded-2xl mb-3 text-2xl bg-indigo-50";
+    document.getElementById("keuze-titel").textContent   = "Toets";
+  } else {
+    document.getElementById("keuze-icon").textContent    = "✏️";
+    document.getElementById("keuze-icon").className      = "inline-flex p-3 rounded-2xl mb-3 text-2xl bg-emerald-50";
+    document.getElementById("keuze-titel").textContent   = "Oefenen";
+  }
+  document.getElementById("keuze-err").classList.add("hidden");
+  showView("keuze-view");
+}
+
+function bevestigKeuze() {
+  var selected = [];
+  if (document.getElementById("check-etre").checked)  selected.push("etre");
+  if (document.getElementById("check-avoir").checked) selected.push("avoir");
+
+  if (selected.length === 0) {
+    document.getElementById("keuze-err").textContent = "Selecteer minstens één werkwoord.";
+    document.getElementById("keuze-err").classList.remove("hidden");
+    return;
+  }
+  bouwVragen(selected);
+}
+
+// ── VRAGEN BOUWEN ─────────────────────────────────────────────────────────
+function bouwVragen(selected) {
+  var pool = [];
+  selected.forEach(function(vKey) {
+    var verb = VERBS[vKey];
+    verb.conjugations.forEach(function(conj) {
+      // Bouw de volledige Franse uitdrukking
+      var fr = conj.pr + (conj.pr.slice(-1) === "'" ? "" : " ") + conj.c;
+
+      // FR → NL
+      pool.push({
+        verb:      verb.name,
+        prompt:    fr,
+        answer:    conj.tr,
+        direction: "FR-NL",
+        cat:       conj.cat,
+        fr:        fr,
+        nl:        conj.tr
+      });
+      // NL → FR
+      pool.push({
+        verb:      verb.name,
+        prompt:    conj.tr,
+        answer:    fr,
+        direction: "NL-FR",
+        cat:       conj.cat,
+        fr:        fr,
+        nl:        conj.tr
+      });
+    });
+  });
+
+  // Shuffle en pak 15
+  questions    = shuffle(pool).slice(0, 15);
+  currentIndex = 0;
+  score        = 0;
+  history      = [];
+
+  // Mode-badge kleur
+  var modeBadge = document.getElementById("mode-badge");
+  if (currentMode === "toets") {
+    modeBadge.textContent  = "Toets";
+    modeBadge.className    = "text-xs font-extrabold px-2 py-1 rounded-lg bg-indigo-100 text-indigo-700 uppercase tracking-wide";
+    document.getElementById("progress-bar").className = "h-full bg-indigo-500 transition-all duration-300";
+  } else {
+    modeBadge.textContent  = "Oefenen";
+    modeBadge.className    = "text-xs font-extrabold px-2 py-1 rounded-lg bg-emerald-100 text-emerald-700 uppercase tracking-wide";
+    document.getElementById("progress-bar").className = "h-full bg-blue-500 transition-all duration-300";
+  }
+
+  showView("quiz-view");
+  toonVraag();
+}
+
+// ── QUIZ LOGICA ───────────────────────────────────────────────────────────
+function toonVraag() {
+  var q = questions[currentIndex];
+  quizState = "answering";
+
+  document.getElementById("question-counter").textContent =
+    "Vraag " + (currentIndex + 1) + " / " + questions.length;
+  document.getElementById("verb-label").textContent     = q.verb.toUpperCase();
+  document.getElementById("direction-label").textContent =
+    q.direction === "FR-NL" ? "Vertaal naar het Nederlands" : "Vertaal naar het Frans";
+  document.getElementById("prompt-text").textContent    = q.prompt;
+  document.getElementById("progress-bar").style.width  =
+    (currentIndex / questions.length * 100) + "%";
+
+  var inp = document.getElementById("user-input");
+  inp.value     = "";
+  inp.disabled  = false;
+  inp.className = "w-full p-5 text-center text-xl font-bold rounded-2xl border-2 outline-none transition-all border-slate-200 focus:border-blue-500 shadow-sm";
+
+  document.getElementById("feedback-area").classList.add("hidden");
+  document.getElementById("action-btn").textContent  = "Controleer";
+  document.getElementById("action-btn").className    =
+    "w-full bg-blue-600 text-white py-4 rounded-2xl font-extrabold text-lg shadow-md hover:bg-blue-700 transition-all";
+  inp.focus();
+}
+
+function handleAction() {
+  if (quizState === "answering") controleer();
+  else                           volgende();
+}
+
+function controleer() {
+  var val = document.getElementById("user-input").value.trim().toLowerCase();
+  if (!val) return;
+
+  var q        = questions[currentIndex];
+  var correct  = q.answer.toLowerCase();
+
+  // Accepteer ook deelantwoorden bij slash-varianten (bijv. "jullie zijn" als antwoord op "jullie zijn / u bent")
+  var isCorrect = (val === correct) ||
+    (correct.includes(" / ") && correct.split(" / ").map(function(s){return s.trim();}).indexOf(val) >= 0);
+
+  if (isCorrect) score++;
+
+  history.push({
+    verb:        q.verb,
+    direction:   q.direction,
+    prompt:      q.prompt,
+    answer:      q.answer,
+    userAttempt: val,
+    correct:     isCorrect,
+    cat:         q.cat
+  });
+
+  quizState = "feedback";
+  var inp = document.getElementById("user-input");
+  inp.disabled = true;
+  inp.classList.add(isCorrect ? "border-green-500" : "border-red-400");
+
+  var fbArea = document.getElementById("feedback-area");
+  var fbBox  = document.getElementById("feedback-box");
+  fbArea.classList.remove("hidden");
+
+  if (isCorrect) {
+    fbBox.className = "p-4 rounded-2xl mb-3 flex items-center gap-3 font-bold text-sm bg-green-100 text-green-800";
+    fbBox.innerHTML = "<span>✅ Correct!</span>";
+  } else {
+    fbBox.className = "p-4 rounded-2xl mb-3 flex items-center gap-3 font-bold text-sm bg-red-100 text-red-800";
+    fbBox.innerHTML = "❌ Fout. Het juiste antwoord is: <strong class='ml-1'>" + q.answer + "</strong>";
+  }
+
+  document.getElementById("action-btn").textContent = "Volgende →";
+  document.getElementById("action-btn").className   =
+    "w-full bg-slate-900 text-white py-4 rounded-2xl font-extrabold text-lg hover:bg-black transition-all";
+}
+
+function volgende() {
+  currentIndex++;
+  if (currentIndex < questions.length) toonVraag();
+  else toonResultaat();
+}
+
+function bevestigStoppen() {
+  document.getElementById("stop-modal").classList.remove("hidden");
+}
+
+function naarMenu() {
+  document.getElementById("stop-modal").classList.add("hidden");
+  showView("menu-view");
+}
+
+// ── RESULTAAT ─────────────────────────────────────────────────────────────
+function toonResultaat() {
+  showView("result-view");
+
+  var pct = Math.round((score / questions.length) * 100);
+  document.getElementById("score-text").textContent   = score + "/" + questions.length;
+  document.getElementById("percent-text").textContent = pct + "%";
+  document.getElementById("result-emoji").textContent = pct === 100 ? "🏆" : pct >= 70 ? "🎉" : pct >= 50 ? "💪" : "📚";
+  document.getElementById("result-subtitel").textContent =
+    currentMode === "toets" ? "Je hebt de toets voltooid." : "Je hebt de oefening voltooid.";
+
+  // Foutenlijst
+  var errList = document.getElementById("error-list");
+  errList.innerHTML = "";
+  if (history.filter(function(h){return !h.correct;}).length === 0) {
+    errList.innerHTML = '<div class="text-center py-5 bg-green-50 rounded-2xl border border-green-100 text-green-700 font-bold">Foutloos! Super gedaan. 🎉</div>';
+  } else {
+    history.forEach(function(h, i) {
+      var ok = h.correct;
+      var bg = ok ? "bg-green-50 border-green-100" : "bg-red-50 border-red-100";
+      var el = document.createElement("div");
+      el.className = "p-4 rounded-2xl border " + bg;
+      el.innerHTML =
+        '<div class="flex justify-between items-start gap-2 flex-wrap">' +
+          '<span class="font-bold text-slate-800 text-sm">' + (ok ? "✅" : "❌") + " " + (i+1) + ". " + h.prompt + '</span>' +
+          '<span class="text-xs font-bold text-slate-400 uppercase">' + h.verb + " · " + (h.direction === "FR-NL" ? "FR→NL" : "NL→FR") + "</span>" +
+        "</div>" +
+        (!ok
+          ? '<div class="mt-2 text-sm">' +
+              'Jouw antwoord: <b class="text-red-600">' + h.userAttempt + "</b>" +
+              ' → Juist: <b class="text-slate-800">' + h.answer + "</b>" +
+            "</div>"
+          : "");
+      errList.appendChild(el);
+    });
+  }
+
+  // Opslag
+  document.getElementById("upload-status").style.display = "none";
+  document.getElementById("guest-result-note").style.display = "none";
+
+  if (currentMode === "toets") {
+    if (isGuest || !window._leerlingId) {
+      document.getElementById("guest-result-note").style.display = "block";
+    } else {
+      slaScoreOp(pct);
+    }
+  }
+}
+
+// ── SCORE OPSLAAN (zelfde patroon als Gewicht) ───────────────────────────
+function slaScoreOp(pct) {
+  var statusBox  = document.getElementById("upload-status");
+  var statusText = document.getElementById("upload-status-text");
+  var spinner    = document.getElementById("upload-spinner");
+
+  function setStatus(type, msg) {
+    statusBox.style.display = "block";
+    spinner.style.display   = (type === "loading") ? "inline" : "none";
+    if (type === "loading") {
+      statusBox.style.background  = "#f8fafc";
+      statusBox.style.borderColor = "#cbd5e1";
+      statusBox.style.color       = "#475569";
+    } else if (type === "ok") {
+      statusBox.style.background  = "#f0fdf4";
+      statusBox.style.borderColor = "#bbf7d0";
+      statusBox.style.color       = "#15803d";
+    } else {
+      statusBox.style.background  = "#fff1f2";
+      statusBox.style.borderColor = "#fecdd3";
+      statusBox.style.color       = "#be123c";
+    }
+    statusText.textContent = msg;
+  }
+
+  setStatus("loading", "Bezig met opslaan...");
+
+  // Foutenanalyse per werkwoord
+  var foutenTelling = {};
+  history.filter(function(h){return !h.correct;}).forEach(function(h) {
+    var k = h.verb + " (" + (h.direction === "FR-NL" ? "FR→NL" : "NL→FR") + ")";
+    foutenTelling[k] = (foutenTelling[k] || 0) + 1;
+  });
+  var extraOefenen = Object.keys(foutenTelling)
+    .sort(function(a,b){return foutenTelling[b]-foutenTelling[a];})
+    .map(function(k){return k + " (" + foutenTelling[k] + "x fout)";});
+
+  var record = {
+    leerlingId:   window._leerlingId,
+    leerlingNaam: window._leerlingNaam || "Leerling",
+    mode:         "toets",
+    score:        score,
+    totalQ:       questions.length,
+    percentage:   pct,
+    hintsGebruikt: 0,
+    timestamp:    firebase.firestore.FieldValue.serverTimestamp(),
+    foutenAnalyse: {
+      extraOefenen:       extraOefenen,
+      foutenPerCategorie: foutenTelling
+    },
+    vragen: history.map(function(h, i) {
+      return {
+        vraagNr:         i + 1,
+        vraag:           h.prompt,
+        categorie:       h.verb + " " + (h.direction === "FR-NL" ? "FR→NL" : "NL→FR"),
+        antwoordLeerling: h.userAttempt,
+        juistAntwoord:   h.answer,
+        isJuist:         h.correct,
+        hintGebruikt:    false,
+        punten:          h.correct ? 1 : 0
+      };
+    })
+  };
+
+  _db.collection("etreavoir_toets").add(record)
+    .then(function(docRef) {
+      setStatus("ok", "✅ Score opgeslagen!");
+    })
+    .catch(function(e) {
+      var uitleg = e.message || "Onbekende fout";
+      if (e.code === "permission-denied") uitleg = "Geen schrijfrechten. Contacteer de leerkracht.";
+      else if (e.code === "unavailable")  uitleg = "Geen internetverbinding. Probeer opnieuw.";
+      setStatus("error", "❌ Opslaan mislukt: " + uitleg);
+    });
+}
+
+// ── HELPER: SHUFFLE ───────────────────────────────────────────────────────
+function shuffle(arr) {
+  var a = arr.slice();
+  for (var i = a.length - 1; i > 0; i--) {
+    var j = Math.floor(Math.random() * (i + 1));
+    var t = a[i]; a[i] = a[j]; a[j] = t;
+  }
+  return a;
+}
+
+// ── DOM READY (Enter-toets support) ──────────────────────────────────────
+document.addEventListener("DOMContentLoaded", function() {
+  // Enter op login-velden
+  document.getElementById("klas-naam").addEventListener("keypress", function(e) {
+    if (e.key === "Enter") klasLogin();
+  });
+  document.getElementById("klas-code").addEventListener("keypress", function(e) {
+    if (e.key === "Enter") klasLogin();
+  });
+  // Enter op quiz-input
+  document.getElementById("user-input").addEventListener("keypress", function(e) {
+    if (e.key === "Enter") handleAction();
+  });
+  // Uitloggen
+  document.getElementById("signout-btn").addEventListener("click", doLogout);
+});
+</script>
+</body>
+</html>
