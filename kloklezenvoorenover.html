@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kloklezen Oefening</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { font-family:'Inter',sans-serif; min-height:100vh; display:flex; align-items:center; justify-content:center; background-color:#f7fafc; }
+        .container-app { max-width:900px; width:95%; margin:20px auto; }
+        #clockCanvas { border:4px solid #3b82f6; border-radius:50%; background-color:#ffffff; box-shadow:0 10px 15px -3px rgba(0,0,0,0.1); display:block; width:100%; height:auto; aspect-ratio:1/1; max-width:400px; }
+        .input-group select,.input-group input { border-color:#d1d5db; padding:10px; border-radius:8px; transition:border-color .2s; -webkit-appearance:none; -moz-appearance:none; appearance:none; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l4 4 4-4'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:right .7em top 50%; background-size:1.5em auto; }
+        .input-group select:focus,.input-group input:focus { border-color:#3b82f6; outline:none; }
+        /* Upload status — style.display NOOIT classList */
+        #upload-status { display:none; padding:10px 14px; border-radius:10px; border:2px solid; font-size:.85rem; font-weight:700; text-align:center; margin-top:12px; }
+        @keyframes spin { to { transform:rotate(360deg); } }
+        #upload-spinner { display:inline-block; width:13px; height:13px; border:2px solid #e5e7eb; border-top-color:#3b82f6; border-radius:50%; animation:spin .7s linear infinite; vertical-align:middle; margin-right:6px; }
+    </style>
+</head>
+<body class="p-4">
+
+<!-- LOGIN SCHERM (fixed overlay) -->
+<div id="login-screen" style="position:fixed;inset:0;z-index:9999;background:linear-gradient(135deg,#1e3a5f,#2563eb);display:flex;align-items:center;justify-content:center;padding:20px;">
+  <div style="background:white;border-radius:24px;padding:2.5rem 2rem;width:100%;max-width:380px;box-shadow:0 25px 50px rgba(0,0,0,.25);text-align:center;display:flex;flex-direction:column;gap:12px;">
+    <div style="font-size:3rem">🕐</div>
+    <h1 style="font-size:1.5rem;font-weight:900;color:#1f2937;margin:0;">Kloklezen</h1>
+    <p style="color:#6b7280;font-size:.9rem;margin:0;">Voer je naam en code in</p>
+    <div id="klas-err" style="display:none;color:#dc2626;font-size:.85rem;font-weight:700;background:#fee2e2;border:1px solid #fca5a5;padding:8px 12px;border-radius:8px;"></div>
+    <input type="text" id="klas-naam" placeholder="Jouw voornaam" style="width:100%;padding:14px;border:2px solid #e5e7eb;border-radius:12px;font-family:inherit;font-size:1rem;font-weight:600;text-align:center;outline:none;" autocomplete="off" autocapitalize="words">
+    <input type="password" id="klas-code" placeholder="Jouw code" style="width:100%;padding:14px;border:2px solid #e5e7eb;border-radius:12px;font-family:inherit;font-size:1rem;font-weight:600;text-align:center;outline:none;" autocomplete="off">
+    <button id="login-btn" style="width:100%;background:#2563eb;color:white;border:none;border-radius:12px;padding:14px;font-family:inherit;font-size:1rem;font-weight:700;cursor:pointer;">Inloggen</button>
+    <button id="gast-btn" style="width:100%;background:transparent;border:2px solid #d1d5db;border-radius:12px;padding:12px;font-family:inherit;font-size:.9rem;font-weight:700;color:#6b7280;cursor:pointer;">Doorgaan als gast (geen opslag)</button>
+    <div style="font-size:.75rem;color:#9ca3af;"><a href="dashboard.html" style="color:#2563eb;font-weight:700;text-decoration:none;">Leerkracht? Klik hier</a></div>
+  </div>
+</div>
+
+<!-- User badge (style.display — nooit classList) -->
+<div id="user-badge" style="display:none;position:fixed;top:10px;right:14px;z-index:50;align-items:center;gap:8px;background:white;border:1px solid #bfdbfe;border-radius:10px;padding:5px 12px;font-size:.8rem;font-weight:700;color:#1d4ed8;box-shadow:0 2px 8px rgba(0,0,0,.08);">
+  <span id="user-badge-naam"></span>
+  <button id="logout-btn" style="background:none;border:none;cursor:pointer;color:#94a3b8;font-size:.75rem;padding:2px 6px;border-left:1px solid #e5e7eb;margin-left:4px;font-family:inherit;">↩ Uit</button>
+</div>
+<div id="gast-badge" style="display:none;position:fixed;top:10px;right:14px;z-index:50;background:#fefce8;border:1px solid #fde68a;border-radius:8px;padding:4px 10px;font-size:.75rem;font-weight:700;color:#d97706;">👤 Gast – niet opgeslagen</div>
+
+<!-- HOOFD-APP -->
+<div id="app" class="container-app p-6 md:p-10 bg-white rounded-xl shadow-2xl space-y-8">
+  <h1 class="text-3xl font-extrabold text-center text-gray-800">Kloklezen Oefening</h1>
+
+  <!-- STARTSCHERM (style.display) -->
+  <div id="startScreen" style="display:block;" class="space-y-6 text-center">
+    <h2 class="text-2xl font-semibold text-gray-700">Kies een Oefenniveau</h2>
+    <p class="text-md text-gray-500">Kies de minutenbereiken die je wilt oefenen. Het doel is 10 correcte antwoorden.</p>
+    <div class="flex flex-col space-y-4 max-w-sm mx-auto">
+      <button data-level="1" class="level-button w-full py-3 bg-green-500 hover:bg-green-600 text-white font-bold text-xl rounded-xl shadow-lg transition duration-150">Niveau 1: Enkel '... over ...' (1 t/m 29 min)</button>
+      <button data-level="2" class="level-button w-full py-3 bg-yellow-500 hover:bg-yellow-600 text-white font-bold text-xl rounded-xl shadow-lg transition duration-150">Niveau 2: Enkel '... voor ...' (31 t/m 59 min)</button>
+      <button data-level="3" class="level-button w-full py-3 bg-blue-500 hover:bg-blue-600 text-white font-bold text-xl rounded-xl shadow-lg transition duration-150">Niveau 3: 'Voor' en 'Over' (1-29 &amp; 31-59 min)</button>
+      <button data-level="4" class="level-button w-full py-4 text-white font-bold text-xl rounded-xl shadow-lg transition duration-150 border-2 border-indigo-300" style="background:linear-gradient(to right,#1d4ed8,#4338ca);">
+        🏆 Toets: alles door elkaar
+        <div class="text-sm font-semibold opacity-80 mt-1">Evenveel 'voor' als 'over' · score wordt opgeslagen</div>
+      </button>
+    </div>
+  </div>
+
+  <!-- GAME CONTAINER (style.display) -->
+  <div id="gameContainer" style="display:none;">
+    <div class="flex justify-between items-center text-lg font-semibold border-b pb-4">
+      <div id="scoreDisplay" class="text-blue-600">Score: 0</div>
+      <div id="statusMessage" class="text-gray-700"></div>
+      <div id="goalDisplay" class="text-green-600">Doel: 10 Punten</div>
+    </div>
+    <div class="flex flex-col md:flex-row gap-8 items-start pt-8">
+      <div class="w-full md:w-1/2 flex justify-center items-center"><canvas id="clockCanvas"></canvas></div>
+      <div class="w-full md:w-1/2 space-y-6">
+        <p class="text-xl font-bold text-gray-700">Wat is de tijd?</p>
+        <div id="feedbackBox" class="p-3 rounded-lg hidden font-medium"></div>
+        <form id="answerForm" class="space-y-6">
+          <fieldset class="border p-4 rounded-lg shadow-sm">
+            <legend class="text-md font-semibold text-gray-600 px-2">1. Digitale Klok (Voormiddag: 0 t/m 11 uur)</legend>
+            <div class="flex space-x-3 mt-2 input-group">
+              <select id="inputHourAM" class="w-1/2 text-center text-2xl font-mono"><option value="" disabled selected>HH</option></select>
+              <span class="text-2xl font-bold">:</span>
+              <select id="inputMinuteAM" class="w-1/2 text-center text-2xl font-mono"><option value="" disabled selected>MM</option></select>
+            </div>
+          </fieldset>
+          <fieldset class="border p-4 rounded-lg shadow-sm">
+            <legend class="text-md font-semibold text-gray-600 px-2">2. Digitale Klok (Namiddag: 12 t/m 23 uur)</legend>
+            <div class="flex space-x-3 mt-2 input-group">
+              <select id="inputHourPM" class="w-1/2 text-center text-2xl font-mono"><option value="" disabled selected>HH</option></select>
+              <span class="text-2xl font-bold">:</span>
+              <select id="inputMinutePM" class="w-1/2 text-center text-2xl font-mono"><option value="" disabled selected>MM</option></select>
+            </div>
+          </fieldset>
+          <fieldset class="border p-4 rounded-lg shadow-sm">
+            <legend class="text-md font-semibold text-gray-600 px-2">3. Verbale Klok ('... voor ...' / '... over ...')</legend>
+            <div class="flex flex-wrap items-center space-x-2 mt-2 input-group">
+              <span class="text-xl">Het is</span>
+              <select id="inputVerbalMinute" class="w-24 text-center text-xl"><option value="" disabled selected>min.</option></select>
+              <select id="inputVerbalRelation" class="text-xl"><option value="" disabled selected>Kies...</option><option value="over">over</option><option value="voor">voor</option></select>
+              <select id="inputVerbalHour" class="w-24 text-center text-xl"><option value="" disabled selected>uur</option></select>
+            </div>
+          </fieldset>
+          <button type="submit" id="submitButton" class="w-full py-3 bg-blue-500 hover:bg-blue-600 text-white font-bold text-xl rounded-xl shadow-lg transition duration-150">Controleer Antwoord</button>
+        </form>
+        <button id="nextQuestionButton" class="w-full py-3 bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold text-xl rounded-xl shadow-lg transition duration-150 hidden">Volgende Vraag</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- GAME OVER MODAL (style.display — nooit classList.remove('hidden')) -->
+  <div id="gameOverModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);align-items:center;justify-content:center;padding:16px;z-index:50;">
+    <div class="bg-white p-8 rounded-xl shadow-2xl text-center space-y-4 max-w-sm w-full">
+      <h2 class="text-3xl font-bold text-green-600">Gefeliciteerd!</h2>
+      <p class="text-xl text-gray-700">Je hebt 10 punten behaald!</p>
+      <!-- Upload status (style.display — nooit classList) -->
+      <div id="upload-status"><span id="upload-spinner"></span><span id="upload-status-text">Bezig met opslaan...</span></div>
+      <button id="restartButton" class="px-6 py-2 bg-blue-500 hover:bg-blue-600 text-white font-semibold rounded-lg shadow-md">Opnieuw Beginnen</button>
+    </div>
+  </div>
+</div>
+
+<!-- FIREBASE compat SDK — geen type="module", geen anonymous auth -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script>
+firebase.initializeApp({apiKey:"AIzaSyCnQDVVAlK6jE-PPUUediRJMTbN0xqrLDE",authDomain:"klaswebsite-database.firebaseapp.com",projectId:"klaswebsite-database",storageBucket:"klaswebsite-database.firebasestorage.app",messagingSenderId:"42912327282",appId:"1:42912327282:web:f13f2c706f6c42c115c4eb"});
+var _db=firebase.firestore(),_currentUser=null,_isGuest=false,COL_NAME="kloklezen_toets";
+
+function setUploadStatus(type,msg){
+  var box=document.getElementById("upload-status"),text=document.getElementById("upload-status-text"),spinner=document.getElementById("upload-spinner");
+  box.style.display="block"; spinner.style.display=(type==="loading")?"inline-block":"none";
+  if(type==="loading"){box.style.background="#eff6ff";box.style.borderColor="#bfdbfe";box.style.color="#1d4ed8";}
+  else if(type==="ok"){box.style.background="#f0fdf4";box.style.borderColor="#86efac";box.style.color="#15803d";}
+  else{box.style.background="#fff1f2";box.style.borderColor="#fecdd3";box.style.color="#be123c";}
+  text.textContent=msg;
+  console.log("[kloklezen] "+type+": "+msg);
+}
+
+function klasLogin(){
+  var naam=(document.getElementById("klas-naam").value||"").trim().toLowerCase();
+  var code=(document.getElementById("klas-code").value||"").trim();
+  var err=document.getElementById("klas-err");
+  err.style.display="none";
+  if(!naam){err.textContent="Vul je voornaam in.";err.style.display="block";return;}
+  if(!code){err.textContent="Vul je code in.";err.style.display="block";return;}
+  var btn=document.getElementById("login-btn");
+  btn.textContent="Even wachten...";btn.disabled=true;
+  _db.collection("leerlingen").doc(naam).get().then(function(doc){
+    btn.textContent="Inloggen";btn.disabled=false;
+    if(!doc.exists){err.textContent="Naam niet gevonden.";err.style.display="block";return;}
+    var data=doc.data();
+    if(data.code!==code){err.textContent="Verkeerde code.";err.style.display="block";return;}
+    window._leerlingNaam=data.weergavenaam||(naam.charAt(0).toUpperCase()+naam.slice(1));
+    window._leerlingId=naam;
+    _currentUser={uid:naam,displayName:window._leerlingNaam};
+    _isGuest=false;
+    openApp(window._leerlingNaam,false);
+  }).catch(function(e){btn.textContent="Inloggen";btn.disabled=false;err.textContent="Fout: "+e.message;err.style.display="block";});
+}
+
+function klasGast(){_isGuest=true;_currentUser=null;window._leerlingId=null;window._leerlingNaam="Gast";openApp("Gast",true);}
+
+// openApp: ALLEEN style.display — nooit classList (Tailwind !important conflict)
+function openApp(naam,isGast){
+  document.getElementById("login-screen").style.display="none";
+  if(isGast){document.getElementById("gast-badge").style.display="block";document.getElementById("user-badge").style.display="none";}
+  else{document.getElementById("user-badge-naam").textContent=naam;document.getElementById("user-badge").style.display="flex";document.getElementById("gast-badge").style.display="none";}
+}
+
+function doLogout(){
+  _currentUser=null;_isGuest=false;window._leerlingId=null;window._leerlingNaam=null;
+  document.getElementById("login-screen").style.display="flex";
+  document.getElementById("user-badge").style.display="none";
+  document.getElementById("gast-badge").style.display="none";
+  document.getElementById("klas-naam").value="";document.getElementById("klas-code").value="";
+  document.getElementById("klas-err").style.display="none";
+  document.getElementById("login-btn").disabled=false;document.getElementById("login-btn").textContent="Inloggen";
+  document.getElementById("gameContainer").style.display="none";
+  document.getElementById("gameOverModal").style.display="none";
+  document.getElementById("startScreen").style.display="block";
+}
+
+async function saveToFirestore(vragen){
+  if(_isGuest||!_currentUser){setUploadStatus("error","❌ Niet opgeslagen: je speelt als gast.");return;}
+  if(!window._leerlingId){setUploadStatus("error","❌ Geen leerling-ID. Log opnieuw in.");return;}
+  setUploadStatus("loading","Bezig met opslaan...");
+  var juist=vragen.filter(function(v){return v.isJuist;}).length;
+  var total=vragen.length;
+  var pct=Math.round(juist/total*100);
+  var foutenVoor=vragen.filter(function(v){return !v.isJuist&&v.relatie==="voor";}).length;
+  var foutenOver=vragen.filter(function(v){return !v.isJuist&&v.relatie==="over";}).length;
+  var foutenTelling={};
+  if(foutenVoor>0)foutenTelling["voor"]=foutenVoor;
+  if(foutenOver>0)foutenTelling["over"]=foutenOver;
+  var extraOefenen=[];
+  if(foutenVoor>0)extraOefenen.push("'voor' ("+foutenVoor+"x fout)");
+  if(foutenOver>0)extraOefenen.push("'over' ("+foutenOver+"x fout)");
+  var record={leerlingId:window._leerlingId,leerlingNaam:window._leerlingNaam||"Leerling",vak:"Wiskunde",mode:"Toets: alles door elkaar",score:juist,totalQ:total,percentage:pct,tijd:"",hintsGebruikt:0,timestamp:firebase.firestore.FieldValue.serverTimestamp(),foutenAnalyse:{extraOefenen:extraOefenen,foutenPerCategorie:foutenTelling},vragen:vragen.map(function(v,i){return{vraagNr:i+1,vraag:v.vraag||"",categorie:v.relatie==="voor"?"voor":"over",antwoordLeerling:v.antwoord||"(leeg)",juistAntwoord:v.juistAntwoord||"",isJuist:v.isJuist||false,hintGebruikt:false,punten:v.isJuist?1:0,tijdSeconden:0};})};
+  try{
+    var docRef=await _db.collection(COL_NAME).add(record);
+    await _db.collection("toets_registry").doc(COL_NAME).set({naam:"Kloklezen (voor & over)",collection:COL_NAME,vak:"Wiskunde",lastSeen:firebase.firestore.FieldValue.serverTimestamp()},{merge:true});
+    setUploadStatus("ok","✅ Score opgeslagen! (ID: "+docRef.id.substring(0,8)+"…)");
+  }catch(e){
+    var uitleg=e.message||"Onbekende fout";
+    if(e.code==="permission-denied")uitleg="Geen schrijfrechten.";
+    else if(e.code==="unavailable")uitleg="Geen internet.";
+    setUploadStatus("error","❌ Opslaan mislukt: "+uitleg);
+  }
+}
+
+document.addEventListener("DOMContentLoaded",function(){
+  document.getElementById("login-btn").addEventListener("click",klasLogin);
+  document.getElementById("gast-btn").addEventListener("click",klasGast);
+  document.getElementById("logout-btn").addEventListener("click",doLogout);
+  document.getElementById("klas-naam").addEventListener("keypress",function(e){if(e.key==="Enter")klasLogin();});
+  document.getElementById("klas-code").addEventListener("keypress",function(e){if(e.key==="Enter")klasLogin();});
+});
+</script>
+
+<!-- GAME LOGICA -->
+<script>
+// quizLog — NOOIT 'history' (window.history conflict!)
+var score=0,currentHour24=0,currentMinute=0,gameActive=true,selectedLevel=0,TARGET_SCORE=10;
+var quizLog=[],isToetsMode=false,toetsVoorCount=0,toetsOverCount=0;
+var canvas,ctx;
+
+function resizeCanvas(){
+  canvas=document.getElementById("clockCanvas");
+  if(!canvas)return;
+  ctx=canvas.getContext("2d");
+  var size=canvas.clientWidth||400;
+  canvas.width=size;canvas.height=size;
+  if(gameActive)drawClock(currentHour24,currentMinute);
+}
+
+function drawClock(h24,m){
+  if(!canvas||!ctx)return;
+  var R=canvas.width/2,C=R;
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  ctx.textAlign="center";ctx.textBaseline="middle";
+  ctx.beginPath();ctx.arc(C,C,R*.95,0,2*Math.PI);ctx.strokeStyle="#3b82f6";ctx.lineWidth=R*.02;ctx.stroke();
+  ctx.font="bold "+(R*.12)+"px Inter,sans-serif";ctx.fillStyle="#1f2937";
+  for(var n=1;n<=12;n++){var a=(n*Math.PI/6)-(Math.PI/2);ctx.fillText(n,C+R*.75*Math.cos(a),C+R*.75*Math.sin(a));}
+  ctx.strokeStyle="#6b7280";
+  for(var i=0;i<60;i++){var a2=(i*Math.PI/30)-(Math.PI/2),ll,lw,sr;if(i%5===0){ll=R*.04;lw=R*.01;sr=R*.92;}else{ll=R*.02;lw=R*.005;sr=R*.93;}ctx.lineWidth=lw;ctx.beginPath();ctx.moveTo(C+sr*Math.cos(a2),C+sr*Math.sin(a2));ctx.lineTo(C+(sr-ll)*Math.cos(a2),C+(sr-ll)*Math.sin(a2));ctx.stroke();}
+  var ha=(h24%12*Math.PI/6)+(m/60*Math.PI/6)-(Math.PI/2),ma=(m*Math.PI/30)-(Math.PI/2);
+  function dh(len,w,ang,col){ctx.beginPath();ctx.strokeStyle=col;ctx.lineWidth=w;ctx.lineCap="round";ctx.moveTo(C-R*.1*Math.cos(ang),C-R*.1*Math.sin(ang));ctx.lineTo(C+len*Math.cos(ang),C+len*Math.sin(ang));ctx.stroke();}
+  dh(R*.8,R*.01,ma,"#000");dh(R*.55,R*.025,ha,"#000");
+  ctx.beginPath();ctx.arc(C,C,R*.03,0,2*Math.PI);ctx.fillStyle="#3b82f6";ctx.fill();
+}
+
+function populateDropdowns(){
+  function go(sel,s,e,pad){var ph=sel.querySelector("option[disabled][selected]");sel.innerHTML="";if(ph)sel.appendChild(ph);for(var i=s;i<=e;i++){var o=document.createElement("option");o.value=pad?String(i).padStart(pad,"0"):String(i);o.textContent=o.value;sel.appendChild(o);}}
+  go(document.getElementById("inputHourAM"),0,11,2);go(document.getElementById("inputMinuteAM"),0,59,2);
+  go(document.getElementById("inputHourPM"),12,23,2);go(document.getElementById("inputMinutePM"),0,59,2);
+  go(document.getElementById("inputVerbalMinute"),1,30,0);go(document.getElementById("inputVerbalHour"),1,12,0);
+}
+
+function generateRandomTime(){
+  var s,e;
+  if(selectedLevel===1){s=1;e=29;}
+  else if(selectedLevel===2){s=31;e=59;}
+  else if(selectedLevel===3){if(Math.random()<.5){s=1;e=29;}else{s=31;e=59;}}
+  else if(selectedLevel===4){
+    // Evenwichtig: zorg dat na 10 vragen ~5 voor en ~5 over zijn
+    var helft=Math.ceil(TARGET_SCORE/2);
+    if(toetsOverCount<helft&&toetsVoorCount>=helft){s=1;e=29;}
+    else if(toetsVoorCount<helft&&toetsOverCount>=helft){s=31;e=59;}
+    else if(Math.random()<.5){s=1;e=29;}
+    else{s=31;e=59;}
+  }
+  currentHour24=Math.floor(Math.random()*24);
+  currentMinute=Math.floor(Math.random()*(e-s+1))+s;
+}
+
+function getVerbalTime(h24,m){
+  var h12=h24%12||12,vm,vr,vh;
+  if(m>=1&&m<=30){vm=m;vr="over";vh=h12;}
+  else{vm=60-m;vr="voor";vh=(h12%12)+1;}
+  return{verbalMinute:vm,verbalRelation:vr,verbalHour:vh,h24:h24,m:m};
+}
+
+function newQuestion(){
+  if(!gameActive)return;
+  generateRandomTime();resizeCanvas();drawClock(currentHour24,currentMinute);
+  document.getElementById("answerForm").reset();
+  document.getElementById("feedbackBox").classList.add("hidden");
+  document.getElementById("submitButton").classList.remove("hidden");
+  document.getElementById("nextQuestionButton").classList.add("hidden");
+  document.querySelectorAll("#answerForm select").forEach(function(el){el.disabled=false;});
+  var lbls=["","Niveau 1: over","Niveau 2: voor","Niveau 3: voor & over","🏆 Toets: alles door elkaar"];
+  document.getElementById("statusMessage").textContent=lbls[selectedLevel]||"";
+}
+
+function updateScore(isCorrect){
+  if(!gameActive)return;
+  if(isCorrect)score++;
+  document.getElementById("scoreDisplay").textContent="Score: "+score;
+  if(score>=TARGET_SCORE){
+    gameActive=false;
+    document.getElementById("statusMessage").textContent="Oefening Voltooid!";
+    // Modal tonen via style.display (nooit classList.remove('hidden') — Tailwind !important)
+    document.getElementById("gameOverModal").style.display="flex";
+    if(isToetsMode){
+      document.getElementById("upload-status").style.display="block";
+      document.getElementById("upload-status-text").textContent="Bezig met opslaan...";
+      document.getElementById("upload-spinner").style.display="inline-block";
+      saveToFirestore(quizLog);
+    }
+  }
+}
+
+function checkAnswer(event){
+  event.preventDefault();if(!gameActive)return;
+  var ct=getVerbalTime(currentHour24,currentMinute);
+  var iHAM=parseInt(document.getElementById("inputHourAM").value,10);
+  var iMAM=parseInt(document.getElementById("inputMinuteAM").value,10);
+  var iHPM=parseInt(document.getElementById("inputHourPM").value,10);
+  var iMPM=parseInt(document.getElementById("inputMinutePM").value,10);
+  var iVM=parseInt(document.getElementById("inputVerbalMinute").value,10);
+  var iVR=document.getElementById("inputVerbalRelation").value;
+  var iVH=parseInt(document.getElementById("inputVerbalHour").value,10);
+  var amOk=!isNaN(iHAM)&&!isNaN(iMAM),pmOk=!isNaN(iHPM)&&!isNaN(iMPM),verbOk=!isNaN(iVM)&&!isNaN(iVH)&&iVR!=="";
+  var minOk=(iMAM===ct.m)&&(iMPM===ct.m);
+  var hourOk=false;
+  if(amOk&&pmOk&&minOk){if(ct.h24<=11)hourOk=(iHAM===ct.h24);else hourOk=(iHPM===ct.h24);}
+  var digOk=amOk&&pmOk&&minOk&&hourOk;
+  var verOk=verbOk&&iVM===ct.verbalMinute&&iVR===ct.verbalRelation&&iVH===ct.verbalHour;
+  var isCorrect=digOk&&verOk;
+
+  // Bijhouden voor/over teller bij toets
+  if(selectedLevel===4){if(ct.verbalRelation==="voor")toetsVoorCount++;else toetsOverCount++;}
+
+  var c24=String(ct.h24).padStart(2,"0")+":"+String(ct.m).padStart(2,"0");
+  var cVerb=ct.verbalMinute+" "+ct.verbalRelation+" "+ct.verbalHour;
+  var antw=verbOk?(iVM+" "+iVR+" "+iVH):"(onvolledig)";
+  quizLog.push({vraag:"Klok "+c24+" = "+cVerb,antwoord:antw,juistAntwoord:cVerb,relatie:ct.verbalRelation,isJuist:isCorrect});
+
+  var fb=document.getElementById("feedbackBox");fb.classList.remove("hidden");
+  var cMD=String(ct.m).padStart(2,"0"),cAM,cPM;
+  if(ct.h24<=11){cAM=String(ct.h24).padStart(2,"0")+":"+cMD;cPM="(12 t/m 23 blok leeg laten)";}
+  else{cAM="(0 t/m 11 blok leeg laten)";cPM=String(ct.h24).padStart(2,"0")+":"+cMD;}
+  var ftxt="";
+  if(isCorrect){fb.className="p-3 rounded-lg font-medium bg-green-100 text-green-700";ftxt="Correct! Goed gedaan. (+1 punt)";}
+  else{fb.className="p-3 rounded-lg font-medium bg-red-100 text-red-700";
+    if(!amOk||!pmOk||!verbOk)ftxt="Fout! Je moet alle velden invullen. (Geen punten afgetrokken)";
+    else ftxt="Fout! Eén of meer antwoorden zijn incorrect. (Geen punten afgetrokken)";
+    ftxt+="<br><br>De correcte tijd is: <b>"+c24+"</b>";
+    ftxt+="<br>Digitale Klok (0-11): <b>"+cAM+"</b>";
+    ftxt+="<br>Digitale Klok (12-23): <b>"+cPM+"</b>";
+    ftxt+="<br>Verbale Klok: <b>"+cVerb+"</b>";}
+  fb.innerHTML=ftxt;
+  updateScore(isCorrect);
+  document.getElementById("submitButton").classList.add("hidden");
+  document.getElementById("nextQuestionButton").classList.remove("hidden");
+  document.querySelectorAll("#answerForm select").forEach(function(el){el.disabled=true;});
+}
+
+function restartGame(){
+  score=0;gameActive=true;selectedLevel=0;quizLog=[];toetsVoorCount=0;toetsOverCount=0;isToetsMode=false;
+  document.getElementById("scoreDisplay").textContent="Score: 0";
+  // style.display — nooit classList (Tailwind !important)
+  document.getElementById("gameOverModal").style.display="none";
+  document.getElementById("upload-status").style.display="none";
+  document.getElementById("gameContainer").style.display="none";
+  document.getElementById("startScreen").style.display="block";
+}
+
+function startGame(level){
+  selectedLevel=level;isToetsMode=(level===4);
+  quizLog=[];toetsVoorCount=0;toetsOverCount=0;score=0;gameActive=true;
+  document.getElementById("scoreDisplay").textContent="Score: 0";
+  // style.display — nooit classList
+  document.getElementById("startScreen").style.display="none";
+  document.getElementById("gameContainer").style.display="block";
+  resizeCanvas();newQuestion();
+}
+
+document.addEventListener("DOMContentLoaded",function(){
+  populateDropdowns();resizeCanvas();
+  canvas=document.getElementById("clockCanvas");
+  ctx=canvas?canvas.getContext("2d"):null;
+  document.getElementById("answerForm").addEventListener("submit",checkAnswer);
+  document.getElementById("nextQuestionButton").addEventListener("click",newQuestion);
+  document.getElementById("restartButton").addEventListener("click",restartGame);
+  document.querySelectorAll(".level-button").forEach(function(btn){
+    btn.addEventListener("click",function(e){startGame(parseInt(e.currentTarget.dataset.level));});
+  });
+});
+window.addEventListener("resize",resizeCanvas);
+</script>
+</body>
+</html>
