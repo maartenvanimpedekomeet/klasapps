@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>QuizKlas — Quiz Uploaden</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+
+<style>
+*, *::before, *::after { box-sizing: border-box; }
+body { font-family: 'Plus Jakarta Sans', sans-serif; background: #f8fafc; margin: 0; }
+.hidden { display: none !important; }
+
+/* LOGIN (identiek aan dashboard.html) */
+#login-screen {
+  position: fixed; inset: 0; z-index: 9999;
+  background: linear-gradient(135deg, #1e3a5f 0%, #1d4ed8 100%);
+  display: flex; align-items: center; justify-content: center; padding: 20px;
+}
+
+.card { background: white; border-radius: 1.5rem; box-shadow: 0 4px 20px rgba(0,0,0,0.07); padding: 1.5rem; margin-bottom: 1rem; }
+
+/* Upload zone */
+.upload-zone {
+  border: 3px dashed #d1d5db; border-radius: 1.25rem;
+  padding: 48px 32px; text-align: center; cursor: pointer;
+  transition: all .2s; background: #f8fafc;
+}
+.upload-zone:hover, .upload-zone.over { border-color: #1d4ed8; background: #eff6ff; }
+
+/* Tabel */
+.preview-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+.preview-table th {
+  background: #f1f5f9; padding: 10px 12px; text-align: left;
+  font-size: 0.72rem; font-weight: 800; text-transform: uppercase; letter-spacing: .5px; color: #6b7280;
+}
+.preview-table td { padding: 10px 12px; border-bottom: 1px solid #f1f5f9; font-weight: 600; color: #374151; }
+.preview-table tr:hover td { background: #f8fafc; }
+.badge-ok { background: #dcfce7; color: #166534; padding: 3px 10px; border-radius: 99px; font-size: .75rem; font-weight: 800; }
+
+/* Quiz rij */
+.quiz-rij {
+  display: flex; align-items: center; gap: 14px; padding: 14px 18px;
+  border-radius: 1rem; border: 1px solid #e5e7eb; margin-bottom: 8px; background: white;
+  transition: border-color .15s;
+}
+.quiz-rij:hover { border-color: #1d4ed8; }
+
+.spinner { display: inline-block; width: 18px; height: 18px; border: 3px solid #e5e7eb; border-top-color: #1d4ed8; border-radius: 50%; animation: spin .7s linear infinite; vertical-align: middle; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.btn { padding: 10px 20px; border-radius: 1rem; font-weight: 700; font-size: .9rem; cursor: pointer; border: none; transition: all .2s; font-family: inherit; }
+.btn-blue { background: #1d4ed8; color: white; } .btn-blue:hover { background: #1e40af; }
+.btn-red { background: #dc2626; color: white; } .btn-red:hover { background: #b91c1c; }
+.btn-green { background: #16a34a; color: white; } .btn-green:hover { background: #15803d; }
+.btn-outline { background: white; color: #374151; border: 2px solid #e5e7eb; } .btn-outline:hover { border-color: #1d4ed8; color: #1d4ed8; }
+</style>
+</head>
+<body>
+
+<!-- ══ LOGIN (zelfde als dashboard) ══ -->
+<div id="login-screen">
+  <div style="background:white;border-radius:2rem;padding:2.5rem 2rem;width:100%;max-width:360px;box-shadow:0 25px 50px rgba(0,0,0,0.25);text-align:center;">
+    <div style="font-size:2.5rem;margin-bottom:1rem;">👨‍🏫</div>
+    <h1 style="font-size:1.5rem;font-weight:800;color:#1f2937;margin-bottom:6px;">Quiz Uploaden</h1>
+    <p style="font-size:.85rem;color:#6b7280;margin-bottom:1.5rem;">Alleen voor de leerkracht</p>
+    <input type="password" id="teacher-pwd" placeholder="Wachtwoord"
+      style="width:100%;padding:14px;border:2px solid #e5e7eb;border-radius:1rem;font-size:1rem;font-weight:600;text-align:center;outline:none;margin-bottom:12px;font-family:inherit;">
+    <div id="pwd-error" style="color:#dc2626;font-size:.85rem;font-weight:700;min-height:20px;margin-bottom:8px;"></div>
+    <button class="btn btn-blue" style="width:100%;" onclick="checkPwd()">Inloggen</button>
+    <div style="margin-top:14px;font-size:0.75rem;color:#9ca3af;">
+      <a href="dashboard.html" style="color:#1d4ed8;font-weight:700;text-decoration:none;">← Terug naar dashboard</a>
+    </div>
+  </div>
+</div>
+
+<!-- ══ APP ══ -->
+<div id="main-app" class="hidden">
+  <nav style="background:white;border-bottom:1px solid #e5e7eb;padding:14px 24px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;position:sticky;top:0;z-index:40;">
+    <div>
+      <div style="font-size:1.2rem;font-weight:800;color:#1e3a5f;">🎯 QuizKlas — Uploaden</div>
+      <div style="font-size:.75rem;color:#6b7280;font-weight:600;">Maak nieuwe quizzen via Excel</div>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+      <a href="dashboard.html" class="btn btn-outline" style="font-size:.82rem;padding:8px 14px;text-decoration:none;">📊 Dashboard</a>
+      <button class="btn btn-outline" onclick="uitloggen()" style="font-size:.82rem;padding:8px 14px;">Uitloggen</button>
+    </div>
+  </nav>
+
+  <div style="max-width:1000px;margin:0 auto;padding:20px 16px;">
+
+    <!-- TABS -->
+    <div style="display:flex;gap:4px;background:#f1f5f9;border-radius:12px;padding:4px;width:fit-content;margin-bottom:24px;">
+      <button onclick="toonTab('upload')" id="tab-upload-btn"
+        style="padding:10px 22px;border-radius:10px;border:none;font-family:inherit;font-size:.9rem;font-weight:700;cursor:pointer;background:#1d4ed8;color:white;transition:all .2s;">
+        📤 Nieuwe Quiz
+      </button>
+      <button onclick="toonTab('quizzen')" id="tab-quizzen-btn"
+        style="padding:10px 22px;border-radius:10px;border:none;font-family:inherit;font-size:.9rem;font-weight:700;cursor:pointer;background:transparent;color:#6b7280;transition:all .2s;">
+        📋 Mijn Quizzen
+      </button>
+    </div>
+
+    <!-- ── TAB UPLOAD ── -->
+    <div id="tab-upload">
+      <div class="card">
+        <h2 style="font-size:1rem;font-weight:800;color:#1e3a5f;margin-bottom:16px;">📤 Kahoot Excel uploaden</h2>
+
+        <!-- Upload zone -->
+        <div class="upload-zone" id="upload-zone"
+          onclick="document.getElementById('excel-input').click()"
+          ondragover="event.preventDefault();this.classList.add('over')"
+          ondragleave="this.classList.remove('over')"
+          ondrop="handleDrop(event)">
+          <div style="font-size:2.5rem;margin-bottom:10px;">📊</div>
+          <div style="font-size:1.1rem;font-weight:800;color:#1e3a5f;margin-bottom:6px;">Sleep je Excel-bestand hier</div>
+          <div style="font-size:.88rem;color:#6b7280;">of klik om te kiezen (.xlsx) — zelfde formaat als Kahoot</div>
+        </div>
+        <input type="file" id="excel-input" accept=".xlsx,.xls" style="display:none" onchange="laadExcel(event)">
+      </div>
+
+      <!-- Preview + opslaan -->
+      <div class="card" id="preview-card" style="display:none;">
+        <div style="display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap;margin-bottom:16px;">
+          <div style="flex:1;min-width:200px;">
+            <label style="font-size:.75rem;font-weight:700;color:#6b7280;display:block;margin-bottom:5px;">Naam voor deze quiz</label>
+            <input type="text" id="quiz-naam-input" placeholder="Bijv. Week 5 — Gemengde vragen"
+              style="width:100%;padding:12px 14px;border:2px solid #e5e7eb;border-radius:.75rem;font-family:inherit;font-size:.95rem;font-weight:700;outline:none;color:#1f2937;">
+          </div>
+          <button class="btn btn-green" onclick="slaQuizOp()" style="height:46px;white-space:nowrap;">💾 Opslaan</button>
+        </div>
+        <div id="upload-feedback" style="display:none;padding:10px 14px;border-radius:.75rem;font-weight:700;font-size:.88rem;margin-bottom:12px;"></div>
+        <div style="font-size:.88rem;font-weight:800;color:#1e3a5f;margin-bottom:10px;">
+          👁️ Voorbeeld — <span id="preview-count">0</span> vragen herkend
+          <span style="font-weight:600;color:#6b7280;font-size:.8rem;">(groen = correct antwoord)</span>
+        </div>
+        <div style="overflow-x:auto;">
+          <table class="preview-table">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th style="min-width:200px;">Vraag</th>
+                <th style="min-width:120px;">✅ Juist antwoord</th>
+                <th>Antw 2</th>
+                <th>Antw 3</th>
+                <th>Antw 4</th>
+                <th>Tijd</th>
+              </tr>
+            </thead>
+            <tbody id="preview-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── TAB QUIZZEN ── -->
+    <div id="tab-quizzen" style="display:none;">
+      <div class="card">
+        <h2 style="font-size:1rem;font-weight:800;color:#1e3a5f;margin-bottom:16px;">📋 Opgeslagen quizzen</h2>
+        <div id="quizzen-lijst">
+          <div style="text-align:center;padding:2rem;color:#9ca3af;"><span class="spinner"></span> Laden...</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ══ FIREBASE + LOGICA ══ -->
+<script>
+// ── FIREBASE (zelfde project) ────────────────────────────────────────────
+firebase.initializeApp({
+  apiKey:            "AIzaSyCnQDVVAlK6jE-PPUUediRJMTbN0xqrLDE",
+  authDomain:        "klaswebsite-database.firebaseapp.com",
+  projectId:         "klaswebsite-database",
+  storageBucket:     "klaswebsite-database.firebasestorage.app",
+  messagingSenderId: "42912327282",
+  appId:             "1:42912327282:web:f13f2c706f6c42c115c4eb"
+});
+var db = firebase.firestore();
+
+// ── CONFIG ───────────────────────────────────────────────────────────────
+var TEACHER_PWD = 'meester2025';   // Zelfde als dashboard
+var geladenVragen = [];
+
+// ── LOGIN ────────────────────────────────────────────────────────────────
+function checkPwd() {
+  if (document.getElementById('teacher-pwd').value === TEACHER_PWD) {
+    document.getElementById('login-screen').classList.add('hidden');
+    document.getElementById('main-app').classList.remove('hidden');
+    laadQuizzen();
+  } else {
+    document.getElementById('pwd-error').textContent = 'Verkeerd wachtwoord.';
+  }
+}
+function uitloggen() {
+  document.getElementById('login-screen').classList.remove('hidden');
+  document.getElementById('main-app').classList.add('hidden');
+  document.getElementById('teacher-pwd').value = '';
+}
+document.addEventListener('DOMContentLoaded', function() {
+  document.getElementById('teacher-pwd').addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') checkPwd();
+  });
+});
+
+// ── TABS ─────────────────────────────────────────────────────────────────
+function toonTab(naam) {
+  document.getElementById('tab-upload').style.display    = naam === 'upload'  ? 'block' : 'none';
+  document.getElementById('tab-quizzen').style.display   = naam === 'quizzen' ? 'block' : 'none';
+
+  var stijlAct = 'background:#1d4ed8;color:white;';
+  var stijlInact = 'background:transparent;color:#6b7280;';
+  document.getElementById('tab-upload-btn').style.cssText  = naam === 'upload'  ? stijlAct : stijlInact;
+  document.getElementById('tab-quizzen-btn').style.cssText = naam === 'quizzen' ? stijlAct : stijlInact;
+
+  if (naam === 'quizzen') laadQuizzen();
+}
+
+// ── EXCEL INLADEN ─────────────────────────────────────────────────────────
+function handleDrop(e) {
+  e.preventDefault();
+  document.getElementById('upload-zone').classList.remove('over');
+  var f = e.dataTransfer.files[0];
+  if (f) verwerkFile(f);
+}
+function laadExcel(e) { if (e.target.files[0]) verwerkFile(e.target.files[0]); }
+
+function verwerkFile(file) {
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    var wb = XLSX.read(new Uint8Array(e.target.result), {type:'array'});
+    var ws = wb.Sheets[wb.SheetNames[0]];
+    var rows = XLSX.utils.sheet_to_json(ws, {header:1, defval:''});
+
+    // Zoek header-rij (bevat 'question' of 'vraag')
+    var headerRij = -1;
+    for (var i = 0; i < Math.min(rows.length, 15); i++) {
+      for (var j = 0; j < rows[i].length; j++) {
+        var cel = String(rows[i][j]).toLowerCase();
+        if (cel.includes('question') || cel.includes('vraag')) { headerRij = i; break; }
+      }
+      if (headerRij >= 0) break;
+    }
+    var startRij = headerRij >= 0 ? headerRij + 1 : 8;
+
+    geladenVragen = [];
+    for (var r = startRij; r < rows.length; r++) {
+      var row = rows[r];
+      var vraag = String(row[1] || '').trim();
+      if (!vraag) continue;
+
+      var antwoorden = [];
+      for (var k = 2; k <= 5; k++) {
+        var a = String(row[k] || '').trim();
+        if (a) antwoorden.push(a);
+      }
+      if (antwoorden.length < 2) continue;
+
+      var tijd  = parseInt(row[6]) || 60;
+      var juist = parseInt(row[7]) || 1;   // 1-gebaseerd; antwoord 1 is correct
+
+      geladenVragen.push({
+        vraag: vraag,
+        antwoorden: antwoorden.map(function(a, i) {
+          return { tekst: a, correct: (i === juist - 1) };
+        }),
+        tijd: tijd
+      });
+    }
+
+    toonPreview();
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+function toonPreview() {
+  if (!geladenVragen.length) {
+    alert('Geen vragen herkend. Controleer of het een geldig Kahoot Excel-bestand is (.xlsx).');
+    return;
+  }
+  document.getElementById('preview-count').textContent = geladenVragen.length;
+  var tbody = document.getElementById('preview-body');
+  tbody.innerHTML = '';
+  geladenVragen.forEach(function(v, i) {
+    var antw = v.antwoorden;
+    var tr = document.createElement('tr');
+    tr.innerHTML =
+      '<td><b>' + (i+1) + '</b></td>' +
+      '<td>' + v.vraag + '</td>' +
+      '<td><span class="badge-ok">' + (antw[0] ? antw[0].tekst : '—') + '</span></td>' +
+      '<td>' + (antw[1] ? antw[1].tekst : '—') + '</td>' +
+      '<td>' + (antw[2] ? antw[2].tekst : '—') + '</td>' +
+      '<td>' + (antw[3] ? antw[3].tekst : '—') + '</td>' +
+      '<td style="white-space:nowrap;">' + v.tijd + 's</td>';
+    tbody.appendChild(tr);
+  });
+  document.getElementById('preview-card').style.display = 'block';
+  document.getElementById('upload-feedback').style.display = 'none';
+}
+
+// ── OPSLAAN ───────────────────────────────────────────────────────────────
+function slaQuizOp() {
+  var naam = document.getElementById('quiz-naam-input').value.trim();
+  if (!naam) { alert('Geef de quiz eerst een naam!'); return; }
+  if (!geladenVragen.length) { alert('Geen vragen geladen!'); return; }
+
+  var fb = document.getElementById('upload-feedback');
+  fb.style.display = 'block';
+  fb.style.cssText = 'display:block;padding:10px 14px;border-radius:.75rem;font-weight:700;font-size:.88rem;margin-bottom:12px;background:#fef9c3;color:#92400e;';
+  fb.textContent = '⏳ Opslaan in Firebase...';
+
+  db.collection('kahoot_quizzen').add({
+    naam:         naam,
+    vragen:       geladenVragen,
+    aantalVragen: geladenVragen.length,
+    aangemaakt:   firebase.firestore.FieldValue.serverTimestamp()
+  }).then(function() {
+    fb.style.cssText = 'display:block;padding:10px 14px;border-radius:.75rem;font-weight:700;font-size:.88rem;margin-bottom:12px;background:#dcfce7;color:#166534;';
+    fb.textContent = '✅ "' + naam + '" opgeslagen! (' + geladenVragen.length + ' vragen) — leerlingen kunnen nu deze quiz spelen.';
+    document.getElementById('quiz-naam-input').value = '';
+  }).catch(function(e) {
+    fb.style.cssText = 'display:block;padding:10px 14px;border-radius:.75rem;font-weight:700;font-size:.88rem;margin-bottom:12px;background:#fee2e2;color:#991b1b;';
+    fb.textContent = '❌ Fout: ' + e.message;
+  });
+}
+
+// ── QUIZZEN LIJST ─────────────────────────────────────────────────────────
+function laadQuizzen() {
+  var cont = document.getElementById('quizzen-lijst');
+  cont.innerHTML = '<div style="text-align:center;padding:2rem;color:#9ca3af;"><span class="spinner"></span> Laden...</div>';
+
+  db.collection('kahoot_quizzen').orderBy('aangemaakt', 'desc').get()
+    .then(function(snap) {
+      if (snap.empty) {
+        cont.innerHTML = '<p style="color:#9ca3af;font-style:italic;padding:.5rem;">Nog geen quizzen. Upload je eerste quiz!</p>';
+        return;
+      }
+      cont.innerHTML = '';
+      snap.forEach(function(doc) {
+        var d = doc.data();
+        var datum = d.aangemaakt ? d.aangemaakt.toDate().toLocaleDateString('nl-BE') : '—';
+        var div = document.createElement('div');
+        div.className = 'quiz-rij';
+        div.innerHTML =
+          '<div style="width:40px;height:40px;border-radius:10px;background:#dbeafe;display:flex;align-items:center;justify-content:center;font-size:1.2rem;flex-shrink:0;">🎯</div>' +
+          '<div style="flex:1;">' +
+            '<div style="font-weight:800;color:#1e3a5f;">' + d.naam + '</div>' +
+            '<div style="font-size:.78rem;color:#6b7280;font-weight:600;">' + d.aantalVragen + ' vragen · aangemaakt ' + datum + '</div>' +
+          '</div>' +
+          '<button class="btn btn-red" style="font-size:.78rem;padding:7px 13px;" onclick="verwijderQuiz(\'' + doc.id + '\',\'' + d.naam.replace(/'/g,"\\'") + '\',this)">🗑 Verwijderen</button>';
+        cont.appendChild(div);
+      });
+    })
+    .catch(function(e) {
+      cont.innerHTML = '<p style="color:#dc2626;font-weight:700;">Fout: ' + e.message + '</p>';
+    });
+}
+
+function verwijderQuiz(id, naam, btn) {
+  if (!confirm('Quiz "' + naam + '" verwijderen? Dit kan niet ongedaan gemaakt worden.')) return;
+  btn.disabled = true; btn.textContent = '...';
+  db.collection('kahoot_quizzen').doc(id).delete()
+    .then(function() { btn.closest('.quiz-rij').remove(); })
+    .catch(function(e) { alert('Fout: ' + e.message); btn.disabled = false; btn.textContent = '🗑 Verwijderen'; });
+}
+</script>
+</body>
+</html>
