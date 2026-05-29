@@ -476,14 +476,14 @@ window.openMod=openMod;
 function goMenu(){clearTimer();showV('v-menu');}
 window.goMenu=goMenu;
 
-function restartMod(){document.getElementById('v-result').className='result-overlay';openMod(ST.mod);}
+function restartMod(){const r=document.getElementById('v-result');r.className='result-overlay';r.classList.remove('hidden');openMod(ST.mod);}
 window.restartMod=restartMod;
 
 function startMod(){
   document.getElementById('mod-start-box').classList.add('hidden');
   document.getElementById('q-area').classList.remove('hidden');
   ST.questions=buildQ(ST.mod);
-  ST.idx=0;ST.correct=0;ST.wrong=0;ST.themeErr={};
+  ST.idx=0;ST.correct=0;ST.wrong=0;ST.mistake=false;ST.themeErr={};
   startTimer();renderQ();
 }
 window.startMod=startMod;
@@ -561,7 +561,9 @@ function buildGetallenas(){
     {min:0,max:1,steps:[2,3,4,5,6,8,10]},
     {min:0,max:2,steps:[2,3,4,5]},
   ];
-  for(let i=0;i<12;i++){
+  let attempts=0;
+  while(questions.length<12&&attempts<200){
+    attempts++;
     const cfg=pick(configs);
     const n=pick(cfg.steps);
     const t=rnd(1,n*cfg.max-1);
@@ -792,9 +794,9 @@ function renderVergelijk(q,area){
       ${breukHTML(q.t2,q.n2,'breuk-lg')}
     </div>
     <div style="display:flex;gap:12px;justify-content:center;margin-bottom:12px;">
-      <button class="symb-btn" onclick="checkVerg(this,'<','${q.teken}',area)">&lt;</button>
-      <button class="symb-btn" onclick="checkVerg(this,'=','${q.teken}',area)">=</button>
-      <button class="symb-btn" onclick="checkVerg(this,'>','${q.teken}',area)">&gt;</button>
+      <button class="symb-btn" id="sv-lt">&lt;</button>
+      <button class="symb-btn" id="sv-eq">=</button>
+      <button class="symb-btn" id="sv-gt">&gt;</button>
     </div>
     <button class="btn-next" id="btn-next" onclick="nextQ()">Volgende →</button>`;
   // store area ref for onclick
@@ -1113,6 +1115,7 @@ async function showResults(){
 
   const ov=document.getElementById('v-result');
   ov.className='result-overlay show '+cfg.theme;
+  ov.classList.remove('hidden');
 
   document.getElementById('res-score').textContent=`${ST.correct}/${total}`;
   document.getElementById('res-cor').textContent=ST.correct;
