@@ -7,11 +7,8 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-
-  <!-- Firebase compat SDK -->
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-
   <style>
     :root {
       --ink:    #1a1a2e;
@@ -23,41 +20,72 @@
       --muted:  #7a7060;
     }
     * { box-sizing: border-box; }
-    body { font-family: 'DM Sans', sans-serif; background: var(--paper); color: var(--ink); min-height: 100vh; }
+    body { font-family: 'DM Sans', sans-serif; background: var(--paper); color: var(--ink); min-height: 100vh; margin: 0; }
     h1,h2,h3,.syne { font-family: 'Syne', sans-serif; }
 
-    /* LOGIN */
+    /* ── LOGIN OVERLAY ── */
     #login-overlay {
       position: fixed; inset: 0; z-index: 9999;
       background: var(--ink);
       display: flex; align-items: center; justify-content: center;
+      padding: 16px;
     }
     .login-card {
-      background: var(--paper); border-radius: 20px;
-      padding: 48px 40px; width: 360px;
-      box-shadow: 0 40px 80px rgba(0,0,0,0.5); text-align: center;
+      background: var(--paper); border-radius: 24px;
+      padding: 44px 36px; width: 100%; max-width: 400px;
+      box-shadow: 0 40px 80px rgba(0,0,0,0.55);
+      text-align: center;
     }
-    .login-card h2 { font-size: 2rem; font-weight: 800; margin-bottom: 6px; }
-    .login-card p  { color: var(--muted); font-size: .9rem; margin-bottom: 28px; }
-    .login-card input {
-      width: 100%; padding: 12px 16px; border: 2px solid var(--cream);
-      border-radius: 10px; font-size: 1rem; background: white;
-      margin-bottom: 12px; font-family: 'DM Sans', sans-serif; transition: border-color .2s;
+    .login-emoji { font-size: 3rem; margin-bottom: 14px; display: block; }
+    .login-card h2 {
+      font-family: 'Syne', sans-serif;
+      font-size: 2.2rem; font-weight: 800;
+      color: var(--ink); margin: 0 0 6px;
+      line-height: 1.1; word-break: break-word;
     }
-    .login-card input:focus { outline: none; border-color: var(--accent); }
-    #login-error { color: var(--accent); font-size: .85rem; margin-top: 8px; min-height: 20px; }
+    .login-card .sub { color: var(--muted); font-size: .9rem; margin-bottom: 32px; display: block; }
+    .login-divider {
+      display: flex; align-items: center; gap: 10px;
+      margin: 20px 0; color: var(--muted); font-size: .8rem;
+    }
+    .login-divider::before, .login-divider::after {
+      content: ''; flex: 1; height: 1px; background: var(--cream);
+    }
+    .login-field { display: flex; flex-direction: column; gap: 5px; margin-bottom: 12px; text-align: left; }
+    .login-field label { font-size: .72rem; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .07em; }
+    .login-field input {
+      width: 100%; padding: 12px 14px; border: 2px solid var(--cream);
+      border-radius: 11px; font-size: 1rem; background: white;
+      font-family: 'DM Sans', sans-serif; transition: border-color .2s; color: var(--ink);
+    }
+    .login-field input:focus { outline: none; border-color: var(--accent); }
+    .login-field input.small { font-size: .85rem; padding: 10px 14px; }
+    #login-error { color: var(--accent); font-size: .82rem; margin: 6px 0 0; min-height: 18px; text-align: center; }
 
-    /* TOPBAR */
+    /* API key sectie in login */
+    .api-section {
+      background: #f0f7f3; border: 2px solid #c8e6d4;
+      border-radius: 12px; padding: 14px 16px; margin-top: 16px; text-align: left;
+    }
+    .api-section p {
+      font-size: .78rem; color: var(--green); font-weight: 600; margin: 0 0 8px;
+    }
+    .api-section .hint {
+      font-size: .72rem; color: var(--muted); margin-top: 6px; font-weight: 400;
+    }
+
+    /* ── TOPBAR ── */
     #topbar {
       background: var(--ink); color: white;
-      padding: 14px 32px;
+      padding: 12px 28px;
       display: flex; justify-content: space-between; align-items: center;
       position: sticky; top: 0; z-index: 100;
     }
-    #topbar h1 { font-size: 1.25rem; font-weight: 800; }
-    #topbar-sub { font-size: .8rem; color: rgba(255,255,255,.4); }
+    #topbar h1 { font-size: 1.15rem; font-weight: 800; margin: 0; }
+    #topbar-sub { font-size: .75rem; color: rgba(255,255,255,.4); }
+    .topbar-right { display: flex; gap: 8px; align-items: center; }
 
-    /* BUTTONS */
+    /* ── BUTTONS ── */
     .btn-accent {
       background: var(--accent); color: white; border: none;
       border-radius: 10px; padding: 11px 22px; font-size: .95rem;
@@ -68,8 +96,9 @@
     .btn-sm {
       background: rgba(255,255,255,.1); color: white;
       border: 1px solid rgba(255,255,255,.2); border-radius: 8px;
-      padding: 6px 14px; font-size: .8rem; font-weight: 600;
+      padding: 6px 13px; font-size: .78rem; font-weight: 600;
       cursor: pointer; font-family: 'Syne', sans-serif; transition: background .2s;
+      display: inline-flex; align-items: center; gap: 6px;
     }
     .btn-sm:hover { background: rgba(255,255,255,.2); }
     .btn-icon {
@@ -82,18 +111,14 @@
     .btn-icon.danger:hover { background: var(--accent); color: white; }
     .btn-icon.ai-btn { background: #e8f4ec; color: var(--green); }
     .btn-icon.ai-btn:hover { background: var(--green); color: white; }
-    .btn-icon.ai-btn:disabled { opacity: .5; cursor: not-allowed; pointer-events: none; }
 
-    /* MAIN */
-    #main { max-width: 860px; margin: 0 auto; padding: 32px 20px 80px; }
+    /* ── MAIN ── */
+    #main { max-width: 860px; margin: 0 auto; padding: 28px 20px 80px; }
 
-    /* FILTER BAR */
-    #filter-bar {
-      display: flex; gap: 10px; margin-bottom: 24px;
-      flex-wrap: wrap; align-items: center;
-    }
+    /* ── FILTER BAR ── */
+    #filter-bar { display: flex; gap: 10px; margin-bottom: 22px; flex-wrap: wrap; align-items: center; }
     #zoek-input {
-      flex: 1; min-width: 180px; padding: 10px 14px;
+      flex: 1; min-width: 160px; padding: 10px 14px;
       border: 2px solid var(--cream); border-radius: 10px;
       font-size: .9rem; font-family: 'DM Sans', sans-serif;
       background: white; transition: border-color .2s;
@@ -108,75 +133,65 @@
       background: white; border: 2px solid var(--cream);
       border-radius: 20px; padding: 6px 14px;
       font-size: .8rem; font-weight: 700; color: var(--muted);
-      font-family: 'Syne', sans-serif;
+      font-family: 'Syne', sans-serif; white-space: nowrap;
     }
 
-    /* ADD FORM */
+    /* ── ADD FORM ── */
     #add-form {
       background: white; border: 2px solid var(--cream);
-      border-radius: 16px; padding: 22px; margin-bottom: 28px;
+      border-radius: 16px; padding: 20px; margin-bottom: 26px;
     }
     #add-form h2 {
       font-family: 'Syne', sans-serif; font-size: 1rem;
-      font-weight: 800; color: var(--ink); margin-bottom: 16px;
+      font-weight: 800; color: var(--ink); margin: 0 0 16px;
       display: flex; align-items: center; gap: 8px;
     }
     .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
     @media(max-width:600px){ .field-row { grid-template-columns: 1fr; } }
     .field-group { display: flex; flex-direction: column; gap: 4px; }
-    .field-group label {
-      font-size: .7rem; font-weight: 700; color: var(--muted);
-      text-transform: uppercase; letter-spacing: .07em;
-    }
+    .field-group label { font-size: .7rem; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .07em; }
     .field-group input, .field-group textarea {
       border: 2px solid var(--cream); border-radius: 9px;
       padding: 9px 12px; font-size: .9rem;
       font-family: 'DM Sans', sans-serif; background: #fafafa;
-      transition: border-color .2s; resize: none;
+      transition: border-color .2s; resize: none; color: var(--ink);
     }
-    .field-group input:focus, .field-group textarea:focus {
-      outline: none; border-color: var(--gold); background: white;
-    }
+    .field-group input:focus, .field-group textarea:focus { outline: none; border-color: var(--gold); background: white; }
     .field-group textarea { height: 68px; }
     #add-error { color: var(--accent); font-size: .82rem; margin-top: 6px; min-height: 18px; }
 
-    /* AI MODAL */
-    #ai-modal-overlay {
-      position: fixed; inset: 0; background: rgba(0,0,0,.55);
-      z-index: 600; display: none; align-items: center; justify-content: center;
+    /* ── AI MODAL ── */
+    .modal-overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,.5);
+      z-index: 600; display: none; align-items: center; justify-content: center; padding: 16px;
     }
-    #ai-modal-overlay.open { display: flex; }
-    .ai-modal {
-      background: white; border-radius: 18px; padding: 32px;
-      max-width: 480px; width: 92%; box-shadow: 0 30px 60px rgba(0,0,0,.2);
+    .modal-overlay.open { display: flex; }
+    .modal-box {
+      background: white; border-radius: 18px; padding: 30px;
+      max-width: 480px; width: 100%; box-shadow: 0 30px 60px rgba(0,0,0,.2);
     }
-    .ai-modal h3 {
-      font-family: 'Syne', sans-serif; font-size: 1.2rem;
-      font-weight: 800; margin-bottom: 8px; color: var(--green);
-    }
-    .ai-modal .ai-result-field { display: flex; flex-direction: column; gap: 4px; margin-bottom: 12px; }
-    .ai-modal .ai-result-field label {
-      font-size: .7rem; font-weight: 700; color: var(--muted);
-      text-transform: uppercase; letter-spacing: .07em;
-    }
-    .ai-modal textarea {
+    .modal-box h3 { font-family: 'Syne', sans-serif; font-size: 1.15rem; font-weight: 800; margin: 0 0 8px; }
+    .modal-box p.sub { color: var(--muted); font-size: .85rem; margin: 0 0 16px; }
+    .ai-result-field { display: flex; flex-direction: column; gap: 4px; margin-bottom: 12px; }
+    .ai-result-field label { font-size: .7rem; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .07em; }
+    .ai-result-field textarea {
       border: 2px solid var(--cream); border-radius: 9px;
       padding: 9px 12px; font-size: .9rem;
       font-family: 'DM Sans', sans-serif; resize: none; height: 72px;
       transition: border-color .2s;
     }
-    .ai-modal textarea:focus { outline: none; border-color: var(--gold); }
-    .ai-modal-btns { display: flex; gap: 10px; justify-content: flex-end; margin-top: 16px; }
+    .ai-result-field textarea:focus { outline: none; border-color: var(--gold); }
+    .modal-btns { display: flex; gap: 10px; justify-content: flex-end; margin-top: 16px; flex-wrap: wrap; }
     .btn-cancel {
       background: var(--cream); border: none; border-radius: 8px;
       padding: 10px 18px; cursor: pointer; font-weight: 600;
       font-family: 'Syne', sans-serif; color: var(--ink);
     }
-    #ai-spinner { text-align: center; padding: 24px; color: var(--green); }
-    .spin { animation: spin .7s linear infinite; }
+    #ai-spinner { text-align: center; padding: 28px; color: var(--green); }
+    .spin { animation: spin .7s linear infinite; display: inline-block; }
     @keyframes spin { to { transform: rotate(360deg); } }
 
-    /* WOORD CARDS */
+    /* ── WOORD CARDS ── */
     .woord-card {
       background: white; border-radius: 14px;
       border: 2px solid var(--cream);
@@ -184,67 +199,41 @@
       transition: border-color .2s, box-shadow .15s;
     }
     .woord-card:hover { border-color: #d4ccb8; box-shadow: 0 3px 12px rgba(0,0,0,.05); }
-    .card-top {
-      display: flex; justify-content: space-between;
-      align-items: flex-start; margin-bottom: 12px;
-    }
-    .woord-title {
-      font-family: 'Syne', sans-serif; font-size: 1.25rem;
-      font-weight: 800; color: var(--ink);
-    }
-    .woord-datum {
-      font-size: .72rem; color: var(--muted); font-weight: 500; margin-top: 2px;
-    }
+    .card-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; }
+    .woord-title { font-family: 'Syne', sans-serif; font-size: 1.2rem; font-weight: 800; color: var(--ink); }
+    .woord-datum { font-size: .72rem; color: var(--muted); font-weight: 500; margin-top: 2px; }
     .card-actions { display: flex; gap: 6px; flex-shrink: 0; }
     .card-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
     @media(max-width:600px){ .card-fields { grid-template-columns: 1fr; } }
-    .card-img-row {
-      display: flex; gap: 12px; align-items: flex-start; margin-top: 10px;
-    }
-    .img-preview {
-      width: 76px; height: 76px; border-radius: 10px;
-      object-fit: cover; border: 2px solid var(--cream);
-      cursor: pointer; flex-shrink: 0;
-    }
+    .card-img-row { display: flex; gap: 12px; align-items: flex-start; margin-top: 10px; }
+    .img-preview { width: 76px; height: 76px; border-radius: 10px; object-fit: cover; border: 2px solid var(--cream); cursor: pointer; flex-shrink: 0; }
     .img-broken {
       width: 76px; height: 76px; border-radius: 10px;
       border: 2px dashed #c8c0ae; background: var(--cream);
       display: flex; flex-direction: column; align-items: center;
       justify-content: center; color: var(--muted);
-      font-size: .65rem; text-align: center; flex-shrink: 0; cursor: pointer;
+      font-size: .65rem; text-align: center; flex-shrink: 0; cursor: pointer; gap: 4px;
     }
-    .dot {
-      display: inline-block; width: 8px; height: 8px;
-      border-radius: 50%; margin-left: 6px; vertical-align: middle;
-    }
+    .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-left: 6px; vertical-align: middle; }
     .dot-ok { background: var(--green); }
     .dot-fail { background: var(--accent); }
     .dot-wait { background: var(--gold); }
 
-    /* DATE GROUPS */
+    /* ── DATE GROUPS ── */
     .datum-groep-label {
-      font-family: 'Syne', sans-serif; font-size: .75rem; font-weight: 800;
+      font-family: 'Syne', sans-serif; font-size: .72rem; font-weight: 800;
       color: var(--muted); text-transform: uppercase; letter-spacing: .1em;
       padding: 4px 0 8px; border-bottom: 2px solid var(--cream);
       margin-bottom: 10px; margin-top: 24px;
     }
 
-    /* CONFIRM MODAL */
-    #confirm-modal {
-      position: fixed; inset: 0; background: rgba(0,0,0,.45);
-      z-index: 700; display: none; align-items: center; justify-content: center;
-    }
-    #confirm-modal.open { display: flex; }
-    .confirm-box {
-      background: white; border-radius: 16px; padding: 30px;
-      max-width: 380px; width: 90%; box-shadow: 0 20px 50px rgba(0,0,0,.2);
-    }
-    .confirm-box h3 { font-family:'Syne',sans-serif; font-size:1.1rem; font-weight:800; margin-bottom:8px; }
-    .confirm-box p { color:var(--muted); font-size:.9rem; margin-bottom:20px; }
-    .confirm-btns { display:flex; gap:10px; justify-content:flex-end; }
-    .btn-danger { background:var(--accent); color:white; border:none; border-radius:8px; padding:10px 18px; cursor:pointer; font-weight:700; font-family:'Syne',sans-serif; }
+    /* ── CONFIRM MODAL ── */
+    .confirm-box { max-width: 360px; }
+    .confirm-box p { color: var(--muted); font-size: .9rem; margin: 0 0 20px; }
+    .confirm-btns { display: flex; gap: 10px; justify-content: flex-end; }
+    .btn-danger { background: var(--accent); color: white; border: none; border-radius: 8px; padding: 10px 18px; cursor: pointer; font-weight: 700; font-family: 'Syne', sans-serif; }
 
-    /* SAVE TOAST */
+    /* ── SAVE TOAST ── */
     #save-toast {
       position: fixed; bottom: 22px; right: 22px;
       background: var(--green); color: white;
@@ -254,40 +243,63 @@
       font-family: 'Syne', sans-serif;
     }
 
-    .empty-state { text-align:center; padding:56px 20px; color:var(--muted); }
-    .empty-state i { font-size:2.8rem; opacity:.3; display:block; margin-bottom:14px; }
-
-    #version { position:fixed; bottom:6px; left:10px; font-size:.65rem; color:var(--muted); font-family:monospace; }
+    .empty-state { text-align: center; padding: 56px 20px; color: var(--muted); }
+    .empty-state i { font-size: 2.8rem; opacity: .3; display: block; margin-bottom: 14px; }
+    #version { position: fixed; bottom: 6px; left: 10px; font-size: .65rem; color: var(--muted); font-family: monospace; }
   </style>
 </head>
 <body>
 
-<!-- LOGIN OVERLAY -->
+<!-- ══════════════════════════════════════════
+     LOGIN OVERLAY
+══════════════════════════════════════════ -->
 <div id="login-overlay">
   <div class="login-card">
-    <div style="font-size:2.5rem;margin-bottom:12px">📚</div>
-    <h2>Woordenschat</h2>
-    <p>Beheertool voor de meester</p>
-    <input type="password" id="login-pw" placeholder="Wachtwoord">
-    <button class="btn-accent" style="width:100%;justify-content:center;" onclick="doLogin()">
+    <span class="login-emoji">📚</span>
+    <h2>Woordenschat<br>Beheer</h2>
+    <span class="sub">Beheertool voor de meester</span>
+
+    <div class="login-field">
+      <label>Wachtwoord</label>
+      <input type="password" id="login-pw" placeholder="••••••••••">
+    </div>
+    <button class="btn-accent" style="width:100%;justify-content:center;margin-top:4px;" onclick="doLogin()">
       <i class="fa-solid fa-right-to-bracket"></i> Inloggen
     </button>
     <div id="login-error"></div>
+
+    <div class="api-section">
+      <p><i class="fa-solid fa-wand-magic-sparkles"></i> Gemini AI (optioneel)</p>
+      <div class="login-field" style="margin-bottom:0;">
+        <label>Google AI Studio API-sleutel</label>
+        <input type="text" id="login-apikey" class="small" placeholder="Plak hier je Gemini API key…">
+      </div>
+      <div class="hint">Wordt lokaal opgeslagen. Nodig voor automatisch genereren van betekenissen.</div>
+    </div>
   </div>
 </div>
 
-<!-- TOPBAR -->
+<!-- ══════════════════════════════════════════
+     TOPBAR
+══════════════════════════════════════════ -->
 <div id="topbar">
   <div>
     <h1 class="syne">📚 Woordenschat Beheer</h1>
     <div id="topbar-sub">Laden…</div>
   </div>
-  <button class="btn-sm" onclick="uitloggen()">
-    <i class="fa-solid fa-right-from-bracket"></i> Uitloggen
-  </button>
+  <div class="topbar-right">
+    <button class="btn-sm" onclick="openApiKeyModal()" title="API key instellen">
+      <i class="fa-solid fa-key"></i> AI-sleutel
+    </button>
+    <button class="btn-sm" onclick="uitloggen()">
+      <i class="fa-solid fa-right-from-bracket"></i> Uitloggen
+    </button>
+  </div>
 </div>
 
-<!-- MAIN -->
+<!-- ══════════════════════════════════════════
+     MAIN
+══════════════════════════════════════════ -->
 <div id="main">
 
   <!-- WOORD TOEVOEGEN -->
@@ -314,7 +326,7 @@
       </div>
     </div>
     <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
-      <button class="btn-icon ai-btn" id="ai-btn-new" onclick="openAiModal(null)">
+      <button class="btn-icon ai-btn" onclick="openAiModal(null)">
         <i class="fa-solid fa-wand-magic-sparkles"></i> AI: genereer betekenis &amp; zin
       </button>
       <button class="btn-accent" onclick="voegWoordToe()">
@@ -337,34 +349,31 @@
 
   <!-- WOORDENLIJST -->
   <div id="woorden-lijst"></div>
-
 </div>
 
-<!-- AI MODAL -->
-<div id="ai-modal-overlay">
-  <div class="ai-modal">
-    <h3><i class="fa-solid fa-wand-magic-sparkles"></i> AI-assistent</h3>
-    <div id="ai-modal-body">
-      <div id="ai-spinner" style="display:none;">
-        <i class="fa-solid fa-circle-notch spin" style="font-size:2rem;"></i>
-        <p style="margin-top:10px;color:var(--muted);font-size:.9rem;">Betekenis genereren…</p>
-      </div>
-      <div id="ai-result" style="display:none;">
-        <p style="font-size:.85rem;color:var(--muted);margin-bottom:14px;">
-          Nakijken en aanpassen indien nodig, dan overnemen.
-        </p>
-        <div class="ai-result-field">
-          <label>Betekenis</label>
-          <textarea id="ai-bet-out"></textarea>
-        </div>
-        <div class="ai-result-field">
-          <label>Voorbeeldzin</label>
-          <textarea id="ai-zin-out"></textarea>
-        </div>
-      </div>
-      <div id="ai-error" style="display:none;color:var(--accent);font-size:.9rem;padding:16px 0;"></div>
+<!-- ══════════════════════════════════════════
+     AI MODAL
+══════════════════════════════════════════ -->
+<div id="ai-modal" class="modal-overlay">
+  <div class="modal-box">
+    <h3 style="color:var(--green)"><i class="fa-solid fa-wand-magic-sparkles"></i> AI-assistent</h3>
+    <div id="ai-spinner" style="display:none;">
+      <i class="fa-solid fa-circle-notch spin" style="font-size:2rem;color:var(--green);"></i>
+      <p style="margin-top:10px;color:var(--muted);font-size:.9rem;">Betekenis genereren via Gemini…</p>
     </div>
-    <div class="ai-modal-btns">
+    <div id="ai-result" style="display:none;">
+      <p class="sub">Nakijken en aanpassen indien nodig, dan overnemen.</p>
+      <div class="ai-result-field">
+        <label>Betekenis</label>
+        <textarea id="ai-bet-out"></textarea>
+      </div>
+      <div class="ai-result-field">
+        <label>Voorbeeldzin</label>
+        <textarea id="ai-zin-out"></textarea>
+      </div>
+    </div>
+    <div id="ai-error" style="display:none;color:var(--accent);font-size:.88rem;padding:12px 0;"></div>
+    <div class="modal-btns">
       <button class="btn-cancel" onclick="closeAiModal()">Annuleren</button>
       <button class="btn-accent" id="ai-overneem-btn" style="display:none;" onclick="neemAiOver()">
         <i class="fa-solid fa-check"></i> Overnemen
@@ -373,9 +382,32 @@
   </div>
 </div>
 
-<!-- CONFIRM MODAL -->
-<div id="confirm-modal">
-  <div class="confirm-box">
+<!-- ══════════════════════════════════════════
+     API KEY MODAL
+══════════════════════════════════════════ -->
+<div id="apikey-modal" class="modal-overlay">
+  <div class="modal-box" style="max-width:420px;">
+    <h3><i class="fa-solid fa-key" style="color:var(--green)"></i> Gemini API-sleutel</h3>
+    <p class="sub">De sleutel wordt lokaal opgeslagen in je browser en staat nooit in de code.</p>
+    <div class="field-group" style="margin-bottom:12px;">
+      <label>API-sleutel</label>
+      <input type="text" id="apikey-input" placeholder="Plak hier je Gemini API key…" style="border:2px solid var(--cream);border-radius:9px;padding:10px 12px;font-size:.9rem;font-family:'DM Sans',sans-serif;background:#fafafa;width:100%;">
+    </div>
+    <p style="font-size:.75rem;color:var(--muted);">
+      Haal je gratis sleutel op via <a href="https://aistudio.google.com/apikey" target="_blank" style="color:var(--green);">aistudio.google.com/apikey</a>
+    </p>
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="closeApiKeyModal()">Annuleren</button>
+      <button class="btn-accent" onclick="slaApiKeyOp()"><i class="fa-solid fa-save"></i> Opslaan</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     CONFIRM MODAL
+══════════════════════════════════════════ -->
+<div id="confirm-modal" class="modal-overlay">
+  <div class="modal-box confirm-box">
     <h3 id="confirm-title">Bevestigen</h3>
     <p id="confirm-text">Ben je zeker?</p>
     <div class="confirm-btns">
@@ -388,12 +420,12 @@
 <!-- SAVE TOAST -->
 <div id="save-toast"><i class="fa-solid fa-cloud-arrow-up"></i> Opgeslagen</div>
 
-<div id="version">v0.2</div>
+<div id="version">v0.4</div>
 
 <script>
-// ================================================================
+// ════════════════════════════════════════════
 // FIREBASE
-// ================================================================
+// ════════════════════════════════════════════
 firebase.initializeApp({
   apiKey: "AIzaSyCnQDVVAlK6jE-PPUUediRJMTbN0xqrLDE",
   authDomain: "klaswebsite-database.firebaseapp.com",
@@ -401,33 +433,40 @@ firebase.initializeApp({
 });
 var db = firebase.firestore();
 
-// ================================================================
+// ════════════════════════════════════════════
 // STATE
-// ================================================================
+// ════════════════════════════════════════════
 var WACHTWOORD = "meester2025";
-var alleWoorden = [];   // [{id, woord, betekenis, zin, afbeelding, aangemaakt (Timestamp)}]
+var alleWoorden = [];
 var confirmCb = null;
-var aiDoelWoordId = null;  // null = nieuw woord formulier, anders card-id
+var aiDoelWoordId = null;
 var saveToastTimer = null;
 var autoSaveTimers = {};
 
-// ================================================================
+// ════════════════════════════════════════════
 // LOGIN
-// ================================================================
+// ════════════════════════════════════════════
 document.addEventListener("DOMContentLoaded", function() {
   document.getElementById("login-pw").addEventListener("keydown", function(e) {
     if (e.key === "Enter") doLogin();
   });
+  // Laad opgeslagen API key in veld
+  var opgeslagen = localStorage.getItem("gemini_api_key") || "";
+  document.getElementById("login-apikey").value = opgeslagen;
 });
 
 function doLogin() {
   var pw = document.getElementById("login-pw").value;
-  if (pw === WACHTWOORD) {
-    document.getElementById("login-overlay").style.display = "none";
-    laadWoorden();
-  } else {
+  if (pw !== WACHTWOORD) {
     document.getElementById("login-error").textContent = "Verkeerd wachtwoord.";
+    return;
   }
+  // API key opslaan indien ingevuld
+  var key = document.getElementById("login-apikey").value.trim();
+  if (key) localStorage.setItem("gemini_api_key", key);
+
+  document.getElementById("login-overlay").style.display = "none";
+  laadWoorden();
 }
 
 function uitloggen() {
@@ -435,9 +474,28 @@ function uitloggen() {
   document.getElementById("login-pw").value = "";
 }
 
-// ================================================================
+// ════════════════════════════════════════════
+// API KEY MODAL
+// ════════════════════════════════════════════
+function openApiKeyModal() {
+  document.getElementById("apikey-input").value = localStorage.getItem("gemini_api_key") || "";
+  document.getElementById("apikey-modal").classList.add("open");
+}
+function closeApiKeyModal() {
+  document.getElementById("apikey-modal").classList.remove("open");
+}
+function slaApiKeyOp() {
+  var key = document.getElementById("apikey-input").value.trim();
+  if (key) {
+    localStorage.setItem("gemini_api_key", key);
+    showToast("🔑 API-sleutel opgeslagen");
+  }
+  closeApiKeyModal();
+}
+
+// ════════════════════════════════════════════
 // FIRESTORE
-// ================================================================
+// ════════════════════════════════════════════
 function laadWoorden() {
   db.collection("woordenschat")
     .orderBy("aangemaakt", "desc")
@@ -463,14 +521,13 @@ function voegWoordToe() {
     document.getElementById("new-woord").focus();
     return;
   }
-  var data = {
+  db.collection("woordenschat").add({
     woord: woord,
     betekenis: document.getElementById("new-betekenis").value.trim(),
     zin: document.getElementById("new-zin").value.trim(),
     afbeelding: document.getElementById("new-img").value.trim(),
     aangemaakt: firebase.firestore.FieldValue.serverTimestamp()
-  };
-  db.collection("woordenschat").add(data).then(function() {
+  }).then(function() {
     document.getElementById("new-woord").value = "";
     document.getElementById("new-betekenis").value = "";
     document.getElementById("new-zin").value = "";
@@ -494,14 +551,12 @@ function updateVeld(id, veld, waarde) {
 function verwijderWoord(id, naam) {
   openConfirm("Woord verwijderen",
     "Weet je zeker dat je \"" + naam + "\" wilt verwijderen?",
-    function() {
-      db.collection("woordenschat").doc(id).delete();
-    });
+    function() { db.collection("woordenschat").doc(id).delete(); });
 }
 
-// ================================================================
+// ════════════════════════════════════════════
 // RENDER
-// ================================================================
+// ════════════════════════════════════════════
 function renderWoorden() {
   var zoek = (document.getElementById("zoek-input").value || "").toLowerCase();
   var filter = document.getElementById("datum-filter").value;
@@ -509,10 +564,8 @@ function renderWoorden() {
   var DAG = 86400000;
 
   var lijst = alleWoorden.filter(function(w) {
-    // Zoekfilter
     if (zoek && w.woord.toLowerCase().indexOf(zoek) === -1 &&
         (w.betekenis || "").toLowerCase().indexOf(zoek) === -1) return false;
-    // Datumfilter
     if (filter !== "alles" && w.aangemaakt) {
       var ms = w.aangemaakt.toDate ? w.aangemaakt.toDate().getTime() : 0;
       if (filter === "week"  && nu - ms > 7  * DAG) return false;
@@ -521,7 +574,8 @@ function renderWoorden() {
     return true;
   });
 
-  document.getElementById("count-badge").textContent = lijst.length + " woord" + (lijst.length !== 1 ? "en" : "");
+  document.getElementById("count-badge").textContent =
+    lijst.length + " woord" + (lijst.length !== 1 ? "en" : "");
 
   var container = document.getElementById("woorden-lijst");
   if (lijst.length === 0) {
@@ -531,26 +585,24 @@ function renderWoorden() {
 
   // Groepeer per datum
   var groepen = {};
-  var groepVolgorde = [];
+  var volgorde = [];
   lijst.forEach(function(w) {
     var key = "Onbekende datum";
     if (w.aangemaakt && w.aangemaakt.toDate) {
       var d = w.aangemaakt.toDate();
       key = d.toLocaleDateString("nl-BE", { weekday:"long", day:"numeric", month:"long", year:"numeric" });
     }
-    if (!groepen[key]) { groepen[key] = []; groepVolgorde.push(key); }
+    if (!groepen[key]) { groepen[key] = []; volgorde.push(key); }
     groepen[key].push(w);
   });
 
   container.innerHTML = "";
-  groepVolgorde.forEach(function(key) {
+  volgorde.forEach(function(key) {
     var lbl = document.createElement("div");
     lbl.className = "datum-groep-label";
     lbl.textContent = key;
     container.appendChild(lbl);
-    groepen[key].forEach(function(w) {
-      container.appendChild(maakCard(w));
-    });
+    groepen[key].forEach(function(w) { container.appendChild(maakCard(w)); });
   });
 }
 
@@ -559,7 +611,12 @@ function maakCard(w) {
   card.className = "woord-card";
   card.id = "card-" + w.id;
 
-  var imgHtml = imgPreviewHtml(w);
+  var imgHtml = w.afbeelding
+    ? '<img id="imgbox-' + w.id + '" src="' + escH(w.afbeelding) + '" class="img-preview" '
+      + 'onerror="imgFout(\'' + w.id + '\')" onload="imgOk(\'' + w.id + '\')" '
+      + 'onclick="focusUrl(\'' + w.id + '\')" title="Klik om URL aan te passen">'
+    : '<div class="img-broken" id="imgbox-' + w.id + '" onclick="focusUrl(\'' + w.id + '\')" title="URL toevoegen">'
+      + '<i class="fa-solid fa-image" style="font-size:1.3rem;opacity:.3;"></i>Geen foto</div>';
 
   card.innerHTML =
     '<div class="card-top">' +
@@ -568,49 +625,34 @@ function maakCard(w) {
         '<div class="woord-datum">' + datumTekst(w.aangemaakt) + '</div>' +
       '</div>' +
       '<div class="card-actions">' +
-        '<button class="btn-icon ai-btn" onclick="openAiModal(\'' + w.id + '\')" title="AI: genereer betekenis &amp; zin">' +
+        '<button class="btn-icon ai-btn" onclick="openAiModal(\'' + w.id + '\')">' +
           '<i class="fa-solid fa-wand-magic-sparkles"></i> AI</button>' +
         '<button class="btn-icon danger" onclick="verwijderWoord(\'' + w.id + '\',\'' + escH(w.woord) + '\')">' +
           '<i class="fa-solid fa-trash"></i></button>' +
       '</div>' +
     '</div>' +
     '<div class="card-fields">' +
-      '<div class="field-group">' +
-        '<label>Betekenis</label>' +
-        '<textarea oninput="updateVeld(\'' + w.id + '\',\'betekenis\',this.value)">' + escH(w.betekenis || "") + '</textarea>' +
-      '</div>' +
-      '<div class="field-group">' +
-        '<label>Voorbeeldzin</label>' +
-        '<textarea oninput="updateVeld(\'' + w.id + '\',\'zin\',this.value)">' + escH(w.zin || "") + '</textarea>' +
-      '</div>' +
+      '<div class="field-group"><label>Betekenis</label>' +
+        '<textarea oninput="updateVeld(\'' + w.id + '\',\'betekenis\',this.value)">' + escH(w.betekenis || "") + '</textarea></div>' +
+      '<div class="field-group"><label>Voorbeeldzin</label>' +
+        '<textarea oninput="updateVeld(\'' + w.id + '\',\'zin\',this.value)">' + escH(w.zin || "") + '</textarea></div>' +
     '</div>' +
     '<div class="card-img-row">' +
       imgHtml +
       '<div class="field-group" style="flex:1;">' +
         '<label>Afbeelding URL <span id="url-st-' + w.id + '"></span></label>' +
-        '<input type="url" id="url-inp-' + w.id + '" value="' + escH(w.afbeelding || "") + '" ' +
-          'placeholder="https://…" ' +
-          'oninput="updateUrl(\'' + w.id + '\',this.value)">' +
+        '<input type="url" id="url-inp-' + w.id + '" value="' + escH(w.afbeelding || "") + '" '
+          + 'placeholder="https://…" oninput="updateUrl(\'' + w.id + '\',this.value)">' +
       '</div>' +
     '</div>';
 
   return card;
 }
 
-function imgPreviewHtml(w) {
-  if (!w.afbeelding) {
-    return '<div class="img-broken" id="imgbox-' + w.id + '" onclick="focusUrl(\'' + w.id + '\')" title="Klik om URL toe te voegen">' +
-      '<i class="fa-solid fa-image" style="font-size:1.4rem;opacity:.35;margin-bottom:4px;"></i>Geen foto</div>';
-  }
-  return '<img id="imgbox-' + w.id + '" src="' + escH(w.afbeelding) + '" class="img-preview" ' +
-    'onerror="imgFout(\'' + w.id + '\')" onload="imgOk(\'' + w.id + '\')" ' +
-    'onclick="focusUrl(\'' + w.id + '\')" title="Klik om URL aan te passen">';
-}
-
-function focusUrl(id) {
-  var el = document.getElementById("url-inp-" + id);
-  if (el) el.focus();
-}
+// ════════════════════════════════════════════
+// AFBEELDING
+// ════════════════════════════════════════════
+function focusUrl(id) { var el = document.getElementById("url-inp-" + id); if (el) el.focus(); }
 
 function imgOk(id) {
   var st = document.getElementById("url-st-" + id);
@@ -619,15 +661,13 @@ function imgOk(id) {
 
 function imgFout(id) {
   var st = document.getElementById("url-st-" + id);
-  if (st) st.innerHTML = '<span class="dot dot-fail" title="URL werkt niet — pas aan"></span> <span style="color:var(--accent);font-size:.75rem;font-weight:600;">Link stuk</span>';
+  if (st) st.innerHTML = '<span class="dot dot-fail"></span> <span style="color:var(--accent);font-size:.72rem;font-weight:600;">Link stuk</span>';
   var box = document.getElementById("imgbox-" + id);
   if (box && box.tagName === "IMG") {
     var ph = document.createElement("div");
-    ph.className = "img-broken";
-    ph.id = "imgbox-" + id;
-    ph.title = "Klik om URL aan te passen";
+    ph.className = "img-broken"; ph.id = "imgbox-" + id;
     ph.onclick = (function(wid){ return function(){ focusUrl(wid); }; })(id);
-    ph.innerHTML = '<i class="fa-solid fa-link-slash" style="font-size:1.3rem;color:var(--accent);opacity:.7;margin-bottom:4px;"></i>Link stuk';
+    ph.innerHTML = '<i class="fa-solid fa-link-slash" style="font-size:1.2rem;color:var(--accent);opacity:.7;"></i>Link stuk';
     box.parentNode.replaceChild(ph, box);
   }
 }
@@ -638,30 +678,26 @@ function updateUrl(id, url) {
   var st  = document.getElementById("url-st-" + id);
   if (!url) {
     var ph = document.createElement("div");
-    ph.className = "img-broken";
-    ph.id = "imgbox-" + id;
-    ph.title = "Klik om URL toe te voegen";
+    ph.className = "img-broken"; ph.id = "imgbox-" + id;
     ph.onclick = (function(wid){ return function(){ focusUrl(wid); }; })(id);
-    ph.innerHTML = '<i class="fa-solid fa-image" style="font-size:1.4rem;opacity:.35;margin-bottom:4px;"></i>Geen foto';
+    ph.innerHTML = '<i class="fa-solid fa-image" style="font-size:1.3rem;opacity:.3;"></i>Geen foto';
     if (box && box.parentNode) box.parentNode.replaceChild(ph, box);
     if (st) st.innerHTML = "";
     return;
   }
   var ni = document.createElement("img");
-  ni.className = "img-preview";
-  ni.id = "imgbox-" + id;
-  ni.title = "Klik om URL aan te passen";
+  ni.className = "img-preview"; ni.id = "imgbox-" + id;
   ni.onclick = (function(wid){ return function(){ focusUrl(wid); }; })(id);
   ni.onerror = function(){ imgFout(id); };
   ni.onload  = function(){ imgOk(id); };
   ni.src = url;
-  if (st) st.innerHTML = '<span class="dot dot-wait" title="Controleren…"></span>';
+  if (st) st.innerHTML = '<span class="dot dot-wait"></span>';
   if (box && box.parentNode) box.parentNode.replaceChild(ni, box);
 }
 
-// ================================================================
-// AI MODAL  (via Claude artifact API — werkt enkel in claude.ai)
-// ================================================================
+// ════════════════════════════════════════════
+// AI MODAL — via Gemini, key uit localStorage
+// ════════════════════════════════════════════
 function openAiModal(woordId) {
   aiDoelWoordId = woordId;
   var woordTekst = "";
@@ -678,32 +714,44 @@ function openAiModal(woordId) {
     woordTekst = obj ? obj.woord : "";
   }
 
+  var apiKey = localStorage.getItem("gemini_api_key") || "";
+  if (!apiKey) {
+    openApiKeyModal();
+    return;
+  }
+
   // Reset modal
   document.getElementById("ai-spinner").style.display = "block";
   document.getElementById("ai-result").style.display = "none";
   document.getElementById("ai-error").style.display = "none";
   document.getElementById("ai-overneem-btn").style.display = "none";
-  document.getElementById("ai-modal-overlay").classList.add("open");
+  document.getElementById("ai-modal").classList.add("open");
 
-  // API call
-  fetch("https://api.anthropic.com/v1/messages", {
+  var SYSTEEM = "Je bent een leerkracht in het buitengewoon onderwijs (België) die woordverklaringen schrijft voor leerlingen van 11-13 jaar met leermoeilijkheden en een beperkte woordenschat.\n\nRegels:\n- Schrijf altijd in het Nederlands\n- Gebruik KORTE, eenvoudige zinnen (max 12 woorden per zin)\n- Gebruik GEEN moeilijke woorden in je uitleg\n- Wees concreet en beeldend\n- De betekenis mag maximaal 2 zinnen zijn\n- De voorbeeldzin gebruikt het woord in een herkenbare, alledaagse situatie (thuis, school, vrienden)\n\nAntwoord ENKEL met geldige JSON, geen uitleg, geen markdown:\n{\"betekenis\": \"...\", \"zin\": \"...\"}";
+
+  var url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=" + encodeURIComponent(apiKey);
+
+  fetch(url, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: {
+      "Content-Type": "application/json"
+    },
     body: JSON.stringify({
-      model: "claude-sonnet-4-20250514",
-      max_tokens: 1000,
-      system: "Je bent een leerkracht buitengewoon onderwijs die eenvoudige woordverklaringen schrijft voor leerlingen van 11-13 jaar met leermoeilijkheden. Regels: gebruik KORTE zinnen (max 12 woorden), gebruik GEEN moeilijke woorden in je uitleg, wees concreet en beeldend. Antwoord ENKEL met geldige JSON, geen uitleg, geen markdown: {\"betekenis\": \"...\", \"zin\": \"...\"}",
-      messages: [{ role: "user", content: "Geef een eenvoudige betekenis en een voorbeeldzin voor het woord: " + woordTekst }]
+      system_instruction: { parts: [{ text: SYSTEEM }] },
+      contents: [{
+        parts: [{ text: "Geef een eenvoudige betekenis en een voorbeeldzin voor het woord: " + woordTekst }]
+      }],
+      generationConfig: { temperature: 0.4, maxOutputTokens: 300 }
     })
   })
   .then(function(r) {
-    if (!r.ok) return r.text().then(function(t){ throw new Error("HTTP " + r.status + ": " + t); });
+    if (!r.ok) return r.text().then(function(t){ throw new Error("HTTP " + r.status + " — " + t.substring(0, 200)); });
     return r.json();
   })
   .then(function(data) {
     var tekst = "";
-    if (data.content && data.content[0]) tekst = data.content[0].text || "";
-    tekst = tekst.replace(/```json|```/g,"").trim();
+    try { tekst = data.candidates[0].content.parts[0].text || ""; } catch(e) {}
+    tekst = tekst.replace(/```json|```/g, "").trim();
     var parsed = JSON.parse(tekst);
     document.getElementById("ai-bet-out").value = parsed.betekenis || "";
     document.getElementById("ai-zin-out").value = parsed.zin || "";
@@ -713,7 +761,13 @@ function openAiModal(woordId) {
   })
   .catch(function(e) {
     document.getElementById("ai-spinner").style.display = "none";
-    document.getElementById("ai-error").textContent = "Kon geen AI-suggestie genereren. Fout: " + e.message;
+    var msg = e.message || String(e);
+    var hint = "";
+    if (msg.indexOf("403") !== -1) hint = " — Controleer of je API-sleutel correct is.";
+    if (msg.indexOf("Failed to fetch") !== -1) hint = " — Controleer je internetverbinding.";
+    document.getElementById("ai-error").innerHTML =
+      "<strong>Fout:</strong> " + escH(msg) + hint +
+      '<br><br><a href="https://aistudio.google.com/apikey" target="_blank" style="color:var(--green);text-decoration:underline;">Sleutel controleren →</a>';
     document.getElementById("ai-error").style.display = "block";
   });
 }
@@ -733,49 +787,39 @@ function neemAiOver() {
   closeAiModal();
 }
 
-function closeAiModal() {
-  document.getElementById("ai-modal-overlay").classList.remove("open");
-}
+function closeAiModal() { document.getElementById("ai-modal").classList.remove("open"); }
 
-// ================================================================
+// ════════════════════════════════════════════
 // CONFIRM MODAL
-// ================================================================
+// ════════════════════════════════════════════
 function openConfirm(titel, tekst, cb) {
   document.getElementById("confirm-title").textContent = titel;
   document.getElementById("confirm-text").textContent = tekst;
   confirmCb = cb;
   document.getElementById("confirm-modal").classList.add("open");
 }
-function closeConfirm() {
-  document.getElementById("confirm-modal").classList.remove("open");
-  confirmCb = null;
-}
-function confirmAction() {
-  closeConfirm();
-  if (confirmCb) confirmCb();
-}
+function closeConfirm() { document.getElementById("confirm-modal").classList.remove("open"); confirmCb = null; }
+function confirmAction() { closeConfirm(); if (confirmCb) confirmCb(); }
 
-// ================================================================
+// ════════════════════════════════════════════
 // HELPERS
-// ================================================================
-function showToast() {
+// ════════════════════════════════════════════
+function showToast(msg) {
   var el = document.getElementById("save-toast");
+  el.innerHTML = '<i class="fa-solid fa-cloud-arrow-up"></i> ' + (msg || "Opgeslagen");
   el.style.display = "flex";
   clearTimeout(saveToastTimer);
-  saveToastTimer = setTimeout(function(){ el.style.display = "none"; }, 2200);
+  saveToastTimer = setTimeout(function(){ el.style.display = "none"; }, 2400);
 }
 
 function datumTekst(ts) {
   if (!ts || !ts.toDate) return "";
-  return ts.toDate().toLocaleDateString("nl-BE", {
-    weekday:"long", day:"numeric", month:"long", year:"numeric"
-  });
+  return ts.toDate().toLocaleDateString("nl-BE", { weekday:"long", day:"numeric", month:"long", year:"numeric" });
 }
 
 function escH(str) {
   if (!str) return "";
-  return String(str)
-    .replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")
+  return String(str).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")
     .replace(/"/g,"&quot;").replace(/'/g,"&#39;");
 }
 </script>
