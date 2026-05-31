@@ -1,0 +1,1108 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Delen van de Plant</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;600;700;800&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Nunito', sans-serif; background: #f0fdf4; }
+        .title-font { font-family: 'Baloo 2', cursive; }
+        .hidden { display: none !important; }
+        
+        /* Plant SVG labels */
+        .plant-label {
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .plant-label:hover .label-pill {
+            transform: scale(1.08);
+            box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+        }
+        
+        /* Drag & drop */
+        .drag-item {
+            cursor: grab;
+            user-select: none;
+            transition: all 0.2s;
+        }
+        .drag-item:active { cursor: grabbing; transform: scale(1.05); }
+        .drag-item.dragging { opacity: 0.4; }
+        
+        .drop-zone {
+            transition: all 0.2s;
+            border: 2.5px dashed #86efac;
+            background: rgba(240,253,244,0.7);
+        }
+        .drop-zone.drag-over {
+            border-color: #16a34a;
+            background: rgba(220,252,231,0.9);
+            transform: scale(1.02);
+        }
+        .drop-zone.correct {
+            border-color: #16a34a;
+            background: #dcfce7;
+        }
+        .drop-zone.wrong {
+            border-color: #ef4444;
+            background: #fee2e2;
+        }
+
+        /* Card animations */
+        .module-card {
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .module-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 28px -4px rgba(0,0,0,0.12);
+        }
+        
+        /* Quiz option buttons */
+        .quiz-opt {
+            transition: all 0.15s;
+        }
+        .quiz-opt:not(:disabled):hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(0,0,0,0.1);
+        }
+        
+        /* Progress dots */
+        .dot-active { background: #16a34a; border-color: #15803d; }
+        .dot-done { background: #4ade80; border-color: #16a34a; }
+        .dot-future { background: #d1fae5; border-color: #86efac; }
+        
+        /* Leaf decoration */
+        .leaf-bg {
+            background-image: 
+                radial-gradient(ellipse at 20% 50%, rgba(134,239,172,0.15) 0%, transparent 60%),
+                radial-gradient(ellipse at 80% 20%, rgba(74,222,128,0.12) 0%, transparent 50%);
+        }
+
+        /* Info card pop */
+        .info-pill {
+            animation: popIn 0.3s cubic-bezier(0.34,1.56,0.64,1);
+        }
+        @keyframes popIn {
+            from { transform: scale(0.7); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+        
+        /* SVG interactive parts */
+        .plant-part-hit {
+            cursor: pointer;
+            transition: filter 0.2s;
+        }
+        .plant-part-hit:hover {
+            filter: brightness(1.15) drop-shadow(0 0 6px rgba(22,163,74,0.5));
+        }
+        .plant-part-hit.selected {
+            filter: brightness(1.2) drop-shadow(0 0 10px rgba(22,163,74,0.8));
+        }
+    </style>
+</head>
+<body class="min-h-screen leaf-bg pb-16">
+
+<!-- NAVBAR -->
+<nav class="bg-white border-b border-green-100 shadow-sm sticky top-0 z-40 px-6 py-3">
+    <div class="max-w-5xl mx-auto flex justify-between items-center">
+        <div class="flex items-center gap-3">
+            <div class="bg-green-500 text-white p-2.5 rounded-xl shadow shadow-green-500/30 text-xl">🌱</div>
+            <div>
+                <span class="text-xs font-bold text-green-600 uppercase tracking-wider block">Wetenschap & Natuur</span>
+                <h1 class="title-font text-lg font-bold text-slate-800 leading-tight">Delen van de Plant</h1>
+            </div>
+        </div>
+        <button id="nav-home-btn" onclick="showView('menu')" class="hidden text-slate-400 hover:text-green-600 transition-colors text-sm font-semibold flex items-center gap-1">
+            <i class="fa-solid fa-house"></i> Menu
+        </button>
+    </div>
+</nav>
+
+<!-- APP CONTAINER -->
+<main class="max-w-4xl mx-auto px-4 mt-6">
+
+<!-- ===================== MENU ===================== -->
+<section id="view-menu">
+    <div class="text-center mb-8">
+        <h2 class="title-font text-4xl font-extrabold text-green-800 mb-2">Wat weet jij over planten? 🌻</h2>
+        <p class="text-slate-500 max-w-md mx-auto">Leer alles over de delen van een plant en een bloem. Kies een oefening!</p>
+    </div>
+
+    <!-- MODULE CARDS -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-5 mb-6">
+
+        <!-- Leer de delen -->
+        <button onclick="showView('leer')" class="module-card bg-white rounded-3xl border border-green-100 p-6 text-left shadow-sm hover:border-green-300 group">
+            <div class="w-14 h-14 bg-green-100 text-green-600 rounded-2xl flex items-center justify-center text-3xl mb-4 group-hover:bg-green-500 group-hover:text-white transition-colors">🔍</div>
+            <h3 class="title-font text-xl font-bold text-slate-800 mb-1">Leer de Delen</h3>
+            <p class="text-sm text-slate-500">Klik op een deel van de plant of de bloem. Dan zie je wat dat deel doet!</p>
+            <div class="mt-3 text-xs font-bold text-green-600 bg-green-50 rounded-full px-3 py-1 inline-block">🌿 Plant & Bloem</div>
+        </button>
+
+        <!-- Sleep & plak -->
+        <button onclick="startSleep()" class="module-card bg-white rounded-3xl border border-blue-100 p-6 text-left shadow-sm hover:border-blue-300 group">
+            <div class="w-14 h-14 bg-blue-100 text-blue-600 rounded-2xl flex items-center justify-center text-3xl mb-4 group-hover:bg-blue-500 group-hover:text-white transition-colors">✋</div>
+            <h3 class="title-font text-xl font-bold text-slate-800 mb-1">Sleep & Plak</h3>
+            <p class="text-sm text-slate-500">Sleep de namen naar de juiste plek op de plant of de bloem. Waar hoort elk woord?</p>
+            <div class="mt-3 text-xs font-bold text-blue-600 bg-blue-50 rounded-full px-3 py-1 inline-block">🎯 Oefenen</div>
+        </button>
+
+        <!-- Quiz -->
+        <button onclick="startQuiz('oefenen')" class="module-card bg-white rounded-3xl border border-amber-100 p-6 text-left shadow-sm hover:border-amber-300 group">
+            <div class="w-14 h-14 bg-amber-100 text-amber-600 rounded-2xl flex items-center justify-center text-3xl mb-4 group-hover:bg-amber-500 group-hover:text-white transition-colors">❓</div>
+            <h3 class="title-font text-xl font-bold text-slate-800 mb-1">Quiz: Oefenen</h3>
+            <p class="text-sm text-slate-500">Kies het juiste antwoord. Bij een fout zie je meteen wat het goede antwoord is.</p>
+            <div class="mt-3 text-xs font-bold text-amber-600 bg-amber-50 rounded-full px-3 py-1 inline-block">⭐ Leren</div>
+        </button>
+
+        <!-- Toets -->
+        <button onclick="startQuiz('toets')" class="module-card bg-white rounded-3xl border border-purple-100 p-6 text-left shadow-sm hover:border-purple-300 group">
+            <div class="w-14 h-14 bg-purple-100 text-purple-600 rounded-2xl flex items-center justify-center text-3xl mb-4 group-hover:bg-purple-500 group-hover:text-white transition-colors">🎓</div>
+            <h3 class="title-font text-xl font-bold text-slate-800 mb-1">Quiz: Toets</h3>
+            <p class="text-sm text-slate-500">10 vragen. Geen hulp. Hoe hoog is jouw score?</p>
+            <div class="mt-3 text-xs font-bold text-purple-600 bg-purple-50 rounded-full px-3 py-1 inline-block">📝 Toets jezelf</div>
+        </button>
+    </div>
+
+    <!-- Fun fact banner -->
+    <div class="bg-gradient-to-r from-green-500 to-emerald-500 rounded-3xl p-6 text-white text-center shadow-lg shadow-green-500/20">
+        <div class="text-3xl mb-2">💡</div>
+        <p class="font-bold text-lg" id="fun-fact-text"></p>
+        <p class="text-green-100 text-xs mt-1">Wist je dat?</p>
+    </div>
+</section>
+
+<!-- ===================== LEER ===================== -->
+<section id="view-leer" class="hidden">
+    <!-- Tabs -->
+    <div class="flex gap-3 mb-6 justify-center">
+        <button onclick="setLeerTab('plant')" id="tab-plant" class="px-6 py-2.5 rounded-full font-bold text-sm transition-all bg-green-500 text-white shadow">🌿 De Plant</button>
+        <button onclick="setLeerTab('bloem')" id="tab-bloem" class="px-6 py-2.5 rounded-full font-bold text-sm transition-all bg-white text-slate-600 border border-slate-200 hover:border-green-300">🌸 De Bloem</button>
+    </div>
+
+    <!-- PLANT TAB -->
+    <div id="leer-plant" class="bg-white rounded-3xl border border-green-100 shadow-sm p-6">
+        <h3 class="title-font text-2xl font-bold text-slate-800 mb-4 text-center">Klik op een deel om te leren wat het doet!</h3>
+        
+        <div class="flex flex-col md:flex-row gap-6 items-start">
+            <!-- SVG Plant -->
+            <div class="flex-shrink-0 mx-auto">
+                <svg id="plant-svg" viewBox="0 0 320 480" width="280" height="420" xmlns="http://www.w3.org/2000/svg">
+                    <!-- Grond -->
+                    <ellipse cx="160" cy="390" rx="130" ry="22" fill="#92400e" opacity="0.25"/>
+                    <rect x="30" y="378" width="260" height="102" rx="8" fill="#a16207" opacity="0.18"/>
+                    <!-- Wortels -->
+                    <g id="hit-wortels" class="plant-part-hit" onclick="selectPlantPart('wortels')">
+                        <line x1="160" y1="385" x2="120" y2="430" stroke="#78350f" stroke-width="4" stroke-linecap="round"/>
+                        <line x1="160" y1="395" x2="145" y2="445" stroke="#78350f" stroke-width="3.5" stroke-linecap="round"/>
+                        <line x1="160" y1="385" x2="195" y2="435" stroke="#78350f" stroke-width="4" stroke-linecap="round"/>
+                        <line x1="160" y1="400" x2="170" y2="450" stroke="#78350f" stroke-width="3" stroke-linecap="round"/>
+                        <line x1="120" y1="430" x2="100" y2="455" stroke="#78350f" stroke-width="2.5" stroke-linecap="round"/>
+                        <line x1="195" y1="435" x2="215" y2="458" stroke="#78350f" stroke-width="2.5" stroke-linecap="round"/>
+                        <!-- Highlight zone -->
+                        <rect x="90" y="375" width="140" height="90" fill="transparent"/>
+                    </g>
+                    <!-- Stengel -->
+                    <g id="hit-stengel" class="plant-part-hit" onclick="selectPlantPart('stengel')">
+                        <path d="M152 370 Q148 300 155 230 Q158 180 160 90" stroke="#16a34a" stroke-width="9" fill="none" stroke-linecap="round"/>
+                        <rect x="142" y="80" width="36" height="300" fill="transparent"/>
+                    </g>
+                    <!-- Bladeren -->
+                    <g id="hit-blad" class="plant-part-hit" onclick="selectPlantPart('blad')">
+                        <!-- Blad links boven -->
+                        <ellipse cx="118" cy="195" rx="42" ry="18" fill="#22c55e" transform="rotate(-35 118 195)"/>
+                        <line x1="155" y1="208" x2="118" y2="195" stroke="#15803d" stroke-width="1.5"/>
+                        <!-- Blad rechts boven -->
+                        <ellipse cx="202" cy="178" rx="42" ry="18" fill="#22c55e" transform="rotate(35 202 178)"/>
+                        <line x1="163" y1="188" x2="202" y2="178" stroke="#15803d" stroke-width="1.5"/>
+                        <!-- Blad links midden -->
+                        <ellipse cx="108" cy="280" rx="40" ry="17" fill="#4ade80" transform="rotate(-40 108 280)"/>
+                        <line x1="150" y1="290" x2="108" y2="280" stroke="#15803d" stroke-width="1.5"/>
+                        <!-- Blad rechts midden -->
+                        <ellipse cx="210" cy="265" rx="40" ry="17" fill="#4ade80" transform="rotate(40 210 265)"/>
+                        <line x1="168" y1="273" x2="210" y2="265" stroke="#15803d" stroke-width="1.5"/>
+                    </g>
+                    <!-- Bloem -->
+                    <g id="hit-bloem" class="plant-part-hit" onclick="selectPlantPart('bloem')">
+                        <circle cx="160" cy="80" r="8" fill="#fbbf24"/>
+                        <ellipse cx="160" cy="52" rx="14" ry="22" fill="#f472b6" opacity="0.85"/>
+                        <ellipse cx="184" cy="62" rx="14" ry="22" fill="#f472b6" opacity="0.85" transform="rotate(50 184 62)"/>
+                        <ellipse cx="187" cy="90" rx="14" ry="22" fill="#fb923c" opacity="0.85" transform="rotate(100 187 90)"/>
+                        <ellipse cx="160" cy="108" rx="14" ry="22" fill="#fb923c" opacity="0.85" transform="rotate(150 160 108)"/>
+                        <ellipse cx="133" cy="90" rx="14" ry="22" fill="#f472b6" opacity="0.85" transform="rotate(-100 133 90)"/>
+                        <ellipse cx="136" cy="62" rx="14" ry="22" fill="#f472b6" opacity="0.85" transform="rotate(-50 136 62)"/>
+                        <circle cx="160" cy="80" r="9" fill="#fbbf24"/>
+                    </g>
+                    <!-- Labels -->
+                    <!-- Bloem label -->
+                    <text x="215" y="68" font-family="Nunito" font-size="12" fill="#9d174d" font-weight="800">bloem</text>
+                    <line x1="180" y1="70" x2="213" y2="66" stroke="#9d174d" stroke-width="1.2"/>
+                    <!-- Blad label -->
+                    <text x="230" y="195" font-family="Nunito" font-size="12" fill="#15803d" font-weight="800">blad</text>
+                    <line x1="210" y1="183" x2="228" y2="190" stroke="#15803d" stroke-width="1.2"/>
+                    <!-- Stengel label -->
+                    <text x="190" y="320" font-family="Nunito" font-size="12" fill="#166534" font-weight="800">stengel</text>
+                    <line x1="170" y1="315" x2="188" y2="318" stroke="#166534" stroke-width="1.2"/>
+                    <!-- Wortels label -->
+                    <text x="195" y="445" font-family="Nunito" font-size="12" fill="#78350f" font-weight="800">wortels</text>
+                    <line x1="180" y1="430" x2="193" y2="440" stroke="#78350f" stroke-width="1.2"/>
+                </svg>
+            </div>
+
+            <!-- Info panel -->
+            <div id="plant-info-panel" class="flex-1 min-h-[220px]">
+                <div id="plant-default-msg" class="text-center text-slate-400 mt-10">
+                    <div class="text-5xl mb-3">👆</div>
+                    <p class="font-semibold">Klik op een deel van de plant!</p>
+                </div>
+                <div id="plant-info-card" class="hidden info-pill">
+                    <!-- filled by JS -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- BLOEM TAB -->
+    <div id="leer-bloem" class="hidden bg-white rounded-3xl border border-pink-100 shadow-sm p-6">
+        <h3 class="title-font text-2xl font-bold text-slate-800 mb-4 text-center">Klik op een deel van de bloem!</h3>
+        
+        <div class="flex flex-col md:flex-row gap-6 items-start">
+            <!-- SVG Bloem (based on infographic_bloem.jpg) -->
+            <div class="flex-shrink-0 mx-auto">
+                <svg id="bloem-svg" viewBox="0 0 320 370" width="300" height="345" xmlns="http://www.w3.org/2000/svg">
+                    <!-- Stengel -->
+                    <rect x="148" y="290" width="20" height="70" rx="6" fill="#4ade80"/>
+                    <!-- Bloembodem -->
+                    <g id="hit-bloembodem" class="plant-part-hit" onclick="selectBloemPart('bloembodem')">
+                        <ellipse cx="158" cy="288" rx="28" ry="14" fill="#4ade80"/>
+                        <rect x="80" y="278" width="160" height="30" fill="transparent"/>
+                    </g>
+                    <!-- Kelkbladen -->
+                    <g id="hit-kelkblad" class="plant-part-hit" onclick="selectBloemPart('kelkblad')">
+                        <ellipse cx="128" cy="285" rx="20" ry="10" fill="#86efac" transform="rotate(-40 128 285)"/>
+                        <ellipse cx="190" cy="285" rx="20" ry="10" fill="#86efac" transform="rotate(40 190 285)"/>
+                        <ellipse cx="110" cy="278" rx="18" ry="8" fill="#86efac" transform="rotate(-60 110 278)"/>
+                        <ellipse cx="208" cy="278" rx="18" ry="8" fill="#86efac" transform="rotate(60 208 278)"/>
+                    </g>
+                    <!-- Kroonbladen (groot, roze) -->
+                    <g id="hit-kroonblad" class="plant-part-hit" onclick="selectBloemPart('kroonblad')">
+                        <ellipse cx="158" cy="165" rx="38" ry="60" fill="#f9a8d4" opacity="0.9"/>
+                        <ellipse cx="90" cy="200" rx="38" ry="55" fill="#f9a8d4" opacity="0.85" transform="rotate(-50 90 200)"/>
+                        <ellipse cx="226" cy="200" rx="38" ry="55" fill="#f9a8d4" opacity="0.85" transform="rotate(50 226 200)"/>
+                        <ellipse cx="72" cy="250" rx="32" ry="50" fill="#ec4899" opacity="0.7" transform="rotate(-80 72 250)"/>
+                        <ellipse cx="244" cy="250" rx="32" ry="50" fill="#ec4899" opacity="0.7" transform="rotate(80 244 250)"/>
+                        <ellipse cx="158" cy="250" rx="34" ry="55" fill="#f472b6" opacity="0.75" transform="rotate(160 158 250)"/>
+                    </g>
+                    <!-- Stamper (centraal groen orgaan) -->
+                    <g id="hit-stamper" class="plant-part-hit" onclick="selectBloemPart('stamper')">
+                        <!-- Onderste deel (vruchtbeginsel) -->
+                        <ellipse cx="158" cy="268" rx="18" ry="22" fill="#86efac"/>
+                        <!-- Stijl -->
+                        <rect x="152" y="195" width="12" height="72" rx="6" fill="#4ade80"/>
+                        <!-- Stempel (bovenstuk) -->
+                        <ellipse cx="158" cy="192" rx="12" ry="8" fill="#bbf7d0"/>
+                    </g>
+                    <!-- Meeldraden -->
+                    <g id="hit-meeldraad" class="plant-part-hit" onclick="selectBloemPart('meeldraad')">
+                        <!-- Stelen -->
+                        <line x1="130" y1="255" x2="108" y2="210" stroke="#4ade80" stroke-width="4" stroke-linecap="round"/>
+                        <line x1="140" y1="248" x2="125" y2="205" stroke="#4ade80" stroke-width="4" stroke-linecap="round"/>
+                        <line x1="186" y1="255" x2="208" y2="210" stroke="#4ade80" stroke-width="4" stroke-linecap="round"/>
+                        <line x1="176" y1="248" x2="191" y2="205" stroke="#4ade80" stroke-width="4" stroke-linecap="round"/>
+                        <line x1="133" y1="256" x2="118" y2="225" stroke="#4ade80" stroke-width="3.5" stroke-linecap="round"/>
+                        <line x1="183" y1="256" x2="198" y2="225" stroke="#4ade80" stroke-width="3.5" stroke-linecap="round"/>
+                        <!-- Helmknoppen (geel) -->
+                        <ellipse cx="105" cy="205" rx="10" ry="7" fill="#fde047" transform="rotate(-20 105 205)"/>
+                        <ellipse cx="122" cy="200" rx="10" ry="7" fill="#fde047" transform="rotate(-10 122 200)"/>
+                        <ellipse cx="210" cy="205" rx="10" ry="7" fill="#fde047" transform="rotate(20 210 205)"/>
+                        <ellipse cx="193" cy="200" rx="10" ry="7" fill="#fde047" transform="rotate(10 193 200)"/>
+                        <ellipse cx="116" cy="220" rx="9" ry="6" fill="#fde047" transform="rotate(-15 116 220)"/>
+                        <ellipse cx="200" cy="220" rx="9" ry="6" fill="#fde047" transform="rotate(15 200 220)"/>
+                    </g>
+                    <!-- Labels -->
+                    <text x="220" y="140" font-family="Nunito" font-size="11" fill="#9d174d" font-weight="800">kroonblad</text>
+                    <line x1="195" y1="148" x2="218" y2="142" stroke="#9d174d" stroke-width="1.2"/>
+                    <text x="222" y="200" font-family="Nunito" font-size="11" fill="#854d0e" font-weight="800">meeldraad</text>
+                    <line x1="210" y1="208" x2="220" y2="200" stroke="#854d0e" stroke-width="1.2"/>
+                    <text x="220" y="260" font-family="Nunito" font-size="11" fill="#166534" font-weight="800">stamper</text>
+                    <line x1="176" y1="258" x2="218" y2="258" stroke="#166534" stroke-width="1.2"/>
+                    <text x="205" y="295" font-family="Nunito" font-size="11" fill="#365314" font-weight="800">kelkblad</text>
+                    <line x1="180" y1="284" x2="203" y2="292" stroke="#365314" stroke-width="1.2"/>
+                    <text x="195" y="315" font-family="Nunito" font-size="11" fill="#713f12" font-weight="800">bloembodem</text>
+                    <line x1="180" y1="288" x2="193" y2="312" stroke="#713f12" stroke-width="1.2"/>
+                </svg>
+            </div>
+
+            <!-- Info panel bloem -->
+            <div id="bloem-info-panel" class="flex-1 min-h-[220px]">
+                <div id="bloem-default-msg" class="text-center text-slate-400 mt-10">
+                    <div class="text-5xl mb-3">👆</div>
+                    <p class="font-semibold">Klik op een deel van de bloem!</p>
+                </div>
+                <div id="bloem-info-card" class="hidden info-pill">
+                    <!-- filled by JS -->
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ===================== SLEEP & PLAK ===================== -->
+<section id="view-sleep" class="hidden">
+    <div class="flex justify-between items-center mb-4">
+        <h2 class="title-font text-2xl font-bold text-slate-800">Sleep & Plak 🎯</h2>
+        <div class="flex gap-2">
+            <button onclick="setSleepTab('plant')" id="sleep-tab-plant" class="px-4 py-1.5 rounded-full text-sm font-bold bg-green-500 text-white">🌿 Plant</button>
+            <button onclick="setSleepTab('bloem')" id="sleep-tab-bloem" class="px-4 py-1.5 rounded-full text-sm font-bold bg-white text-slate-600 border border-slate-200">🌸 Bloem</button>
+        </div>
+    </div>
+
+    <!-- SLEEP PLANT -->
+    <div id="sleep-plant-view">
+        <div class="bg-white rounded-3xl border border-green-100 shadow-sm p-5 mb-4">
+            <div class="flex flex-col md:flex-row gap-6">
+                <!-- Diagram -->
+                <div class="flex-shrink-0 mx-auto relative">
+                    <svg viewBox="0 0 320 480" width="250" height="375" xmlns="http://www.w3.org/2000/svg">
+                        <!-- Grond -->
+                        <rect x="30" y="378" width="260" height="102" rx="8" fill="#a16207" opacity="0.18"/>
+                        <ellipse cx="160" cy="390" rx="130" ry="22" fill="#92400e" opacity="0.25"/>
+                        <!-- Wortels -->
+                        <line x1="160" y1="385" x2="120" y2="430" stroke="#78350f" stroke-width="4" stroke-linecap="round"/>
+                        <line x1="160" y1="395" x2="145" y2="445" stroke="#78350f" stroke-width="3.5" stroke-linecap="round"/>
+                        <line x1="160" y1="385" x2="195" y2="435" stroke="#78350f" stroke-width="4" stroke-linecap="round"/>
+                        <line x1="160" y1="400" x2="170" y2="450" stroke="#78350f" stroke-width="3" stroke-linecap="round"/>
+                        <line x1="120" y1="430" x2="100" y2="455" stroke="#78350f" stroke-width="2.5" stroke-linecap="round"/>
+                        <line x1="195" y1="435" x2="215" y2="458" stroke="#78350f" stroke-width="2.5" stroke-linecap="round"/>
+                        <!-- Stengel -->
+                        <path d="M152 370 Q148 300 155 230 Q158 180 160 90" stroke="#16a34a" stroke-width="9" fill="none" stroke-linecap="round"/>
+                        <!-- Bladeren -->
+                        <ellipse cx="118" cy="195" rx="42" ry="18" fill="#22c55e" transform="rotate(-35 118 195)"/>
+                        <line x1="155" y1="208" x2="118" y2="195" stroke="#15803d" stroke-width="1.5"/>
+                        <ellipse cx="202" cy="178" rx="42" ry="18" fill="#22c55e" transform="rotate(35 202 178)"/>
+                        <line x1="163" y1="188" x2="202" y2="178" stroke="#15803d" stroke-width="1.5"/>
+                        <ellipse cx="108" cy="280" rx="40" ry="17" fill="#4ade80" transform="rotate(-40 108 280)"/>
+                        <line x1="150" y1="290" x2="108" y2="280" stroke="#15803d" stroke-width="1.5"/>
+                        <ellipse cx="210" cy="265" rx="40" ry="17" fill="#4ade80" transform="rotate(40 210 265)"/>
+                        <line x1="168" y1="273" x2="210" y2="265" stroke="#15803d" stroke-width="1.5"/>
+                        <!-- Bloem -->
+                        <circle cx="160" cy="80" r="8" fill="#fbbf24"/>
+                        <ellipse cx="160" cy="52" rx="14" ry="22" fill="#f472b6" opacity="0.85"/>
+                        <ellipse cx="184" cy="62" rx="14" ry="22" fill="#f472b6" opacity="0.85" transform="rotate(50 184 62)"/>
+                        <ellipse cx="187" cy="90" rx="14" ry="22" fill="#fb923c" opacity="0.85" transform="rotate(100 187 90)"/>
+                        <ellipse cx="160" cy="108" rx="14" ry="22" fill="#fb923c" opacity="0.85" transform="rotate(150 160 108)"/>
+                        <ellipse cx="133" cy="90" rx="14" ry="22" fill="#f472b6" opacity="0.85" transform="rotate(-100 133 90)"/>
+                        <ellipse cx="136" cy="62" rx="14" ry="22" fill="#f472b6" opacity="0.85" transform="rotate(-50 136 62)"/>
+                        <circle cx="160" cy="80" r="9" fill="#fbbf24"/>
+                        <!-- Pijlen naar dropzones -->
+                        <line x1="172" y1="82" x2="228" y2="70" stroke="#d1d5db" stroke-width="1.5" stroke-dasharray="4"/>
+                        <line x1="200" y1="185" x2="248" y2="185" stroke="#d1d5db" stroke-width="1.5" stroke-dasharray="4"/>
+                        <line x1="172" y1="310" x2="232" y2="310" stroke="#d1d5db" stroke-width="1.5" stroke-dasharray="4"/>
+                        <line x1="175" y1="420" x2="228" y2="415" stroke="#d1d5db" stroke-width="1.5" stroke-dasharray="4"/>
+                    </svg>
+                    <!-- Drop zones overlay (absolute positioned) -->
+                    <div class="absolute" style="top:52px;right:-10px">
+                        <div id="dz-bloem" class="drop-zone rounded-xl px-3 py-2 min-w-[90px] text-center text-sm font-bold text-slate-400" data-answer="bloem">?</div>
+                    </div>
+                    <div class="absolute" style="top:150px;right:-10px">
+                        <div id="dz-blad" class="drop-zone rounded-xl px-3 py-2 min-w-[90px] text-center text-sm font-bold text-slate-400" data-answer="blad">?</div>
+                    </div>
+                    <div class="absolute" style="top:272px;right:-10px">
+                        <div id="dz-stengel" class="drop-zone rounded-xl px-3 py-2 min-w-[90px] text-center text-sm font-bold text-slate-400" data-answer="stengel">?</div>
+                    </div>
+                    <div class="absolute" style="top:375px;right:-10px">
+                        <div id="dz-wortels" class="drop-zone rounded-xl px-3 py-2 min-w-[90px] text-center text-sm font-bold text-slate-400" data-answer="wortels">?</div>
+                    </div>
+                </div>
+
+                <!-- Drag items -->
+                <div class="flex-1">
+                    <p class="text-sm font-bold text-slate-500 mb-3 uppercase tracking-wider">Sleep de woorden naar de juiste plek:</p>
+                        <!-- filled by JS -->
+                    </div>
+                    <div id="sleep-plant-result" class="hidden mt-5 p-4 rounded-2xl text-center font-bold text-lg"></div>
+                    <button id="sleep-plant-check" onclick="checkSleep('plant')" class="hidden mt-4 w-full bg-green-500 hover:bg-green-600 text-white font-bold py-3 rounded-2xl transition-all">✅ Controleer!</button>
+                    <button id="sleep-plant-reset" onclick="resetSleep('plant')" class="hidden mt-2 w-full bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold py-2.5 rounded-2xl transition-all text-sm">🔄 Opnieuw</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SLEEP BLOEM -->
+    <div id="sleep-bloem-view" class="hidden">
+        <div class="bg-white rounded-3xl border border-pink-100 shadow-sm p-5 mb-4">
+            <div class="flex flex-col md:flex-row gap-4">
+                <!-- Diagram -->
+                <div class="flex-shrink-0 mx-auto relative">
+                    <svg viewBox="0 0 320 370" width="240" height="278" xmlns="http://www.w3.org/2000/svg">
+                        <rect x="148" y="290" width="20" height="70" rx="6" fill="#4ade80"/>
+                        <ellipse cx="158" cy="288" rx="28" ry="14" fill="#4ade80"/>
+                        <ellipse cx="128" cy="285" rx="20" ry="10" fill="#86efac" transform="rotate(-40 128 285)"/>
+                        <ellipse cx="190" cy="285" rx="20" ry="10" fill="#86efac" transform="rotate(40 190 285)"/>
+                        <ellipse cx="110" cy="278" rx="18" ry="8" fill="#86efac" transform="rotate(-60 110 278)"/>
+                        <ellipse cx="208" cy="278" rx="18" ry="8" fill="#86efac" transform="rotate(60 208 278)"/>
+                        <ellipse cx="158" cy="165" rx="38" ry="60" fill="#f9a8d4" opacity="0.9"/>
+                        <ellipse cx="90" cy="200" rx="38" ry="55" fill="#f9a8d4" opacity="0.85" transform="rotate(-50 90 200)"/>
+                        <ellipse cx="226" cy="200" rx="38" ry="55" fill="#f9a8d4" opacity="0.85" transform="rotate(50 226 200)"/>
+                        <ellipse cx="72" cy="250" rx="32" ry="50" fill="#ec4899" opacity="0.7" transform="rotate(-80 72 250)"/>
+                        <ellipse cx="244" cy="250" rx="32" ry="50" fill="#ec4899" opacity="0.7" transform="rotate(80 244 250)"/>
+                        <ellipse cx="158" cy="250" rx="34" ry="55" fill="#f472b6" opacity="0.75" transform="rotate(160 158 250)"/>
+                        <ellipse cx="158" cy="268" rx="18" ry="22" fill="#86efac"/>
+                        <rect x="152" y="195" width="12" height="72" rx="6" fill="#4ade80"/>
+                        <ellipse cx="158" cy="192" rx="12" ry="8" fill="#bbf7d0"/>
+                        <line x1="130" y1="255" x2="108" y2="210" stroke="#4ade80" stroke-width="4" stroke-linecap="round"/>
+                        <line x1="140" y1="248" x2="125" y2="205" stroke="#4ade80" stroke-width="4" stroke-linecap="round"/>
+                        <line x1="186" y1="255" x2="208" y2="210" stroke="#4ade80" stroke-width="4" stroke-linecap="round"/>
+                        <line x1="176" y1="248" x2="191" y2="205" stroke="#4ade80" stroke-width="4" stroke-linecap="round"/>
+                        <ellipse cx="105" cy="205" rx="10" ry="7" fill="#fde047" transform="rotate(-20 105 205)"/>
+                        <ellipse cx="122" cy="200" rx="10" ry="7" fill="#fde047" transform="rotate(-10 122 200)"/>
+                        <ellipse cx="210" cy="205" rx="10" ry="7" fill="#fde047" transform="rotate(20 210 205)"/>
+                        <ellipse cx="193" cy="200" rx="10" ry="7" fill="#fde047" transform="rotate(10 193 200)"/>
+                        <!-- pijltjes -->
+                        <line x1="200" y1="150" x2="262" y2="138" stroke="#d1d5db" stroke-width="1.5" stroke-dasharray="4"/>
+                        <line x1="220" y1="200" x2="262" y2="200" stroke="#d1d5db" stroke-width="1.5" stroke-dasharray="4"/>
+                        <line x1="178" y1="255" x2="262" y2="255" stroke="#d1d5db" stroke-width="1.5" stroke-dasharray="4"/>
+                        <line x1="192" y1="285" x2="262" y2="285" stroke="#d1d5db" stroke-width="1.5" stroke-dasharray="4"/>
+                        <line x1="180" y1="295" x2="262" y2="305" stroke="#d1d5db" stroke-width="1.5" stroke-dasharray="4"/>
+                    </svg>
+                    <!-- Drop zones bloem -->
+                    <div class="absolute" style="top:100px;right:-15px">
+                        <div id="dzb-kroonblad" class="drop-zone rounded-xl px-3 py-1.5 min-w-[100px] text-center text-xs font-bold text-slate-400" data-answer="kroonblad">?</div>
+                    </div>
+                    <div class="absolute" style="top:160px;right:-15px">
+                        <div id="dzb-meeldraad" class="drop-zone rounded-xl px-3 py-1.5 min-w-[100px] text-center text-xs font-bold text-slate-400" data-answer="meeldraad">?</div>
+                    </div>
+                    <div class="absolute" style="top:214px;right:-15px">
+                        <div id="dzb-stamper" class="drop-zone rounded-xl px-3 py-1.5 min-w-[100px] text-center text-xs font-bold text-slate-400" data-answer="stamper">?</div>
+                    </div>
+                    <div class="absolute" style="top:244px;right:-15px">
+                        <div id="dzb-kelkblad" class="drop-zone rounded-xl px-3 py-1.5 min-w-[100px] text-center text-xs font-bold text-slate-400" data-answer="kelkblad">?</div>
+                    </div>
+                    <div class="absolute" style="top:270px;right:-15px">
+                        <div id="dzb-bloembodem" class="drop-zone rounded-xl px-3 py-1.5 min-w-[100px] text-center text-xs font-bold text-slate-400" data-answer="bloembodem">?</div>
+                    </div>
+                </div>
+
+                <!-- Drag items bloem -->
+                <div class="flex-1">
+                    <p class="text-sm font-bold text-slate-500 mb-3 uppercase tracking-wider">Sleep de woorden:</p>
+                    <div id="drag-pool-bloem" class="flex flex-wrap gap-2">
+                        <!-- filled by JS -->
+                    </div>
+                    <div id="sleep-bloem-result" class="hidden mt-5 p-4 rounded-2xl text-center font-bold text-lg"></div>
+                    <button id="sleep-bloem-check" onclick="checkSleep('bloem')" class="hidden mt-4 w-full bg-pink-500 hover:bg-pink-600 text-white font-bold py-3 rounded-2xl transition-all">✅ Controleer!</button>
+                    <button id="sleep-bloem-reset" onclick="resetSleep('bloem')" class="hidden mt-2 w-full bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold py-2.5 rounded-2xl transition-all text-sm">🔄 Opnieuw</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ===================== QUIZ ===================== -->
+<section id="view-quiz" class="hidden">
+    <!-- Progress -->
+    <div class="flex flex-col items-center mb-5">
+        <div id="quiz-mode-badge" class="text-xs font-bold uppercase tracking-wider px-4 py-1.5 rounded-full mb-3 bg-amber-100 text-amber-700">Oefenen</div>
+        <div id="quiz-dots" class="flex gap-2"></div>
+    </div>
+
+    <div class="bg-white rounded-3xl border border-slate-100 shadow-md p-6 md:p-8">
+        <!-- Exit -->
+        <button onclick="confirmExit()" class="absolute top-4 right-4 text-slate-300 hover:text-rose-400 transition-colors text-xl">
+            <i class="fa-solid fa-circle-xmark"></i>
+        </button>
+
+        <!-- Vraagnummer & Vraag -->
+        <div class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2" id="quiz-q-num">Vraag 1/10</div>
+        <div class="bg-amber-50 border border-amber-100 rounded-2xl p-5 mb-6 text-center">
+            <p class="text-lg font-bold text-slate-800" id="quiz-question">...</p>
+        </div>
+
+        <!-- Opties -->
+        <div id="quiz-options" class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-5">
+            <!-- filled by JS -->
+        </div>
+
+        <!-- Feedback -->
+        <div id="quiz-feedback" class="hidden rounded-2xl p-4 text-center font-bold mb-4"></div>
+
+        <!-- Volgende knop -->
+        <button id="quiz-next-btn" onclick="nextQuizQuestion()" class="hidden w-full bg-green-500 hover:bg-green-600 text-white font-bold py-3.5 rounded-2xl transition-all flex items-center justify-center gap-2">
+            Volgende vraag <i class="fa-solid fa-arrow-right"></i>
+        </button>
+    </div>
+</section>
+
+<!-- ===================== RESULTAAT ===================== -->
+<section id="view-result" class="hidden">
+    <div class="bg-white rounded-3xl border border-slate-100 shadow-lg p-8 text-center">
+        <div class="text-7xl mb-4" id="result-emoji">🌟</div>
+        <h2 class="title-font text-3xl font-extrabold text-slate-800 mb-2" id="result-titel">Fantastisch!</h2>
+        <p class="text-slate-500 mb-6" id="result-tekst">Je hebt de quiz afgemaakt.</p>
+        
+        <div class="flex justify-center gap-6 mb-8">
+            <div class="bg-green-50 rounded-2xl p-5 flex-1">
+                <div class="text-4xl font-extrabold text-green-600 title-font" id="result-score">-</div>
+                <div class="text-xs text-slate-500 font-bold mt-1 uppercase">Score</div>
+            </div>
+            <div class="bg-amber-50 rounded-2xl p-5 flex-1">
+                <div class="text-4xl font-extrabold text-amber-600 title-font" id="result-pct">-</div>
+                <div class="text-xs text-slate-500 font-bold mt-1 uppercase">Correct</div>
+            </div>
+        </div>
+
+        <!-- Overzicht fouten -->
+        <div id="result-fouten" class="text-left mb-6 space-y-2"></div>
+
+        <div class="flex gap-3 justify-center">
+            <button onclick="showView('menu')" class="px-6 py-3 bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold rounded-2xl transition-all">🏠 Menu</button>
+            <button id="result-retry-btn" class="px-6 py-3 bg-green-500 hover:bg-green-600 text-white font-bold rounded-2xl transition-all">🔄 Opnieuw</button>
+        </div>
+    </div>
+</section>
+
+</main>
+
+<script>
+// ============================
+// DATA
+// ============================
+const PLANT_DATA = {
+    bloem: {
+        naam: 'Bloem 🌸',
+        kleur: 'bg-pink-50 border-pink-200',
+        titleKleur: 'text-pink-700',
+        emoji: '🌸',
+        uitleg: 'De bloem is fel gekleurd en ruikt lekker. Zo trekt ze bijen en vlinders aan. Die beestjes nemen stuifmeel mee naar een andere bloem.',
+        functie: 'De bloem zorgt voor nieuwe zaden.',
+        kleurSpot: '#ec4899',
+    },
+    blad: {
+        naam: 'Blad 🍃',
+        kleur: 'bg-green-50 border-green-200',
+        titleKleur: 'text-green-700',
+        emoji: '🍃',
+        uitleg: 'Het blad vangt zonlicht op. Met dat licht maakt het blad voedsel voor de plant. Daarvoor heeft het ook water en lucht nodig.',
+        functie: 'Het blad maakt voedsel voor de plant.',
+        kleurSpot: '#16a34a',
+    },
+    stengel: {
+        naam: 'Stengel 🌿',
+        kleur: 'bg-emerald-50 border-emerald-200',
+        titleKleur: 'text-emerald-700',
+        emoji: '🌿',
+        uitleg: 'De stengel houdt de plant recht. Hij brengt water van de wortels naar de bladeren en de bloem. Zo krijgt elke deel genoeg water.',
+        functie: 'De stengel brengt water naar alle delen van de plant.',
+        kleurSpot: '#059669',
+    },
+    wortels: {
+        naam: 'Wortels 🌱',
+        kleur: 'bg-amber-50 border-amber-200',
+        titleKleur: 'text-amber-700',
+        emoji: '🌱',
+        uitleg: 'De wortels zitten in de grond. Ze zuigen water op. Ze houden de plant ook stevig vast zodat ze niet omvalt.',
+        functie: 'De wortels zuigen water op en houden de plant vast.',
+        kleurSpot: '#d97706',
+    },
+};
+
+const BLOEM_DATA = {
+    kroonblad: {
+        naam: 'Kroonblad 🌸',
+        kleur: 'bg-pink-50 border-pink-200',
+        titleKleur: 'text-pink-700',
+        uitleg: 'De kroonbladen zijn de gekleurde blaadjes van de bloem. Ze lokken bijen en vlinders aan. De beestjes zien de felle kleur en komen dichterbij.',
+        functie: 'Bijen en vlinders aantrekken.',
+    },
+    meeldraad: {
+        naam: 'Meeldraad 🌼',
+        kleur: 'bg-yellow-50 border-yellow-200',
+        titleKleur: 'text-yellow-700',
+        uitleg: 'De meeldraad maakt stuifmeel. Dat zijn kleine gele korreltjes. Een bij neemt die korreltjes mee als ze op de bloem zit.',
+        functie: 'Stuifmeel maken.',
+    },
+    stamper: {
+        naam: 'Stamper 🌿',
+        kleur: 'bg-green-50 border-green-200',
+        titleKleur: 'text-green-700',
+        uitleg: 'De stamper staat in het midden van de bloem. Als stuifmeel op de stamper valt, kan er een zaad groeien. Uit dat zaad groeit een nieuwe plant.',
+        functie: 'Zaden maken.',
+    },
+    kelkblad: {
+        naam: 'Kelkblad 🌿',
+        kleur: 'bg-lime-50 border-lime-200',
+        titleKleur: 'text-lime-700',
+        uitleg: 'De kelkbladen zijn de groene blaadjes onder de bloem. Als de bloem nog gesloten is, beschermen de kelkbladen haar.',
+        functie: 'De bloem beschermen als ze nog dicht is.',
+    },
+    bloembodem: {
+        naam: 'Bloembodem 🟢',
+        kleur: 'bg-teal-50 border-teal-200',
+        titleKleur: 'text-teal-700',
+        uitleg: 'De bloembodem zit onderaan de bloem. Alle delen van de bloem zitten hierop vast. Hij verbindt de bloem met de stengel.',
+        functie: 'Alle bloemdelen vasthouden en verbinden met de stengel.',
+    },
+};
+
+const QUIZ_VRAGEN = [
+    { vraag: 'Welk deel maakt voedsel voor de plant?', antwoord: 'Blad', opties: ['Blad', 'Wortel', 'Stengel', 'Bloem'], uitleg: 'Het blad vangt zonlicht op en maakt daarmee voedsel voor de plant.' },
+    { vraag: 'Welk deel zuigt water op uit de grond?', antwoord: 'Wortels', opties: ['Stengel', 'Blad', 'Wortels', 'Bloem'], uitleg: 'De wortels zitten in de grond en zuigen water op.' },
+    { vraag: 'Wat doet de stengel?', antwoord: 'Water brengen naar alle delen', opties: ['Voedsel maken', 'Water brengen naar alle delen', 'Bijen aantrekken', 'Zaden maken'], uitleg: 'De stengel brengt water van de wortels naar de bladeren en de bloem.' },
+    { vraag: 'Welk deel van de bloem trekt bijen aan?', antwoord: 'Kroonblad', opties: ['Stamper', 'Kelkblad', 'Bloembodem', 'Kroonblad'], uitleg: 'De kroonbladen zijn fel gekleurd. Dat trekt bijen en vlinders aan.' },
+    { vraag: 'Wat maakt de meeldraad?', antwoord: 'Stuifmeel', opties: ['Nectar', 'Zaad', 'Stuifmeel', 'Vruchten'], uitleg: 'De meeldraad maakt stuifmeel. Dat zijn kleine gele korreltjes.' },
+    { vraag: 'Welk deel beschermt de bloem als ze nog dicht is?', antwoord: 'Kelkblad', opties: ['Kroonblad', 'Meeldraad', 'Stamper', 'Kelkblad'], uitleg: 'De kelkbladen zitten onder de bloem en beschermen haar als ze nog dicht is.' },
+    { vraag: 'Wat groeit er als stuifmeel op de stamper valt?', antwoord: 'Een zaad', opties: ['Een wortel', 'Een zaad', 'Een blad', 'Een stengel'], uitleg: 'Als stuifmeel op de stamper valt, groeit er een zaad. Uit dat zaad komt een nieuwe plant.' },
+    { vraag: 'Waarvoor heeft het blad zonlicht nodig?', antwoord: 'Om voedsel te maken', opties: ['Om water op te zuigen', 'Om voedsel te maken', 'Om bijen aan te trekken', 'Om te groeien in de grond'], uitleg: 'Het blad vangt zonlicht op en gebruikt dat om voedsel te maken voor de plant.' },
+    { vraag: 'Wat verbindt de bloem met de stengel?', antwoord: 'Bloembodem', opties: ['Kelkblad', 'Kroonblad', 'Bloembodem', 'Meeldraad'], uitleg: 'De bloembodem zit onderaan de bloem en verbindt haar met de stengel.' },
+    { vraag: 'Waarom zijn bloemen fel gekleurd?', antwoord: 'Om bijen en vlinders te lokken', opties: ['Om water op te slaan', 'Om bijen en vlinders te lokken', 'Om sneller te groeien', 'Om meer zonlicht op te vangen'], uitleg: 'Felle kleuren trekken bijen en vlinders aan. Die brengen stuifmeel van bloem tot bloem.' },
+    { vraag: 'Waarvoor zorgen de wortels nog meer, naast water opzuigen?', antwoord: 'De plant vasthouden in de grond', opties: ['Voedsel maken', 'Bijen aantrekken', 'De plant vasthouden in de grond', 'Stuifmeel maken'], uitleg: 'De wortels houden de plant stevig vast zodat ze niet omvalt.' },
+    { vraag: 'Een bij neemt stuifmeel mee naar een andere bloem. Hoe noemen we dat?', antwoord: 'Bestuiving', opties: ['Groei', 'Bestuiving', 'Fotosynthese', 'Voeding'], uitleg: 'Als een bij stuifmeel meeneemt van de ene bloem naar de andere, noemen we dat bestuiving.' },
+    { vraag: 'Welk deel van de bloem maakt zaden?', antwoord: 'Stamper', opties: ['Meeldraad', 'Kelkblad', 'Stamper', 'Kroonblad'], uitleg: 'De stamper vangt stuifmeel op en maakt daarna zaden.' },
+    { vraag: 'Welk deel houdt de plant recht?', antwoord: 'Stengel', opties: ['Wortel', 'Stengel', 'Bloem', 'Blad'], uitleg: 'De stengel houdt de plant recht en brengt water naar alle delen.' },
+    { vraag: 'Uit wat groeit een nieuwe plant?', antwoord: 'Een zaad', opties: ['Een blad', 'Een zaad', 'Een wortel', 'Een bloem'], uitleg: 'Uit een zaad groeit een nieuwe plant.' },
+];
+
+const FUN_FACTS = [
+    'Een zonnebloem draait zijn gezicht elke dag naar de zon! 🌻',
+    'Bomen zijn ook planten. Ze kunnen heel oud worden! 🌳',
+    'Sommige planten vangen insecten en eten ze op! 🪲',
+    'Een eikenboom kan meer dan 500 jaar oud worden! 🌳',
+    'Bamboe groeit soms wel 90 cm per dag. Dat is heel snel! 🎋',
+    'Rozen en aardbeien zijn familie van elkaar! 🍓',
+];
+
+// ============================
+// STATE
+// ============================
+let currentView = 'menu';
+let quizMode = 'oefenen';
+let quizVragen = [];
+let quizIndex = 0;
+let quizScore = 0;
+let quizHistory = [];
+let quizAnswered = false;
+let lastQuizMode = 'oefenen';
+
+let sleepDragItem = null;
+let sleepDragSource = null;
+
+// ============================
+// VIEWS
+// ============================
+function showView(view) {
+    ['menu','leer','sleep','quiz','result'].forEach(v => {
+        document.getElementById('view-' + v).classList.add('hidden');
+    });
+    document.getElementById('view-' + view).classList.remove('hidden');
+    currentView = view;
+
+    const homeBtn = document.getElementById('nav-home-btn');
+    homeBtn.classList.toggle('hidden', view === 'menu');
+
+    if (view === 'menu') setFunFact();
+    if (view === 'leer') initLeer();
+    if (view === 'sleep') initSleep();
+}
+
+function setFunFact() {
+    const el = document.getElementById('fun-fact-text');
+    el.textContent = FUN_FACTS[Math.floor(Math.random() * FUN_FACTS.length)];
+}
+
+function confirmExit() {
+    if (confirm('Wil je de quiz stoppen en naar het menu gaan?')) showView('menu');
+}
+
+// ============================
+// LEER
+// ============================
+function initLeer() {
+    setLeerTab('plant');
+}
+
+function setLeerTab(tab) {
+    document.getElementById('leer-plant').classList.toggle('hidden', tab !== 'plant');
+    document.getElementById('leer-bloem').classList.toggle('hidden', tab !== 'bloem');
+    document.getElementById('tab-plant').className = tab === 'plant'
+        ? 'px-6 py-2.5 rounded-full font-bold text-sm transition-all bg-green-500 text-white shadow'
+        : 'px-6 py-2.5 rounded-full font-bold text-sm transition-all bg-white text-slate-600 border border-slate-200 hover:border-green-300';
+    document.getElementById('tab-bloem').className = tab === 'bloem'
+        ? 'px-6 py-2.5 rounded-full font-bold text-sm transition-all bg-pink-500 text-white shadow'
+        : 'px-6 py-2.5 rounded-full font-bold text-sm transition-all bg-white text-slate-600 border border-slate-200 hover:border-pink-300';
+}
+
+function selectPlantPart(part) {
+    document.querySelectorAll('#plant-svg .plant-part-hit').forEach(g => g.classList.remove('selected'));
+    document.getElementById('hit-' + part).classList.add('selected');
+    
+    const data = PLANT_DATA[part];
+    const panel = document.getElementById('plant-info-card');
+    const defMsg = document.getElementById('plant-default-msg');
+    defMsg.classList.add('hidden');
+    panel.classList.remove('hidden');
+    panel.className = 'info-pill rounded-2xl border p-5 ' + data.kleur;
+    panel.innerHTML = `
+        <div class="flex items-center gap-2 mb-3">
+            <span class="text-3xl">${data.emoji}</span>
+            <h4 class="title-font text-xl font-extrabold ${data.titleKleur}">${data.naam}</h4>
+        </div>
+        <p class="text-slate-700 text-sm leading-relaxed mb-3">${data.uitleg}</p>
+        <div class="bg-white/70 rounded-xl p-3 border border-current/10">
+            <span class="text-xs font-bold uppercase tracking-wider text-slate-400 block mb-1">Functie:</span>
+            <span class="text-sm font-semibold text-slate-700">${data.functie}</span>
+        </div>
+    `;
+}
+
+function selectBloemPart(part) {
+    document.querySelectorAll('#bloem-svg .plant-part-hit').forEach(g => g.classList.remove('selected'));
+    document.getElementById('hit-' + part).classList.add('selected');
+    
+    const data = BLOEM_DATA[part];
+    const panel = document.getElementById('bloem-info-card');
+    const defMsg = document.getElementById('bloem-default-msg');
+    defMsg.classList.add('hidden');
+    panel.classList.remove('hidden');
+    panel.className = 'info-pill rounded-2xl border p-5 ' + data.kleur;
+    panel.innerHTML = `
+        <div class="flex items-center gap-2 mb-3">
+            <h4 class="title-font text-xl font-extrabold ${data.titleKleur}">${data.naam}</h4>
+        </div>
+        <p class="text-slate-700 text-sm leading-relaxed mb-3">${data.uitleg}</p>
+        <div class="bg-white/70 rounded-xl p-3">
+            <span class="text-xs font-bold uppercase tracking-wider text-slate-400 block mb-1">Functie:</span>
+            <span class="text-sm font-semibold text-slate-700">${data.functie}</span>
+        </div>
+    `;
+}
+
+// ============================
+// SLEEP & PLAK
+// ============================
+function startSleep() {
+    showView('sleep');
+}
+
+function initSleep() {
+    setSleepTab('plant');
+    resetSleep('plant');
+    resetSleep('bloem');
+}
+
+function setSleepTab(tab) {
+    document.getElementById('sleep-plant-view').classList.toggle('hidden', tab !== 'plant');
+    document.getElementById('sleep-bloem-view').classList.toggle('hidden', tab !== 'bloem');
+    document.getElementById('sleep-tab-plant').className = tab === 'plant'
+        ? 'px-4 py-1.5 rounded-full text-sm font-bold bg-green-500 text-white'
+        : 'px-4 py-1.5 rounded-full text-sm font-bold bg-white text-slate-600 border border-slate-200';
+    document.getElementById('sleep-tab-bloem').className = tab === 'bloem'
+        ? 'px-4 py-1.5 rounded-full text-sm font-bold bg-pink-500 text-white'
+        : 'px-4 py-1.5 rounded-full text-sm font-bold bg-white text-slate-600 border border-slate-200';
+}
+
+function resetSleep(type) {
+    const isPlant = type === 'plant';
+    const words = isPlant
+        ? ['bloem', 'blad', 'stengel', 'wortels']
+        : ['kroonblad', 'meeldraad', 'stamper', 'kelkblad', 'bloembodem'];
+    const prefix = isPlant ? 'dz-' : 'dzb-';
+    const poolId = isPlant ? 'drag-pool-plant' : 'drag-pool-bloem';
+
+    // Reset dropzones
+    words.forEach(w => {
+        const dz = document.getElementById(prefix + w);
+        if (dz) {
+            dz.textContent = '?';
+            dz.dataset.filled = '';
+            dz.className = 'drop-zone rounded-xl px-3 ' + (isPlant ? 'py-2 min-w-[90px]' : 'py-1.5 min-w-[100px]') + ' text-center ' + (isPlant ? 'text-sm' : 'text-xs') + ' font-bold text-slate-400';
+        }
+    });
+
+    // Rebuild pool
+    const pool = document.getElementById(poolId);
+    pool.innerHTML = '';
+    const shuffled = [...words].sort(() => Math.random() - 0.5);
+    shuffled.forEach(w => {
+        const div = document.createElement('div');
+        div.id = 'drag-' + w;
+        div.className = 'drag-item bg-white border-2 border-slate-200 rounded-xl px-4 py-2 font-bold text-slate-700 text-sm shadow-sm select-none';
+        div.textContent = w;
+        div.draggable = true;
+        div.dataset.word = w;
+        div.dataset.type = type;
+        setupDrag(div);
+        pool.appendChild(div);
+    });
+
+    // Reset result & buttons
+    document.getElementById('sleep-' + type + '-result').classList.add('hidden');
+    document.getElementById('sleep-' + type + '-check').classList.add('hidden');
+    document.getElementById('sleep-' + type + '-reset').classList.add('hidden');
+
+    // Setup drop zones
+    const allDZs = isPlant
+        ? document.querySelectorAll('#sleep-plant-view .drop-zone')
+        : document.querySelectorAll('#sleep-bloem-view .drop-zone');
+    allDZs.forEach(dz => setupDrop(dz, type));
+}
+
+function setupDrag(el) {
+    el.addEventListener('dragstart', (e) => {
+        sleepDragItem = el;
+        e.dataTransfer.setData('text/plain', el.dataset.word);
+        setTimeout(() => el.classList.add('dragging'), 0);
+    });
+    el.addEventListener('dragend', () => {
+        el.classList.remove('dragging');
+        sleepDragItem = null;
+    });
+}
+
+function setupDrop(zone, type) {
+    zone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        zone.classList.add('drag-over');
+    });
+    zone.addEventListener('dragleave', () => zone.classList.remove('drag-over'));
+    zone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        zone.classList.remove('drag-over');
+        const word = e.dataTransfer.getData('text/plain');
+        if (!word) return;
+
+        // If zone already filled, swap back to pool
+        const prevWord = zone.dataset.filled;
+        if (prevWord) {
+            const pool = document.getElementById('drag-pool-' + type);
+            const returnDiv = document.createElement('div');
+            returnDiv.id = 'drag-' + prevWord;
+            returnDiv.className = 'drag-item bg-white border-2 border-slate-200 rounded-xl px-4 py-2 font-bold text-slate-700 text-sm shadow-sm select-none';
+            returnDiv.textContent = prevWord;
+            returnDiv.draggable = true;
+            returnDiv.dataset.word = prevWord;
+            returnDiv.dataset.type = type;
+            setupDrag(returnDiv);
+            pool.appendChild(returnDiv);
+        }
+
+        // Remove from pool
+        const source = document.getElementById('drag-' + word);
+        if (source) source.remove();
+
+        // Place in zone
+        zone.textContent = word;
+        zone.dataset.filled = word;
+        zone.className = zone.className.replace('text-slate-400', 'text-slate-700 bg-white/80');
+
+        // Check if all filled → show check button
+        checkAllFilled(type);
+    });
+}
+
+function checkAllFilled(type) {
+    const words = type === 'plant'
+        ? ['bloem', 'blad', 'stengel', 'wortels']
+        : ['kroonblad', 'meeldraad', 'stamper', 'kelkblad', 'bloembodem'];
+    const prefix = type === 'plant' ? 'dz-' : 'dzb-';
+    const allFilled = words.every(w => {
+        const dz = document.getElementById(prefix + w);
+        return dz && dz.dataset.filled;
+    });
+    if (allFilled) {
+        document.getElementById('sleep-' + type + '-check').classList.remove('hidden');
+    }
+}
+
+function checkSleep(type) {
+    const words = type === 'plant'
+        ? ['bloem', 'blad', 'stengel', 'wortels']
+        : ['kroonblad', 'meeldraad', 'stamper', 'kelkblad', 'bloembodem'];
+    const prefix = type === 'plant' ? 'dz-' : 'dzb-';
+    let correct = 0;
+    words.forEach(w => {
+        const dz = document.getElementById(prefix + w);
+        const isCorrect = dz && dz.dataset.filled === dz.dataset.answer;
+        if (isCorrect) {
+            correct++;
+            dz.className = dz.className + ' correct';
+        } else {
+            dz.className = dz.className + ' wrong';
+        }
+    });
+
+    const resultDiv = document.getElementById('sleep-' + type + '-result');
+    resultDiv.classList.remove('hidden');
+    const pct = Math.round((correct / words.length) * 100);
+    if (correct === words.length) {
+        resultDiv.className = 'mt-5 p-4 rounded-2xl text-center font-bold text-lg bg-green-50 border border-green-200 text-green-800';
+        resultDiv.innerHTML = '🎉 Perfect! Alle woorden staan op de juiste plek!';
+        confetti({ particleCount: 80, spread: 70, origin: { y: 0.7 } });
+    } else {
+        resultDiv.className = 'mt-5 p-4 rounded-2xl text-center font-bold text-lg bg-amber-50 border border-amber-200 text-amber-800';
+        resultDiv.innerHTML = `${correct}/${words.length} juist (${pct}%). De groene zijn goed, de rode zijn fout.`;
+    }
+    document.getElementById('sleep-' + type + '-check').classList.add('hidden');
+    document.getElementById('sleep-' + type + '-reset').classList.remove('hidden');
+}
+
+// ============================
+// QUIZ
+// ============================
+function startQuiz(mode) {
+    quizMode = mode;
+    lastQuizMode = mode;
+    quizVragen = [...QUIZ_VRAGEN].sort(() => Math.random() - 0.5).slice(0, 10);
+    quizIndex = 0;
+    quizScore = 0;
+    quizHistory = [];
+    quizAnswered = false;
+    showView('quiz');
+    renderQuizQuestion();
+    updateQuizDots();
+
+    const badge = document.getElementById('quiz-mode-badge');
+    badge.textContent = mode === 'toets' ? '🎓 Toets' : '⭐ Oefenen';
+    badge.className = mode === 'toets'
+        ? 'text-xs font-bold uppercase tracking-wider px-4 py-1.5 rounded-full mb-3 bg-purple-100 text-purple-700'
+        : 'text-xs font-bold uppercase tracking-wider px-4 py-1.5 rounded-full mb-3 bg-amber-100 text-amber-700';
+}
+
+function updateQuizDots() {
+    const container = document.getElementById('quiz-dots');
+    container.innerHTML = '';
+    for (let i = 0; i < quizVragen.length; i++) {
+        const dot = document.createElement('div');
+        dot.className = 'w-3 h-3 rounded-full border-2 transition-all ' +
+            (i < quizIndex ? 'dot-done' : i === quizIndex ? 'dot-active' : 'dot-future');
+        container.appendChild(dot);
+    }
+}
+
+function renderQuizQuestion() {
+    const q = quizVragen[quizIndex];
+    quizAnswered = false;
+
+    document.getElementById('quiz-q-num').textContent = `Vraag ${quizIndex + 1}/${quizVragen.length}`;
+    document.getElementById('quiz-question').textContent = q.vraag;
+    document.getElementById('quiz-feedback').classList.add('hidden');
+    document.getElementById('quiz-next-btn').classList.add('hidden');
+
+    const grid = document.getElementById('quiz-options');
+    grid.innerHTML = '';
+    const shuffled = [...q.opties].sort(() => Math.random() - 0.5);
+    shuffled.forEach(opt => {
+        const btn = document.createElement('button');
+        btn.className = 'quiz-opt bg-white border-2 border-slate-200 rounded-2xl px-5 py-4 text-left font-bold text-slate-700 hover:border-amber-400 hover:bg-amber-50 transition-all text-sm';
+        btn.textContent = opt;
+        btn.onclick = () => answerQuiz(opt, q, btn);
+        grid.appendChild(btn);
+    });
+}
+
+function answerQuiz(chosen, q, btnEl) {
+    if (quizAnswered) return;
+    quizAnswered = true;
+
+    const isCorrect = chosen === q.antwoord;
+    if (isCorrect) quizScore++;
+    quizHistory.push({ vraag: q.vraag, gekozen: chosen, juist: q.antwoord, correct: isCorrect, uitleg: q.uitleg });
+
+    // Color buttons
+    document.querySelectorAll('#quiz-options button').forEach(btn => {
+        btn.disabled = true;
+        if (btn.textContent === q.antwoord) {
+            btn.className = 'quiz-opt bg-green-500 border-2 border-green-600 text-white rounded-2xl px-5 py-4 text-left font-bold text-sm';
+        } else if (btn === btnEl && !isCorrect) {
+            btn.className = 'quiz-opt bg-rose-500 border-2 border-rose-600 text-white rounded-2xl px-5 py-4 text-left font-bold text-sm';
+        } else {
+            btn.className = 'quiz-opt bg-slate-100 border-2 border-slate-200 text-slate-300 rounded-2xl px-5 py-4 text-left font-bold text-sm opacity-60';
+        }
+    });
+
+    // Feedback
+    const fb = document.getElementById('quiz-feedback');
+    fb.classList.remove('hidden');
+    if (isCorrect) {
+        fb.className = 'rounded-2xl p-4 text-center font-bold mb-4 bg-green-50 border border-green-200 text-green-800';
+        fb.innerHTML = '✅ Juist! Goed gedaan!';
+        if (quizMode === 'oefenen') {
+            fb.innerHTML += `<p class="text-sm font-normal mt-1 text-green-700">${q.uitleg}</p>`;
+        }
+        confetti({ particleCount: 30, spread: 50, origin: { y: 0.8 } });
+    } else {
+        fb.className = 'rounded-2xl p-4 text-center font-bold mb-4 bg-rose-50 border border-rose-200 text-rose-800';
+        fb.innerHTML = `❌ Fout. Het juiste antwoord was: <span class="text-slate-900">${q.antwoord}</span>`;
+        if (quizMode === 'oefenen') {
+            fb.innerHTML += `<p class="text-sm font-normal mt-1 text-slate-600">${q.uitleg}</p>`;
+        }
+    }
+
+    document.getElementById('quiz-next-btn').classList.remove('hidden');
+    document.getElementById('quiz-next-btn').textContent = quizIndex + 1 < quizVragen.length
+        ? '▶ Volgende vraag'
+        : '🏁 Bekijk resultaat';
+}
+
+function nextQuizQuestion() {
+    quizIndex++;
+    if (quizIndex < quizVragen.length) {
+        renderQuizQuestion();
+        updateQuizDots();
+    } else {
+        showResult();
+    }
+}
+
+// ============================
+// RESULTAAT
+// ============================
+function showResult() {
+    showView('result');
+    const pct = Math.round((quizScore / quizVragen.length) * 100);
+
+    document.getElementById('result-score').textContent = `${quizScore}/${quizVragen.length}`;
+    document.getElementById('result-pct').textContent = `${pct}%`;
+
+    let emoji = '🌱', titel = 'Goed geprobeerd!', tekst = 'Blijf oefenen en je wordt beter!';
+    if (pct === 100) { emoji = '🏆'; titel = 'Fantastisch!'; tekst = 'Je weet alles over planten. Heel goed!'; confetti({ particleCount: 200, spread: 100 }); }
+    else if (pct >= 80) { emoji = '🌟'; titel = 'Heel goed!'; tekst = 'Je kent bijna alles. Goed gedaan!'; confetti({ particleCount: 100, spread: 70 }); }
+    else if (pct >= 60) { emoji = '🌸'; titel = 'Best goed!'; tekst = 'Je weet al veel! Nog een beetje oefenen.'; }
+    else if (pct >= 40) { emoji = '🌿'; titel = 'Blijf oefenen!'; tekst = 'Lees de info nog eens en probeer opnieuw.'; }
+    else { emoji = '🌱'; titel = 'Niet erg!'; tekst = 'Begin met "Leer de Delen" en probeer daarna opnieuw.'; }
+
+    document.getElementById('result-emoji').textContent = emoji;
+    document.getElementById('result-titel').textContent = titel;
+    document.getElementById('result-tekst').textContent = tekst;
+
+    // Fout-overzicht
+    const fDiv = document.getElementById('result-fouten');
+    fDiv.innerHTML = '';
+    const fouten = quizHistory.filter(h => !h.correct);
+    if (fouten.length > 0) {
+        fDiv.innerHTML = '<p class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Verbeterpunten:</p>';
+        fouten.forEach(f => {
+            const card = document.createElement('div');
+            card.className = 'p-3 bg-rose-50 rounded-xl border border-rose-100 text-sm';
+            card.innerHTML = `<p class="font-semibold text-slate-700 mb-1">${f.vraag}</p>
+                <p class="text-rose-600 text-xs">Jij koos: <b>${f.gekozen}</b> &nbsp;|&nbsp; Juist: <b class="text-green-700">${f.juist}</b></p>`;
+            fDiv.appendChild(card);
+        });
+    } else {
+        fDiv.innerHTML = '<p class="text-green-600 font-bold text-center">🎉 Geen fouten! Perfecte score!</p>';
+    }
+
+    document.getElementById('result-retry-btn').onclick = () => startQuiz(lastQuizMode);
+}
+
+// ============================
+// INIT
+// ============================
+document.addEventListener('DOMContentLoaded', () => {
+    showView('menu');
+});
+</script>
+</body>
+</html>
