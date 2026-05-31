@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Les Nombres — Frans</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600&family=Plus+Jakarta+Sans:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<style>
+  body { font-family: 'Plus Jakarta Sans', sans-serif; background: #f0fdf4; }
+  .fredoka { font-family: 'Fredoka', sans-serif; }
+  .hidden { display: none !important; }
+
+  .number-btn {
+    aspect-ratio: 1; display: flex; align-items: center; justify-content: center;
+    font-size: 1.15rem; font-weight: 700; background: #f8fafc;
+    border: 3px solid #e2e8f0; border-radius: 1rem;
+    cursor: pointer; transition: all 0.2s; font-family: 'Fredoka', sans-serif;
+  }
+  .number-btn:hover:not(:disabled) { border-color: #22c55e; background: #f0fdf4; transform: scale(1.05); }
+  .number-btn.correct { background: #22c55e !important; border-color: #16a34a !important; color: white; }
+  .number-btn.wrong   { background: #ef4444 !important; border-color: #dc2626 !important; color: white; }
+  .number-btn:disabled { cursor: default; }
+
+  .number-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+  @media(min-width:480px) { .number-grid { grid-template-columns: repeat(5, 1fr); } }
+
+  .speaker-btn {
+    background: #22c55e; color: white; width: 80px; height: 80px;
+    border-radius: 50%; display: flex; align-items: center; justify-content: center;
+    margin: 0 auto; cursor: pointer;
+    box-shadow: 0 8px 15px rgba(34,197,94,0.3); transition: all 0.2s;
+  }
+  .speaker-btn:active { transform: scale(0.9); }
+  .speaker-btn.playing { background: #16a34a; animation: pulse 0.6s ease-in-out infinite alternate; }
+  @keyframes pulse { from{transform:scale(1)} to{transform:scale(1.07)} }
+
+  .level-card {
+    cursor: pointer; transition: all 0.2s; border: 2px solid #e2e8f0;
+    background: white; border-radius: 0.75rem; padding: 1rem;
+    display: flex; justify-content: space-between; align-items: center; width: 100%;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+  }
+  .level-card:hover { border-color: #22c55e; background: #f0fdf4; transform: translateY(-2px); }
+</style>
+</head>
+<body class="min-h-screen pb-20">
+
+<!-- ══════════════════════════════════════════════
+     LOGIN OVERLAY
+══════════════════════════════════════════════ -->
+<div id="klas-login" style="position:fixed;inset:0;z-index:9999;background:linear-gradient(135deg,#1e3a5f,#15803d);display:flex;align-items:center;justify-content:center;padding:20px;">
+  <div style="background:white;border-radius:24px;padding:2.5rem 2rem;width:100%;max-width:380px;box-shadow:0 25px 50px rgba(0,0,0,0.25);text-align:center;display:flex;flex-direction:column;gap:12px;">
+    <div style="font-size:3rem;">🇫🇷</div>
+    <h1 style="font-size:1.5rem;font-weight:900;color:#1f2937;margin:0;">Les Nombres</h1>
+    <p style="color:#6b7280;font-size:.9rem;margin:0;">Voer je naam en code in</p>
+    <div id="klas-err" style="color:#dc2626;font-size:.85rem;font-weight:700;min-height:18px;display:none;"></div>
+    <input type="text"     id="klas-naam" placeholder="Jouw voornaam" autocomplete="off" autocapitalize="words"
+      style="width:100%;padding:14px;border:2px solid #e5e7eb;border-radius:12px;font-family:inherit;font-size:1rem;font-weight:600;text-align:center;outline:none;">
+    <input type="password" id="klas-code" placeholder="Jouw code" autocomplete="off"
+      style="width:100%;padding:14px;border:2px solid #e5e7eb;border-radius:12px;font-family:inherit;font-size:1rem;font-weight:600;text-align:center;outline:none;">
+    <button onclick="klasLogin()" style="width:100%;background:#15803d;color:white;border:none;border-radius:12px;padding:14px;font-family:inherit;font-size:1rem;font-weight:700;cursor:pointer;">Inloggen</button>
+    <button onclick="klasGast()"  style="width:100%;background:transparent;border:2px solid #e5e7eb;border-radius:12px;padding:12px;font-family:inherit;font-size:.9rem;font-weight:700;color:#6b7280;cursor:pointer;">Doorgaan als gast (geen opslag)</button>
+    <div style="font-size:.75rem;color:#9ca3af;"><a href="dashboard.html" style="color:#15803d;font-weight:700;text-decoration:none;">Leerkracht? Klik hier</a></div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     NAVIGATIEBALK
+══════════════════════════════════════════════ -->
+<nav class="bg-white border-b border-slate-100 shadow-sm sticky top-0 z-40 px-4 py-3">
+  <div class="max-w-xl mx-auto flex justify-between items-center">
+    <div class="flex items-center gap-3">
+      <div class="bg-green-600 text-white p-2 rounded-xl shadow-md text-lg">🇫🇷</div>
+      <div>
+        <span class="text-xs font-bold text-green-600 uppercase tracking-wider block">Frans</span>
+        <h1 class="text-base font-bold text-slate-800 leading-tight">Les Nombres</h1>
+      </div>
+    </div>
+    <div id="user-badge" class="hidden items-center gap-2">
+      <div id="user-avatar-circle" style="width:34px;height:34px;border-radius:50%;background:#dcfce7;display:flex;align-items:center;justify-content:center;font-weight:900;color:#15803d;font-size:.95rem;flex-shrink:0;">?</div>
+      <div class="text-left">
+        <p id="user-name-nav" class="text-sm font-bold text-slate-800 leading-none"></p>
+        <p id="guest-label-nav" class="hidden text-[10px] font-bold text-amber-500">GAST</p>
+      </div>
+      <button id="signout-btn" class="text-[11px] text-slate-400 hover:text-rose-500 border border-slate-200 px-2 py-1 rounded-lg transition">
+        <i class="fa-solid fa-right-from-bracket"></i>
+      </button>
+    </div>
+  </div>
+</nav>
+
+<!-- ══════════════════════════════════════════════
+     APP
+══════════════════════════════════════════════ -->
+<div class="max-w-xl mx-auto px-4 py-8">
+
+  <!-- ── GASTBANNER ── -->
+  <div id="guest-banner" class="hidden mb-4 bg-amber-50 border border-amber-200 text-amber-700 text-sm font-semibold p-3 rounded-2xl text-center">
+    <i class="fa-solid fa-user-secret mr-1"></i> Je bent aangemeld als <strong>gast</strong> — scores worden <strong>niet</strong> opgeslagen.
+  </div>
+
+  <!-- ── STARTSCHERM ── -->
+  <div id="start-screen">
+    <div class="bg-white rounded-[2rem] p-8 shadow-2xl border border-green-100 text-center mb-6">
+      <div class="text-5xl mb-3">🔢</div>
+      <h1 class="fredoka text-4xl text-green-700 mb-2">Les Nombres</h1>
+      <p class="text-slate-500 text-sm">Kies een niveau en een modus om te beginnen.</p>
+    </div>
+
+    <!-- Modus-schakelaar -->
+    <div class="flex gap-3 mb-5 bg-slate-100 p-1.5 rounded-2xl">
+      <button id="btn-oefenen" onclick="setModus('oefenen')"
+        class="flex-1 py-3 rounded-xl font-extrabold text-sm transition-all bg-white text-slate-800 shadow-sm">
+        ✏️ Oefenen
+      </button>
+      <button id="btn-toets" onclick="setModus('toets')"
+        class="flex-1 py-3 rounded-xl font-extrabold text-sm transition-all text-slate-500">
+        📝 Toets
+      </button>
+    </div>
+    <div id="modus-uitleg" class="text-center text-xs text-slate-400 font-semibold mb-5 -mt-2">Score wordt niet opgeslagen</div>
+
+    <!-- Niveaus -->
+    <div class="space-y-3">
+      <button onclick="startGame(10)"    class="level-card"><span class="font-bold text-lg text-slate-700">Tot 10 <span class="text-slate-400 font-normal text-sm">(incl. 0)</span></span><span class="bg-green-100 text-green-700 px-3 py-1 rounded-full text-sm font-bold">Niveau 1</span></button>
+      <button onclick="startGame(20)"    class="level-card"><span class="font-bold text-lg text-slate-700">Tot 20</span><span class="bg-green-100 text-green-700 px-3 py-1 rounded-full text-sm font-bold">Niveau 2</span></button>
+      <button onclick="startGame(100)"   class="level-card"><span class="font-bold text-lg text-slate-700">Tot 100</span><span class="bg-green-100 text-green-700 px-3 py-1 rounded-full text-sm font-bold">Niveau 3</span></button>
+      <button onclick="startGame(1000)"  class="level-card"><span class="font-bold text-lg text-slate-700">Tot 1.000</span><span class="bg-green-100 text-green-700 px-3 py-1 rounded-full text-sm font-bold">Niveau 4</span></button>
+      <button onclick="startGame(10000)" class="level-card"><span class="font-bold text-lg text-slate-700">Tot 10.000</span><span class="bg-green-100 text-green-700 px-3 py-1 rounded-full text-sm font-bold">Niveau 5</span></button>
+    </div>
+  </div>
+
+  <!-- ── GAMESCHERM ── -->
+  <div id="game-screen" class="hidden">
+    <div class="bg-white rounded-[2rem] shadow-xl overflow-hidden border border-green-100">
+      <!-- Header -->
+      <div class="bg-green-500 p-4 text-white flex justify-between items-center">
+        <div>
+          <p class="text-xs opacity-80 uppercase font-bold tracking-wider flex items-center gap-2">
+            Niveau: <span id="level-indicator"></span>
+            <span id="mode-badge-game" class="bg-white/20 px-2 py-0.5 rounded text-[10px] font-extrabold tracking-wider">OEFENEN</span>
+          </p>
+          <span class="font-bold text-lg">Vraag <span id="current-q">1</span>/10</span>
+        </div>
+        <div class="flex items-center gap-3">
+          <span id="score-display" class="bg-white/20 px-3 py-2 rounded-lg font-bold text-sm">Juist: 0</span>
+          <button onclick="bevestigStoppen()" class="text-white/70 hover:text-white text-xs font-bold flex items-center gap-1 border border-white/30 px-2 py-1 rounded-lg">
+            <i class="fa-solid fa-arrow-left"></i> Stop
+          </button>
+        </div>
+      </div>
+
+      <!-- Voortgangsbalk -->
+      <div class="h-1.5 bg-green-100">
+        <div id="progress-bar" class="h-full bg-green-400 transition-all duration-300" style="width:0%"></div>
+      </div>
+
+      <div class="p-6 text-center">
+        <!-- Speaker -->
+        <p class="text-slate-400 text-xs font-bold uppercase mb-4 tracking-widest">Klik en luister:</p>
+        <div id="speaker-icon" onclick="speakNumber()" class="speaker-btn mb-6">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
+          </svg>
+        </div>
+
+        <!-- Nummergrid -->
+        <div id="number-grid" class="number-grid"></div>
+
+        <!-- Feedback -->
+        <div id="feedback-msg" class="mt-5 min-h-[28px] font-bold text-base text-center"></div>
+
+        <button id="next-btn" onclick="volgendeRonde()"
+          class="hidden mt-5 w-full bg-slate-800 text-white font-bold py-4 rounded-xl shadow-lg transition-all active:scale-95 font-family-inherit">
+          Volgende vraag →
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── STOP-MODAL ── -->
+  <div id="stop-modal" class="hidden fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+    <div class="bg-white rounded-3xl p-8 max-w-sm w-full text-center shadow-2xl space-y-5">
+      <div class="text-4xl">⚠️</div>
+      <h3 class="text-xl font-extrabold text-slate-800">Stoppen?</h3>
+      <p class="text-slate-500 text-sm">Je voortgang gaat verloren.</p>
+      <div class="flex gap-3">
+        <button onclick="document.getElementById('stop-modal').classList.add('hidden')"
+          class="flex-1 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl">Doorgaan</button>
+        <button onclick="naarMenu()"
+          class="flex-1 py-3 bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl">Stoppen</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── RESULTAATSCHERM ── -->
+  <div id="result-screen" class="hidden bg-white rounded-[2.5rem] p-10 shadow-2xl text-center border border-green-100 space-y-5">
+    <div class="text-7xl fredoka text-green-700">Félicitations!</div>
+    <div id="result-level-badge" class="inline-block px-4 py-1.5 bg-green-100 text-green-800 rounded-full font-bold text-sm border-2 border-green-200"></div>
+    <div id="result-mode-badge" class="inline-block ml-2 px-3 py-1 rounded-full font-bold text-xs"></div>
+
+    <div class="grid grid-cols-2 gap-4">
+      <div class="bg-green-50 p-6 rounded-2xl border-2 border-green-200">
+        <p class="text-xs text-green-600 font-bold uppercase mb-1">Juist</p>
+        <p id="final-correct" class="text-5xl font-bold text-green-700">0</p>
+      </div>
+      <div class="bg-red-50 p-6 rounded-2xl border-2 border-red-200">
+        <p class="text-xs text-red-600 font-bold uppercase mb-1">Fout</p>
+        <p id="final-wrong" class="text-5xl font-bold text-red-700">0</p>
+      </div>
+    </div>
+    <div class="bg-slate-50 p-5 rounded-2xl border border-slate-200">
+      <p class="text-xs text-slate-500 font-bold uppercase mb-1">Score</p>
+      <p id="final-pct" class="text-3xl font-bold text-slate-700">0%</p>
+    </div>
+
+    <!-- Opslag-status -->
+    <div id="upload-status" style="display:none;" class="p-4 rounded-2xl border text-sm font-semibold text-center">
+      <i id="upload-spinner" class="fa-solid fa-spinner fa-spin text-indigo-500 text-base mr-2"></i>
+      <span id="upload-status-text">Bezig met opslaan...</span>
+    </div>
+    <!-- Gast-notitie -->
+    <div id="guest-result-note" style="display:none;" class="bg-amber-50 border border-amber-200 text-amber-700 text-xs p-3 rounded-2xl">
+      <i class="fa-solid fa-user-secret mr-1"></i> Je speelde als gast. Score is <strong>niet</strong> opgeslagen.
+    </div>
+
+    <button onclick="naarMenu()"
+      class="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-4 rounded-2xl text-xl shadow-lg transition-all">
+      Ander niveau kiezen
+    </button>
+  </div>
+
+</div><!-- /.container -->
+
+<!-- ══════════════════════════════════════════════
+     FIREBASE — compat scripts, GEEN type="module"
+══════════════════════════════════════════════ -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script>
+firebase.initializeApp({
+  apiKey:            "AIzaSyCnQDVVAlK6jE-PPUUediRJMTbN0xqrLDE",
+  authDomain:        "klaswebsite-database.firebaseapp.com",
+  projectId:         "klaswebsite-database",
+  storageBucket:     "klaswebsite-database.firebasestorage.app",
+  messagingSenderId: "42912327282",
+  appId:             "1:42912327282:web:f13f2c706f6c42c115c4eb"
+});
+var _db = firebase.firestore();
+
+// ── GLOBALE STAAT (var — geen let/const voor globals) ─────────────────────
+var currentUser  = null;
+var isGuest      = false;
+var currentModus = "oefenen";   // "oefenen" | "toets"
+
+// Quiz-staat
+var currentRound  = 0;
+var aantalGoed    = 0;
+var aantalFout    = 0;
+var targetNumber  = 0;
+var isAnswering   = false;
+var maxNumber     = 10;
+var quizHistory   = [];
+
+// Spraak
+var frenchVoice = null;
+
+// ── VOICE SETUP ───────────────────────────────────────────────────────────
+function loadVoices() {
+  var voices = window.speechSynthesis.getVoices();
+  frenchVoice = null;
+  for (var i = 0; i < voices.length; i++) {
+    if (voices[i].lang.startsWith("fr")) { frenchVoice = voices[i]; break; }
+  }
+  if (!frenchVoice && voices.length > 0) frenchVoice = voices[0];
+}
+window.speechSynthesis.onvoiceschanged = loadVoices;
+loadVoices();
+
+// ── LOGIN ──────────────────────────────────────────────────────────────────
+function klasLogin() {
+  var naam = (document.getElementById("klas-naam").value || "").trim().toLowerCase();
+  var code = (document.getElementById("klas-code").value || "").trim();
+  var err  = document.getElementById("klas-err");
+  err.style.display = "none";
+
+  if (!naam) { err.textContent = "Vul je voornaam in."; err.style.display = "block"; return; }
+  if (!code) { err.textContent = "Vul je code in.";     err.style.display = "block"; return; }
+
+  _db.collection("leerlingen").doc(naam).get()
+    .then(function(doc) {
+      if (!doc.exists) { err.textContent = "Naam niet gevonden."; err.style.display = "block"; return; }
+      var data = doc.data();
+      if (data.code !== code) { err.textContent = "Verkeerde code."; err.style.display = "block"; return; }
+      currentUser          = { uid: naam, displayName: data.weergavenaam || naam };
+      isGuest              = false;
+      window._leerlingId   = naam;
+      window._leerlingNaam = data.weergavenaam || naam;
+      afterLogin();
+    })
+    .catch(function(e) { err.textContent = "Fout: " + e.message; err.style.display = "block"; });
+}
+
+function klasGast() {
+  currentUser          = null;
+  isGuest              = true;
+  window._leerlingId   = null;
+  window._leerlingNaam = "Gast";
+  afterLogin();
+}
+
+function afterLogin() {
+  document.getElementById("klas-login").style.display = "none";
+  var displayNaam = isGuest ? "Gast" : (window._leerlingNaam || "?");
+  var badge = document.getElementById("user-badge");
+  badge.style.display = "flex";
+  document.getElementById("user-name-nav").textContent      = displayNaam;
+  document.getElementById("user-avatar-circle").textContent = displayNaam[0].toUpperCase();
+  if (isGuest) {
+    document.getElementById("guest-label-nav").classList.remove("hidden");
+    document.getElementById("guest-banner").classList.remove("hidden");
+  }
+  toonScherm("start");
+}
+
+function doLogout() {
+  currentUser          = null;
+  isGuest              = false;
+  window._leerlingId   = null;
+  window._leerlingNaam = null;
+  window.speechSynthesis.cancel();
+  document.getElementById("klas-naam").value        = "";
+  document.getElementById("klas-code").value        = "";
+  document.getElementById("klas-err").style.display = "none";
+  document.getElementById("user-badge").style.display = "none";
+  document.getElementById("guest-label-nav").classList.add("hidden");
+  document.getElementById("guest-banner").classList.add("hidden");
+  document.getElementById("klas-login").style.display = "flex";
+}
+
+// ── SCHERMEN ───────────────────────────────────────────────────────────────
+function toonScherm(id) {
+  document.getElementById("start-screen").classList.add("hidden");
+  document.getElementById("game-screen").classList.add("hidden");
+  document.getElementById("result-screen").classList.add("hidden");
+  document.getElementById(id + "-screen").classList.remove("hidden");
+}
+
+// ── MODUS WISSELEN ─────────────────────────────────────────────────────────
+function setModus(modus) {
+  currentModus = modus;
+  var btnOef   = document.getElementById("btn-oefenen");
+  var btnToets = document.getElementById("btn-toets");
+  var uitleg   = document.getElementById("modus-uitleg");
+
+  if (modus === "toets") {
+    btnToets.className = "flex-1 py-3 rounded-xl font-extrabold text-sm transition-all bg-white text-slate-800 shadow-sm";
+    btnOef.className   = "flex-1 py-3 rounded-xl font-extrabold text-sm transition-all text-slate-500";
+    uitleg.textContent = "Score wordt opgeslagen in het dashboard";
+  } else {
+    btnOef.className   = "flex-1 py-3 rounded-xl font-extrabold text-sm transition-all bg-white text-slate-800 shadow-sm";
+    btnToets.className = "flex-1 py-3 rounded-xl font-extrabold text-sm transition-all text-slate-500";
+    uitleg.textContent = "Score wordt niet opgeslagen";
+  }
+}
+
+// ── GAME STARTEN ──────────────────────────────────────────────────────────
+function startGame(level) {
+  maxNumber    = level;
+  currentRound = 0;
+  aantalGoed   = 0;
+  aantalFout   = 0;
+  quizHistory  = [];
+
+  var levelLabel = "Tot " + level.toLocaleString("nl-BE");
+  document.getElementById("level-indicator").textContent = levelLabel;
+
+  // Mode-badge in game header
+  var modeBadge = document.getElementById("mode-badge-game");
+  if (currentModus === "toets") {
+    modeBadge.textContent = "TOETS";
+    modeBadge.style.background = "rgba(255,255,255,0.3)";
+  } else {
+    modeBadge.textContent = "OEFENEN";
+    modeBadge.style.background = "rgba(255,255,255,0.2)";
+  }
+
+  toonScherm("game");
+  genereerRonde();
+}
+
+// ── RONDE GENEREREN ───────────────────────────────────────────────────────
+function genereerRonde() {
+  if (currentRound >= 10) { toonResultaat(); return; }
+
+  currentRound++;
+  isAnswering = true;
+
+  document.getElementById("current-q").textContent    = currentRound;
+  document.getElementById("feedback-msg").textContent = "";
+  document.getElementById("next-btn").classList.add("hidden");
+  document.getElementById("progress-bar").style.width = ((currentRound - 1) / 10 * 100) + "%";
+
+  // 10 unieke willekeurige getallen
+  var nummers = [];
+  var pogingen = 0;
+  while (nummers.length < 10 && pogingen < 500) {
+    var n = Math.floor(Math.random() * (maxNumber + 1));
+    if (nummers.indexOf(n) === -1) nummers.push(n);
+    pogingen++;
+  }
+  // Als range te klein is (bijv. tot 10 geeft exact 11 mogelijkheden) neem wat er is
+  while (nummers.length < 10) nummers.push(nummers.length);
+
+  targetNumber = nummers[Math.floor(Math.random() * nummers.length)];
+
+  // Knoppen bouwen
+  var grid = document.getElementById("number-grid");
+  grid.innerHTML = "";
+  nummers.slice().sort(function(a, b) { return a - b; }).forEach(function(num) {
+    var btn = document.createElement("button");
+    btn.className   = "number-btn";
+    btn.textContent = num.toLocaleString("nl-BE");
+    btn.setAttribute("data-val", num);
+    // IIFE om scope-bug te vermijden
+    (function(n, b) {
+      b.onclick = function() { handleAnswer(n, b); };
+    })(num, btn);
+    grid.appendChild(btn);
+  });
+
+  // Spreek getal uit na korte pauze
+  setTimeout(speakNumber, 300);
+}
+
+// ── SPREKEN ───────────────────────────────────────────────────────────────
+function speakNumber() {
+  window.speechSynthesis.cancel();
+  var utt = new SpeechSynthesisUtterance(targetNumber.toString());
+  if (frenchVoice) utt.voice = frenchVoice;
+  utt.lang = "fr-FR";
+  utt.rate = 0.9;
+  var btn = document.getElementById("speaker-icon");
+  btn.classList.add("playing");
+  utt.onend = function() { btn.classList.remove("playing"); };
+  utt.onerror = function() { btn.classList.remove("playing"); };
+  window.speechSynthesis.speak(utt);
+}
+
+// ── ANTWOORD VERWERKEN ────────────────────────────────────────────────────
+function handleAnswer(selected, btn) {
+  if (!isAnswering) return;
+  isAnswering = false;
+
+  var isGoed = (selected === targetNumber);
+  var feedback = document.getElementById("feedback-msg");
+
+  // Alle knoppen uitschakelen
+  document.querySelectorAll(".number-btn").forEach(function(b) {
+    b.disabled = true;
+    if (parseInt(b.getAttribute("data-val")) === targetNumber) b.classList.add("correct");
+  });
+
+  if (isGoed) {
+    aantalGoed++;
+    btn.classList.add("correct");
+    feedback.innerHTML = '<span class="text-green-600">Bien joué ! ✅</span>';
+    confetti({ particleCount: 40, spread: 50, origin: { y: 0.8 } });
+  } else {
+    aantalFout++;
+    btn.classList.add("wrong");
+    feedback.innerHTML = '<span class="text-red-500 italic">C\'était ' + targetNumber.toLocaleString("nl-BE") + '. Écoute encore... 🔊</span>';
+    setTimeout(speakNumber, 400);
+  }
+
+  document.getElementById("score-display").textContent = "Juist: " + aantalGoed;
+
+  quizHistory.push({
+    doelGetal:  targetNumber,
+    gekozen:    selected,
+    isJuist:    isGoed,
+    niveau:     maxNumber
+  });
+
+  document.getElementById("next-btn").classList.remove("hidden");
+}
+
+// ── VOLGENDE RONDE ────────────────────────────────────────────────────────
+function volgendeRonde() { genereerRonde(); }
+
+function bevestigStoppen() { document.getElementById("stop-modal").classList.remove("hidden"); }
+
+function naarMenu() {
+  window.speechSynthesis.cancel();
+  document.getElementById("stop-modal").classList.add("hidden");
+  toonScherm("start");
+}
+
+// ── RESULTAAT TONEN ───────────────────────────────────────────────────────
+function toonResultaat() {
+  window.speechSynthesis.cancel();
+  document.getElementById("progress-bar").style.width = "100%";
+
+  var pct = Math.round((aantalGoed / 10) * 100);
+  document.getElementById("final-correct").textContent = aantalGoed;
+  document.getElementById("final-wrong").textContent   = aantalFout;
+  document.getElementById("final-pct").textContent     = pct + "%";
+
+  var levelLabel = "Tot " + maxNumber.toLocaleString("nl-BE");
+  document.getElementById("result-level-badge").textContent = "Niveau: " + levelLabel;
+
+  var modeBadge = document.getElementById("result-mode-badge");
+  if (currentModus === "toets") {
+    modeBadge.textContent  = "TOETS";
+    modeBadge.className    = "inline-block ml-2 px-3 py-1 rounded-full font-bold text-xs bg-indigo-100 text-indigo-700";
+  } else {
+    modeBadge.textContent  = "OEFENEN";
+    modeBadge.className    = "inline-block ml-2 px-3 py-1 rounded-full font-bold text-xs bg-green-100 text-green-700";
+  }
+
+  if (aantalGoed >= 8) confetti({ particleCount: 150, spread: 100, origin: { y: 0.6 } });
+
+  // Opslag reset
+  document.getElementById("upload-status").style.display     = "none";
+  document.getElementById("guest-result-note").style.display = "none";
+
+  if (currentModus === "toets") {
+    if (isGuest || !window._leerlingId) {
+      document.getElementById("guest-result-note").style.display = "block";
+    } else {
+      slaScoreOp(pct);
+    }
+  }
+
+  toonScherm("result");
+}
+
+// ── SCORE OPSLAAN ─────────────────────────────────────────────────────────
+// Collection-naam bevat het niveau zodat het dashboard dit duidelijk toont
+// bijv. "franse_getallen_10_toets", "franse_getallen_1000_toets"
+function slaScoreOp(pct) {
+  var statusBox  = document.getElementById("upload-status");
+  var statusText = document.getElementById("upload-status-text");
+  var spinner    = document.getElementById("upload-spinner");
+
+  function setStatus(type, msg) {
+    statusBox.style.display = "block";
+    spinner.style.display   = (type === "loading") ? "inline" : "none";
+    if (type === "loading") {
+      statusBox.style.background = "#f8fafc"; statusBox.style.borderColor = "#cbd5e1"; statusBox.style.color = "#475569";
+    } else if (type === "ok") {
+      statusBox.style.background = "#f0fdf4"; statusBox.style.borderColor = "#bbf7d0"; statusBox.style.color = "#15803d";
+    } else {
+      statusBox.style.background = "#fff1f2"; statusBox.style.borderColor = "#fecdd3"; statusBox.style.color = "#be123c";
+    }
+    statusText.textContent = msg;
+  }
+
+  setStatus("loading", "Bezig met opslaan...");
+
+  // Niveau in de collection-naam → dashboard toont per niveau apart
+  var collectionNaam = "franse_getallen_" + maxNumber + "_toets";
+
+  var record = {
+    leerlingId:    window._leerlingId,
+    leerlingNaam:  window._leerlingNaam || "Leerling",
+    mode:          "toets",
+    niveau:        maxNumber,
+    niveauLabel:   "Tot " + maxNumber.toLocaleString("nl-BE"),
+    score:         aantalGoed,
+    totalQ:        10,
+    percentage:    pct,
+    hintsGebruikt: 0,
+    timestamp:     firebase.firestore.FieldValue.serverTimestamp(),
+    vragen: quizHistory.map(function(h, i) {
+      return {
+        vraagNr:         i + 1,
+        doelGetal:       h.doelGetal,
+        antwoordLeerling: h.gekozen,
+        isJuist:         h.isJuist,
+        punten:          h.isJuist ? 1 : 0
+      };
+    })
+  };
+
+  _db.collection(collectionNaam).add(record)
+    .then(function() {
+      setStatus("ok", "✅ Score opgeslagen!");
+    })
+    .catch(function(e) {
+      var uitleg = e.message || "Onbekende fout";
+      if (e.code === "permission-denied") uitleg = "Geen schrijfrechten. Contacteer de leerkracht.";
+      else if (e.code === "unavailable")  uitleg = "Geen internetverbinding. Probeer opnieuw.";
+      setStatus("error", "❌ Opslaan mislukt: " + uitleg);
+    });
+}
+
+// ── DOM READY ─────────────────────────────────────────────────────────────
+document.addEventListener("DOMContentLoaded", function() {
+  document.getElementById("klas-naam").addEventListener("keypress", function(e) {
+    if (e.key === "Enter") klasLogin();
+  });
+  document.getElementById("klas-code").addEventListener("keypress", function(e) {
+    if (e.key === "Enter") klasLogin();
+  });
+  document.getElementById("signout-btn").addEventListener("click", doLogout);
+});
+</script>
+</body>
+</html>
