@@ -1,0 +1,647 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lichaamsdelen & Functies</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600&family=Plus+Jakarta+Sans:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<style>
+  body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #f8fafc; }
+  .title-font { font-family: 'Fredoka', sans-serif; }
+  .hidden { display: none !important; }
+  .choice-btn {
+    width: 100%; text-align: left; padding: 1rem 1.5rem;
+    background: white; border: 2px solid #e2e8f0; border-radius: 1rem;
+    transition: all 0.2s; font-weight: 700; color: #334155;
+    margin-bottom: 0.75rem; cursor: pointer; font-family: inherit; font-size: 1rem;
+  }
+  .choice-btn:hover:not(:disabled) { border-color: #3b82f6; background-color: #eff6ff; transform: translateY(-2px); }
+  .choice-btn.correct { background-color: #dcfce7; border-color: #22c55e; color: #166534; }
+  .choice-btn.wrong   { background-color: #fee2e2; border-color: #ef4444; color: #991b1b; }
+  .choice-btn:disabled { cursor: default; }
+  .card-anim { transition: transform .18s, box-shadow .18s; }
+  .card-anim:hover { transform: translateY(-3px); box-shadow: 0 10px 24px rgba(0,0,0,0.08); }
+</style>
+</head>
+<body class="min-h-screen pb-20">
+
+<!-- ══════════════════════════════════════════════
+     LOGIN OVERLAY
+══════════════════════════════════════════════ -->
+<div id="klas-login" style="position:fixed;inset:0;z-index:9999;background:linear-gradient(135deg,#1e3a5f,#0369a1);display:flex;align-items:center;justify-content:center;padding:20px;">
+  <div style="background:white;border-radius:24px;padding:2.5rem 2rem;width:100%;max-width:380px;box-shadow:0 25px 50px rgba(0,0,0,0.25);text-align:center;display:flex;flex-direction:column;gap:12px;">
+    <div style="font-size:3rem;">🫀</div>
+    <h1 style="font-size:1.5rem;font-weight:900;color:#1f2937;margin:0;">Lichaamsdelen</h1>
+    <p style="color:#6b7280;font-size:.9rem;margin:0;">Voer je naam en code in</p>
+    <div id="klas-err" style="color:#dc2626;font-size:.85rem;font-weight:700;min-height:18px;display:none;"></div>
+    <input type="text"     id="klas-naam" placeholder="Jouw voornaam" autocomplete="off" autocapitalize="words"
+      style="width:100%;padding:14px;border:2px solid #e5e7eb;border-radius:12px;font-family:inherit;font-size:1rem;font-weight:600;text-align:center;outline:none;">
+    <input type="password" id="klas-code" placeholder="Jouw code" autocomplete="off"
+      style="width:100%;padding:14px;border:2px solid #e5e7eb;border-radius:12px;font-family:inherit;font-size:1rem;font-weight:600;text-align:center;outline:none;">
+    <button onclick="klasLogin()" style="width:100%;background:#0369a1;color:white;border:none;border-radius:12px;padding:14px;font-family:inherit;font-size:1rem;font-weight:700;cursor:pointer;">Inloggen</button>
+    <button onclick="klasGast()"  style="width:100%;background:transparent;border:2px solid #e5e7eb;border-radius:12px;padding:12px;font-family:inherit;font-size:.9rem;font-weight:700;color:#6b7280;cursor:pointer;">Doorgaan als gast (geen opslag)</button>
+    <div style="font-size:.75rem;color:#9ca3af;"><a href="dashboard.html" style="color:#0369a1;font-weight:700;text-decoration:none;">Leerkracht? Klik hier</a></div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     NAVIGATIEBALK
+══════════════════════════════════════════════ -->
+<nav class="bg-white border-b border-slate-100 shadow-sm sticky top-0 z-40 px-4 py-3">
+  <div class="max-w-xl mx-auto flex justify-between items-center">
+    <div class="flex items-center gap-3">
+      <div class="bg-sky-600 text-white p-2 rounded-xl shadow-md text-lg">🫀</div>
+      <div>
+        <span class="text-xs font-bold text-sky-600 uppercase tracking-wider block">WO</span>
+        <h1 class="text-base font-bold text-slate-800 leading-tight">Lichaamsdelen &amp; Functies</h1>
+      </div>
+    </div>
+    <div id="user-badge" class="hidden items-center gap-2">
+      <div id="user-avatar-circle" style="width:34px;height:34px;border-radius:50%;background:#e0f2fe;display:flex;align-items:center;justify-content:center;font-weight:900;color:#0369a1;font-size:.95rem;flex-shrink:0;">?</div>
+      <div class="text-left">
+        <p id="user-name-nav" class="text-sm font-bold text-slate-800 leading-none"></p>
+        <p id="guest-label-nav" class="hidden text-[10px] font-bold text-amber-500">GAST</p>
+      </div>
+      <button id="signout-btn" class="text-[11px] text-slate-400 hover:text-rose-500 border border-slate-200 px-2 py-1 rounded-lg transition">
+        <i class="fa-solid fa-right-from-bracket"></i>
+      </button>
+    </div>
+  </div>
+</nav>
+
+<!-- ══════════════════════════════════════════════
+     HOOFD APP
+══════════════════════════════════════════════ -->
+<div class="max-w-xl mx-auto p-4 py-8">
+
+  <!-- ── KEUZEMENU ── -->
+  <div id="menu-view">
+    <div id="guest-banner" class="hidden mb-4 bg-amber-50 border border-amber-200 text-amber-700 text-sm font-semibold p-3 rounded-2xl text-center">
+      <i class="fa-solid fa-user-secret mr-1"></i> Je bent aangemeld als <strong>gast</strong> — scores worden <strong>niet</strong> opgeslagen.
+    </div>
+
+    <div class="bg-white rounded-3xl shadow-xl p-8 border border-slate-100 text-center mb-6">
+      <div class="text-5xl mb-3">🫀</div>
+      <h2 class="title-font text-3xl font-bold text-slate-800">Lichaamsdelen</h2>
+      <p class="text-slate-500 text-sm mt-2">Lees de beschrijving en kies het juiste lichaamsdeel.</p>
+    </div>
+
+    <div class="grid grid-cols-1 gap-4">
+      <button onclick="startModule('oefenen')" class="card-anim bg-white p-5 rounded-2xl border-2 border-slate-100 hover:border-emerald-400 text-left flex items-center gap-4 transition-all shadow-sm">
+        <div class="w-12 h-12 bg-emerald-50 text-emerald-500 rounded-xl flex items-center justify-center text-xl flex-shrink-0">✏️</div>
+        <div>
+          <h3 class="font-extrabold text-slate-800">Oefenen</h3>
+          <p class="text-xs text-slate-400 mt-0.5">20 willekeurige vragen · hints beschikbaar · score niet bewaard</p>
+        </div>
+        <div class="ml-auto text-slate-300 text-lg">›</div>
+      </button>
+
+      <button onclick="startModule('toets')" class="card-anim bg-white p-5 rounded-2xl border-2 border-slate-100 hover:border-indigo-400 text-left flex items-center gap-4 transition-all shadow-sm">
+        <div class="w-12 h-12 bg-indigo-50 text-indigo-500 rounded-xl flex items-center justify-center text-xl flex-shrink-0">📝</div>
+        <div>
+          <h3 class="font-extrabold text-slate-800">Toets</h3>
+          <p class="text-xs text-slate-400 mt-0.5">20 willekeurige vragen · geen hints · score wordt opgeslagen</p>
+        </div>
+        <div class="ml-auto text-slate-300 text-lg">›</div>
+      </button>
+    </div>
+  </div>
+
+  <!-- ── QUIZ SCHERM ── -->
+  <div id="quiz-view" class="hidden">
+    <div class="bg-white rounded-[2rem] shadow-xl overflow-hidden border border-slate-100">
+      <!-- Progress bar -->
+      <div class="h-2 bg-slate-100 w-full">
+        <div id="progress-bar" class="h-full bg-sky-500 transition-all duration-300" style="width:0%"></div>
+      </div>
+      <div class="p-6">
+        <!-- Header -->
+        <div class="flex justify-between items-center mb-5">
+          <button onclick="bevestigStoppen()" class="text-sm font-bold text-slate-400 hover:text-red-500 flex items-center gap-1 transition-colors">
+            <i class="fa-solid fa-arrow-left"></i> Stop
+          </button>
+          <span id="question-counter" class="bg-slate-100 text-slate-600 px-4 py-1 rounded-full text-sm font-bold">Vraag 1/20</span>
+          <div class="flex gap-2 items-center">
+            <span class="text-green-500 font-bold text-sm" id="score-correct">0</span>
+            <span class="text-slate-300">|</span>
+            <span class="text-red-400 font-bold text-sm" id="score-wrong">0</span>
+            <span id="mode-badge" class="ml-1 text-xs font-extrabold px-2 py-1 rounded-lg bg-emerald-100 text-emerald-700 uppercase tracking-wide">Oefenen</span>
+          </div>
+        </div>
+
+        <!-- Vraag -->
+        <p id="description" class="text-lg text-slate-800 font-semibold mb-5 leading-relaxed"></p>
+
+        <!-- Foto (na juist antwoord) -->
+        <div id="image-feedback" class="hidden mb-5" style="height:180px;display:flex;justify-content:center;align-items:center;background:#f1f5f9;border-radius:1rem;overflow:hidden;">
+          <img id="result-img" src="" class="h-full object-contain" alt="lichaamsdeel">
+        </div>
+
+        <!-- Antwoord-knoppen -->
+        <div id="choices-grid"></div>
+
+        <!-- Hint (alleen oefenen) -->
+        <div id="hint-section">
+          <button id="hint-btn" onclick="showHint()"
+            class="mt-2 text-blue-500 text-sm font-bold flex items-center gap-2 hover:underline">
+            <i class="fa-regular fa-lightbulb"></i> Heb je een hint nodig?
+          </button>
+          <div id="hint-box" class="hidden mt-3 bg-yellow-50 text-yellow-800 p-3 rounded-xl text-sm border border-dashed border-yellow-300"></div>
+        </div>
+
+        <button id="next-btn" onclick="volgendeVraag()"
+          class="hidden w-full mt-5 bg-slate-800 text-white font-bold py-4 rounded-xl hover:bg-slate-900 transition-all">
+          Volgende Vraag →
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── STOP-MODAL ── -->
+  <div id="stop-modal" class="hidden fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+    <div class="bg-white rounded-3xl p-8 max-w-sm w-full text-center shadow-2xl space-y-5">
+      <div class="text-4xl">⚠️</div>
+      <h3 class="text-xl font-extrabold text-slate-800">Stoppen?</h3>
+      <p class="text-slate-500 text-sm">Je voortgang gaat verloren.</p>
+      <div class="flex gap-3">
+        <button onclick="document.getElementById('stop-modal').classList.add('hidden')"
+          class="flex-1 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl transition-all">Doorgaan</button>
+        <button onclick="naarMenu()"
+          class="flex-1 py-3 bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl transition-all">Stoppen</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── RESULTATEN SCHERM ── -->
+  <div id="result-view" class="hidden space-y-5">
+    <div class="bg-white rounded-3xl shadow-xl p-8 text-center border border-slate-100 space-y-5">
+      <div class="text-6xl" id="result-emoji">🎉</div>
+      <div>
+        <h2 class="title-font text-3xl font-bold text-slate-800">Quiz Voltooid!</h2>
+        <p class="text-slate-500 text-sm mt-1" id="result-subtitel">Geweldig gedaan!</p>
+      </div>
+      <div class="space-y-3">
+        <div class="flex justify-between p-4 bg-green-50 rounded-2xl">
+          <span class="text-green-700 font-bold">Juist:</span>
+          <span id="final-correct" class="text-green-700 font-bold text-xl">0</span>
+        </div>
+        <div class="flex justify-between p-4 bg-red-50 rounded-2xl">
+          <span class="text-red-700 font-bold">Fouten:</span>
+          <span id="final-wrong" class="text-red-700 font-bold text-xl">0</span>
+        </div>
+        <div class="flex justify-between p-4 bg-slate-50 rounded-2xl">
+          <span class="text-slate-600 font-bold">Score:</span>
+          <span id="final-pct" class="text-slate-800 font-bold text-xl">0%</span>
+        </div>
+        <div id="final-hints-row" class="flex justify-between p-4 bg-blue-50 rounded-2xl">
+          <span class="text-blue-700 font-bold">Hints gebruikt:</span>
+          <span id="final-hints" class="text-blue-700 font-bold text-xl">0</span>
+        </div>
+      </div>
+      <!-- Opslag-status (alleen toets) -->
+      <div id="upload-status" style="display:none;" class="p-4 rounded-2xl border text-sm font-semibold text-center max-w-sm mx-auto">
+        <i id="upload-spinner" class="fa-solid fa-spinner fa-spin text-indigo-500 text-base mr-2"></i>
+        <span id="upload-status-text">Bezig met opslaan...</span>
+      </div>
+      <!-- Gast-notitie -->
+      <div id="guest-result-note" style="display:none;" class="bg-amber-50 border border-amber-200 text-amber-700 text-xs p-3 rounded-2xl">
+        <i class="fa-solid fa-user-secret mr-1"></i> Je speelde als gast. Score is <strong>niet</strong> opgeslagen.
+      </div>
+    </div>
+
+    <!-- Foutenoverzicht -->
+    <div class="bg-white rounded-3xl shadow-xl p-8 border border-slate-100 space-y-4">
+      <h3 class="text-xl font-extrabold text-slate-800">📋 Overzicht</h3>
+      <div id="error-list" class="space-y-3"></div>
+      <button onclick="naarMenu()"
+        class="w-full mt-4 bg-slate-900 text-white py-4 rounded-2xl font-extrabold text-lg hover:bg-black transition-all shadow-md">
+        Terug naar menu
+      </button>
+    </div>
+  </div>
+
+</div><!-- /.container -->
+
+<!-- ══════════════════════════════════════════════
+     FIREBASE  — compat scripts, GEEN type="module"
+══════════════════════════════════════════════ -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script>
+firebase.initializeApp({
+  apiKey:            "AIzaSyCnQDVVAlK6jE-PPUUediRJMTbN0xqrLDE",
+  authDomain:        "klaswebsite-database.firebaseapp.com",
+  projectId:         "klaswebsite-database",
+  storageBucket:     "klaswebsite-database.firebasestorage.app",
+  messagingSenderId: "42912327282",
+  appId:             "1:42912327282:web:f13f2c706f6c42c115c4eb"
+});
+var _db = firebase.firestore();
+
+// ── GLOBALE STAAT  (var — geen let/const voor globals, anders onclick-scope problemen) ──
+var currentUser  = null;
+var isGuest      = false;
+var currentMode  = "";      // "oefenen" | "toets"
+
+// Quiz-staat
+var vragen       = [];
+var currentIdx   = 0;
+var aantalGoed   = 0;
+var aantalFout   = 0;
+var hintsUsed    = 0;
+var hintForCurrent = false;
+var locked       = false;
+var quizHistory  = [];
+
+// ── DATABASE ─────────────────────────────────────────────────────────────
+var DATABASE = [
+  { q: "Dit zit boven je ogen. Als je ouder wordt krijg je er rimpels.", a: "Voorhoofd", id: "13LXGjE-R-btpQuLKiqmc47tcCRMtotN2", hint: "Denk aan de plek waar je je hand legt als je koorts voelt.", related: ["Slaap", "Wangen", "Kruin"] },
+  { q: "Deze haren zitten boven je ogen. Ze stoppen zweet.", a: "Wenkbrauw", id: "18bSVSpWVWoFcD1SiHbssDeemxFb3i0Dw", hint: "Deze haren trek je op als je verbaasd bent.", related: ["Wimpers", "Snor", "Baard"] },
+  { q: "Deze kleine haartjes op je oogleden beschermen je ogen tegen stof.", a: "Wimpers", id: "1eJdHxiWD2c3Jp013luQL2J6N1Ac4nKpJ", hint: "Ze zitten aan je oogleden vast.", related: ["Wenkbrauw", "Pupil", "Iris"] },
+  { q: "Dit is het zachte, onderste deel van je oor, sommigen hebben hier een oorbel.", a: "Oorlel", id: "1fXU9V89ZDXnpyqxCaQ0eUk97Azo8Wsb5", hint: "Het is het enige deel van het oor zonder kraakbeen.", related: ["Oorschelp", "Trommelvlies", "Hals"] },
+  { q: "Dit zijn de zijkanten van je neus. Ze kunnen bewegen.", a: "Neusvleugel", id: "1IHw-UajyrySbBcX0uoyHg5qA-fK-ylsI", hint: "Ze hebben de naam van een lichaamsdeel van een vogel.", related: ["Neusbrug", "Wangen", "Lippen"] },
+  { q: "Deze zitten aan de zijkant van je gezicht, onder je ogen. Als je bloost worden ze rood.", a: "Wang", id: "11HGQ0YPe8lAtZEbQ1kY1dzzZGkgO9v4z", hint: "Je krijgt hier vaak een kusje op van je oma.", related: ["Kin", "Slaap", "Voorhoofd"] },
+  { q: "Dit is het onderste puntje van je gezicht, onder je mond.", a: "Kin", id: "1HEI4WXRJWiYHe3gG2IxkA2hIS6c-_O5n", hint: "Het rijmt op 'erin'.", related: ["Hals", "Wang", "Lippen"] },
+  { q: "Dit is de zijkant van je hoofd, naast je oog en boven je oren.", a: "Slaap", id: "1qme8VhqWQrWYBRAHM2W_V7MC6MlNKU8S", hint: "Je wrijft hier vaak als je hoofdpijn hebt.", related: ["Voorhoofd", "Wang", "Oorlel"] },
+  { q: "Hier zitten je tanden in vast. Het is roze en zacht.", a: "Tandvlees", id: "1OH0alx0V0aGR-HfRQh4ZVg5hT2q371b0", hint: "Het zit in je mond rondom je tanden.", related: ["Tong", "Gehemelte", "Huig"] },
+  { q: "Dit is de bovenkant van de binnenkant van je mond.", a: "Gehemelte", id: "1TKTyLoOEyk_upMl3_6u15lKCn0ru0vsC", hint: "Het woord lijkt op 'hemel'.", related: ["Huig", "Tong", "Slokdarm"] },
+  { q: "Dit vleesje hangt achter in je keel.", a: "Huig", id: "1-fYR6HBoLJZzLqiE3mD2w-dUz5Dj8thN", hint: "Het bungelt achter in je mond.", related: ["Gehemelte", "Tong", "Amandelen"] },
+  { q: "Dit is het zwarte stipje in het midden van je oog.", a: "Pupil", id: "1wwieDlKlBROo26t9PlpK1RViVNH2w6X5", hint: "Het wordt groter in het donker.", related: ["Iris", "Wimpers", "Wenkbrauw"] },
+  { q: "Dit is de voorkant van je nek.", a: "Hals", id: "1HkahTYu8ITY2kh8kMPsim-bYGVV7KJvC", hint: "Hier zit je strottenhoofd.", related: ["Nek", "Borst", "Schouder"] },
+  { q: "Dit bot loopt vooraan van je hals naar je schouder.", a: "Sleutelbeen", id: "10sL3fnd9s8qzoHU45iSuz6ZYmW2O9D7E", hint: "Dit bot breekt vaak bij een val met de fiets.", related: ["Schouderblad", "Ribben", "Borstbeen"] },
+  { q: "Dit is het kleine gaatje in het midden van je buik.", a: "Navel", id: "1dP6KN34Z6CqTjVnMF8mQnEBic_gPiPfK", hint: "Hier zat vroeger de navelstreng vast.", related: ["Taille", "Maag", "Lies"] },
+  { q: "Dit is de zijkant van je buik.", a: "Zij (flanken)", id: "1yYE9aSX6wAH5Pt9zB4MHHkx9gmYdYZmb", hint: "Het zit tussen je buik en je rug.", related: ["Taille", "Navel", "Borst"] },
+  { q: "Dit is het smalste deel van je buik.", a: "Taille", id: "1yb04ERciaLKcfNvMU19b2Uedd_XYGav6", hint: "Hier draag je vaak een riem.", related: ["Zij (flanken)", "Navel", "Heupen"] },
+  { q: "Deze rij botten zit in het midden van je rug.", a: "Wervelkolom", id: "1EEwk_AXN4lZYVZ5t_QT9_jT-Bod3o7VW", hint: "Ook wel de ruggengraat genoemd.", related: ["Ribben", "Bekken", "Schouderblad"] },
+  { q: "Deze twee platte botten zitten boven aan je rug.", a: "Schouderblad", id: "1lrg4Cu06vgFz-7e1gvC-c60VB-C72Ixz", hint: "Ze lijken op vleugels aan de achterkant.", related: ["Sleutelbeen", "Wervelkolom", "Oksel"] },
+  { q: "Dit is de holte onder je arm. Hier kan het erg zweten.", a: "Oksel", id: "1P7I10JwTohiF1z0CYnRLInTsNiWp0Lk_", hint: "Hier spuit je deodorant.", related: ["Lies", "Elleboog", "Hals"] },
+  { q: "Dit is een sterke spier tussen je borst en je buik.", a: "Middenrif", id: "1ERq12-FeK9FfOP8TTJB63g1Z1qbvgdPl", hint: "Deze spier helpt bij het ademhalen.", related: ["Longen", "Maag", "Hart"] },
+  { q: "Dit is het allerlaatste botje onderaan je rug.", a: "Staartbeentje", id: "16nLhz3vJC6bPC4iLdq0v-nHbC8aTBTWT", hint: "Het zit helemaal onderaan de wervelkolom.", related: ["Bekken", "Heupen", "Heiligbeen"] },
+  { q: "Dit is de plek waar de binnenkant van je been aan je buik vastzit.", a: "Lies", id: "1-kpOW2w97v9jd6n6l8Gev_iq6FI_QkPx", hint: "Voetballers rekken dit vaak voor de wedstrijd.", related: ["Heupen", "Dij", "Navel"] },
+  { q: "Dit is het deel van je arm tussen je schouder en elleboog.", a: "Bovenarm", id: "15IhOJ-wLqzNvfT6Xnk-Ef9gnPeXBDYn-", hint: "Hier zitten je biceps.", related: ["Onderarm", "Pols", "Schouder"] },
+  { q: "Dit is de harde punt in het midden van je arm.", a: "Elleboog", id: "11kaDQpkkG3xGJjlIHCMPFv6YpnXHJyPq", hint: "Je mag dit niet op tafel zetten tijdens het eten.", related: ["Knie", "Pols", "Schouder"] },
+  { q: "Dit is het deel van je arm tussen je elleboog en je hand.", a: "Onderarm", id: "1ALsUV1hfl6KGOzQO0vFXXY142HmeKXG5", hint: "Het deel tussen elleboog en pols.", related: ["Bovenarm", "Pols", "Handpalm"] },
+  { q: "Dit is het deel tussen je arm en je hand. Je kan er een horloge dragen.", a: "Pols", id: "1t9etJcnfBCfyTz_x4gbAaoZfSpdK-xaz", hint: "Hier voel je je hartslag.", related: ["Enkel", "Onderarm", "Handpalm"] },
+  { q: "Dit is de binnenkant van je hand. Je grijpt er dingen mee vast.", a: "Handpalm", id: "1ULnK4QhjKoe6KJwhONXz86yJMBB7ym3P", hint: "Je kan hieruit 'lezen'.", related: ["Muis van de hand", "Knokkels", "Pols"] },
+  { q: "Deze harde bobbels zie je als je een vuist maakt.", a: "Knokkels", id: "1z4SM_fSbV8fV9MqkvqqX0UGRmJY1Kgra", hint: "Het zijn de gewrichten van je vingers.", related: ["Nagels", "Handpalm", "Vingertoppen"] },
+  { q: "Dit is het dikke, zachte vlees onder je duim, aan de binnenkant van je hand.", a: "Muis van de hand", id: "1bjT2FPAlXFYY4YN-PS8kDbZwPcEXNS38", hint: "Het heeft de naam van een klein knaagdier.", related: ["Handpalm", "Pink", "Pols"] },
+  { q: "Dit is het dikke deel van je been, tussen je heup en je knie.", a: "Dij", id: "1Bi_Onfoe8nuBrfclAIVJd66MFvgADapC", hint: "Ook wel het bovenbeen genoemd.", related: ["Kuit", "Scheenbeen", "Knie"] },
+  { q: "Dit onderdeel zit tussen je bovenbeen en je onderbeen.", a: "Knie", id: "1tlhzg0iv38p9p6wEISjCn5MbN6ZQsKwx", hint: "Hierop zit je knieschijf.", related: ["Elleboog", "Enkel", "Heup"] },
+  { q: "Dit is de zachte achterkant van je knie.", a: "Knieholte", id: "1b9yPrNGli7W6TMDYQUE6aZZgO-sbfdvW", hint: "De kuil achter je kniegewricht.", related: ["Kuit", "Dij", "Enkel"] },
+  { q: "Dit is het harde bot aan de voorkant van je onderbeen.", a: "Scheenbeen", id: "1_PPP8eW26e8QzkDSoC15rL5Jnnofkugm", hint: "Doet erg pijn als je er tegenaan stoot.", related: ["Kuit", "Kuitbeen", "Dijbeen"] },
+  { q: "Dit is de zachte achterkant van je onderbeen.", a: "Kuit", id: "1UFrlk0iG0IvseTNaO5bTl-PWwowSWo5j", hint: "Deze spier gebruik je om te springen.", related: ["Scheenbeen", "Hiel", "Enkel"] },
+  { q: "Dit is een deel van je voet en zit onderaan, onder je benen.", a: "Hiel", id: "1NeroePSTuB6062CW-hOXxsZtQVLqCo4o", hint: "Achterkant van de voet, ook wel hak genoemd.", related: ["Enkel", "Wreef", "Voetzool"] }
+];
+
+// ── LOGIN ─────────────────────────────────────────────────────────────────
+function klasLogin() {
+  var naam = (document.getElementById("klas-naam").value || "").trim().toLowerCase();
+  var code = (document.getElementById("klas-code").value || "").trim();
+  var err  = document.getElementById("klas-err");
+  err.style.display = "none";
+
+  if (!naam) { err.textContent = "Vul je voornaam in."; err.style.display = "block"; return; }
+  if (!code) { err.textContent = "Vul je code in.";     err.style.display = "block"; return; }
+
+  _db.collection("leerlingen").doc(naam).get()
+    .then(function(doc) {
+      if (!doc.exists) { err.textContent = "Naam niet gevonden."; err.style.display = "block"; return; }
+      var data = doc.data();
+      if (data.code !== code) { err.textContent = "Verkeerde code."; err.style.display = "block"; return; }
+      currentUser          = { uid: naam, displayName: data.weergavenaam || naam };
+      isGuest              = false;
+      window._leerlingId   = naam;
+      window._leerlingNaam = data.weergavenaam || naam;
+      afterLogin();
+    })
+    .catch(function(e) { err.textContent = "Fout: " + e.message; err.style.display = "block"; });
+}
+
+function klasGast() {
+  currentUser          = null;
+  isGuest              = true;
+  window._leerlingId   = null;
+  window._leerlingNaam = "Gast";
+  afterLogin();
+}
+
+function afterLogin() {
+  document.getElementById("klas-login").style.display = "none";
+  var displayNaam = isGuest ? "Gast" : (window._leerlingNaam || "?");
+  var badge = document.getElementById("user-badge");
+  badge.style.display = "flex";
+  document.getElementById("user-name-nav").textContent     = displayNaam;
+  document.getElementById("user-avatar-circle").textContent = displayNaam[0].toUpperCase();
+  if (isGuest) {
+    document.getElementById("guest-label-nav").classList.remove("hidden");
+    document.getElementById("guest-banner").classList.remove("hidden");
+  }
+  showView("menu-view");
+}
+
+function doLogout() {
+  currentUser          = null;
+  isGuest              = false;
+  window._leerlingId   = null;
+  window._leerlingNaam = null;
+  document.getElementById("klas-naam").value       = "";
+  document.getElementById("klas-code").value       = "";
+  document.getElementById("klas-err").style.display = "none";
+  document.getElementById("user-badge").style.display = "none";
+  document.getElementById("guest-label-nav").classList.add("hidden");
+  document.getElementById("guest-banner").classList.add("hidden");
+  document.getElementById("klas-login").style.display = "flex";
+}
+
+// ── VIEWS ─────────────────────────────────────────────────────────────────
+function showView(id) {
+  ["menu-view", "quiz-view", "result-view"].forEach(function(v) {
+    document.getElementById(v).classList.add("hidden");
+  });
+  document.getElementById(id).classList.remove("hidden");
+}
+
+// ── MODULE STARTEN ────────────────────────────────────────────────────────
+function startModule(mode) {
+  currentMode  = mode;
+  aantalGoed   = 0;
+  aantalFout   = 0;
+  hintsUsed    = 0;
+  currentIdx   = 0;
+  quizHistory  = [];
+
+  // 20 willekeurige vragen
+  vragen = shuffle(DATABASE.slice()).slice(0, 20);
+
+  // Mode-stijl
+  var modeBadge = document.getElementById("mode-badge");
+  var progressBar = document.getElementById("progress-bar");
+  if (mode === "toets") {
+    modeBadge.textContent = "Toets";
+    modeBadge.className   = "ml-1 text-xs font-extrabold px-2 py-1 rounded-lg bg-indigo-100 text-indigo-700 uppercase tracking-wide";
+    progressBar.className = "h-full bg-indigo-500 transition-all duration-300";
+  } else {
+    modeBadge.textContent = "Oefenen";
+    modeBadge.className   = "ml-1 text-xs font-extrabold px-2 py-1 rounded-lg bg-emerald-100 text-emerald-700 uppercase tracking-wide";
+    progressBar.className = "h-full bg-sky-500 transition-all duration-300";
+  }
+
+  showView("quiz-view");
+  toonVraag();
+}
+
+// ── VRAAG RENDEREN ────────────────────────────────────────────────────────
+function toonVraag() {
+  locked           = false;
+  hintForCurrent   = false;
+
+  var q = vragen[currentIdx];
+  document.getElementById("question-counter").textContent = "Vraag " + (currentIdx + 1) + "/20";
+  document.getElementById("description").textContent      = q.q;
+  document.getElementById("progress-bar").style.width     = (currentIdx / vragen.length * 100) + "%";
+  document.getElementById("score-correct").textContent    = aantalGoed;
+  document.getElementById("score-wrong").textContent      = aantalFout;
+
+  // Reset feedback
+  var imgFb = document.getElementById("image-feedback");
+  imgFb.classList.add("hidden");
+  imgFb.style.display = "";     // reset inline display
+  document.getElementById("result-img").src = "";
+
+  document.getElementById("hint-box").classList.add("hidden");
+  document.getElementById("hint-box").textContent = q.hint;
+  document.getElementById("next-btn").classList.add("hidden");
+
+  // Hint-sectie: tonen bij oefenen, verbergen bij toets
+  document.getElementById("hint-section").style.display = (currentMode === "oefenen") ? "block" : "none";
+  document.getElementById("hint-btn").classList.remove("hidden");
+
+  // Antwoord-knoppen
+  var grid = document.getElementById("choices-grid");
+  grid.innerHTML = "";
+  var opties = shuffle([q.a].concat(q.related));
+  opties.forEach(function(opt) {
+    var btn = document.createElement("button");
+    btn.className   = "choice-btn";
+    btn.textContent = opt;
+    btn.onclick = function() { controleerAntwoord(opt, btn); };
+    grid.appendChild(btn);
+  });
+}
+
+// ── HINT ──────────────────────────────────────────────────────────────────
+function showHint() {
+  if (locked) return;
+  document.getElementById("hint-box").classList.remove("hidden");
+  if (!hintForCurrent) {
+    hintsUsed++;
+    hintForCurrent = true;
+  }
+}
+
+// ── ANTWOORD CONTROLEREN ─────────────────────────────────────────────────
+function controleerAntwoord(selected, btn) {
+  if (locked) return;
+  locked = true;
+
+  var q       = vragen[currentIdx];
+  var isGoed  = (selected === q.a);
+
+  // Knoppen uitschakelen + kleuren
+  document.querySelectorAll(".choice-btn").forEach(function(b) {
+    b.disabled = true;
+    if (b.textContent === q.a) b.classList.add("correct");
+    else if (b === btn && !isGoed) b.classList.add("wrong");
+  });
+
+  if (isGoed) {
+    aantalGoed++;
+    confetti({ particleCount: 40, spread: 50, origin: { y: 0.8 } });
+    // Foto tonen
+    var imgFb = document.getElementById("image-feedback");
+    document.getElementById("result-img").src = "https://lh3.googleusercontent.com/d/" + q.id;
+    imgFb.style.display = "flex";
+    imgFb.classList.remove("hidden");
+  } else {
+    aantalFout++;
+  }
+
+  quizHistory.push({
+    vraag:      q.q,
+    juist:      q.a,
+    gekozen:    selected,
+    isCorrect:  isGoed,
+    hintUsed:   hintForCurrent
+  });
+
+  document.getElementById("hint-btn").classList.add("hidden");
+  document.getElementById("next-btn").classList.remove("hidden");
+}
+
+// ── VOLGENDE VRAAG ────────────────────────────────────────────────────────
+function volgendeVraag() {
+  currentIdx++;
+  if (currentIdx < vragen.length) toonVraag();
+  else toonResultaat();
+}
+
+function bevestigStoppen() {
+  document.getElementById("stop-modal").classList.remove("hidden");
+}
+
+function naarMenu() {
+  document.getElementById("stop-modal").classList.add("hidden");
+  showView("menu-view");
+}
+
+// ── RESULTATEN ────────────────────────────────────────────────────────────
+function toonResultaat() {
+  showView("result-view");
+
+  var pct = Math.round((aantalGoed / vragen.length) * 100);
+  document.getElementById("final-correct").textContent = aantalGoed;
+  document.getElementById("final-wrong").textContent   = aantalFout;
+  document.getElementById("final-pct").textContent     = pct + "%";
+  document.getElementById("final-hints").textContent   = hintsUsed;
+  document.getElementById("result-emoji").textContent  = pct === 100 ? "🏆" : pct >= 70 ? "🎉" : pct >= 50 ? "💪" : "📚";
+
+  // Hints-rij alleen bij oefenen
+  document.getElementById("final-hints-row").style.display = (currentMode === "oefenen") ? "flex" : "none";
+  document.getElementById("result-subtitel").textContent   = currentMode === "toets"
+    ? "Je hebt de toets voltooid." : "Geweldig gedaan!";
+
+  if (pct === 100) confetti({ particleCount: 150, spread: 80, origin: { y: 0.6 } });
+
+  // Foutenlijst
+  var errList = document.getElementById("error-list");
+  errList.innerHTML = "";
+  var fouten = quizHistory.filter(function(h) { return !h.isCorrect; });
+  if (fouten.length === 0) {
+    errList.innerHTML = '<div class="text-center py-5 bg-green-50 rounded-2xl border border-green-100 text-green-700 font-bold">Foutloos! Super gedaan. 🎉</div>';
+  } else {
+    quizHistory.forEach(function(h, i) {
+      var el = document.createElement("div");
+      el.className = "p-4 rounded-2xl border " + (h.isCorrect ? "bg-green-50 border-green-100" : "bg-red-50 border-red-100");
+      el.innerHTML =
+        '<div class="font-bold text-slate-800 text-sm mb-1">' + (h.isCorrect ? "✅" : "❌") + " " + (i + 1) + ". " + h.vraag + "</div>" +
+        (!h.isCorrect
+          ? '<div class="text-sm">Jouw antwoord: <b class="text-red-600">' + h.gekozen + "</b> → Juist: <b class='text-slate-800'>" + h.juist + "</b></div>"
+          : "");
+      errList.appendChild(el);
+    });
+  }
+
+  // Opslag en notities resetten
+  document.getElementById("upload-status").style.display    = "none";
+  document.getElementById("guest-result-note").style.display = "none";
+
+  if (currentMode === "toets") {
+    if (isGuest || !window._leerlingId) {
+      document.getElementById("guest-result-note").style.display = "block";
+    } else {
+      slaScoreOp(pct);
+    }
+  }
+}
+
+// ── SCORE OPSLAAN (zelfde patroon als Gewicht.html) ──────────────────────
+function slaScoreOp(pct) {
+  var statusBox  = document.getElementById("upload-status");
+  var statusText = document.getElementById("upload-status-text");
+  var spinner    = document.getElementById("upload-spinner");
+
+  function setStatus(type, msg) {
+    statusBox.style.display = "block";
+    spinner.style.display   = (type === "loading") ? "inline" : "none";
+    if (type === "loading") {
+      statusBox.style.background  = "#f8fafc";
+      statusBox.style.borderColor = "#cbd5e1";
+      statusBox.style.color       = "#475569";
+    } else if (type === "ok") {
+      statusBox.style.background  = "#f0fdf4";
+      statusBox.style.borderColor = "#bbf7d0";
+      statusBox.style.color       = "#15803d";
+    } else {
+      statusBox.style.background  = "#fff1f2";
+      statusBox.style.borderColor = "#fecdd3";
+      statusBox.style.color       = "#be123c";
+    }
+    statusText.textContent = msg;
+  }
+
+  setStatus("loading", "Bezig met opslaan...");
+
+  // Foutenanalyse
+  var foutenTelling = {};
+  quizHistory.filter(function(h) { return !h.isCorrect; }).forEach(function(h) {
+    foutenTelling[h.juist] = (foutenTelling[h.juist] || 0) + 1;
+  });
+  var extraOefenen = Object.keys(foutenTelling)
+    .sort(function(a, b) { return foutenTelling[b] - foutenTelling[a]; })
+    .map(function(k) { return k + " (" + foutenTelling[k] + "x fout)"; });
+
+  var record = {
+    leerlingId:    window._leerlingId,
+    leerlingNaam:  window._leerlingNaam || "Leerling",
+    mode:          "toets",
+    score:         aantalGoed,
+    totalQ:        vragen.length,
+    percentage:    pct,
+    hintsGebruikt: 0,
+    timestamp:     firebase.firestore.FieldValue.serverTimestamp(),
+    foutenAnalyse: {
+      extraOefenen:       extraOefenen,
+      foutenPerCategorie: foutenTelling
+    },
+    vragen: quizHistory.map(function(h, i) {
+      return {
+        vraagNr:         i + 1,
+        vraag:           h.vraag,
+        categorie:       h.juist,
+        antwoordLeerling: h.gekozen,
+        juistAntwoord:   h.juist,
+        isJuist:         h.isCorrect,
+        hintGebruikt:    h.hintUsed,
+        punten:          h.isCorrect ? 1 : 0
+      };
+    })
+  };
+
+  _db.collection("lichaamsdelen_toets").add(record)
+    .then(function() {
+      setStatus("ok", "✅ Score opgeslagen!");
+    })
+    .catch(function(e) {
+      var uitleg = e.message || "Onbekende fout";
+      if (e.code === "permission-denied") uitleg = "Geen schrijfrechten. Contacteer de leerkracht.";
+      else if (e.code === "unavailable")  uitleg = "Geen internetverbinding. Probeer opnieuw.";
+      setStatus("error", "❌ Opslaan mislukt: " + uitleg);
+    });
+}
+
+// ── HELPER: SHUFFLE ───────────────────────────────────────────────────────
+function shuffle(arr) {
+  var a = arr.slice();
+  for (var i = a.length - 1; i > 0; i--) {
+    var j = Math.floor(Math.random() * (i + 1));
+    var t = a[i]; a[i] = a[j]; a[j] = t;
+  }
+  return a;
+}
+
+// ── DOM READY — Enter-toets + uitlog-knop ─────────────────────────────────
+document.addEventListener("DOMContentLoaded", function() {
+  document.getElementById("klas-naam").addEventListener("keypress", function(e) {
+    if (e.key === "Enter") klasLogin();
+  });
+  document.getElementById("klas-code").addEventListener("keypress", function(e) {
+    if (e.key === "Enter") klasLogin();
+  });
+  document.getElementById("signout-btn").addEventListener("click", doLogout);
+});
+</script>
+</body>
+</html>
