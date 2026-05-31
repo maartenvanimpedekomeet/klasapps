@@ -1,0 +1,972 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hoofdletters — Nederlands</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Plus Jakarta Sans', sans-serif; background: #fdf2f8; min-height: 100vh; }
+  .hidden { display: none !important; }
+
+  /* ── WOORD TOKENS ── */
+  .token {
+    display: inline-block; padding: 4px 8px; margin: 3px 1px;
+    border-radius: 8px; border: 2px solid transparent;
+    transition: all 0.18s; user-select: none; white-space: nowrap;
+    font-size: 1.35rem; font-weight: 600; line-height: 1.8;
+  }
+  .token.clickable {
+    cursor: pointer; border-color: #e9d5ff;
+    background: white;
+  }
+  .token.clickable:hover {
+    background: #f3e8ff; border-color: #a855f7;
+    transform: translateY(-1px) scale(1.04);
+    box-shadow: 0 4px 12px rgba(168,85,247,0.2);
+  }
+  .token.selected {
+    background: #fce7f3; border-color: #ec4899;
+    transform: scale(1.06);
+    box-shadow: 0 4px 12px rgba(236,72,153,0.25);
+    font-weight: 700;
+  }
+  .token.correct {
+    background: #dcfce7; border-color: #22c55e;
+    font-weight: 800; cursor: default;
+  }
+  .token.incorrect {
+    background: #fee2e2; border-color: #ef4444;
+    text-decoration: line-through; cursor: default;
+  }
+  .token.missed {
+    background: #fef3c7; border-color: #f59e0b;
+    font-style: italic; cursor: default;
+  }
+  .token.punctuation {
+    color: #94a3b8; cursor: default; padding: 4px 2px;
+    border: none; background: transparent;
+  }
+
+  /* ── REGEL KNOPPEN ── */
+  .rule-btn {
+    width: 100%; padding: 14px 20px; border-radius: 14px;
+    border: 2px solid #e9d5ff; background: white;
+    font-family: inherit; font-size: .95rem; font-weight: 700;
+    cursor: pointer; text-align: left; transition: all 0.18s;
+    display: flex; align-items: center; gap: 12px; color: #4c1d95;
+  }
+  .rule-btn:hover {
+    background: #f3e8ff; border-color: #a855f7;
+    transform: translateX(4px);
+    box-shadow: 0 4px 12px rgba(168,85,247,0.15);
+  }
+  .rule-btn .icon {
+    width: 36px; height: 36px; border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.1rem; flex-shrink: 0;
+  }
+
+  /* ── MODAL ── */
+  .modal-bg {
+    position: fixed; inset: 0; z-index: 999;
+    background: rgba(0,0,0,0.5); backdrop-filter: blur(4px);
+    display: flex; align-items: center; justify-content: center; padding: 16px;
+  }
+  .modal-card {
+    background: white; border-radius: 24px; padding: 32px 28px;
+    width: 100%; max-width: 440px;
+    box-shadow: 0 25px 50px rgba(0,0,0,0.25);
+    animation: popIn 0.22s cubic-bezier(.34,1.56,.64,1);
+  }
+  @keyframes popIn {
+    from { transform: scale(0.88); opacity: 0; }
+    to   { transform: scale(1);    opacity: 1; }
+  }
+
+  /* ── PROGRESS DOTS ── */
+  .progress-dot {
+    width: 14px; height: 14px; border-radius: 50%;
+    transition: all 0.3s;
+  }
+</style>
+</head>
+<body class="pb-20">
+
+<!-- ══════════════════════════════════════════════
+     LOGIN OVERLAY
+══════════════════════════════════════════════ -->
+<div id="klas-login" style="position:fixed;inset:0;z-index:9999;background:linear-gradient(135deg,#1e3a5f,#7c3aed);display:flex;align-items:center;justify-content:center;padding:20px;">
+  <div style="background:white;border-radius:24px;padding:2.5rem 2rem;width:100%;max-width:380px;box-shadow:0 25px 50px rgba(0,0,0,0.25);text-align:center;display:flex;flex-direction:column;gap:12px;">
+    <div style="font-size:3rem;">🔤</div>
+    <h1 style="font-size:1.5rem;font-weight:900;color:#1f2937;margin:0;">Hoofdletters</h1>
+    <p style="color:#6b7280;font-size:.9rem;margin:0;">Voer je naam en code in</p>
+    <div id="klas-err" style="color:#dc2626;font-size:.85rem;font-weight:700;min-height:18px;display:none;"></div>
+    <input type="text"     id="klas-naam" placeholder="Jouw voornaam" autocomplete="off" autocapitalize="words"
+      style="width:100%;padding:14px;border:2px solid #e5e7eb;border-radius:12px;font-family:inherit;font-size:1rem;font-weight:600;text-align:center;outline:none;">
+    <input type="password" id="klas-code" placeholder="Jouw code" autocomplete="off"
+      style="width:100%;padding:14px;border:2px solid #e5e7eb;border-radius:12px;font-family:inherit;font-size:1rem;font-weight:600;text-align:center;outline:none;">
+    <button onclick="klasLogin()" style="width:100%;background:#7c3aed;color:white;border:none;border-radius:12px;padding:14px;font-family:inherit;font-size:1rem;font-weight:700;cursor:pointer;">Inloggen</button>
+    <button onclick="klasGast()"  style="width:100%;background:transparent;border:2px solid #e5e7eb;border-radius:12px;padding:12px;font-family:inherit;font-size:.9rem;font-weight:700;color:#6b7280;cursor:pointer;">Doorgaan als gast (geen opslag)</button>
+    <div style="font-size:.75rem;color:#9ca3af;"><a href="dashboard.html" style="color:#7c3aed;font-weight:700;text-decoration:none;">Leerkracht? Klik hier</a></div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     NAVIGATIEBALK
+══════════════════════════════════════════════ -->
+<nav style="background:white;border-bottom:1px solid #f3e8ff;box-shadow:0 2px 12px rgba(124,58,237,.07);position:sticky;top:0;z-index:40;padding:14px 24px;">
+  <div style="max-width:800px;margin:0 auto;display:flex;justify-content:space-between;align-items:center;">
+    <div style="display:flex;align-items:center;gap:12px;">
+      <div style="background:#7c3aed;color:white;padding:10px;border-radius:14px;font-size:1.1rem;box-shadow:0 4px 12px rgba(124,58,237,.3);">
+        <i class="fa-solid fa-font"></i>
+      </div>
+      <div>
+        <span style="font-size:.7rem;font-weight:800;color:#7c3aed;text-transform:uppercase;letter-spacing:1px;display:block;">Nederlands</span>
+        <span style="font-size:1rem;font-weight:800;color:#1f2937;">Hoofdletters</span>
+      </div>
+    </div>
+    <div id="user-badge" style="display:none;align-items:center;gap:10px;">
+      <div id="user-avatar-circle" style="width:34px;height:34px;border-radius:50%;background:#f3e8ff;display:flex;align-items:center;justify-content:center;font-weight:900;color:#7c3aed;font-size:.95rem;flex-shrink:0;">?</div>
+      <div>
+        <p id="user-name-nav" style="font-size:.88rem;font-weight:800;color:#1f2937;line-height:1;"></p>
+        <p id="guest-label-nav" class="hidden" style="font-size:.65rem;font-weight:800;color:#f59e0b;">GAST</p>
+      </div>
+      <button id="signout-btn" style="font-size:.75rem;color:#94a3b8;border:1px solid #e2e8f0;padding:6px 10px;border-radius:8px;background:none;cursor:pointer;">
+        <i class="fa-solid fa-right-from-bracket"></i>
+      </button>
+    </div>
+  </div>
+</nav>
+
+<!-- ══════════════════════════════════════════════
+     APP CONTAINER
+══════════════════════════════════════════════ -->
+<div style="max-width:800px;margin:0 auto;padding:24px 16px;">
+
+  <!-- GASTBANNER -->
+  <div id="guest-banner" class="hidden" style="background:#fffbeb;border:1px solid #fde68a;color:#92400e;font-size:.88rem;font-weight:600;padding:12px 16px;border-radius:16px;text-align:center;margin-bottom:16px;">
+    <i class="fa-solid fa-user-secret"></i> Je bent aangemeld als <strong>gast</strong> — scores van de toets worden <strong>niet</strong> opgeslagen.
+  </div>
+
+  <!-- ── MENU ── -->
+  <div id="menu-view">
+    <!-- Hero -->
+    <div style="background:linear-gradient(135deg,#7c3aed,#ec4899);border-radius:28px;padding:40px 32px;text-align:center;color:white;margin-bottom:24px;box-shadow:0 12px 40px rgba(124,58,237,.3);">
+      <div style="font-size:3.5rem;margin-bottom:12px;">🔤</div>
+      <h1 style="font-size:2rem;font-weight:900;margin-bottom:8px;">Hoofdletters</h1>
+      <p style="opacity:.85;font-size:.95rem;">Klik op de woorden die een hoofdletter nodig hebben en geef de reden op.</p>
+    </div>
+
+    <!-- Legenda -->
+    <div style="background:white;border-radius:20px;padding:20px 24px;margin-bottom:24px;border:1px solid #f3e8ff;box-shadow:0 4px 16px rgba(124,58,237,.07);">
+      <h3 style="font-weight:800;color:#4c1d95;font-size:.85rem;text-transform:uppercase;letter-spacing:1px;margin-bottom:14px;"><i class="fa-solid fa-lightbulb mr-2 text-yellow-400"></i>Wanneer gebruik je een hoofdletter?</h3>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+        <div style="background:#f3e8ff;border-radius:12px;padding:12px;display:flex;align-items:center;gap:10px;">
+          <span style="font-size:1.3rem;">📝</span>
+          <div>
+            <div style="font-weight:800;font-size:.82rem;color:#4c1d95;">Begin van een zin</div>
+            <div style="font-size:.72rem;color:#7c3aed;">Eerste woord</div>
+          </div>
+        </div>
+        <div style="background:#fce7f3;border-radius:12px;padding:12px;display:flex;align-items:center;gap:10px;">
+          <span style="font-size:1.3rem;">👤</span>
+          <div>
+            <div style="font-weight:800;font-size:.82rem;color:#9d174d;">(Merk)naam</div>
+            <div style="font-size:.72rem;color:#ec4899;">Persoon, merk, bedrijf</div>
+          </div>
+        </div>
+        <div style="background:#dcfce7;border-radius:12px;padding:12px;display:flex;align-items:center;gap:10px;">
+          <span style="font-size:1.3rem;">🌍</span>
+          <div>
+            <div style="font-weight:800;font-size:.82rem;color:#14532d;">Plaatsnaam / taal / volk</div>
+            <div style="font-size:.72rem;color:#16a34a;">Stad, land, nationaliteit</div>
+          </div>
+        </div>
+        <div style="background:#fef3c7;border-radius:12px;padding:12px;display:flex;align-items:center;gap:10px;">
+          <span style="font-size:1.3rem;">🎉</span>
+          <div>
+            <div style="font-weight:800;font-size:.82rem;color:#92400e;">Feestdag</div>
+            <div style="font-size:.72rem;color:#d97706;">Kerst, Pasen, ...</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Puntensysteem uitleg -->
+    <div style="background:#fffbeb;border:1px solid #fde68a;border-radius:16px;padding:16px 20px;margin-bottom:24px;font-size:.88rem;color:#78350f;">
+      <p style="font-weight:700;margin-bottom:4px;">⚠️ Puntensysteem:</p>
+      <p>Elk juist woord <strong>én</strong> de juiste reden = <strong>1 punt</strong>.</p>
+      <p class="mt-1">🔄 <strong>Tweede kans:</strong> Eerste poging fout? Je ziet de regeloverzicht en mag opnieuw — dat levert maximaal <strong>0,5 punt</strong> op.</p>
+    </div>
+
+    <!-- Modus-schakelaar -->
+    <div style="display:flex;gap:6px;background:#f1f5f9;border-radius:16px;padding:5px;margin-bottom:20px;">
+      <button id="btn-oefenen" onclick="setModus('oefenen')"
+        style="flex:1;padding:12px;border-radius:12px;border:none;font-family:inherit;font-size:.92rem;font-weight:800;cursor:pointer;background:white;color:#1f2937;box-shadow:0 2px 8px rgba(0,0,0,.08);transition:all .2s;">
+        ✏️ Oefenen
+      </button>
+      <button id="btn-toets" onclick="setModus('toets')"
+        style="flex:1;padding:12px;border-radius:12px;border:none;font-family:inherit;font-size:.92rem;font-weight:800;cursor:pointer;background:transparent;color:#94a3b8;transition:all .2s;">
+        📝 Toets
+      </button>
+    </div>
+    <p id="modus-uitleg" style="text-align:center;font-size:.78rem;color:#94a3b8;font-weight:600;margin-bottom:20px;">Score wordt niet opgeslagen</p>
+
+    <!-- Start knop -->
+    <button onclick="startQuiz()"
+      style="width:100%;background:linear-gradient(135deg,#7c3aed,#ec4899);color:white;border:none;border-radius:18px;padding:20px;font-family:inherit;font-size:1.1rem;font-weight:900;cursor:pointer;box-shadow:0 8px 24px rgba(124,58,237,.35);transition:all .2s;letter-spacing:.3px;">
+      🚀 Start de quiz — 5 willekeurige zinnen
+    </button>
+  </div>
+
+  <!-- ── QUIZ VIEW ── -->
+  <div id="quiz-view" class="hidden">
+    <!-- Header kaart -->
+    <div style="background:white;border-radius:20px;padding:18px 22px;margin-bottom:16px;border:1px solid #f3e8ff;box-shadow:0 4px 16px rgba(124,58,237,.07);">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px;">
+        <button onclick="bevestigStoppen()" style="font-size:.82rem;font-weight:700;color:#94a3b8;background:none;border:1px solid #e2e8f0;padding:6px 12px;border-radius:8px;cursor:pointer;display:flex;align-items:center;gap:6px;">
+          <i class="fa-solid fa-arrow-left"></i> Stop
+        </button>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span id="quiz-vraag-label" style="background:#f3e8ff;color:#7c3aed;font-size:.8rem;font-weight:800;padding:6px 14px;border-radius:99px;">Vraag 1 / 5</span>
+          <span id="mode-badge-quiz" style="font-size:.72rem;font-weight:800;padding:5px 10px;border-radius:8px;background:#dcfce7;color:#14532d;text-transform:uppercase;">OEFENEN</span>
+        </div>
+        <div style="font-size:.88rem;font-weight:800;color:#ec4899;">
+          ✅ <span id="score-live">0</span> / <span id="score-max">0</span>
+        </div>
+      </div>
+      <!-- Progress dots -->
+      <div style="display:flex;gap:6px;justify-content:center;" id="progress-dots"></div>
+    </div>
+
+    <!-- Zin-kaart -->
+    <div style="background:white;border-radius:24px;padding:28px;margin-bottom:16px;border:1px solid #f3e8ff;box-shadow:0 8px 24px rgba(124,58,237,.1);">
+      <!-- Instructie -->
+      <div style="background:#f5f3ff;border-left:4px solid #7c3aed;border-radius:0 12px 12px 0;padding:12px 16px;margin-bottom:20px;font-size:.85rem;color:#4c1d95;font-weight:600;">
+        <i class="fa-solid fa-hand-pointer mr-2 text-purple-500"></i>
+        Klik op de woorden die een <strong>hoofdletter</strong> nodig hebben.
+      </div>
+      <!-- De zin -->
+      <div id="sentence-display" style="line-height:3rem;padding:8px 0;"></div>
+      <!-- Tweede kans: regeloverzicht -->
+      <div id="alphabet-box" class="hidden" style="margin-top:16px;background:#f5f3ff;border:2px dashed #a855f7;border-radius:16px;padding:16px;">
+        <p style="font-size:.72rem;font-weight:800;color:#7c3aed;text-transform:uppercase;letter-spacing:1px;margin-bottom:12px;text-align:center;">💡 Tweede kans — wanneer gebruik je een hoofdletter?</p>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+          <div style="background:white;border-radius:12px;padding:10px 12px;display:flex;align-items:center;gap:8px;border:1px solid #e9d5ff;">
+            <span style="font-size:1.2rem;">📝</span>
+            <div>
+              <div style="font-weight:800;font-size:.78rem;color:#4c1d95;">Begin van een zin</div>
+              <div style="font-size:.68rem;color:#7c3aed;">Eerste woord</div>
+            </div>
+          </div>
+          <div style="background:white;border-radius:12px;padding:10px 12px;display:flex;align-items:center;gap:8px;border:1px solid #fbcfe8;">
+            <span style="font-size:1.2rem;">👤</span>
+            <div>
+              <div style="font-weight:800;font-size:.78rem;color:#9d174d;">(Merk)naam</div>
+              <div style="font-size:.68rem;color:#ec4899;">Persoon, merk, bedrijf</div>
+            </div>
+          </div>
+          <div style="background:white;border-radius:12px;padding:10px 12px;display:flex;align-items:center;gap:8px;border:1px solid #bbf7d0;">
+            <span style="font-size:1.2rem;">🌍</span>
+            <div>
+              <div style="font-weight:800;font-size:.78rem;color:#14532d;">Plaatsnaam / taal / volk</div>
+              <div style="font-size:.68rem;color:#16a34a;">Stad, land, nationaliteit</div>
+            </div>
+          </div>
+          <div style="background:white;border-radius:12px;padding:10px 12px;display:flex;align-items:center;gap:8px;border:1px solid #fde68a;">
+            <span style="font-size:1.2rem;">🎉</span>
+            <div>
+              <div style="font-weight:800;font-size:.78rem;color:#92400e;">Feestdag</div>
+              <div style="font-size:.68rem;color:#d97706;">Kerst, Pasen, ...</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Feedback -->
+    <div id="feedback-area" class="hidden" style="border-radius:14px;padding:14px 18px;margin-bottom:14px;font-weight:700;font-size:.92rem;text-align:center;"></div>
+
+    <!-- Actie-knoppen -->
+    <div style="display:flex;gap:10px;">
+      <button id="check-btn" onclick="controleerEnGaDoor()"
+        style="flex:1;background:#7c3aed;color:white;border:none;border-radius:14px;padding:16px;font-family:inherit;font-size:1rem;font-weight:800;cursor:pointer;box-shadow:0 6px 16px rgba(124,58,237,.3);transition:all .2s;">
+        Controleer & Verder <i class="fa-solid fa-check ml-1"></i>
+      </button>
+      <button id="next-btn" onclick="volgendeVraag()" class="hidden"
+        style="flex:1;background:#1f2937;color:white;border:none;border-radius:14px;padding:16px;font-family:inherit;font-size:1rem;font-weight:800;cursor:pointer;box-shadow:0 6px 16px rgba(0,0,0,.2);transition:all .2s;">
+        Volgende Vraag <i class="fa-solid fa-arrow-right ml-1"></i>
+      </button>
+    </div>
+  </div>
+
+  <!-- ── STOP-MODAL ── -->
+  <div id="stop-modal" class="hidden modal-bg">
+    <div class="modal-card" style="max-width:360px;text-align:center;">
+      <div style="font-size:2.5rem;margin-bottom:12px;">⚠️</div>
+      <h3 style="font-size:1.2rem;font-weight:800;color:#1f2937;margin-bottom:8px;">Stoppen?</h3>
+      <p style="font-size:.88rem;color:#6b7280;margin-bottom:20px;">Je voortgang gaat verloren.</p>
+      <div style="display:flex;gap:10px;">
+        <button onclick="document.getElementById('stop-modal').classList.add('hidden')"
+          style="flex:1;padding:13px;background:#f1f5f9;border:none;border-radius:12px;font-family:inherit;font-weight:700;cursor:pointer;">Doorgaan</button>
+        <button onclick="naarMenu()"
+          style="flex:1;padding:13px;background:#dc2626;color:white;border:none;border-radius:12px;font-family:inherit;font-weight:700;cursor:pointer;">Stoppen</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── RESULTAAT VIEW ── -->
+  <div id="result-view" class="hidden">
+    <div style="background:linear-gradient(135deg,#7c3aed,#ec4899);border-radius:28px;padding:36px 28px;text-align:center;color:white;margin-bottom:20px;box-shadow:0 12px 40px rgba(124,58,237,.3);">
+      <div style="font-size:4rem;margin-bottom:8px;" id="result-emoji">🎉</div>
+      <h2 style="font-size:1.8rem;font-weight:900;margin-bottom:4px;">Quiz Voltooid!</h2>
+      <p id="result-subtitel" style="opacity:.85;font-size:.92rem;">Bekijk je resultaten hieronder.</p>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px;">
+      <div style="background:white;border-radius:18px;padding:20px;text-align:center;border:2px solid #dcfce7;box-shadow:0 4px 12px rgba(0,0,0,.06);">
+        <div style="font-size:.7rem;color:#16a34a;font-weight:800;text-transform:uppercase;margin-bottom:6px;">Score (woord + reden)</div>
+        <div id="res-score" style="font-size:2.2rem;font-weight:900;color:#15803d;">0/0</div>
+      </div>
+      <div style="background:white;border-radius:18px;padding:20px;text-align:center;border:2px solid #f3e8ff;box-shadow:0 4px 12px rgba(0,0,0,.06);">
+        <div style="font-size:.7rem;color:#7c3aed;font-weight:800;text-transform:uppercase;margin-bottom:6px;">Percentage</div>
+        <div id="res-pct" style="font-size:2.2rem;font-weight:900;color:#7c3aed;">0%</div>
+      </div>
+      <div style="background:white;border-radius:18px;padding:20px;text-align:center;border:2px solid #fce7f3;box-shadow:0 4px 12px rgba(0,0,0,.06);">
+        <div style="font-size:.7rem;color:#ec4899;font-weight:800;text-transform:uppercase;margin-bottom:6px;">Woorden gevonden</div>
+        <div id="res-gevonden" style="font-size:2.2rem;font-weight:900;color:#db2777;">0/0</div>
+      </div>
+      <div style="background:white;border-radius:18px;padding:20px;text-align:center;border:2px solid #fee2e2;box-shadow:0 4px 12px rgba(0,0,0,.06);">
+        <div style="font-size:.7rem;color:#dc2626;font-weight:800;text-transform:uppercase;margin-bottom:6px;">Foutief aangeduid</div>
+        <div id="res-fout" style="font-size:2.2rem;font-weight:900;color:#dc2626;">0</div>
+      </div>
+    </div>
+
+    <!-- Opslag-status -->
+    <div id="upload-status" style="display:none;padding:14px 18px;border-radius:14px;border:1px solid #cbd5e1;text-align:center;font-size:.88rem;font-weight:600;margin-bottom:16px;">
+      <i id="upload-spinner" class="fa-solid fa-spinner fa-spin text-indigo-500 mr-2"></i>
+      <span id="upload-status-text">Bezig met opslaan...</span>
+    </div>
+    <!-- Gast-notitie -->
+    <div id="guest-result-note" style="display:none;background:#fffbeb;border:1px solid #fde68a;color:#92400e;font-size:.82rem;font-weight:600;padding:12px 16px;border-radius:14px;text-align:center;margin-bottom:16px;">
+      <i class="fa-solid fa-user-secret mr-1"></i> Je speelde als gast. Score is <strong>niet</strong> opgeslagen.
+    </div>
+
+    <!-- Foutenlijst per zin -->
+    <div style="background:white;border-radius:20px;padding:24px;margin-bottom:20px;border:1px solid #f3e8ff;box-shadow:0 4px 16px rgba(124,58,237,.07);">
+      <h3 style="font-weight:800;color:#1f2937;margin-bottom:16px;font-size:1rem;"><i class="fa-solid fa-clipboard-list mr-2 text-purple-500"></i>Overzicht per zin</h3>
+      <div id="mistake-list" style="display:flex;flex-direction:column;gap:12px;"></div>
+    </div>
+
+    <button onclick="naarMenu()"
+      style="width:100%;background:#1f2937;color:white;border:none;border-radius:16px;padding:18px;font-family:inherit;font-size:1rem;font-weight:800;cursor:pointer;box-shadow:0 6px 16px rgba(0,0,0,.2);">
+      <i class="fa-solid fa-house mr-2"></i> Terug naar menu
+    </button>
+  </div>
+
+</div><!-- /#container -->
+
+<!-- ══════════════════════════════════════════════
+     MODAL: REDEN KIEZEN
+══════════════════════════════════════════════ -->
+<div id="rule-modal" class="hidden modal-bg">
+  <div class="modal-card">
+    <h3 style="font-size:1.1rem;font-weight:800;color:#1f2937;margin-bottom:6px;">Waarom heeft dit woord een hoofdletter nodig?</h3>
+    <div id="modal-word" style="font-size:2rem;font-weight:900;color:#7c3aed;text-align:center;padding:14px;background:#f5f3ff;border-radius:14px;margin:14px 0;"></div>
+    <div id="rule-options" style="display:flex;flex-direction:column;gap:8px;"></div>
+    <button onclick="sluitModal(false)"
+      style="margin-top:14px;width:100%;padding:12px;background:#f1f5f9;border:none;border-radius:12px;font-family:inherit;font-weight:700;color:#6b7280;cursor:pointer;">
+      Annuleer / Sluit
+    </button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     FIREBASE — compat scripts, GEEN type="module"
+══════════════════════════════════════════════ -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script>
+firebase.initializeApp({
+  apiKey:            "AIzaSyCnQDVVAlK6jE-PPUUediRJMTbN0xqrLDE",
+  authDomain:        "klaswebsite-database.firebaseapp.com",
+  projectId:         "klaswebsite-database",
+  storageBucket:     "klaswebsite-database.firebasestorage.app",
+  messagingSenderId: "42912327282",
+  appId:             "1:42912327282:web:f13f2c706f6c42c115c4eb"
+});
+var _db = firebase.firestore();
+
+// ── GLOBALE STAAT (var — geen let/const voor globals) ─────────────────────
+var currentUser  = null;
+var isGuest      = false;
+var currentModus = "oefenen";
+
+// Quiz-staat
+var currentIndex        = 0;
+var selectedTokenIdx    = -1;
+var currentQuizData     = [];
+var secondChanceActief  = false;
+var maxScore            = 0;
+
+// Tellers
+var totalCorrect   = 0;  // woord + reden correct
+var totalGevonden  = 0;  // woord correct aangeklikt (reden mag fout)
+var totalFoutief   = 0;  // woord aangeklikt dat géén hoofdletter nodig had
+var totalGemist    = 0;
+var quizHistory    = [];
+
+// ── REGELS ───────────────────────────────────────────────────────────────
+var REGELS = [
+  { label: "Begin van een zin",       icon: "📝", kleur: "#f5f3ff", tekst: "#4c1d95", match: "begin" },
+  { label: "(Merk)naam",              icon: "👤", kleur: "#fce7f3", tekst: "#9d174d", match: "naam" },
+  { label: "Plaatsnaam / taal / volk",icon: "🌍", kleur: "#dcfce7", tekst: "#14532d", match: "plaats" },
+  { label: "Feestdag",                icon: "🎉", kleur: "#fef3c7", tekst: "#92400e", match: "feest" }
+];
+
+// ── ZINNENBANK ────────────────────────────────────────────────────────────
+var ZINNEN = [
+  { text: "de kat van eva heet mimi en ze houdt van vis.",
+    correct: [ {word:"de",rule:"begin"}, {word:"eva",rule:"naam"}, {word:"mimi",rule:"naam"} ] },
+  { text: "wij vieren kerstmis op 25 december met de familie de vries.",
+    correct: [ {word:"wij",rule:"begin"}, {word:"kerstmis",rule:"feest"}, {word:"de",rule:"naam"}, {word:"vries",rule:"naam"} ] },
+  { text: "ik spreek frans met mijn opa die in brussel woont.",
+    correct: [ {word:"ik",rule:"begin"}, {word:"frans",rule:"plaats"}, {word:"brussel",rule:"plaats"} ] },
+  { text: "op maandag kocht anna een nieuwe iphone bij de winkel.",
+    correct: [ {word:"op",rule:"begin"}, {word:"anna",rule:"naam"}, {word:"iphone",rule:"naam"} ] },
+  { text: "in de zomer gaan we naar italie en bezoeken we rome.",
+    correct: [ {word:"in",rule:"begin"}, {word:"italie",rule:"plaats"}, {word:"rome",rule:"plaats"} ] },
+  { text: "vorig jaar ging jan naar de efteling.",
+    correct: [ {word:"vorig",rule:"begin"}, {word:"jan",rule:"naam"}, {word:"efteling",rule:"naam"} ] },
+  { text: "mijn broer is jarig op tweede paasdag.",
+    correct: [ {word:"mijn",rule:"begin"}, {word:"tweede",rule:"feest"}, {word:"paasdag",rule:"feest"} ] },
+  { text: "wij reizen graag door afrika.",
+    correct: [ {word:"wij",rule:"begin"}, {word:"afrika",rule:"plaats"} ] },
+  { text: "de nieuwjaarsreceptie was op 1 januari.",
+    correct: [ {word:"de",rule:"begin"}, {word:"nieuwjaarsreceptie",rule:"feest"} ] },
+  { text: "mijn favoriete merk is nike.",
+    correct: [ {word:"mijn",rule:"begin"}, {word:"nike",rule:"naam"} ] },
+  { text: "elke zomer gaan wij naar spanje voor twee weken.",
+    correct: [ {word:"elke",rule:"begin"}, {word:"spanje",rule:"plaats"} ] },
+  { text: "tom koopt elke week een cola bij de albert heijn.",
+    correct: [ {word:"tom",rule:["begin","naam"]}, {word:"albert heijn",rule:"naam",multi:true} ] },
+  { text: "op sinterklaas krijgen alle kinderen een cadeau.",
+    correct: [ {word:"op",rule:"begin"}, {word:"sinterklaas",rule:"feest"} ] },
+  { text: "sarah leert chinees op haar nieuwe school in gent.",
+    correct: [ {word:"sarah",rule:["begin","naam"]}, {word:"chinees",rule:"plaats"}, {word:"gent",rule:"plaats"} ] },
+  { text: "de belgische koningin woont in brussel.",
+    correct: [ {word:"de",rule:"begin"}, {word:"belgische",rule:"plaats"}, {word:"brussel",rule:"plaats"} ] },
+  { text: "op nieuwjaarsdag eet onze familie altijd samen.",
+    correct: [ {word:"op",rule:"begin"}, {word:"nieuwjaarsdag",rule:"feest"} ] },
+  { text: "lena heeft een hond die rex heet.",
+    correct: [ {word:"lena",rule:["begin","naam"]}, {word:"rex",rule:"naam"} ] },
+  { text: "mijn vader werkt bij volvo in antwerpen.",
+    correct: [ {word:"mijn",rule:"begin"}, {word:"volvo",rule:"naam"}, {word:"antwerpen",rule:"plaats"} ] },
+  { text: "de italiaan pizza luigi is vlak bij het station.",
+    correct: [ {word:"de",rule:"begin"}, {word:"italiaan",rule:"plaats"}, {word:"luigi",rule:"naam"} ] },
+  { text: "in het museum hangen schilderijen van rubens.",
+    correct: [ {word:"in",rule:"begin"}, {word:"rubens",rule:"naam"} ] }
+];
+
+// ── LOGIN ─────────────────────────────────────────────────────────────────
+function klasLogin() {
+  var naam = (document.getElementById("klas-naam").value || "").trim().toLowerCase();
+  var code = (document.getElementById("klas-code").value || "").trim();
+  var err  = document.getElementById("klas-err");
+  err.style.display = "none";
+  if (!naam) { err.textContent = "Vul je voornaam in."; err.style.display = "block"; return; }
+  if (!code) { err.textContent = "Vul je code in.";     err.style.display = "block"; return; }
+  _db.collection("leerlingen").doc(naam).get()
+    .then(function(doc) {
+      if (!doc.exists) { err.textContent = "Naam niet gevonden."; err.style.display = "block"; return; }
+      var data = doc.data();
+      if (data.code !== code) { err.textContent = "Verkeerde code."; err.style.display = "block"; return; }
+      currentUser          = { uid: naam, displayName: data.weergavenaam || naam };
+      isGuest              = false;
+      window._leerlingId   = naam;
+      window._leerlingNaam = data.weergavenaam || naam;
+      afterLogin();
+    })
+    .catch(function(e) { err.textContent = "Fout: " + e.message; err.style.display = "block"; });
+}
+
+function klasGast() {
+  currentUser = null; isGuest = true;
+  window._leerlingId = null; window._leerlingNaam = "Gast";
+  afterLogin();
+}
+
+function afterLogin() {
+  document.getElementById("klas-login").style.display = "none";
+  var naam = isGuest ? "Gast" : (window._leerlingNaam || "?");
+  document.getElementById("user-badge").style.display = "flex";
+  document.getElementById("user-name-nav").textContent = naam;
+  document.getElementById("user-avatar-circle").textContent = naam[0].toUpperCase();
+  if (isGuest) {
+    document.getElementById("guest-label-nav").classList.remove("hidden");
+    document.getElementById("guest-banner").classList.remove("hidden");
+  }
+  toonView("menu-view");
+}
+
+function doLogout() {
+  currentUser = null; isGuest = false;
+  window._leerlingId = null; window._leerlingNaam = null;
+  document.getElementById("klas-naam").value = "";
+  document.getElementById("klas-code").value = "";
+  document.getElementById("klas-err").style.display = "none";
+  document.getElementById("user-badge").style.display = "none";
+  document.getElementById("guest-label-nav").classList.add("hidden");
+  document.getElementById("guest-banner").classList.add("hidden");
+  document.getElementById("klas-login").style.display = "flex";
+}
+
+// ── VIEWS ─────────────────────────────────────────────────────────────────
+function toonView(id) {
+  ["menu-view","quiz-view","result-view"].forEach(function(v) {
+    document.getElementById(v).classList.add("hidden");
+  });
+  document.getElementById(id).classList.remove("hidden");
+}
+
+// ── MODUS ─────────────────────────────────────────────────────────────────
+function setModus(m) {
+  currentModus = m;
+  var bO = document.getElementById("btn-oefenen");
+  var bT = document.getElementById("btn-toets");
+  var uitleg = document.getElementById("modus-uitleg");
+  if (m === "toets") {
+    bT.style.background = "white"; bT.style.color = "#1f2937"; bT.style.boxShadow = "0 2px 8px rgba(0,0,0,.08)";
+    bO.style.background = "transparent"; bO.style.color = "#94a3b8"; bO.style.boxShadow = "none";
+    uitleg.textContent = "Score wordt opgeslagen in het dashboard";
+  } else {
+    bO.style.background = "white"; bO.style.color = "#1f2937"; bO.style.boxShadow = "0 2px 8px rgba(0,0,0,.08)";
+    bT.style.background = "transparent"; bT.style.color = "#94a3b8"; bT.style.boxShadow = "none";
+    uitleg.textContent = "Score wordt niet opgeslagen";
+  }
+}
+
+// ── QUIZ STARTEN ──────────────────────────────────────────────────────────
+function startQuiz() {
+  currentIndex = 0; totalCorrect = 0; totalGevonden = 0;
+  totalFoutief = 0; totalGemist = 0; quizHistory = [];
+
+  // 5 willekeurige zinnen
+  currentQuizData = shuffle(ZINNEN.slice()).slice(0, 5);
+  maxScore = currentQuizData.reduce(function(s, q) { return s + q.correct.length; }, 0);
+
+  // Mode-badge
+  var badge = document.getElementById("mode-badge-quiz");
+  if (currentModus === "toets") {
+    badge.textContent = "TOETS";
+    badge.style.background = "#e0e7ff"; badge.style.color = "#3730a3";
+  } else {
+    badge.textContent = "OEFENEN";
+    badge.style.background = "#dcfce7"; badge.style.color = "#14532d";
+  }
+
+  document.getElementById("score-max").textContent = maxScore;
+  document.getElementById("score-live").textContent = 0;
+  bouwProgressDots();
+  toonView("quiz-view");
+  laadVraag();
+}
+
+// ── PROGRESS DOTS ─────────────────────────────────────────────────────────
+function bouwProgressDots() {
+  var cont = document.getElementById("progress-dots");
+  cont.innerHTML = "";
+  for (var i = 0; i < 5; i++) {
+    var d = document.createElement("div");
+    d.className = "progress-dot";
+    d.id = "dot-" + i;
+    d.style.background = "#e2e8f0";
+    d.style.border = "2px solid #cbd5e1";
+    cont.appendChild(d);
+  }
+}
+
+function updateProgressDots() {
+  for (var i = 0; i < 5; i++) {
+    var d = document.getElementById("dot-" + i);
+    if (!d) continue;
+    if (i < currentIndex) {
+      d.style.background = "#22c55e"; d.style.border = "2px solid #16a34a";
+    } else if (i === currentIndex) {
+      d.style.background = "#7c3aed"; d.style.border = "2px solid #6d28d9";
+      d.style.transform = "scale(1.2)";
+    } else {
+      d.style.background = "#e2e8f0"; d.style.border = "2px solid #cbd5e1";
+      d.style.transform = "scale(1)";
+    }
+  }
+}
+
+// ── VRAAG LADEN ───────────────────────────────────────────────────────────
+function laadVraag() {
+  if (currentIndex >= currentQuizData.length) { toonResultaat(); return; }
+  secondChanceActief = false;
+  selectedTokenIdx   = -1;
+
+  var q = currentQuizData[currentIndex];
+  document.getElementById("quiz-vraag-label").textContent = "Vraag " + (currentIndex + 1) + " / 5";
+  document.getElementById("alphabet-box").classList.add("hidden");
+  document.getElementById("feedback-area").classList.add("hidden");
+  document.getElementById("feedback-area").textContent = "";
+  document.getElementById("check-btn").classList.remove("hidden");
+  document.getElementById("next-btn").classList.add("hidden");
+  updateProgressDots();
+
+  // Zin tokenizeren
+  var display = document.getElementById("sentence-display");
+  display.innerHTML = "";
+  // Verzamel alle multi-word items uit q.correct
+  var multiWords = [];
+  q.correct.forEach(function(c) { if (c.multi) multiWords.push(c.word); });
+  var tokens = tokenize(q.text, multiWords.length ? multiWords : null);
+  tokens.forEach(function(token, idx) {
+    var isPunct = /^[.,!?;:]$/.test(token);
+    var span = document.createElement("span");
+    span.textContent = token + (isPunct || idx === tokens.length - 1 ? "" : " ");
+    span.className = "token";
+    span.setAttribute("data-index", idx);
+    span.setAttribute("data-word", token);
+    span.setAttribute("data-status", "unselected");
+    if (isPunct) {
+      span.classList.add("punctuation");
+    } else {
+      span.classList.add("clickable");
+      // IIFE om scope-bug te vermijden (var in loop)
+      (function(i) {
+        span.onclick = function() { klikOpWoord(i); };
+      })(idx);
+    }
+    display.appendChild(span);
+  });
+}
+
+function tokenize(txt, multiWords) {
+  // Vervang multi-word items door tijdelijke placeholder voordat we splitsen
+  var werkTxt = txt;
+  var placeholders = {}; // placeholder → origineel
+  if (multiWords) {
+    multiWords.forEach(function(mw, i) {
+      var ph = "__MULTI" + i + "__";
+      // Case-insensitive vervangen
+      var re = new RegExp(mw.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi');
+      werkTxt = werkTxt.replace(re, ph);
+      placeholders[ph.toLowerCase()] = mw;
+    });
+  }
+  var parts = werkTxt.match(/[a-zA-ZàáâãäåæçèéêëìíîïðñòóôõöùúûüýÿæœÀ-Ö_0-9]+|[.,!?;:]/g) || [];
+  // Zet placeholders terug naar originele multi-word string
+  return parts.map(function(p) {
+    return placeholders[p.toLowerCase()] || p;
+  });
+}
+
+// ── WOORD KLIKKEN ─────────────────────────────────────────────────────────
+function klikOpWoord(idx) {
+  var token = document.querySelector("[data-index='" + idx + "']");
+  if (!token || token.getAttribute("data-status") !== "unselected") return;
+  selectedTokenIdx = idx;
+  document.getElementById("modal-word").textContent = token.getAttribute("data-word");
+  token.classList.add("selected");
+  toonModal();
+}
+
+function toonModal() {
+  var cont = document.getElementById("rule-options");
+  cont.innerHTML = "";
+  REGELS.forEach(function(r) {
+    var btn = document.createElement("button");
+    btn.className = "rule-btn";
+    btn.innerHTML = '<div class="icon" style="background:' + r.kleur + ';color:' + r.tekst + ';">' + r.icon + '</div><span>' + r.label + '</span>';
+    // IIFE voor scope
+    (function(regel) {
+      btn.onclick = function() { classificeerWoord(regel); };
+    })(r);
+    cont.appendChild(btn);
+  });
+  document.getElementById("rule-modal").classList.remove("hidden");
+}
+
+function sluitModal(geclassificeerd) {
+  document.getElementById("rule-modal").classList.add("hidden");
+  if (!geclassificeerd && selectedTokenIdx !== -1) {
+    var token = document.querySelector("[data-index='" + selectedTokenIdx + "']");
+    if (token) token.classList.remove("selected");
+  }
+  selectedTokenIdx = -1;
+}
+
+// ── CLASSIFICEREN ─────────────────────────────────────────────────────────
+function classificeerWoord(regel) {
+  if (selectedTokenIdx === -1) return;
+  var token = document.querySelector("[data-index='" + selectedTokenIdx + "']");
+  var woord = token.getAttribute("data-word").toLowerCase();
+  var q = currentQuizData[currentIndex];
+  var correctItem = null;
+  for (var i = 0; i < q.correct.length; i++) {
+    if (q.correct[i].word.toLowerCase() === woord) { correctItem = q.correct[i]; break; }
+  }
+
+  token.classList.remove("selected", "clickable");
+  token.onclick = null;
+
+  if (correctItem) {
+    totalGevonden++;
+    // regel kan een string of een array zijn (bijv. ["begin","naam"])
+    var geldige = Array.isArray(correctItem.rule) ? correctItem.rule : [correctItem.rule];
+    var regelKlopt = (geldige.indexOf(regel.match) !== -1);
+    if (regelKlopt) {
+      totalCorrect++;
+      token.classList.add("correct");
+      token.setAttribute("data-status", "correct");
+    } else {
+      token.classList.add("incorrect");
+      token.setAttribute("data-status", "incorrect_rule");
+      var geldigeLabels = geldige.map(function(r) { return geefRegelLabel(r); }).join(" of ");
+      toonFeedback("⚠️ Het woord '" + token.getAttribute("data-word") + "' heeft wel een hoofdletter nodig, maar de reden is: " + geldigeLabels, "amber");
+    }
+  } else {
+    totalFoutief++;
+    token.classList.add("incorrect");
+    token.setAttribute("data-status", "incorrect_word");
+    toonFeedback("❌ Het woord '" + token.getAttribute("data-word") + "' heeft geen hoofdletter nodig.", "red");
+  }
+
+  document.getElementById("score-live").textContent = totalCorrect;
+  sluitModal(true);
+  checkVraagKlaar();
+}
+
+function geefRegelLabel(match) {
+  for (var i = 0; i < REGELS.length; i++) {
+    if (REGELS[i].match === match) return REGELS[i].label;
+  }
+  return match;
+}
+
+// ── CHECK KLAAR ───────────────────────────────────────────────────────────
+function checkVraagKlaar() {
+  var q = currentQuizData[currentIndex];
+  var aantalCorrect = document.querySelectorAll("[data-status='correct']").length;
+  if (aantalCorrect === q.correct.length) {
+    toonFeedback("🎉 Super! Alle hoofdletters in deze zin correct aangeduid!", "green");
+    document.getElementById("check-btn").classList.add("hidden");
+    document.getElementById("next-btn").classList.remove("hidden");
+    confetti({ particleCount: 30, spread: 50, origin: { y: 0.8 } });
+  }
+}
+
+// ── CONTROLEER & VERDER ───────────────────────────────────────────────────
+function controleerEnGaDoor() {
+  var q = currentQuizData[currentIndex];
+  var tokens = document.querySelectorAll("#sentence-display .token:not(.punctuation)");
+  var gemistDeze = 0;
+
+  tokens.forEach(function(token) {
+    var status = token.getAttribute("data-status");
+    var woord  = token.getAttribute("data-word").toLowerCase();
+    var correctItem = null;
+    for (var i = 0; i < q.correct.length; i++) {
+      if (q.correct[i].word.toLowerCase() === woord) { correctItem = q.correct[i]; break; }
+    }
+    if (correctItem && (status === "unselected" || status === "incorrect_rule")) {
+      token.classList.remove("clickable", "selected");
+      token.classList.add("missed");
+      token.onclick = null;
+      token.setAttribute("data-status", "missed");
+      gemistDeze++;
+    } else if (status === "unselected") {
+      token.classList.remove("clickable", "selected");
+      token.onclick = null;
+    }
+  });
+
+  totalGemist += gemistDeze;
+  document.getElementById("check-btn").classList.add("hidden");
+  document.getElementById("next-btn").classList.remove("hidden");
+
+  if (gemistDeze > 0) {
+    toonFeedback("🟡 Je hebt " + gemistDeze + " hoofdletter(s) gemist. De oranje woorden hadden een hoofdletter nodig.", "amber");
+  } else {
+    toonFeedback("✅ Controle klaar. Je had alle hoofdletters gevonden!", "green");
+  }
+
+  // Sla ronde op in history
+  var zinTokens = document.querySelectorAll("#sentence-display .token:not(.punctuation)");
+  var gevondenDezeRonde = [];
+  var gemistDezeRonde   = [];
+  zinTokens.forEach(function(t) {
+    var s = t.getAttribute("data-status");
+    var w = t.getAttribute("data-word");
+    if (s === "correct") gevondenDezeRonde.push(w);
+    if (s === "missed")  gemistDezeRonde.push(w);
+  });
+  quizHistory.push({
+    zin:       q.text,
+    gevonden:  gevondenDezeRonde,
+    gemist:    gemistDezeRonde,
+    foutief:   totalFoutief,
+    required:  q.correct.map(function(c) { return c.word; })
+  });
+}
+
+function toonFeedback(msg, type) {
+  var el = document.getElementById("feedback-area");
+  el.textContent = msg;
+  el.classList.remove("hidden");
+  var stijlen = {
+    green: "background:#dcfce7;color:#14532d;border:1px solid #bbf7d0;",
+    amber: "background:#fef3c7;color:#78350f;border:1px solid #fde68a;",
+    red:   "background:#fee2e2;color:#991b1b;border:1px solid #fecaca;"
+  };
+  el.style.cssText = (stijlen[type] || stijlen.amber) + "border-radius:14px;padding:14px 18px;margin-bottom:14px;font-weight:700;font-size:.92rem;text-align:center;";
+  setTimeout(function() { if (type !== "green") el.classList.add("hidden"); }, 8000);
+}
+
+// ── VOLGENDE VRAAG ────────────────────────────────────────────────────────
+function volgendeVraag() {
+  currentIndex++;
+  if (currentIndex < currentQuizData.length) laadVraag();
+  else toonResultaat();
+}
+
+function bevestigStoppen() { document.getElementById("stop-modal").classList.remove("hidden"); }
+function naarMenu() {
+  document.getElementById("stop-modal").classList.add("hidden");
+  toonView("menu-view");
+}
+
+// ── RESULTAAT ─────────────────────────────────────────────────────────────
+function toonResultaat() {
+  toonView("result-view");
+  var pct = maxScore > 0 ? Math.round((totalCorrect / maxScore) * 100) : 0;
+
+  document.getElementById("res-score").textContent   = totalCorrect + "/" + maxScore;
+  document.getElementById("res-pct").textContent     = pct + "%";
+  document.getElementById("res-gevonden").textContent = totalGevonden + "/" + maxScore;
+  document.getElementById("res-fout").textContent    = totalFoutief;
+
+  var emoji = pct === 100 ? "🏆" : pct >= 80 ? "🎉" : pct >= 50 ? "💪" : "📚";
+  document.getElementById("result-emoji").textContent   = emoji;
+  document.getElementById("result-subtitel").textContent = currentModus === "toets" ? "Je hebt de toets voltooid." : "Goed gedaan!";
+
+  if (pct === 100) confetti({ particleCount: 150, spread: 80, origin: { y: 0.6 } });
+
+  // Foutenlijst
+  var list = document.getElementById("mistake-list");
+  list.innerHTML = "";
+  quizHistory.forEach(function(h, i) {
+    var allesGoed = h.gemist.length === 0;
+    var div = document.createElement("div");
+    div.style.cssText = "border-radius:14px;padding:16px;border:1px solid " + (allesGoed ? "#bbf7d0" : "#fecdd3") + ";background:" + (allesGoed ? "#f0fdf4" : "#fff1f2") + ";";
+    div.innerHTML =
+      "<div style='font-size:.78rem;font-weight:800;color:" + (allesGoed ? "#15803d" : "#be123c") + ";text-transform:uppercase;margin-bottom:6px;'>" +
+        (allesGoed ? "✅" : "❌") + " Zin " + (i + 1) +
+      "</div>" +
+      "<div style='font-size:.88rem;color:#374151;font-style:italic;margin-bottom:8px;'>" + h.zin + "</div>" +
+      (h.gemist.length > 0
+        ? "<div style='font-size:.82rem;color:#be123c;font-weight:600;'>Gemist: <strong>" + h.gemist.join(", ") + "</strong></div>"
+        : "<div style='font-size:.82rem;color:#15803d;font-weight:600;'>Alle hoofdletters correct gevonden!</div>");
+    list.appendChild(div);
+  });
+
+  // Opslag reset
+  document.getElementById("upload-status").style.display     = "none";
+  document.getElementById("guest-result-note").style.display = "none";
+
+  if (currentModus === "toets") {
+    if (isGuest || !window._leerlingId) {
+      document.getElementById("guest-result-note").style.display = "block";
+    } else {
+      slaScoreOp(pct);
+    }
+  }
+}
+
+// ── SCORE OPSLAAN ─────────────────────────────────────────────────────────
+function slaScoreOp(pct) {
+  var statusBox  = document.getElementById("upload-status");
+  var statusText = document.getElementById("upload-status-text");
+  var spinner    = document.getElementById("upload-spinner");
+
+  function setStatus(type, msg) {
+    statusBox.style.display = "block";
+    spinner.style.display   = (type === "loading") ? "inline" : "none";
+    if (type === "loading") {
+      statusBox.style.background = "#f8fafc"; statusBox.style.borderColor = "#cbd5e1"; statusBox.style.color = "#475569";
+    } else if (type === "ok") {
+      statusBox.style.background = "#f0fdf4"; statusBox.style.borderColor = "#bbf7d0"; statusBox.style.color = "#15803d";
+    } else {
+      statusBox.style.background = "#fff1f2"; statusBox.style.borderColor = "#fecdd3"; statusBox.style.color = "#be123c";
+    }
+    statusText.textContent = msg;
+  }
+
+  setStatus("loading", "Bezig met opslaan...");
+
+  var record = {
+    leerlingId:    window._leerlingId,
+    leerlingNaam:  window._leerlingNaam || "Leerling",
+    mode:          "toets",
+    score:         totalCorrect,
+    totalQ:        maxScore,
+    percentage:    pct,
+    aantalGevonden: totalGevonden,
+    aantalFoutief:  totalFoutief,
+    aantalGemist:   totalGemist,
+    hintsGebruikt:  0,
+    timestamp:     firebase.firestore.FieldValue.serverTimestamp(),
+    vragen: quizHistory.map(function(h, i) {
+      return {
+        vraagNr:  i + 1,
+        zin:      h.zin,
+        gevonden: h.gevonden,
+        gemist:   h.gemist,
+        isJuist:  h.gemist.length === 0
+      };
+    })
+  };
+
+  _db.collection("hoofdletters_toets").add(record)
+    .then(function() { setStatus("ok", "✅ Score opgeslagen!"); })
+    .catch(function(e) {
+      var uitleg = e.message || "Onbekende fout";
+      if (e.code === "permission-denied") uitleg = "Geen schrijfrechten. Contacteer de leerkracht.";
+      else if (e.code === "unavailable")  uitleg = "Geen internetverbinding. Probeer opnieuw.";
+      setStatus("error", "❌ Opslaan mislukt: " + uitleg);
+    });
+}
+
+// ── HELPER: SHUFFLE ───────────────────────────────────────────────────────
+function shuffle(arr) {
+  var a = arr.slice();
+  for (var i = a.length - 1; i > 0; i--) {
+    var j = Math.floor(Math.random() * (i + 1));
+    var t = a[i]; a[i] = a[j]; a[j] = t;
+  }
+  return a;
+}
+
+// ── DOM READY ─────────────────────────────────────────────────────────────
+document.addEventListener("DOMContentLoaded", function() {
+  document.getElementById("klas-naam").addEventListener("keypress", function(e) {
+    if (e.key === "Enter") klasLogin();
+  });
+  document.getElementById("klas-code").addEventListener("keypress", function(e) {
+    if (e.key === "Enter") klasLogin();
+  });
+  document.getElementById("signout-btn").addEventListener("click", doLogout);
+});
+</script>
+</body>
+</html>
