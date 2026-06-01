@@ -1,0 +1,847 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Woordenboek Trainer</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@300..700&family=Plus+Jakarta+Sans:wght@300..800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body { font-family: 'Plus Jakarta Sans', sans-serif; }
+        h1, h2, h3, .font-fun { font-family: 'Fredoka', sans-serif; }
+        .transition-width { transition: width 0.4s ease-in-out; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col justify-between selection:bg-indigo-100">
+
+    <!-- Header -->
+    <header class="bg-white border-b border-slate-100 shadow-sm sticky top-0 z-10 py-4 px-6">
+        <div class="max-w-4xl mx-auto flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="bg-gradient-to-tr from-indigo-500 to-violet-500 p-2.5 rounded-2xl text-white shadow-md shadow-indigo-100">
+                    <i class="fa-solid fa-book-open text-xl"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl md:text-2xl font-bold text-slate-800 tracking-wide">Woordenboek Trainer</h1>
+                    <p class="text-xs text-slate-500 hidden sm:block">Word een echte opzoek-kampioen!</p>
+                </div>
+            </div>
+            <div class="flex items-center space-x-2">
+                <span class="text-xs bg-indigo-50 text-indigo-700 font-semibold px-3 py-1.5 rounded-full border border-indigo-100 flex items-center gap-1.5">
+                    <span class="w-2 h-2 rounded-full bg-indigo-500 animate-pulse"></span>
+                    Klas Oefening
+                </span>
+            </div>
+        </div>
+    </header>
+
+    <!-- LOGIN SCHERM (fixed overlay — app zichtbaar op achtergrond) -->
+<div id="login-screen" style="position:fixed;inset:0;z-index:9999;background:linear-gradient(135deg,#312e81,#4f46e5);display:flex;align-items:center;justify-content:center;padding:20px;">
+  <div style="background:white;border-radius:24px;padding:2.5rem 2rem;width:100%;max-width:380px;box-shadow:0 25px 50px rgba(0,0,0,0.25);text-align:center;display:flex;flex-direction:column;gap:12px;">
+    <div style="font-size:3rem">📚</div>
+    <h1 style="font-size:1.5rem;font-weight:900;color:#1f2937;margin:0;font-family:'Fredoka',sans-serif;">Woordenboek Trainer</h1>
+    <p style="color:#6b7280;font-size:.9rem;margin:0;">Voer je naam en code in</p>
+    <div id="klas-err" style="display:none;color:#dc2626;font-size:.85rem;font-weight:700;background:#fee2e2;border:1px solid #fca5a5;padding:8px 12px;border-radius:8px;"></div>
+    <input type="text" id="klas-naam" placeholder="Jouw voornaam"
+      style="width:100%;padding:14px;border:2px solid #e5e7eb;border-radius:12px;font-family:inherit;font-size:1rem;font-weight:600;text-align:center;outline:none;"
+      autocomplete="off" autocapitalize="words">
+    <input type="password" id="klas-code" placeholder="Jouw code"
+      style="width:100%;padding:14px;border:2px solid #e5e7eb;border-radius:12px;font-family:inherit;font-size:1rem;font-weight:600;text-align:center;outline:none;"
+      autocomplete="off">
+    <button id="login-btn"
+      style="width:100%;background:#4f46e5;color:white;border:none;border-radius:12px;padding:14px;font-family:inherit;font-size:1rem;font-weight:700;cursor:pointer;">
+      Inloggen
+    </button>
+    <button id="gast-btn"
+      style="width:100%;background:transparent;border:2px solid #e5e7eb;border-radius:12px;padding:12px;font-family:inherit;font-size:.9rem;font-weight:700;color:#6b7280;cursor:pointer;">
+      Doorgaan als gast (geen opslag)
+    </button>
+    <div style="font-size:.75rem;color:#9ca3af;">
+      <a href="dashboard.html" style="color:#4f46e5;font-weight:700;text-decoration:none;">Leerkracht? Klik hier</a>
+    </div>
+  </div>
+</div>
+
+<!-- User badge (style.display — nooit classList) -->
+<div id="user-badge" style="display:none;position:fixed;top:10px;right:14px;z-index:50;align-items:center;gap:8px;background:white;border:1px solid #c7d2fe;border-radius:10px;padding:5px 12px;font-size:.8rem;font-weight:700;color:#4338ca;box-shadow:0 2px 8px rgba(0,0,0,.08);">
+  <span id="user-badge-naam"></span>
+  <button id="logout-btn" style="background:none;border:none;cursor:pointer;color:#94a3b8;font-size:.75rem;padding:2px 6px;border-left:1px solid #e5e7eb;margin-left:4px;font-family:inherit;">↩ Uit</button>
+</div>
+<div id="gast-badge" style="display:none;position:fixed;top:10px;right:14px;z-index:50;background:#fefce8;border:1px solid #fde68a;border-radius:8px;padding:4px 10px;font-size:.75rem;font-weight:700;color:#d97706;">👤 Gast – niet opgeslagen</div>
+
+<main class="flex-grow flex items-center justify-center p-4 md:p-8">
+        <div class="w-full max-w-2xl bg-white rounded-3xl border border-slate-100 shadow-xl shadow-slate-200/50 p-6 md:p-8 relative overflow-hidden transition-all duration-300">
+            <div class="absolute -top-12 -right-12 w-32 h-32 bg-indigo-50 rounded-full -z-10 opacity-60"></div>
+            <div class="absolute -bottom-12 -left-12 w-36 h-36 bg-amber-50 rounded-full -z-10 opacity-60"></div>
+
+            <!-- SCREEN 1: START -->
+            <div id="screen-start" class="space-y-6 text-center py-4">
+                <div class="w-20 h-20 bg-amber-100 text-amber-600 rounded-3xl mx-auto flex items-center justify-center text-3xl shadow-inner animate-bounce">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                </div>
+                <div class="space-y-2">
+                    <h2 class="text-2xl md:text-3xl font-extrabold text-slate-800">Klaar voor de start?</h2>
+                    <p class="text-slate-600 max-w-md mx-auto leading-relaxed">
+                        Gebruik je (jeugd)woordenboek om de woorden zo snel mogelijk op te zoeken. Dit spel stopt na <strong>10 woorden</strong>. Succes!
+                    </p>
+                </div>
+                <div class="bg-slate-50 rounded-2xl p-4 text-left max-w-md mx-auto border border-slate-100 space-y-3">
+                    <h3 class="font-bold text-sm text-slate-700 uppercase tracking-wider flex items-center gap-2">
+                        <i class="fa-solid fa-circle-info text-indigo-500"></i> Spelregels:
+                    </h3>
+                    <ul class="text-xs text-slate-600 space-y-2">
+                        <li class="flex items-start gap-2">
+                            <i class="fa-solid fa-magnifying-glass text-amber-500 mt-0.5"></i>
+                            <span>Zoek het getoonde woord op in je woordenboek.</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <i class="fa-solid fa-hashtag text-indigo-500 mt-0.5"></i>
+                            <span><strong>Stap 1:</strong> Klik op het juiste <strong>paginanummer</strong> waarop je het woord gevonden hebt.</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <i class="fa-solid fa-book text-violet-500 mt-0.5"></i>
+                            <span><strong>Stap 2:</strong> Klik op de juiste <strong>betekenis</strong> van het woord.</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <i class="fa-solid fa-stopwatch text-emerald-500 mt-0.5"></i>
+                            <span>Alleen als pagina en betekenis allebei juist zijn, telt het als een punt.</span>
+                        </li>
+                    </ul>
+                </div>
+                <button onclick="startGame('oefenen')" class="w-full max-w-md bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 text-white font-fun font-bold text-lg py-4 px-8 rounded-2xl shadow-lg shadow-indigo-200 hover:shadow-indigo-300 transform hover:-translate-y-0.5 transition duration-200 active:translate-y-0">
+                    <i class="fa-solid fa-book-open mr-2"></i> Oefenen (geen score opgeslagen)
+                </button>
+                <button onclick="startGame('toets')" class="w-full max-w-md text-white font-fun font-bold text-lg py-4 px-8 rounded-2xl shadow-lg transform hover:-translate-y-0.5 transition duration-200 active:translate-y-0 border-2 border-indigo-300" style="background:linear-gradient(to right,#1e3a5f,#1d4ed8);">
+                    <i class="fa-solid fa-award mr-2"></i> Toets starten
+                    <div class="text-sm font-semibold opacity-80 mt-1">0,5 pt per paginanummer + 0,5 pt per betekenis · max. 10 punten · score wordt opgeslagen</div>
+                </button>
+            </div>
+
+            <!-- SCREEN 2: QUIZ -->
+            <div id="screen-quiz" class="hidden space-y-5">
+                <div class="flex justify-between items-center bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                    <div class="space-y-1">
+                        <span class="text-xs text-slate-400 font-bold uppercase tracking-wider">Voortgang</span>
+                        <div class="text-sm font-extrabold text-slate-700" id="progress-text">Woord 1 van 10</div>
+                    </div>
+                    <div class="flex items-center space-x-3">
+                        <div class="text-right">
+                            <span class="text-xs text-slate-400 font-bold uppercase tracking-wider block">Zoektijd</span>
+                            <span class="text-xl font-mono font-bold text-indigo-600" id="live-timer">0.0s</span>
+                        </div>
+                        <div class="bg-indigo-100 text-indigo-600 p-2.5 rounded-xl">
+                            <i class="fa-solid fa-clock animate-pulse"></i>
+                        </div>
+                    </div>
+                </div>
+                <div class="w-full bg-slate-100 h-3 rounded-full overflow-hidden">
+                    <div id="progress-bar" class="bg-gradient-to-r from-indigo-500 to-violet-500 h-full transition-width" style="width: 10%"></div>
+                </div>
+                <div class="text-center py-5 bg-gradient-to-tr from-slate-50 to-indigo-50/20 rounded-3xl border border-slate-100 shadow-inner">
+                    <p class="text-xs text-indigo-500 font-bold uppercase tracking-widest mb-1">Zoek dit woord op in het woordenboek:</p>
+                    <h3 class="text-3xl md:text-5xl font-fun font-extrabold text-indigo-950 tracking-wide select-none" id="target-word">Laden...</h3>
+                    <div class="mt-3">
+                        <span id="step-badge" class="text-xs font-bold px-4 py-1.5 rounded-full bg-indigo-100 text-indigo-700">
+                            Stap 1 van 2 — Op welke pagina staat het woord?
+                        </span>
+                    </div>
+                </div>
+                <div class="space-y-3" id="options-container"></div>
+                <div id="feedback-area" class="hidden p-4 rounded-2xl flex flex-col md:flex-row items-center justify-between gap-4 transition-all duration-300">
+                    <div class="flex items-center space-x-3 text-left">
+                        <div id="feedback-icon" class="w-12 h-12 rounded-full flex items-center justify-center text-xl text-white shrink-0"></div>
+                        <div>
+                            <h4 id="feedback-title" class="font-extrabold text-lg"></h4>
+                            <p id="feedback-text" class="text-sm"></p>
+                        </div>
+                    </div>
+                    <button id="next-btn" class="w-full md:w-auto bg-slate-800 hover:bg-slate-900 text-white font-fun font-bold py-3.5 px-8 rounded-xl flex items-center justify-center gap-2 transform active:scale-95 transition-all">
+                        <span id="next-btn-label">Volgend woord</span>
+                        <i class="fa-solid fa-arrow-right"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- SCREEN 3: RESULTS -->
+            <div id="screen-results" class="hidden space-y-6">
+                <div class="text-center space-y-2">
+                    <div class="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full mx-auto flex items-center justify-center text-2xl shadow-inner">
+                        <i class="fa-solid fa-circle-check"></i>
+                    </div>
+                    <h2 class="text-2xl md:text-3xl font-extrabold text-slate-800">Oefening afgerond!</h2>
+                    <p class="text-slate-500 text-sm">Super goed gewerkt! Hieronder vind je jouw prestatie- en foutenanalyse.</p>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="bg-emerald-50 border border-emerald-100 p-4 rounded-2xl text-center">
+                        <span class="text-xs text-emerald-600 font-bold uppercase tracking-wider block mb-1">Volledig juist</span>
+                        <span class="text-3xl font-fun font-bold text-emerald-700" id="stat-score">0 / 10</span>
+                    </div>
+                    <div class="bg-indigo-50 border border-indigo-100 p-4 rounded-2xl text-center">
+                        <span class="text-xs text-indigo-600 font-bold uppercase tracking-wider block mb-1">Gemiddelde Tijd</span>
+                        <span class="text-3xl font-fun font-bold text-indigo-700" id="stat-avg-time">0.0s</span>
+                    </div>
+                    <div class="bg-amber-50 border border-amber-100 p-4 rounded-2xl text-center">
+                        <span class="text-xs text-amber-600 font-bold uppercase tracking-wider block mb-1">Totale Tijd</span>
+                        <span class="text-3xl font-fun font-bold text-amber-700" id="stat-total-time">0s</span>
+                    </div>
+                </div>
+                <!-- Toets-puntenteller (style.display — zichtbaar enkel bij toets) -->
+                <div id="toets-score-box" style="display:none;" class="bg-gradient-to-r from-indigo-50 to-violet-50 border-2 border-indigo-200 p-5 rounded-2xl text-center">
+                    <span class="text-xs text-indigo-600 font-bold uppercase tracking-wider block mb-1">🏆 Toetsscore (0,5 pt per pagina + 0,5 pt per betekenis)</span>
+                    <span class="text-4xl font-fun font-bold text-indigo-700" id="stat-toets-punten">0 / 10</span>
+                </div>
+                <div class="bg-slate-50 rounded-2xl p-5 border border-slate-100 space-y-3">
+                    <h3 class="font-extrabold text-slate-800 flex items-center gap-2">
+                        <i class="fa-solid fa-chart-pie text-violet-500"></i>
+                        Foutenanalyse &amp; Advies
+                    </h3>
+                    <div id="analytics-feedback" class="text-sm text-slate-600 leading-relaxed space-y-3"></div>
+                </div>
+                <div class="space-y-3">
+                    <h3 class="font-bold text-slate-700 text-sm uppercase tracking-wider">Overzicht per woord</h3>
+                    <div class="max-h-72 overflow-y-auto border border-slate-100 rounded-2xl divide-y divide-slate-100 bg-white" id="results-table-body"></div>
+                </div>
+                <div class="flex flex-col sm:flex-row gap-3 pt-2">
+                    <!-- Upload status (style.display — nooit classList) -->
+                    <div id="upload-status" style="display:none;padding:10px 14px;border-radius:12px;border:2px solid;font-size:.85rem;font-weight:700;text-align:center;width:100%;">
+                      <span id="upload-spinner" style="display:inline-block;width:13px;height:13px;border:2px solid #e5e7eb;border-top-color:#4f46e5;border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle;margin-right:6px;"></span>
+                      <span id="upload-status-text">Bezig met opslaan...</span>
+                    </div>
+                    <button onclick="restartGame()" class="flex-1 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 text-white font-fun font-bold py-4 px-6 rounded-2xl shadow-md transition-all text-center">
+                        <i class="fa-solid fa-rotate-right mr-2"></i> Nog een keer spelen
+                    </button>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <footer class="text-center py-4 text-xs text-slate-400 border-t border-slate-100 bg-white">
+        <p>&copy; 2026 Woordenboek Trainer &middot; Gemaakt om snel en handig te leren zoeken</p>
+    </footer>
+
+    <script>
+    // ============================================================
+    // 1. WOORDENLIJST (ongewijzigd)
+    // ============================================================
+    var dictionaryData = [
+        { word: "pluche",        page: 311, correct: "een zacht, donzig stofje — zoals op een teddybeer",                 incorrect: ["een groot stuk hout om mee te timmeren", "een soort zoet gebak met slagroom"] },
+        { word: "plantsoen",     page: 310, correct: "een klein, groen parkje in een stad of dorp",                        incorrect: ["een grote boerderij met veel dieren", "een winkel waar je planten koopt"] },
+        { word: "rauw",          page: 331, correct: "niet gekookt of niet gebakken",                                      incorrect: ["heel erg zoet van smaak", "licht en luchtig van gewicht"] },
+        { word: "ranja",         page: 331, correct: "een zoet, gekleurd drankje van siroop en water",                     incorrect: ["een soort sterk kaasje uit Frankrijk", "een kleine, zachte vrucht"] },
+        { word: "reu",           page: 341, correct: "een mannelijke hond",                                                incorrect: ["een groot roofvogel", "een klein knaagdier"] },
+        { word: "scepter",       page: 355, correct: "een versierde staf die een koning of koningin vasthoudt",            incorrect: ["een hoge muts van een soldaat", "een schilderij in een gouden lijst"] },
+        { word: "schrokken",     page: 366, correct: "heel snel en gulzig eten",                                            incorrect: ["luid huilen van verdriet", "hard weglopen van angst"] },
+        { word: "solderen",      page: 384, correct: "stukjes metaal aan elkaar vastmaken met heet vloeibaar metaal",      incorrect: ["hout gladmaken met schuurpapier", "verf aanbrengen met een roller"] },
+        { word: "stelt",         page: 400, correct: "een lange stok waarop je kunt lopen",                                incorrect: ["een smal plankje boven een deur", "een klein zakmes"] },
+        { word: "strelen",       page: 407, correct: "zachtjes over iets of iemand aaien",                                 incorrect: ["hard duwen of slaan", "snel over straat rennen"] },
+        { word: "tandem",        page: 417, correct: "een fiets voor twee personen achter elkaar",                         incorrect: ["een grote vrachtwagen met aanhanger", "een smal kano voor één persoon"] },
+        { word: "terrier",       page: 424, correct: "een klein, levendig hondenras",                                      incorrect: ["een grote, trage schildpad", "een kleurrijke papegaai"] },
+        { word: "tuba",          page: 439, correct: "een groot, zwaar blaasinstrument met een diepe klank",               incorrect: ["een lang touw van gedraaid metaal", "een kleine, ronde trommel"] },
+        { word: "vee",           page: 453, correct: "boerderijdieren zoals koeien, schapen en geiten",                    incorrect: ["wilde dieren in een bos", "huisdieren zoals katten en honden"] },
+        { word: "verkommeren",   page: 461, correct: "langzaam slechter worden doordat je te weinig zorg krijgt",          incorrect: ["snel groeien dankzij veel water en zon", "per ongeluk iets kapotmaken"] },
+        { word: "vijzel",        page: 474, correct: "een stevig kommetje om kruiden of zaden fijn te stampen",            incorrect: ["een lange ladder om op te klimmen", "een klein vaatje om water in te bewaren"] },
+        { word: "wervel",        page: 499, correct: "een botje in je ruggengraat",                                        incorrect: ["een snel ronddraaiende wind", "een knoop aan de onderkant van een jas"] },
+        { word: "aria",          page: 20,  correct: "een lang lied dat één persoon zingt in een opera",                   incorrect: ["een snelle dans met veel sprongen", "een gebed dat je fluisterend zegt"] },
+        { word: "boiler",        page: 49,  correct: "een groot apparaat dat water warm maakt in huis",                    incorrect: ["een zware cilinder om verf in te mengen", "een machine die gras afsnijdt"] },
+        { word: "carpoolen",     page: 61,  correct: "samen met anderen in één auto rijden naar dezelfde plek",            incorrect: ["een zwembad huren voor een feestje", "je auto wassen bij een speciaal station"] },
+        { word: "degen",         page: 77,  correct: "een lang, dun zwaard",                                               incorrect: ["een dikke, stevige stok", "een zwaar schild van metaal"] },
+        { word: "draf",          page: 89,  correct: "een manier van lopen waarbij een paard sneller gaat dan stappen",    incorrect: ["een dikke, bruine modder", "een soort donker brood"] },
+        { word: "dwz",           page: 95,  correct: "afkorting van 'dat wil zeggen'",                                     incorrect: ["afkorting van 'door wat zoeken'", "afkorting van 'duidelijk waar zichtbaar'"] },
+        { word: "evenaar",       page: 105, correct: "een denkbeeldige lijn midden om de aarde",                          incorrect: ["een weegschaal om heel precies te wegen", "het midden van een kompas"] },
+        { word: "fuik",          page: 116, correct: "een korf van twijgen of net waarmee je vis vangt",                   incorrect: ["een scherpe haak om aan een muur te hangen", "een grote emmer met een deksel"] },
+        { word: "gems",          page: 125, correct: "een wild berggeit-achtig dier met korte hoorns",                    incorrect: ["een zeldzame kleurrijke vlinder", "een klein knaagdier dat in rotsen leeft"] },
+        { word: "gier",          page: 131, correct: "een grote roofvogel die dode dieren opeet",                          incorrect: ["een klein zangvogeltje met een geel veertje", "een snelle zwemvogel op zee"] },
+        { word: "gunst",         page: 141, correct: "een vriendelijk of aardig gebaar voor iemand anders",                incorrect: ["een harde klap met de vuist", "een strenge straf die je krijgt"] },
+        { word: "hermelijn",     page: 151, correct: "een klein wit diertje met een zwarte staartpunt",                    incorrect: ["een groot hert met gewei", "een soort tropische vis"] },
+        { word: "hobo",          page: 154, correct: "een houten blaasinstrument met een hoog geluid",                     incorrect: ["een grote, ronde trommel", "een lange metalen trompet"] },
+        { word: "kano",          page: 182, correct: "een smal bootje dat je voortbeweegt met een peddel",                incorrect: ["een groot zeilschip op zee", "een vlot van boomstammen"] },
+        { word: "klamboe",       page: 192, correct: "een fijn net dat je om je bed hangt om muggen buiten te houden",    incorrect: ["een dik, warm dekbed voor de winter", "een luifel boven een raam of deur"] },
+        { word: "lans",          page: 219, correct: "een lange, scherpe stok die ridders vroeger gebruikten",            incorrect: ["een plat, rond schild van hout", "een breed zwaard met twee scherpe kanten"] },
+        { word: "luguber",       page: 231, correct: "griezelig en somber",                                                incorrect: ["heel erg gezellig en vrolijk", "lekker warm en knus"] },
+        { word: "mattenklopper", page: 241, correct: "een ding waarmee je matten klopt om het stof eruit te slaan",       incorrect: ["een machine die tapijt wast", "een bezem met een lange steel"] },
+        { word: "medaillon",     page: 241, correct: "een sieraad als klein, rond doosje aan een ketting",                incorrect: ["een grote gouden munt", "een brede armband van zilver"] },
+        { word: "mocassin",      page: 251, correct: "een soepele schoen van zacht leer zonder hak",                      incorrect: ["een hoge laars met gespen", "een stevige bergschoen met profielzool"] },
+        { word: "nerf",          page: 261, correct: "een dun streepje of ribbeltje in een blad of stuk hout",            incorrect: ["een kleine kever in de tuin", "een zaadkorrel van een plant"] },
+        { word: "olm",           page: 268, correct: "een grote loofboom met brede bladeren",                             incorrect: ["een kleine struik met bessen", "een waterplant met lange stengels"] },
+        { word: "oorvijg",       page: 279, correct: "een klap met de vlakke hand tegen het oor of de wang",              incorrect: ["een klein insect dat in je oor kruipt", "een ontsteking aan de binnenkant van het oor"] },
+        { word: "paperassen",    page: 296, correct: "een stapel vervelende of onbelangrijke papieren",                    incorrect: ["kleine snippers papier na het knippen", "mooie gekleurde vouwblaadjes"] },
+        { word: "pont",          page: 314, correct: "een plat bootje dat mensen en fietsen over een rivier brengt",      incorrect: ["een grote onderzeeboot", "een luxe jacht met motor"] }
+    ];
+
+    // ============================================================
+    // 2. AUDIO (ongewijzigd)
+    // ============================================================
+    var audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    function playSound(type) {
+        try {
+            var osc = audioCtx.createOscillator();
+            var gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            if (type === 'success') {
+                osc.frequency.setValueAtTime(523.25, audioCtx.currentTime);
+                osc.frequency.setValueAtTime(659.25, audioCtx.currentTime + 0.1);
+                osc.frequency.setValueAtTime(783.99, audioCtx.currentTime + 0.2);
+                gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.35);
+                osc.start(); osc.stop(audioCtx.currentTime + 0.35);
+            } else {
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(150, audioCtx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(80, audioCtx.currentTime + 0.3);
+                gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+                osc.start(); osc.stop(audioCtx.currentTime + 0.3);
+            }
+        } catch(e) {}
+    }
+
+    // ============================================================
+    // 3. STATE
+    // ============================================================
+    var state = {
+        mode: 'oefenen',        // 'oefenen' of 'toets'
+        selectedWords: [],
+        currentIndex: 0,
+        score: 0,               // volledig juist (pagina + def)
+        toetsPunten: 0,         // 0.5 per pagina + 0.5 per def = max 10
+        questionStartTime: 0,
+        timerInterval: null,
+        elapsedSeconds: 0,
+        // quizLog — NOOIT 'answers' hernoemen naar 'history' (window.history conflict!)
+        answers: [],
+        hasAnswered: false,
+        pendingPageOK: false
+    };
+
+    // ============================================================
+    // 4. GAME FLOW
+    // ============================================================
+    function startGame(mode) {
+        state.mode = mode || 'oefenen';
+        var shuffled = dictionaryData.slice().sort(function() { return 0.5 - Math.random(); });
+        state.selectedWords = shuffled.slice(0, 10);
+        state.currentIndex = 0;
+        state.score = 0;
+        state.toetsPunten = 0;
+        state.answers = [];
+
+        // Reset upload-status bij nieuwe run (style.display — nooit classList)
+        document.getElementById('upload-status').style.display = 'none';
+        document.getElementById('upload-status-text').textContent = 'Bezig met opslaan...';
+        document.getElementById('upload-spinner').style.display = 'inline-block';
+
+        document.getElementById('screen-start').classList.add('hidden');
+        document.getElementById('screen-results').classList.add('hidden');
+        document.getElementById('screen-quiz').classList.remove('hidden');
+        loadWord();
+    }
+
+    function loadWord() {
+        state.hasAnswered = false;
+        state.pendingPageOK = false;
+        var item = state.selectedWords[state.currentIndex];
+
+        document.getElementById('progress-text').innerText = 'Woord ' + (state.currentIndex + 1) + ' van 10';
+        document.getElementById('progress-bar').style.width = (((state.currentIndex + 1) / 10) * 100) + '%';
+        document.getElementById('target-word').innerText = item.word.toUpperCase();
+        document.getElementById('feedback-area').classList.add('hidden');
+
+        state.elapsedSeconds = 0;
+        document.getElementById('live-timer').innerText = '0.0s';
+        state.questionStartTime = Date.now();
+        if (state.timerInterval) clearInterval(state.timerInterval);
+        state.timerInterval = setInterval(function() {
+            state.elapsedSeconds = (Date.now() - state.questionStartTime) / 1000;
+            document.getElementById('live-timer').innerText = state.elapsedSeconds.toFixed(1) + 's';
+        }, 100);
+
+        showPageStep(item);
+    }
+
+    function showPageStep(item) {
+        document.getElementById('step-badge').textContent = 'Stap 1 van 2 — Op welke pagina staat het woord?';
+        document.getElementById('step-badge').className = 'text-xs font-bold px-4 py-1.5 rounded-full bg-indigo-100 text-indigo-700';
+
+        var wrongs = generateWrongPages(item.page);
+        var choices = [{ label: 'Pagina ' + item.page, correct: true }]
+            .concat(wrongs.map(function(p) { return { label: 'Pagina ' + p, correct: false }; }))
+            .sort(function() { return 0.5 - Math.random(); });
+
+        renderOptions(choices, function(isCorrect, chosenLabel) {
+            handlePageAnswer(isCorrect, chosenLabel, item);
+        });
+    }
+
+    function generateWrongPages(correct) {
+        var offsets = [-25, -18, -12, -7, 7, 12, 18, 25, 30, -30].sort(function() { return 0.5 - Math.random(); });
+        var result = [];
+        for (var i = 0; i < offsets.length && result.length < 3; i++) {
+            var p = correct + offsets[i];
+            if (p > 0 && p !== correct && result.indexOf(p) === -1) result.push(p);
+        }
+        var fb = 1;
+        while (result.length < 3) { result.push(correct + fb * 7); fb++; }
+        return result.slice(0, 3);
+    }
+
+    function handlePageAnswer(isCorrect, chosenLabel, item) {
+        if (state.hasAnswered) return;
+        state.hasAnswered = true;
+        state.pendingPageOK = isCorrect;
+
+        highlightOptions(chosenLabel, 'Pagina ' + item.page, isCorrect);
+        playSound(isCorrect ? 'success' : 'error');
+
+        var fb = document.getElementById('feedback-area');
+        document.getElementById('next-btn-label').textContent = 'Verder: zoek de betekenis';
+
+        document.getElementById('next-btn').onclick = function() {
+            state.hasAnswered = false;
+            showDefStep(item, state.pendingPageOK);
+        };
+        fb.classList.remove('hidden');
+
+        if (isCorrect) {
+            fb.className = 'p-4 rounded-2xl flex flex-col md:flex-row items-center justify-between gap-4 transition-all duration-300 bg-emerald-50 border border-emerald-100 text-emerald-800';
+            document.getElementById('feedback-icon').className = 'w-12 h-12 rounded-full flex items-center justify-center text-xl text-white bg-emerald-500 shrink-0';
+            document.getElementById('feedback-icon').innerHTML = '<i class="fa-solid fa-thumbs-up"></i>';
+            document.getElementById('feedback-title').innerText = 'Juist paginanummer!';
+            document.getElementById('feedback-text').innerText = item.word.toUpperCase() + ' staat op pagina ' + item.page + '. Zoek nu de betekenis op!';
+        } else {
+            fb.className = 'p-4 rounded-2xl flex flex-col md:flex-row items-center justify-between gap-4 transition-all duration-300 bg-rose-50 border border-rose-100 text-rose-800';
+            document.getElementById('feedback-icon').className = 'w-12 h-12 rounded-full flex items-center justify-center text-xl text-white bg-rose-500 shrink-0';
+            document.getElementById('feedback-icon').innerHTML = '<i class="fa-solid fa-circle-exclamation"></i>';
+            document.getElementById('feedback-title').innerText = 'Fout paginanummer!';
+            document.getElementById('feedback-text').innerText = 'Het woord staat op pagina ' + item.page + '. Zoek de betekenis nu toch op!';
+        }
+    }
+
+    function showDefStep(item, pageOK) {
+        document.getElementById('step-badge').textContent = 'Stap 2 van 2 — Wat betekent dit woord?';
+        document.getElementById('step-badge').className = 'text-xs font-bold px-4 py-1.5 rounded-full bg-violet-100 text-violet-700';
+        document.getElementById('feedback-area').classList.add('hidden');
+
+        var choices = [{ label: item.correct, correct: true }]
+            .concat(item.incorrect.map(function(t) { return { label: t, correct: false }; }))
+            .sort(function() { return 0.5 - Math.random(); });
+
+        renderOptions(choices, function(isCorrect, chosenLabel) {
+            handleDefAnswer(isCorrect, chosenLabel, item, pageOK);
+        });
+    }
+
+    function handleDefAnswer(isCorrect, chosenLabel, item, pageOK) {
+        if (state.hasAnswered) return;
+        state.hasAnswered = true;
+
+        clearInterval(state.timerInterval);
+        var duration = parseFloat(state.elapsedSeconds.toFixed(1));
+
+        highlightOptions(chosenLabel, item.correct, isCorrect);
+        playSound(isCorrect ? 'success' : 'error');
+
+        var fullyCorrect = pageOK && isCorrect;
+        if (fullyCorrect) state.score++;
+
+        // Toets-puntenstelsel: 0.5 per pagina + 0.5 per betekenis
+        if (pageOK) state.toetsPunten += 0.5;
+        if (isCorrect) state.toetsPunten += 0.5;
+
+        state.answers.push({
+            word: item.word,
+            page: item.page,
+            correctDef: item.correct,
+            chosenDef: chosenLabel,
+            pageOK: pageOK,
+            defOK: isCorrect,
+            seconds: duration
+        });
+
+        document.getElementById('next-btn-label').textContent = state.currentIndex < 9 ? 'Volgend woord' : 'Bekijk resultaten';
+        document.getElementById('next-btn').onclick = nextWord;
+
+        var fb = document.getElementById('feedback-area');
+        fb.classList.remove('hidden');
+        var fbIcon = document.getElementById('feedback-icon');
+        var fbTitle = document.getElementById('feedback-title');
+        var fbText = document.getElementById('feedback-text');
+
+        if (fullyCorrect) {
+            fb.className = 'p-4 rounded-2xl flex flex-col md:flex-row items-center justify-between gap-4 transition-all duration-300 bg-emerald-50 border border-emerald-100 text-emerald-800';
+            fbIcon.className = 'w-12 h-12 rounded-full flex items-center justify-center text-xl text-white bg-emerald-500 shrink-0';
+            fbIcon.innerHTML = '<i class="fa-solid fa-circle-check"></i>';
+            fbTitle.innerText = 'Uitstekend! Alles goed.';
+            fbText.innerText = 'Pagina ' + item.page + ': "' + item.correct + '"';
+        } else if (pageOK && !isCorrect) {
+            fb.className = 'p-4 rounded-2xl flex flex-col md:flex-row items-center justify-between gap-4 transition-all duration-300 bg-amber-50 border border-amber-100 text-amber-800';
+            fbIcon.className = 'w-12 h-12 rounded-full flex items-center justify-center text-xl text-white bg-amber-500 shrink-0';
+            fbIcon.innerHTML = '<i class="fa-solid fa-circle-half-stroke"></i>';
+            fbTitle.innerText = 'Pagina goed, betekenis fout.';
+            fbText.innerText = 'De juiste betekenis: "' + item.correct + '"';
+        } else if (!pageOK && isCorrect) {
+            fb.className = 'p-4 rounded-2xl flex flex-col md:flex-row items-center justify-between gap-4 transition-all duration-300 bg-amber-50 border border-amber-100 text-amber-800';
+            fbIcon.className = 'w-12 h-12 rounded-full flex items-center justify-center text-xl text-white bg-amber-500 shrink-0';
+            fbIcon.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i>';
+            fbTitle.innerText = 'Betekenis goed, pagina fout.';
+            fbText.innerText = 'Het woord staat op pagina ' + item.page + '.';
+        } else {
+            fb.className = 'p-4 rounded-2xl flex flex-col md:flex-row items-center justify-between gap-4 transition-all duration-300 bg-rose-50 border border-rose-100 text-rose-800';
+            fbIcon.className = 'w-12 h-12 rounded-full flex items-center justify-center text-xl text-white bg-rose-500 shrink-0';
+            fbIcon.innerHTML = '<i class="fa-solid fa-circle-exclamation"></i>';
+            fbTitle.innerText = 'Beide fout.';
+            fbText.innerText = 'Pagina ' + item.page + ': "' + item.correct + '"';
+        }
+    }
+
+    function nextWord() {
+        state.currentIndex++;
+        if (state.currentIndex < 10) {
+            loadWord();
+        } else {
+            showResults();
+        }
+    }
+
+    // ============================================================
+    // 5. OPTIES RENDEREN + MARKEREN (ongewijzigd)
+    // ============================================================
+    function renderOptions(choices, onSelect) {
+        var container = document.getElementById('options-container');
+        container.innerHTML = '';
+        choices.forEach(function(choice, i) {
+            var btn = document.createElement('button');
+            btn.className = 'w-full text-left p-4 rounded-2xl border-2 border-slate-100 hover:border-indigo-200 bg-white hover:bg-slate-50 font-medium transition-all flex items-center justify-between group active:scale-[0.99]';
+            (function(c) {
+                btn.onclick = function() { onSelect(c.correct, c.label); };
+            })(choice);
+            btn.innerHTML =
+                '<div class="flex items-center space-x-3 pr-4">' +
+                '<span class="w-8 h-8 rounded-xl bg-slate-100 group-hover:bg-indigo-50 text-slate-500 group-hover:text-indigo-600 font-bold text-sm flex items-center justify-center transition-colors uppercase">' +
+                String.fromCharCode(65 + i) + '</span>' +
+                '<span class="text-slate-700 text-sm md:text-base leading-relaxed">' + choice.label + '</span></div>' +
+                '<div class="option-icon w-6 h-6 rounded-full border border-slate-200 flex items-center justify-center text-xs shrink-0 bg-white transition-all"></div>';
+            container.appendChild(btn);
+        });
+    }
+
+    function highlightOptions(chosenLabel, correctLabel, wasCorrect) {
+        document.querySelectorAll('#options-container button').forEach(function(btn) {
+            btn.disabled = true;
+            btn.classList.remove('hover:border-indigo-200', 'hover:bg-slate-50', 'active:scale-[0.99]');
+            var spans = btn.querySelectorAll('span');
+            var txt = spans[spans.length - 1].innerText;
+            var icon = btn.querySelector('.option-icon');
+            if (txt === correctLabel) {
+                btn.classList.add('border-emerald-500', 'bg-emerald-50/50');
+                icon.className = 'option-icon w-6 h-6 rounded-full bg-emerald-500 text-white flex items-center justify-center text-xs shrink-0';
+                icon.innerHTML = '<i class="fa-solid fa-check"></i>';
+            } else if (txt === chosenLabel && !wasCorrect) {
+                btn.classList.add('border-rose-500', 'bg-rose-50/50');
+                icon.className = 'option-icon w-6 h-6 rounded-full bg-rose-500 text-white flex items-center justify-center text-xs shrink-0';
+                icon.innerHTML = '<i class="fa-solid fa-xmark"></i>';
+            }
+        });
+    }
+
+    // ============================================================
+    // 6. RESULTATEN
+    // ============================================================
+    function showResults() {
+        document.getElementById('screen-quiz').classList.add('hidden');
+        document.getElementById('screen-results').classList.remove('hidden');
+
+        var totalTime = state.answers.reduce(function(s, a) { return s + a.seconds; }, 0);
+        var avgTime = totalTime / 10;
+
+        document.getElementById('stat-score').innerText = state.score + ' / 10';
+        document.getElementById('stat-avg-time').innerText = avgTime.toFixed(1) + 's';
+        document.getElementById('stat-total-time').innerText = Math.round(totalTime) + 's';
+
+        // Toets-puntentegel tonen of verbergen (style.display — nooit classList)
+        if (state.mode === 'toets') {
+            document.getElementById('toets-score-box').style.display = 'block';
+            document.getElementById('stat-toets-punten').innerText = state.toetsPunten.toFixed(1) + ' / 10';
+        } else {
+            document.getElementById('toets-score-box').style.display = 'none';
+        }
+
+        var tbody = document.getElementById('results-table-body');
+        tbody.innerHTML = '';
+        state.answers.forEach(function(ans, idx) {
+            var fully = ans.pageOK && ans.defOK;
+            var half = ans.pageOK !== ans.defOK;
+            var div = document.createElement('div');
+            div.className = 'p-4 flex flex-col gap-2 ' + (fully ? 'bg-emerald-50/20' : half ? 'bg-amber-50/20' : 'bg-rose-50/20');
+
+            var statusIcon = fully
+                ? '<i class="fa-solid fa-circle-check text-emerald-500 text-lg shrink-0"></i>'
+                : half
+                    ? '<i class="fa-solid fa-circle-half-stroke text-amber-500 text-lg shrink-0"></i>'
+                    : '<i class="fa-solid fa-circle-xmark text-rose-500 text-lg shrink-0"></i>';
+
+            var pageTag = ans.pageOK
+                ? '<span class="text-xs bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-md font-semibold">p.' + ans.page + ' \u2713</span>'
+                : '<span class="text-xs bg-rose-100 text-rose-700 px-2 py-0.5 rounded-md font-semibold">p.' + ans.page + ' \u2717</span>';
+
+            var puntenTag = state.mode === 'toets'
+                ? '<span class="text-xs bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-md font-semibold">' + ((ans.pageOK ? 0.5 : 0) + (ans.defOK ? 0.5 : 0)).toFixed(1) + ' pt</span>'
+                : '';
+
+            div.innerHTML =
+                '<div class="flex items-start gap-3">' +
+                '<div class="mt-0.5">' + statusIcon + '</div>' +
+                '<div class="flex-1 min-w-0">' +
+                '<div class="font-bold text-slate-800 flex flex-wrap items-center gap-2">' +
+                '<span>' + (idx + 1) + '. ' + ans.word.toUpperCase() + '</span>' +
+                pageTag + puntenTag +
+                '<span class="text-xs font-mono font-normal text-slate-400 bg-slate-100 px-2 py-0.5 rounded-md">' + ans.seconds.toFixed(1) + 's</span>' +
+                '</div>' +
+                '<p class="text-xs text-slate-500 mt-1"><strong class="text-slate-600">Betekenis:</strong> ' + ans.correctDef + '</p>' +
+                (!ans.defOK ? '<p class="text-xs text-rose-500 mt-0.5"><strong>Gekozen:</strong> ' + ans.chosenDef + '</p>' : '') +
+                '</div></div>';
+            tbody.appendChild(div);
+        });
+
+        var analysisDiv = document.getElementById('analytics-feedback');
+        var sorted = state.answers.slice().sort(function(a, b) { return a.seconds - b.seconds; });
+        var fastest = sorted[0];
+        var slowest = sorted[sorted.length - 1];
+        var pageErrors = state.answers.filter(function(a) { return !a.pageOK; }).length;
+
+        var html = '<p>\u26A1 <strong>Snelheid:</strong> Je vond <span class="font-semibold text-indigo-600">' + fastest.word.toUpperCase() + '</span> het snelst (' + fastest.seconds.toFixed(1) + 's). Voor <span class="font-semibold text-indigo-600">' + slowest.word.toUpperCase() + '</span> had je de meeste tijd nodig (' + slowest.seconds.toFixed(1) + 's).</p>';
+
+        if (pageErrors === 0) {
+            html += '<p>\uD83D\uDCD6 <strong>Paginanummers:</strong> Alle paginanummers juist &mdash; je zoekt heel goed op in het woordenboek! \uD83C\uDF89</p>';
+        } else {
+            html += '<p>\uD83D\uDCD6 <strong>Paginanummers:</strong> Je had ' + pageErrors + ' keer het verkeerde paginanummer. Let goed op de <strong>gidswoorden</strong> bovenaan de bladzijden!</p>';
+        }
+
+        if (state.mode === 'toets') {
+            html += '<p>\uD83C\uDFC6 <strong>Toetsscore:</strong> ' + state.toetsPunten.toFixed(1) + ' / 10 punten (' + state.score + ' woorden volledig juist).</p>';
+        } else if (state.score === 10) {
+            html += '<p>\uD83C\uDFC6 <strong>Perfect!</strong> Alle pagina\'s en betekenissen juist. Jij bent een echte woordenboek-kampioen!</p>';
+        } else if (state.score >= 7) {
+            html += '<p>\u2728 <strong>Heel goed!</strong> ' + state.score + '/10 volledig juist.</p>';
+        } else if (state.score >= 4) {
+            html += '<p>\uD83D\uDCAA <strong>Blijf oefenen!</strong> ' + state.score + '/10 goed.</p>';
+        } else {
+            html += '<p>\uD83D\uDCDA <strong>Oefening baart kunst!</strong> ' + state.score + '/10 goed. Probeer het nog een keer!</p>';
+        }
+        analysisDiv.innerHTML = html;
+
+        // Opslaan enkel bij toets (saveToFirestore is in het Firebase script-blok hieronder)
+        if (state.mode === 'toets') {
+            document.getElementById('upload-status').style.display = 'block';
+            saveToFirestore();
+        }
+    }
+
+    // ============================================================
+    // 7. HERSTART
+    // ============================================================
+    function restartGame() {
+        state.selectedWords = [];
+        state.currentIndex = 0;
+        state.score = 0;
+        state.toetsPunten = 0;
+        state.answers = [];
+        state.hasAnswered = false;
+        if (state.timerInterval) clearInterval(state.timerInterval);
+        document.getElementById('screen-results').classList.add('hidden');
+        document.getElementById('screen-start').classList.remove('hidden');
+    }
+    </script>
+
+    <!-- FIREBASE compat SDK — geen type="module", geen anonymous auth -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    <script>
+    firebase.initializeApp({
+        apiKey:"AIzaSyCnQDVVAlK6jE-PPUUediRJMTbN0xqrLDE",
+        authDomain:"klaswebsite-database.firebaseapp.com",
+        projectId:"klaswebsite-database",
+        storageBucket:"klaswebsite-database.firebasestorage.app",
+        messagingSenderId:"42912327282",
+        appId:"1:42912327282:web:f13f2c706f6c42c115c4eb"
+    });
+    var _db          = firebase.firestore();
+    var _currentUser = null;
+    var _isGuest     = false;
+    var COL_NAME     = "taal_woordenboek";
+
+    // ── UPLOAD STATUS (style.display — NOOIT classList) ───────────────────
+    function setUploadStatus(type, msg) {
+        var box     = document.getElementById("upload-status");
+        var text    = document.getElementById("upload-status-text");
+        var spinner = document.getElementById("upload-spinner");
+        box.style.display    = "block";
+        spinner.style.display = (type === "loading") ? "inline-block" : "none";
+        if (type === "loading") {
+            box.style.background  = "#eef2ff"; box.style.borderColor = "#c7d2fe"; box.style.color = "#3730a3";
+        } else if (type === "ok") {
+            box.style.background  = "#f0fdf4"; box.style.borderColor = "#86efac"; box.style.color = "#15803d";
+        } else {
+            box.style.background  = "#fff1f2"; box.style.borderColor = "#fecdd3"; box.style.color = "#be123c";
+        }
+        text.textContent = msg;
+        console.log("[woordenboek saveToFirestore] " + type + ": " + msg);
+    }
+
+    // ── LOGIN (openApp gebruikt ALLEEN style.display — nooit classList) ───
+    function klasLogin() {
+        var naam = (document.getElementById("klas-naam").value||"").trim().toLowerCase();
+        var code = (document.getElementById("klas-code").value||"").trim();
+        var err  = document.getElementById("klas-err");
+        err.style.display = "none";
+        if (!naam) { err.textContent="Vul je voornaam in."; err.style.display="block"; return; }
+        if (!code) { err.textContent="Vul je code in.";    err.style.display="block"; return; }
+        var btn = document.getElementById("login-btn");
+        btn.textContent = "Even wachten..."; btn.disabled = true;
+        _db.collection("leerlingen").doc(naam).get().then(function(doc) {
+            btn.textContent = "Inloggen"; btn.disabled = false;
+            if (!doc.exists) { err.textContent="Naam niet gevonden."; err.style.display="block"; return; }
+            var data = doc.data();
+            if (data.code !== code) { err.textContent="Verkeerde code."; err.style.display="block"; return; }
+            window._leerlingNaam = data.weergavenaam || (naam.charAt(0).toUpperCase()+naam.slice(1));
+            window._leerlingId   = naam;
+            _currentUser = { uid: naam, displayName: window._leerlingNaam };
+            _isGuest = false;
+            openApp(window._leerlingNaam, false);
+        }).catch(function(e) {
+            btn.textContent = "Inloggen"; btn.disabled = false;
+            err.textContent = "Fout: " + e.message; err.style.display = "block";
+        });
+    }
+
+    function klasGast() {
+        _isGuest = true; _currentUser = null;
+        window._leerlingId   = null;
+        window._leerlingNaam = "Gast";
+        openApp("Gast", true);
+    }
+
+    function openApp(naam, isGast) {
+        document.getElementById("login-screen").style.display = "none";
+        if (isGast) {
+            document.getElementById("gast-badge").style.display  = "block";
+            document.getElementById("user-badge").style.display  = "none";
+        } else {
+            document.getElementById("user-badge-naam").textContent = naam;
+            document.getElementById("user-badge").style.display    = "flex";
+            document.getElementById("gast-badge").style.display    = "none";
+        }
+    }
+
+    function doLogout() {
+        _currentUser = null; _isGuest = false;
+        window._leerlingId = null; window._leerlingNaam = null;
+        document.getElementById("login-screen").style.display = "flex";
+        document.getElementById("user-badge").style.display   = "none";
+        document.getElementById("gast-badge").style.display   = "none";
+        document.getElementById("klas-naam").value = "";
+        document.getElementById("klas-code").value = "";
+        document.getElementById("klas-err").style.display = "none";
+        document.getElementById("login-btn").disabled = false;
+        document.getElementById("login-btn").textContent = "Inloggen";
+        // Terug naar startscherm
+        document.getElementById("screen-quiz").classList.add("hidden");
+        document.getElementById("screen-results").classList.add("hidden");
+        document.getElementById("screen-start").classList.remove("hidden");
+        if (state.timerInterval) clearInterval(state.timerInterval);
+    }
+
+    // ── OPSLAAN NAAR FIRESTORE ────────────────────────────────────────────
+    // vak = Taal (niet wiskunde!) — collection = taal_woordenboek
+    async function saveToFirestore() {
+        if (_isGuest || !_currentUser) {
+            setUploadStatus("error", "❌ Niet opgeslagen: je speelt als gast.");
+            return;
+        }
+        if (!window._leerlingId) {
+            setUploadStatus("error", "❌ Geen leerling-ID. Log opnieuw in.");
+            return;
+        }
+        setUploadStatus("loading", "Bezig met opslaan...");
+
+        var total = state.answers.length;
+        var totalTime = state.answers.reduce(function(s, a) { return s + a.seconds; }, 0);
+        var pageErrors  = state.answers.filter(function(a){ return !a.pageOK; });
+        var defErrors   = state.answers.filter(function(a){ return !a.defOK; });
+
+        var foutenTelling = {};
+        if (pageErrors.length > 0) foutenTelling["paginanummer fout"] = pageErrors.length;
+        if (defErrors.length > 0)  foutenTelling["betekenis fout"]    = defErrors.length;
+
+        var extraOefenen = [];
+        pageErrors.forEach(function(a){ extraOefenen.push(a.word + " (paginanummer fout — juist: p." + a.page + ")"); });
+        defErrors.forEach(function(a){ if (a.pageOK) extraOefenen.push(a.word + " (betekenis fout)"); });
+
+        var record = {
+            leerlingId:   window._leerlingId,
+            leerlingNaam: window._leerlingNaam || "Leerling",
+            vak:          "Taal",
+            mode:         "Toets",
+            score:        state.score,               // volledig juist
+            totalQ:       total,
+            percentage:   Math.round(state.toetsPunten / 10 * 100),
+            toetsPunten:  state.toetsPunten,          // 0–10 met stappen van 0.5
+            tijd:         Math.round(totalTime) + "s",
+            gemiddeldeTijdPerWoord: parseFloat((totalTime/total).toFixed(1)),
+            hintsGebruikt: 0,
+            timestamp:    firebase.firestore.FieldValue.serverTimestamp(),
+            foutenAnalyse: {
+                extraOefenen:       extraOefenen,
+                foutenPerCategorie: foutenTelling
+            },
+            vragen: state.answers.map(function(a, i) {
+                return {
+                    vraagNr:          i + 1,
+                    vraag:            a.word,
+                    categorie:        "woordenboek",
+                    antwoordLeerling: (a.pageOK ? "p." + a.page : "p.?") + " | " + (a.defOK ? "✓" : a.chosenDef),
+                    juistAntwoord:    "p." + a.page + " | " + a.correctDef,
+                    isJuist:          a.pageOK && a.defOK,
+                    paginaJuist:      a.pageOK,
+                    definitieJuist:   a.defOK,
+                    punten:           (a.pageOK ? 0.5 : 0) + (a.defOK ? 0.5 : 0),
+                    tijdSeconden:     a.seconds
+                };
+            })
+        };
+
+        console.log("[woordenboek saveToFirestore] Opslaan naar " + COL_NAME + ":", record);
+
+        try {
+            var docRef = await _db.collection(COL_NAME).add(record);
+            await _db.collection("toets_registry").doc(COL_NAME).set({
+                naam:       "Taal – Woordenboek",
+                collection: COL_NAME,
+                vak:        "Taal",
+                lastSeen:   firebase.firestore.FieldValue.serverTimestamp()
+            }, { merge: true });
+            setUploadStatus("ok", "✅ Score opgeslagen! (ID: " + docRef.id.substring(0,8) + "…)");
+            console.log("[woordenboek saveToFirestore] Succes! ID:", docRef.id);
+        } catch(e) {
+            console.error("[woordenboek saveToFirestore] Fout:", e.code, e.message);
+            var uitleg = e.message || "Onbekende fout";
+            if (e.code === "permission-denied") uitleg = "Geen schrijfrechten. Contacteer de leerkracht.";
+            else if (e.code === "unavailable")  uitleg = "Geen internetverbinding. Probeer opnieuw.";
+            setUploadStatus("error", "❌ Opslaan mislukt: " + uitleg);
+        }
+    }
+
+    // ── EVENT LISTENERS (één DOMContentLoaded — nooit split over script-blokken) ─
+    document.addEventListener("DOMContentLoaded", function() {
+        document.getElementById("login-btn").addEventListener("click", klasLogin);
+        document.getElementById("gast-btn").addEventListener("click", klasGast);
+        document.getElementById("logout-btn").addEventListener("click", doLogout);
+        document.getElementById("klas-naam").addEventListener("keypress", function(e){ if(e.key==="Enter") klasLogin(); });
+        document.getElementById("klas-code").addEventListener("keypress", function(e){ if(e.key==="Enter") klasLogin(); });
+    });
+    </script>
+</body>
+</html>
