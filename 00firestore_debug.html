@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head><meta charset="UTF-8"><title>Firestore Debug</title>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<style>
+  body { font-family: monospace; padding: 20px; background: #1a1a2e; color: #e0e0e0; }
+  button { background: #c84b31; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; margin: 4px; font-size: 14px; }
+  button.green { background: #2d6a4f; }
+  .doc { background: #2a2a3e; padding: 12px; margin: 8px 0; border-radius: 8px; border-left: 3px solid #e8a838; }
+  .doc-id { color: #e8a838; font-weight: bold; font-size: 13px; }
+  .doc-data { color: #aaa; font-size: 11px; margin-top: 6px; word-break: break-all; }
+  #log { background: #0a0a15; padding: 12px; border-radius: 8px; margin-top: 16px; font-size: 12px; line-height: 1.8; }
+  .ok { color: #52b788; } .err { color: #c84b31; } .info { color: #e8a838; }
+</style>
+</head>
+<body>
+<h2 style="color:#e8a838">🔧 Firestore Debug — woordenschat</h2>
+<button class="green" onclick="laadDocs()">📋 Laad alle documenten</button>
+<button onclick="verwijderAlles()">🗑 Verwijder ALLE woorden</button>
+<div id="docs"></div>
+<div id="log"></div>
+
+<script>
+firebase.initializeApp({
+  apiKey: "AIzaSyCnQDVVAlK6jE-PPUUediRJMTbN0xqrLDE",
+  authDomain: "klaswebsite-database.firebaseapp.com",
+  projectId: "klaswebsite-database"
+});
+var db = firebase.firestore();
+
+function log(msg, type) {
+  var el = document.getElementById("log");
+  el.innerHTML += '<div class="' + (type||"info") + '">[' + new Date().toLocaleTimeString() + '] ' + msg + '</div>';
+}
+
+function laadDocs() {
+  log("Ophalen uit Firestore...");
+  document.getElementById("docs").innerHTML = "";
+  db.collection("woordenschat").get().then(function(snap) {
+    log("Gevonden: " + snap.size + " document(en)", "ok");
+    snap.forEach(function(doc) {
+      var data = doc.data();
+      var div = document.createElement("div");
+      div.className = "doc";
+      div.innerHTML =
+        '<div class="doc-id">ID: ' + doc.id + '</div>' +
+        '<div class="doc-data">' +
+          '<b>woord:</b> ' + (data.woord||'?') + ' | ' +
+          '<b>betekenis:</b> ' + (data.betekenis||'').substring(0,50) + ' | ' +
+          '<b>afbeelding:</b> ' + (data.afbeelding||'').substring(0,40) +
+        '</div>' +
+        '<button onclick="verwijderDoc(\'' + doc.id + '\',\'' + (data.woord||'?') + '\')">🗑 Verwijder dit woord</button>';
+      document.getElementById("docs").appendChild(div);
+    });
+    if (snap.size === 0) log("Collectie is leeg!", "ok");
+  }).catch(function(e) { log("FOUT: " + e.message, "err"); });
+}
+
+function verwijderDoc(id, naam) {
+  log("Verwijderen: " + naam + " (ID: " + id + ")...");
+  db.collection("woordenschat").doc(id).delete()
+    .then(function() {
+      log("✅ Verwijderd: " + naam, "ok");
+      laadDocs();
+    })
+    .catch(function(e) { log("❌ FOUT bij verwijderen: " + e.message, "err"); });
+}
+
+function verwijderAlles() {
+  if (!confirm("Alle woorden verwijderen?")) return;
+  db.collection("woordenschat").get().then(function(snap) {
+    var batch = db.batch();
+    snap.forEach(function(doc) { batch.delete(doc.ref); });
+    return batch.commit();
+  }).then(function() {
+    log("✅ Alle woorden verwijderd", "ok");
+    document.getElementById("docs").innerHTML = "";
+  }).catch(function(e) { log("❌ FOUT: " + e.message, "err"); });
+}
+
+// Auto-laad bij openen
+window.onload = laadDocs;
+</script>
+</body>
+</html>
