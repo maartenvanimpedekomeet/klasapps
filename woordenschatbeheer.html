@@ -269,12 +269,12 @@
     <div id="login-error"></div>
 
     <div class="api-section">
-      <p><i class="fa-solid fa-wand-magic-sparkles"></i> Gemini AI (optioneel)</p>
+      <p><i class="fa-solid fa-wand-magic-sparkles"></i> Groq AI (optioneel — gratis via console.groq.com)</p>
       <div class="login-field" style="margin-bottom:0;">
         <label>Google AI Studio API-sleutel</label>
-        <input type="text" id="login-apikey" class="small" placeholder="Plak hier je Gemini API key…">
+        <input type="text" id="login-apikey" class="small" placeholder="gsk_…">
       </div>
-      <div class="hint">Wordt lokaal opgeslagen. Nodig voor automatisch genereren van betekenissen.</div>
+      <div class="hint">Gratis account op console.groq.com → API Keys. Sleutel begint met gsk_</div>
     </div>
   </div>
 </div>
@@ -290,6 +290,9 @@
   <div class="topbar-right">
     <button class="btn-sm" onclick="openApiKeyModal()" title="API key instellen">
       <i class="fa-solid fa-key"></i> AI-sleutel
+    </button>
+    <button class="btn-sm" onclick="herlaadLijst()" title="Lijst opnieuw laden">
+      <i class="fa-solid fa-rotate-right"></i> Vernieuwen
     </button>
     <button class="btn-sm" onclick="uitloggen()">
       <i class="fa-solid fa-right-from-bracket"></i> Uitloggen
@@ -354,12 +357,12 @@
 <!-- ══════════════════════════════════════════
      AI MODAL
 ══════════════════════════════════════════ -->
-<div id="ai-modal" class="modal-overlay">
+<div id="ai-modal" class="modal-overlay" style="display:none;">
   <div class="modal-box">
     <h3 style="color:var(--green)"><i class="fa-solid fa-wand-magic-sparkles"></i> AI-assistent</h3>
     <div id="ai-spinner" style="display:none;">
       <i class="fa-solid fa-circle-notch spin" style="font-size:2rem;color:var(--green);"></i>
-      <p style="margin-top:10px;color:var(--muted);font-size:.9rem;">Betekenis genereren via Gemini…</p>
+      <p style="margin-top:10px;color:var(--muted);font-size:.9rem;">Betekenis genereren via Groq AI…</p>
     </div>
     <div id="ai-result" style="display:none;">
       <p class="sub">Nakijken en aanpassen indien nodig, dan overnemen.</p>
@@ -385,16 +388,16 @@
 <!-- ══════════════════════════════════════════
      API KEY MODAL
 ══════════════════════════════════════════ -->
-<div id="apikey-modal" class="modal-overlay">
+<div id="apikey-modal" class="modal-overlay" style="display:none;">
   <div class="modal-box" style="max-width:420px;">
     <h3><i class="fa-solid fa-key" style="color:var(--green)"></i> Gemini API-sleutel</h3>
     <p class="sub">De sleutel wordt lokaal opgeslagen in je browser en staat nooit in de code.</p>
     <div class="field-group" style="margin-bottom:12px;">
       <label>API-sleutel</label>
-      <input type="text" id="apikey-input" placeholder="Plak hier je Gemini API key…" style="border:2px solid var(--cream);border-radius:9px;padding:10px 12px;font-size:.9rem;font-family:'DM Sans',sans-serif;background:#fafafa;width:100%;">
+      <input type="text" id="apikey-input" placeholder="gsk_…" style="border:2px solid var(--cream);border-radius:9px;padding:10px 12px;font-size:.9rem;font-family:'DM Sans',sans-serif;background:#fafafa;width:100%;">
     </div>
     <p style="font-size:.75rem;color:var(--muted);">
-      Haal je gratis sleutel op via <a href="https://aistudio.google.com/apikey" target="_blank" style="color:var(--green);">aistudio.google.com/apikey</a>
+      Haal je gratis sleutel op via <a href="https://console.groq.com" target="_blank" style="color:var(--green);">console.groq.com</a> → API Keys (begint met <code>gsk_</code>)
     </p>
     <div class="modal-btns">
       <button class="btn-cancel" onclick="closeApiKeyModal()">Annuleren</button>
@@ -406,7 +409,7 @@
 <!-- ══════════════════════════════════════════
      CONFIRM MODAL
 ══════════════════════════════════════════ -->
-<div id="confirm-modal" class="modal-overlay">
+<div id="confirm-modal" class="modal-overlay" style="display:none;">
   <div class="modal-box confirm-box">
     <h3 id="confirm-title">Bevestigen</h3>
     <p id="confirm-text">Ben je zeker?</p>
@@ -420,7 +423,7 @@
 <!-- SAVE TOAST -->
 <div id="save-toast"><i class="fa-solid fa-cloud-arrow-up"></i> Opgeslagen</div>
 
-<div id="version">v0.4</div>
+<div id="version">v0.12</div>
 
 <script>
 // ════════════════════════════════════════════
@@ -469,6 +472,10 @@ function doLogin() {
   laadWoorden();
 }
 
+function herlaadLijst() {
+  herlaadVanServer();
+}
+
 function uitloggen() {
   document.getElementById("login-overlay").style.display = "flex";
   document.getElementById("login-pw").value = "";
@@ -479,10 +486,10 @@ function uitloggen() {
 // ════════════════════════════════════════════
 function openApiKeyModal() {
   document.getElementById("apikey-input").value = localStorage.getItem("gemini_api_key") || "";
-  document.getElementById("apikey-modal").classList.add("open");
+  document.getElementById("apikey-modal").style.display = "flex";
 }
 function closeApiKeyModal() {
-  document.getElementById("apikey-modal").classList.remove("open");
+  document.getElementById("apikey-modal").style.display = "none";
 }
 function slaApiKeyOp() {
   var key = document.getElementById("apikey-input").value.trim();
@@ -499,7 +506,8 @@ function slaApiKeyOp() {
 function laadWoorden() {
   db.collection("woordenschat")
     .orderBy("aangemaakt", "desc")
-    .onSnapshot(function(snap) {
+    .get({ source: "server" })
+    .then(function(snap) {
       alleWoorden = [];
       snap.forEach(function(doc) {
         alleWoorden.push(Object.assign({ id: doc.id }, doc.data()));
@@ -507,9 +515,25 @@ function laadWoorden() {
       renderWoorden();
       document.getElementById("topbar-sub").textContent =
         alleWoorden.length + " woorden opgeslagen";
-    }, function(err) {
-      console.error(err);
-    });
+    })
+    .catch(function(err) { console.error(err); });
+}
+
+function herlaadVanServer() {
+  db.collection("woordenschat")
+    .orderBy("aangemaakt", "desc")
+    .get({ source: "server" })
+    .then(function(snap) {
+      alleWoorden = [];
+      snap.forEach(function(doc) {
+        alleWoorden.push(Object.assign({ id: doc.id }, doc.data()));
+      });
+      renderWoorden();
+      document.getElementById("topbar-sub").textContent =
+        alleWoorden.length + " woorden opgeslagen";
+      showToast("🔄 Lijst ververst");
+    })
+    .catch(function(err) { console.error(err); });
 }
 
 function voegWoordToe() {
@@ -533,6 +557,7 @@ function voegWoordToe() {
     document.getElementById("new-zin").value = "";
     document.getElementById("new-img").value = "";
     document.getElementById("new-woord").focus();
+    herlaadVanServer();
     showToast();
   }).catch(function(e) {
     errEl.textContent = "Fout bij opslaan: " + e.message;
@@ -607,44 +632,128 @@ function renderWoorden() {
 }
 
 function maakCard(w) {
+  var id = w.id;
   var card = document.createElement("div");
   card.className = "woord-card";
-  card.id = "card-" + w.id;
+  card.id = "card-" + id;
 
-  var imgHtml = w.afbeelding
-    ? '<img id="imgbox-' + w.id + '" src="' + escH(w.afbeelding) + '" class="img-preview" '
-      + 'onerror="imgFout(\'' + w.id + '\')" onload="imgOk(\'' + w.id + '\')" '
-      + 'onclick="focusUrl(\'' + w.id + '\')" title="Klik om URL aan te passen">'
-    : '<div class="img-broken" id="imgbox-' + w.id + '" onclick="focusUrl(\'' + w.id + '\')" title="URL toevoegen">'
-      + '<i class="fa-solid fa-image" style="font-size:1.3rem;opacity:.3;"></i>Geen foto</div>';
+  // Card top
+  var cardTop = document.createElement("div");
+  cardTop.className = "card-top";
 
-  card.innerHTML =
-    '<div class="card-top">' +
-      '<div>' +
-        '<div class="woord-title">' + escH(w.woord) + '</div>' +
-        '<div class="woord-datum">' + datumTekst(w.aangemaakt) + '</div>' +
-      '</div>' +
-      '<div class="card-actions">' +
-        '<button class="btn-icon ai-btn" onclick="openAiModal(\'' + w.id + '\')">' +
-          '<i class="fa-solid fa-wand-magic-sparkles"></i> AI</button>' +
-        '<button class="btn-icon danger" onclick="verwijderWoord(\'' + w.id + '\',\'' + escH(w.woord) + '\')">' +
-          '<i class="fa-solid fa-trash"></i></button>' +
-      '</div>' +
-    '</div>' +
-    '<div class="card-fields">' +
-      '<div class="field-group"><label>Betekenis</label>' +
-        '<textarea oninput="updateVeld(\'' + w.id + '\',\'betekenis\',this.value)">' + escH(w.betekenis || "") + '</textarea></div>' +
-      '<div class="field-group"><label>Voorbeeldzin</label>' +
-        '<textarea oninput="updateVeld(\'' + w.id + '\',\'zin\',this.value)">' + escH(w.zin || "") + '</textarea></div>' +
-    '</div>' +
-    '<div class="card-img-row">' +
-      imgHtml +
-      '<div class="field-group" style="flex:1;">' +
-        '<label>Afbeelding URL <span id="url-st-' + w.id + '"></span></label>' +
-        '<input type="url" id="url-inp-' + w.id + '" value="' + escH(w.afbeelding || "") + '" '
-          + 'placeholder="https://…" oninput="updateUrl(\'' + w.id + '\',this.value)">' +
-      '</div>' +
-    '</div>';
+  var titleDiv = document.createElement("div");
+  var titleEl = document.createElement("div");
+  titleEl.className = "woord-title";
+  titleEl.textContent = w.woord;
+  var datumEl = document.createElement("div");
+  datumEl.className = "woord-datum";
+  datumEl.textContent = datumTekst(w.aangemaakt);
+  titleDiv.appendChild(titleEl);
+  titleDiv.appendChild(datumEl);
+
+  var actionsDiv = document.createElement("div");
+  actionsDiv.className = "card-actions";
+
+  var aiBtn = document.createElement("button");
+  aiBtn.className = "btn-icon ai-btn";
+  aiBtn.innerHTML = '<i class="fa-solid fa-wand-magic-sparkles"></i> AI';
+  aiBtn.addEventListener("click", (function(wid){ return function(){ openAiModal(wid); }; })(id));
+
+  var delBtn = document.createElement("button");
+  delBtn.className = "btn-icon danger";
+  delBtn.innerHTML = '<i class="fa-solid fa-trash"></i>';
+  delBtn.addEventListener("click", (function(wid, wnaam){ return function(){
+    openConfirm("Woord verwijderen",
+      "Weet je zeker dat je \"" + wnaam + "\" wilt verwijderen?",
+      function(){
+        // Verwijder eerst lokaal zodat UI meteen reageert
+        alleWoorden = alleWoorden.filter(function(w){ return w.id !== wid; });
+        renderWoorden();
+        document.getElementById("topbar-sub").textContent = alleWoorden.length + " woorden opgeslagen";
+        showToast("🗑 Woord verwijderd");
+        // Dan pas Firestore — na 300ms wacht voor server-side
+        setTimeout(function(){
+          db.collection("woordenschat").doc(wid).delete()
+            .catch(function(e){
+              alert("Verwijderen in database mislukt: " + e.message);
+              // Herlaad als het fout ging
+              herlaadVanServer();
+            });
+        }, 300);
+      });
+  }; })(id, w.woord));
+
+  actionsDiv.appendChild(aiBtn);
+  actionsDiv.appendChild(delBtn);
+  cardTop.appendChild(titleDiv);
+  cardTop.appendChild(actionsDiv);
+  card.appendChild(cardTop);
+
+  // Tekstvelden
+  var fieldsDiv = document.createElement("div");
+  fieldsDiv.className = "card-fields";
+
+  var betGroup = document.createElement("div");
+  betGroup.className = "field-group";
+  betGroup.innerHTML = "<label>Betekenis</label>";
+  var betTa = document.createElement("textarea");
+  betTa.value = w.betekenis || "";
+  betTa.addEventListener("input", (function(wid){ return function(){ updateVeld(wid,"betekenis",this.value); }; })(id));
+  betGroup.appendChild(betTa);
+
+  var zinGroup = document.createElement("div");
+  zinGroup.className = "field-group";
+  zinGroup.innerHTML = "<label>Voorbeeldzin</label>";
+  var zinTa = document.createElement("textarea");
+  zinTa.value = w.zin || "";
+  zinTa.addEventListener("input", (function(wid){ return function(){ updateVeld(wid,"zin",this.value); }; })(id));
+  zinGroup.appendChild(zinTa);
+
+  fieldsDiv.appendChild(betGroup);
+  fieldsDiv.appendChild(zinGroup);
+  card.appendChild(fieldsDiv);
+
+  // Afbeelding rij
+  var imgRow = document.createElement("div");
+  imgRow.className = "card-img-row";
+
+  // Imgbox
+  var imgbox;
+  if (w.afbeelding) {
+    imgbox = document.createElement("img");
+    imgbox.className = "img-preview";
+    imgbox.id = "imgbox-" + id;
+    imgbox.title = "Klik om URL aan te passen";
+    imgbox.src = w.afbeelding;
+    imgbox.addEventListener("error", (function(wid){ return function(){ imgFout(wid); }; })(id));
+    imgbox.addEventListener("load",  (function(wid){ return function(){ imgOk(wid);  }; })(id));
+    imgbox.addEventListener("click", (function(wid){ return function(){ focusUrl(wid); }; })(id));
+  } else {
+    imgbox = document.createElement("div");
+    imgbox.className = "img-broken";
+    imgbox.id = "imgbox-" + id;
+    imgbox.title = "URL toevoegen";
+    imgbox.innerHTML = '<i class="fa-solid fa-image" style="font-size:1.3rem;opacity:.3;"></i>Geen foto';
+    imgbox.addEventListener("click", (function(wid){ return function(){ focusUrl(wid); }; })(id));
+  }
+
+  var urlGroup = document.createElement("div");
+  urlGroup.className = "field-group";
+  urlGroup.style.flex = "1";
+  var urlLabel = document.createElement("label");
+  urlLabel.innerHTML = 'Afbeelding URL <span id="url-st-' + id + '"></span>';
+  var urlInput = document.createElement("input");
+  urlInput.type = "url";
+  urlInput.id = "url-inp-" + id;
+  urlInput.value = w.afbeelding || "";
+  urlInput.placeholder = "https://…";
+  urlInput.addEventListener("input", (function(wid){ return function(){ updateUrl(wid, this.value); }; })(id));
+  urlGroup.appendChild(urlLabel);
+  urlGroup.appendChild(urlInput);
+
+  imgRow.appendChild(imgbox);
+  imgRow.appendChild(urlGroup);
+  card.appendChild(imgRow);
 
   return card;
 }
@@ -725,23 +834,24 @@ function openAiModal(woordId) {
   document.getElementById("ai-result").style.display = "none";
   document.getElementById("ai-error").style.display = "none";
   document.getElementById("ai-overneem-btn").style.display = "none";
-  document.getElementById("ai-modal").classList.add("open");
+  document.getElementById("ai-modal").style.display = "flex";
 
   var SYSTEEM = "Je bent een leerkracht in het buitengewoon onderwijs (België) die woordverklaringen schrijft voor leerlingen van 11-13 jaar met leermoeilijkheden en een beperkte woordenschat.\n\nRegels:\n- Schrijf altijd in het Nederlands\n- Gebruik KORTE, eenvoudige zinnen (max 12 woorden per zin)\n- Gebruik GEEN moeilijke woorden in je uitleg\n- Wees concreet en beeldend\n- De betekenis mag maximaal 2 zinnen zijn\n- De voorbeeldzin gebruikt het woord in een herkenbare, alledaagse situatie (thuis, school, vrienden)\n\nAntwoord ENKEL met geldige JSON, geen uitleg, geen markdown:\n{\"betekenis\": \"...\", \"zin\": \"...\"}";
 
-  var url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=" + encodeURIComponent(apiKey);
-
-  fetch(url, {
+  fetch("https://api.groq.com/openai/v1/chat/completions", {
     method: "POST",
     headers: {
-      "Content-Type": "application/json"
+      "Content-Type": "application/json",
+      "Authorization": "Bearer " + apiKey
     },
     body: JSON.stringify({
-      system_instruction: { parts: [{ text: SYSTEEM }] },
-      contents: [{
-        parts: [{ text: "Geef een eenvoudige betekenis en een voorbeeldzin voor het woord: " + woordTekst }]
-      }],
-      generationConfig: { temperature: 0.4, maxOutputTokens: 300 }
+      model: "llama-3.3-70b-versatile",
+      temperature: 0.4,
+      max_tokens: 300,
+      messages: [
+        { role: "system", content: SYSTEEM },
+        { role: "user", content: "Geef een eenvoudige betekenis en een voorbeeldzin voor het woord: " + woordTekst }
+      ]
     })
   })
   .then(function(r) {
@@ -750,7 +860,7 @@ function openAiModal(woordId) {
   })
   .then(function(data) {
     var tekst = "";
-    try { tekst = data.candidates[0].content.parts[0].text || ""; } catch(e) {}
+    try { tekst = data.choices[0].message.content || ""; } catch(e) {}
     tekst = tekst.replace(/```json|```/g, "").trim();
     var parsed = JSON.parse(tekst);
     document.getElementById("ai-bet-out").value = parsed.betekenis || "";
@@ -787,7 +897,7 @@ function neemAiOver() {
   closeAiModal();
 }
 
-function closeAiModal() { document.getElementById("ai-modal").classList.remove("open"); }
+function closeAiModal() { document.getElementById("ai-modal").style.display = "none"; }
 
 // ════════════════════════════════════════════
 // CONFIRM MODAL
@@ -796,10 +906,14 @@ function openConfirm(titel, tekst, cb) {
   document.getElementById("confirm-title").textContent = titel;
   document.getElementById("confirm-text").textContent = tekst;
   confirmCb = cb;
-  document.getElementById("confirm-modal").classList.add("open");
+  document.getElementById("confirm-modal").style.display = "flex";
 }
-function closeConfirm() { document.getElementById("confirm-modal").classList.remove("open"); confirmCb = null; }
-function confirmAction() { closeConfirm(); if (confirmCb) confirmCb(); }
+function closeConfirm() { document.getElementById("confirm-modal").style.display = "none"; confirmCb = null; }
+function confirmAction() {
+  var cb = confirmCb;   // bewaar callback VOOR closeConfirm hem op null zet
+  closeConfirm();
+  if (cb) cb();
+}
 
 // ════════════════════════════════════════════
 // HELPERS
