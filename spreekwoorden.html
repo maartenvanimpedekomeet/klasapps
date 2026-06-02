@@ -1,0 +1,661 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Spreekwoorden Trainer</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/canvas-confetti/1.6.0/confetti.browser.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Bungee&family=Lexend:wght@400;700&display=swap');
+        :root { --bg-color: #0f172a; --card-bg: #1e293b; }
+        body { font-family: 'Lexend', sans-serif; background-color: var(--bg-color); color: #f1f5f9; overflow-x: hidden; }
+        .bungee { font-family: 'Bungee', cursive; }
+        .glass { background: rgba(30,41,59,0.8); backdrop-filter: blur(12px); border: 2px solid rgba(255,255,255,0.1); }
+        .option-card { transition: all 0.2s cubic-bezier(0.4,0,0.2,1); cursor: pointer; border: 2px solid rgba(255,255,255,0.05); }
+        .option-card:hover:not(.disabled) { transform: translateY(-3px); background: #334155; border-color: #3b82f6; }
+        .correct { background-color: #16a34a !important; border-color: #4ade80 !important; animation: pulse 0.5s; color: white; }
+        .wrong   { background-color: #dc2626 !important; border-color: #f87171 !important; animation: shake 0.5s; color: white; }
+        @keyframes shake  { 0%,100%{transform:translateX(0);} 25%{transform:translateX(-8px);} 75%{transform:translateX(8px);} }
+        @keyframes pulse  { 0%{transform:scale(1);} 50%{transform:scale(1.05);} 100%{transform:scale(1);} }
+        @keyframes spin   { to { transform: rotate(360deg); } }
+        @keyframes floating { 0%,100%{transform:translateY(0);} 50%{transform:translateY(-15px);} }
+        .timer-bar  { transition: width 0.1s linear; }
+        .floating   { animation: floating 4s ease-in-out infinite; }
+        /* .hidden = Tailwind — enkel voor game-schermen, NIET voor login/save */
+    </style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-4">
+
+<!-- LOGIN SCHERM (fixed overlay) -->
+<div id="login-screen" style="position:fixed;inset:0;z-index:9999;background:linear-gradient(135deg,#0f172a,#1e3a5f);display:flex;align-items:center;justify-content:center;padding:20px;">
+  <div style="background:#1e293b;border:2px solid rgba(255,255,255,0.1);border-radius:24px;padding:2.5rem 2rem;width:100%;max-width:380px;box-shadow:0 25px 50px rgba(0,0,0,0.5);text-align:center;display:flex;flex-direction:column;gap:14px;">
+    <div style="font-size:3rem">📚</div>
+    <h1 style="font-size:1.5rem;font-weight:900;color:#f1f5f9;margin:0;" class="bungee">Spreekwoorden Trainer</h1>
+    <p style="color:#94a3b8;font-size:.9rem;margin:0;">Voer je naam en code in</p>
+    <div id="klas-err" style="display:none;color:#fca5a5;font-size:.85rem;font-weight:700;background:rgba(220,38,38,0.2);border:1px solid #f87171;padding:8px 12px;border-radius:8px;"></div>
+    <input type="text" id="klas-naam" placeholder="Jouw voornaam"
+      style="width:100%;padding:14px;border:2px solid rgba(255,255,255,0.1);border-radius:12px;font-family:inherit;font-size:1rem;font-weight:600;text-align:center;outline:none;background:#0f172a;color:#f1f5f9;"
+      autocomplete="off" autocapitalize="words">
+    <input type="password" id="klas-code" placeholder="Jouw code"
+      style="width:100%;padding:14px;border:2px solid rgba(255,255,255,0.1);border-radius:12px;font-family:inherit;font-size:1rem;font-weight:600;text-align:center;outline:none;background:#0f172a;color:#f1f5f9;"
+      autocomplete="off">
+    <button id="login-btn"
+      style="width:100%;background:linear-gradient(to right,#2563eb,#06b6d4);color:white;border:none;border-radius:12px;padding:14px;font-family:inherit;font-size:1rem;font-weight:700;cursor:pointer;">
+      Inloggen
+    </button>
+    <button id="gast-btn"
+      style="width:100%;background:transparent;border:2px solid rgba(255,255,255,0.15);border-radius:12px;padding:12px;font-family:inherit;font-size:.9rem;font-weight:700;color:#94a3b8;cursor:pointer;">
+      Doorgaan als gast (geen opslag)
+    </button>
+    <div style="font-size:.75rem;color:#475569;">
+      <a href="dashboard.html" style="color:#38bdf8;font-weight:700;text-decoration:none;">Leerkracht? Klik hier</a>
+    </div>
+  </div>
+</div>
+
+<!-- User badge (style.display — nooit classList) -->
+<div id="user-badge" style="display:none;position:fixed;top:12px;right:14px;z-index:50;align-items:center;gap:8px;background:rgba(30,41,59,0.95);border:1px solid rgba(59,130,246,0.4);border-radius:10px;padding:5px 12px;font-size:.8rem;font-weight:700;color:#93c5fd;backdrop-filter:blur(8px);">
+  <span id="user-badge-naam"></span>
+  <button id="logout-btn" style="background:none;border:none;cursor:pointer;color:#475569;font-size:.75rem;padding:2px 6px;border-left:1px solid rgba(255,255,255,0.1);margin-left:4px;font-family:inherit;">↩ Uit</button>
+</div>
+<div id="gast-badge" style="display:none;position:fixed;top:12px;right:14px;z-index:50;background:rgba(30,41,59,0.95);border:1px solid rgba(234,179,8,0.4);border-radius:8px;padding:4px 10px;font-size:.75rem;font-weight:700;color:#fbbf24;backdrop-filter:blur(8px);">👤 Gast – niet opgeslagen</div>
+
+<!-- Upload status (style.display — nooit classList) -->
+<div id="upload-status" style="display:none;position:fixed;bottom:20px;left:50%;transform:translateX(-50%);z-index:50;padding:10px 20px;border-radius:12px;border:2px solid;font-size:.85rem;font-weight:700;text-align:center;white-space:nowrap;backdrop-filter:blur(8px);">
+  <span id="upload-spinner" style="display:inline-block;width:13px;height:13px;border:2px solid rgba(255,255,255,0.2);border-top-color:#38bdf8;border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle;margin-right:6px;"></span>
+  <span id="upload-status-text">Bezig met opslaan...</span>
+</div>
+
+<!-- GAME CONTAINER -->
+<div id="game-container" class="w-full max-w-2xl">
+
+    <!-- START SCHERM -->
+    <div id="start-screen" class="glass p-10 rounded-3xl shadow-2xl text-center border-blue-500/30">
+        <div class="mb-6 floating inline-block"><span class="text-7xl">📖</span></div>
+        <h1 class="text-4xl md:text-5xl font-black mb-4 bungee tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-cyan-400">
+            SPREEKWOORDEN TRAINER
+        </h1>
+        <p class="text-slate-300 text-lg mb-8">Oefen alle spreekwoorden tot het einde!</p>
+        <div class="space-y-4 mb-10 text-left">
+            <p class="text-sm font-bold uppercase text-blue-400 tracking-widest ml-1">Welke groepen oefen je?</p>
+            <div id="group-selectors" class="grid grid-cols-1 md:grid-cols-2 gap-3"></div>
+        </div>
+        <button onclick="startGame()" class="w-full bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 text-white font-black py-5 rounded-2xl shadow-xl transition-all transform hover:scale-[1.03] active:scale-95 text-2xl tracking-wide">
+            START NU!
+        </button>
+    </div>
+
+    <!-- GAME SCHERM -->
+    <div id="game-screen" class="hidden">
+        <div class="flex justify-between items-end mb-4 px-2">
+            <div class="text-left">
+                <p class="text-[10px] uppercase font-bold text-slate-500 tracking-widest mb-1">Voortgang</p>
+                <div id="progress-text" class="text-xl font-bold text-slate-200">0 / 0</div>
+            </div>
+            <div class="text-right">
+                <div id="combo-badge" class="hidden bg-yellow-500 text-slate-900 text-xs font-black px-3 py-1 rounded-full animate-bounce mb-1">SUPER COMBO!</div>
+                <div class="text-3xl font-black bungee text-blue-400" id="score-display">0</div>
+            </div>
+        </div>
+        <div class="w-full bg-slate-800 h-4 rounded-full overflow-hidden mb-8 border-2 border-slate-700">
+            <div id="timer" class="timer-bar h-full bg-gradient-to-r from-blue-500 to-cyan-400 w-full"></div>
+        </div>
+        <div class="glass p-8 md:p-12 rounded-[2.5rem] shadow-2xl relative overflow-hidden text-center">
+            <h2 class="text-cyan-400 font-bold text-sm uppercase tracking-[0.2em] mb-6">Wat betekent dit?</h2>
+            <div id="question-box" class="text-2xl md:text-4xl font-bold mb-10 leading-tight"></div>
+            <div id="options" class="grid gap-4"></div>
+        </div>
+    </div>
+
+    <!-- RESULTAAT SCHERM -->
+    <div id="result-screen" class="hidden glass p-8 md:p-12 rounded-3xl shadow-2xl text-center">
+        <h2 id="result-title" class="text-4xl font-black mb-2 bungee">FINISH!</h2>
+        <p id="result-msg" class="text-slate-300 text-lg mb-4 italic"></p>
+        <div id="groups-played-badge" class="mb-6 flex flex-wrap gap-2 justify-center"></div>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-8">
+            <div class="bg-slate-800/80 p-4 rounded-2xl border border-white/5">
+                <p class="text-[10px] uppercase font-bold text-slate-500 mb-1 tracking-widest text-center">Score</p>
+                <p id="final-score" class="text-2xl font-black text-blue-400">0</p>
+            </div>
+            <div class="bg-slate-800/80 p-4 rounded-2xl border border-white/5">
+                <p class="text-[10px] uppercase font-bold text-slate-500 mb-1 tracking-widest text-center">Beste Combo</p>
+                <p id="final-combo" class="text-2xl font-black text-yellow-500">0</p>
+            </div>
+            <div class="bg-slate-800/80 p-4 rounded-2xl border border-white/5">
+                <p class="text-[10px] uppercase font-bold text-slate-500 mb-1 tracking-widest text-center">Juist</p>
+                <p id="stats-correct" class="text-2xl font-black text-green-500">0</p>
+            </div>
+            <div class="bg-slate-800/80 p-4 rounded-2xl border border-white/5">
+                <p class="text-[10px] uppercase font-bold text-slate-500 mb-1 tracking-widest text-center">Fout</p>
+                <p id="stats-wrong" class="text-2xl font-black text-red-500">0</p>
+            </div>
+        </div>
+        <button onclick="resetGame()" class="w-full bg-blue-500 text-white font-black py-5 rounded-2xl hover:bg-blue-400 shadow-lg transition-all transform active:scale-95 text-xl">
+            NOG EEN KEER
+        </button>
+    </div>
+
+</div><!-- /game-container -->
+
+
+<!-- GAME LOGICA -->
+<script>
+const proverbs = [
+    { g:1, p:"Hij slaat de spijker op de kop",           b:"Hij zegt het goed." },
+    { g:1, p:"De handen uit de mouwen steken",            b:"Hard aan het werk gaan." },
+    { g:1, p:"Je beste beentje voorzetten",               b:"Je uiterste best doen." },
+    { g:1, p:"De kar trekken",                            b:"De leiding hebben." },
+    { g:1, p:"Het voortouw nemen",                        b:"De leiding nemen." },
+    { g:1, p:"Wie A zegt, moet ook B zeggen",             b:"Als je aan iets begint, moet je het afmaken." },
+    { g:1, p:"Een schot in de roos",                      b:"Precies raak, goed gelukt." },
+    { g:1, p:"Het is een fluitje van een cent",           b:"Heel erg gemakkelijk." },
+    { g:1, p:"Alles op alles zetten",                     b:"Je uiterste best doen om iets te bereiken." },
+    { g:1, p:"Ergens je schouders onder zetten",          b:"Met volle inzet aan iets beginnen." },
+    { g:1, p:"Met de hakken over de sloot",               b:"Net op het nippertje geslaagd zijn." },
+    { g:1, p:"Je mannetje staan",                         b:"Jezelf goed weten te verdedigen of te redden." },
+    { g:1, p:"De puntjes op de i zetten",                 b:"De laatste kleine details afwerken." },
+    { g:1, p:"Iets onder de knie hebben",                 b:"Iets goed kunnen of begrijpen." },
+    { g:1, p:"Van aanpakken weten",                       b:"Hard kunnen werken." },
+    { g:1, p:"Het ijzer smeden als het heet is",          b:"Meteen actie ondernemen op het juiste moment." },
+    { g:1, p:"De laatste loodjes wegen het zwaarst",      b:"Het einde van een opdracht is het lastigst." },
+    { g:1, p:"Oefening baart kunst",                      b:"Door veel te oefenen word je ergens goed in." },
+    { g:1, p:"Je plan trekken",                           b:"Voor jezelf kunnen zorgen." },
+    { g:1, p:"Doorzetten tot het bittere eind",           b:"Volhouden tot het helemaal klaar is." },
+    { g:2, p:"Het loopt in de soep.",                     b:"Het loopt helemaal mis." },
+    { g:2, p:"Door de mand vallen",                       b:"Betrapt worden." },
+    { g:2, p:"Tegen de lamp lopen",                       b:"Betrapt worden." },
+    { g:2, p:"Met de gebakken peren zitten",              b:"Last hebben van de gevolgen." },
+    { g:2, p:"Dat zal nog een staartje krijgen",          b:"Er zullen nog gevolgen komen." },
+    { g:2, p:"Olie op het vuur gooien",                   b:"Iets doen waardoor anderen nog bozer worden." },
+    { g:2, p:"Roet in het eten gooien",                   b:"De pret verpesten." },
+    { g:2, p:"De sigaar zijn",                            b:"Het slachtoffer zijn." },
+    { g:2, p:"Helaas pindakaas",                          b:"Jammer, maar er is niets meer aan te doen." },
+    { g:2, p:"In nesten zitten",                          b:"In moeilijkheden zitten." },
+    { g:2, p:"In de puree zitten",                        b:"In de problemen zitten." },
+    { g:2, p:"De bui zien hangen",                        b:"Weten dat er problemen gaan komen." },
+    { g:2, p:"Met je hoofd in de wolken lopen",           b:"Niet opletten of dromerig zijn." },
+    { g:2, p:"Buiten de boot vallen",                     b:"Niet mee mogen doen." },
+    { g:2, p:"Een koude douche",                          b:"Een tegenvaller die je niet had verwacht." },
+    { g:2, p:"Ergens naar kunnen fluiten",                b:"Inzien dat je iets niet zal krijgen." },
+    { g:2, p:"Je boekje te buiten gaan",                  b:"Iets doen wat niet mag." },
+    { g:2, p:"De draad kwijt zijn",                       b:"Niet meer weten waar het over gaat." },
+    { g:2, p:"In de knoop zitten",                        b:"In de war zijn." },
+    { g:2, p:"De mist in gaan",                           b:"Volledig mislukken." },
+    { g:3, p:"Met de deur in huis vallen",                b:"Meteen ter zake komen, meteen beginnen." },
+    { g:3, p:"Iets uit de duim zuigen",                   b:"Iets verzinnen." },
+    { g:3, p:"Doen alsof je neus bloedt",                 b:"Doen alsof je van niets weet." },
+    { g:3, p:"Met de mond vol tanden staan",              b:"Niet weten wat je moet zeggen." },
+    { g:3, p:"Van de hak op de tak springen",             b:"Steeds over iets anders beginnen praten." },
+    { g:3, p:"De aap komt uit de mouw",                   b:"Het wordt duidelijk wat er aan de hand is." },
+    { g:3, p:"Iemand zwart maken",                        b:"Slechte dingen over iemand zeggen." },
+    { g:3, p:"Iemand bij de neus nemen",                  b:"Iemand foppen." },
+    { g:3, p:"Iemand blaasjes wijsmaken",                 b:"Iemand leugens doen geloven." },
+    { g:3, p:"Ik ben één en al oor",                      b:"Ik ga goed luisteren." },
+    { g:3, p:"Aan de bel trekken",                        b:"Duidelijk maken dat iets niet klopt." },
+    { g:3, p:"Je hart luchten",                           b:"Zeggen wat je vervelend vindt." },
+    { g:3, p:"Iemand uit de tent lokken",                 b:"Iemand uitdagen tot hij iets zegt of doet." },
+    { g:3, p:"Geen blad voor de mond nemen",              b:"Direct zeggen wat je denkt." },
+    { g:3, p:"Iemand een hak zetten",                     b:"Iemand opzettelijk benadelen." },
+    { g:3, p:"De draak steken met iemand",                b:"Grapjes maken over iemand." },
+    { g:3, p:"Iemand iets op de mouw spelden",            b:"Iemand iets wijsmaken." },
+    { g:3, p:"Over koetjes en kalfjes praten",            b:"Praten over onbelangrijke dingen." },
+    { g:3, p:"Tegen dovemansoren praten",                 b:"Iets zeggen waar niemand naar luistert." },
+    { g:3, p:"Met de billen bloot gaan",                  b:"De volledige waarheid vertellen." },
+    { g:4, p:"In de wolken zijn",                         b:"Erg blij zijn." },
+    { g:4, p:"Een gat in de lucht springen",              b:"Heel erg blij zijn." },
+    { g:4, p:"In je nopjes zijn",                         b:"Blij of tevreden zijn." },
+    { g:4, p:"Uit zijn vel springen",                     b:"Heel erg boos zijn." },
+    { g:4, p:"Door het lint gaan",                        b:"Heel erg boos worden." },
+    { g:4, p:"Slecht gemutst zijn",                       b:"Een slecht humeur hebben." },
+    { g:4, p:"Lange tenen hebben",                        b:"Snel beledigd zijn." },
+    { g:4, p:"Naast je schoenen lopen",                   b:"Overdreven trots zijn." },
+    { g:4, p:"Het hart op de tong hebben",                b:"Direct zeggen wat je voelt of denkt." },
+    { g:4, p:"Een hart onder de riem steken",             b:"Iemand moed inspreken." },
+    { g:4, p:"Je hart vasthouden",                        b:"Bang zijn dat iets misgaat." },
+    { g:4, p:"Als een paal boven water staan",            b:"Het is volkomen zeker." },
+    { g:4, p:"Ieder diertje zijn pleziertje",             b:"Iedereen heeft zijn eigen manier om plezier te maken." },
+    { g:4, p:"Een blok aan het been zijn",                b:"Iemand tot last zijn." },
+    { g:4, p:"Niet verder kijken dan je neus lang is",    b:"Niet goed nadenken." },
+    { g:4, p:"Voor aap staan",                            b:"Gek of belachelijk gevonden worden." },
+    { g:4, p:"Op hete kolen zitten",                      b:"Ongeduldig of zenuwachtig zijn." },
+    { g:4, p:"Liefde maakt blind",                        b:"Gebreken van de ander niet zien door verliefdheid." },
+    { g:4, p:"Het zwarte schaap",                         b:"Iemand die niet wordt geaccepteerd." },
+    { g:4, p:"Iets op je lever hebben",                   b:"Iets willen vertellen wat je dwarszit." },
+    { g:5, p:"Voor een appel en een ei",                  b:"Voor weinig geld." },
+    { g:5, p:"Voor dag en dauw",                          b:"Heel vroeg in de ochtend." },
+    { g:5, p:"Als een lopend vuurtje",                    b:"Heel snel." },
+    { g:5, p:"Van A tot Z",                               b:"Van begin tot einde." },
+    { g:5, p:"Aan de lopende band",                       b:"Steeds opnieuw." },
+    { g:5, p:"Het hoofd boven water houden",              b:"Net genoeg hebben om te overleven." },
+    { g:5, p:"Op grote voet leven",                       b:"Veel geld uitgeven." },
+    { g:5, p:"Bont en blauw",                             b:"Veel blauwe plekken hebben." },
+    { g:5, p:"Bepakt en gezakt",                          b:"Klaar staan met veel bagage." },
+    { g:5, p:"De benen nemen",                            b:"Ervandoor gaan." },
+    { g:5, p:"De pijp uitgaan",                           b:"Doodgaan." },
+    { g:5, p:"Iemand onder de duim houden",               b:"Iemand de baas zijn." },
+    { g:5, p:"Een appeltje voor de dorst",                b:"Sparen voor later." },
+    { g:5, p:"Dat varkentje zullen we wel even wassen",   b:"Dat probleem lossen we op." },
+    { g:5, p:"Slapende honden wakker maken",              b:"Iets oprakelen wat nadeel kan geven." },
+    { g:5, p:"De bloemetjes buiten zetten",               b:"Uitbundig feestvieren." },
+    { g:5, p:"Met iemand een appeltje te schillen hebben",b:"Iets rechtzetten met iemand op wie je boos bent." },
+    { g:5, p:"Boontje komt om zijn loontje",              b:"Wie straf verdient, krijgt die ook." },
+    { g:5, p:"Aan de grond zitten",                       b:"Geen geld meer hebben." },
+    { g:5, p:"Boter bij de vis",                          b:"Meteen moeten betalen." }
+];
+
+const GROUP_LABELS = {
+    1: "Groep 1 – Inzet & werken",
+    2: "Groep 2 – Problemen & mislukken",
+    3: "Groep 3 – Praten & communicatie",
+    4: "Groep 4 – Gevoel & emoties",
+    5: "Groep 5 – Geld, tijd & hoeveelheid"
+};
+
+// NOOIT 'history' als variabelenaam gebruiken — window.history conflict!
+let quizLog        = [];
+let currentProverb = null;
+let playedGroups   = [];
+
+// Herhaling-systeem: spreekwoorden komen terug tot ze juist zijn
+let currentPool    = [];      // wachtrij (FIFO) - fout → achteraan
+let uniqueTotal    = 0;       // totaal unieke spreekwoorden (= max score noemer)
+let score          = 0;       // punten: +1 eerste keer juist, +0.5 na één fout, +0 daarna
+let proverbStatus  = {};      // per spreekwoord: 'unseen'|'wrong-once'|'wrong-repeat'|'correct'
+
+let timerInterval;
+let timeLeft       = 100;
+let isAnswered     = false;
+
+function triggerConfetti(params) {
+    if (typeof confetti === 'function') confetti(params);
+}
+
+function init() {
+    const container = document.getElementById('group-selectors');
+    container.innerHTML = '';
+    for (let i = 1; i <= 5; i++) {
+        container.innerHTML += `
+            <label class="flex items-center p-4 rounded-2xl bg-slate-800/40 border border-white/10 cursor-pointer hover:bg-slate-700/60 transition group">
+                <input type="checkbox" class="w-6 h-6 rounded border-slate-600 bg-slate-900 text-blue-500 group-check" value="${i}" ${i===1?'checked':''}>
+                <span class="ml-4 font-bold text-slate-200">${GROUP_LABELS[i]}</span>
+            </label>`;
+    }
+}
+
+function startGame() {
+    const selectedGroups = Array.from(document.querySelectorAll('.group-check:checked')).map(el => parseInt(el.value));
+    if (selectedGroups.length === 0) return;
+
+    playedGroups  = selectedGroups;
+    quizLog       = [];
+    proverbStatus = {};
+    score         = 0;
+
+    // Bouw initiële wachtrij willekeurig
+    const initial = proverbs.filter(p => selectedGroups.includes(p.g)).sort(() => Math.random() - 0.5);
+    currentPool   = initial.slice();   // kopie als queue
+    uniqueTotal   = initial.length;    // noemer voor score en percentage
+
+    // Initialiseer status per spreekwoord
+    initial.forEach(p => { proverbStatus[p.p] = 'unseen'; });
+
+    document.getElementById('start-screen').classList.add('hidden');
+    document.getElementById('game-screen').classList.remove('hidden');
+    updateUI();
+    nextQuestion();
+}
+
+function updateUI() {
+    // Toon score + hoeveel unieke spreekwoorden al correct
+    const correctUniek = Object.values(proverbStatus).filter(s => s === 'correct').length;
+    const scoreDisplay = score % 1 === 0 ? score : score.toFixed(1);
+    document.getElementById('score-display').innerText = scoreDisplay + ' / ' + uniqueTotal;
+    document.getElementById('progress-text').innerText = correctUniek + ' / ' + uniqueTotal + ' ✓';
+    // Verberg combo-badge (niet meer gebruikt)
+    document.getElementById('combo-badge').classList.add('hidden');
+}
+
+function nextQuestion() {
+    if (currentPool.length === 0) return endGame();
+    isAnswered     = false;
+    currentProverb = currentPool.shift();  // FIFO: eerste uit de wachtrij
+
+    const qBox = document.getElementById('question-box');
+    qBox.innerText = `"${currentProverb.p}"`;
+    qBox.dataset.answer = currentProverb.b;
+    updateUI();
+
+    // Timer-balk (visueel — geen puntenaftrek)
+    timeLeft = 100;
+    clearInterval(timerInterval);
+    timerInterval = setInterval(() => {
+        timeLeft -= 0.2;
+        document.getElementById('timer').style.width = timeLeft + '%';
+        if (timeLeft <= 0) { clearInterval(timerInterval); handleWrong(null, true); }
+    }, 50);
+
+    const optionsDiv = document.getElementById('options');
+    optionsDiv.innerHTML = '';
+    let decoys  = proverbs.filter(p => p.b !== currentProverb.b).sort(() => Math.random() - 0.5).slice(0, 3).map(p => p.b);
+    let choices = [currentProverb.b, ...decoys].sort(() => Math.random() - 0.5);
+    choices.forEach(c => {
+        const btn = document.createElement('div');
+        btn.className = 'option-card glass p-5 rounded-2xl font-bold text-slate-200 text-lg';
+        btn.innerText = c;
+        btn.onclick = () => handleChoice(c, btn);
+        optionsDiv.appendChild(btn);
+    });
+}
+
+function handleChoice(choice, element) {
+    if (isAnswered) return;
+    isAnswered = true;
+    clearInterval(timerInterval);
+    const correct = document.getElementById('question-box').dataset.answer;
+
+    if (choice === correct) {
+        element.classList.add('correct');
+
+        const prevStatus = proverbStatus[currentProverb.p];
+        let punten = 0;
+        if (prevStatus === 'unseen')     punten = 1;    // eerste keer juist → +1
+        if (prevStatus === 'wrong-once') punten = 0.5;  // juist na één fout → +0.5
+        // wrong-repeat of verder → 0 punten (spreekwoord was al minstens 2× fout)
+
+        score += punten;
+        proverbStatus[currentProverb.p] = 'correct';
+
+        quizLog.push({
+            spreekwoord:   currentProverb.p,
+            groep:         currentProverb.g,
+            groepLabel:    GROUP_LABELS[currentProverb.g],
+            gekozen:       choice,
+            juistAntwoord: correct,
+            isJuist:       true,
+            punten:        punten,
+            statusVoor:    prevStatus
+        });
+
+        if (punten === 1)   triggerConfetti({ particleCount: 40, spread: 50, origin: { y: 0.7 } });
+        if (punten === 0.5) triggerConfetti({ particleCount: 20, spread: 40, origin: { y: 0.7 } });
+
+        setTimeout(() => { updateUI(); nextQuestion(); }, 1000);
+    } else {
+        handleWrong(element, false);
+    }
+}
+
+function handleWrong(element, isTimeout) {
+    const correct = document.getElementById('question-box').dataset.answer;
+    if (element) element.classList.add('wrong');
+    Array.from(document.querySelectorAll('.option-card')).forEach(card => {
+        if (card.innerText === correct) card.classList.add('correct');
+    });
+
+    // Status bijwerken
+    const prevStatus = proverbStatus[currentProverb.p];
+    proverbStatus[currentProverb.p] = (prevStatus === 'unseen') ? 'wrong-once' : 'wrong-repeat';
+
+    // Spreekwoord achteraan de wachtrij plaatsen (herhaling)
+    currentPool.push(currentProverb);
+
+    quizLog.push({
+        spreekwoord:   currentProverb.p,
+        groep:         currentProverb.g,
+        groepLabel:    GROUP_LABELS[currentProverb.g],
+        gekozen:       isTimeout ? '(tijd verlopen)' : (element ? element.innerText : '?'),
+        juistAntwoord: correct,
+        isJuist:       false,
+        punten:        0,
+        statusVoor:    prevStatus
+    });
+
+    updateUI();
+    setTimeout(() => { nextQuestion(); }, 2000);
+}
+
+function endGame() {
+    clearInterval(timerInterval);
+    document.getElementById('game-screen').classList.add('hidden');
+    document.getElementById('result-screen').classList.remove('hidden');
+
+    const pct = uniqueTotal > 0 ? Math.round((score / uniqueTotal) * 100) : 0;
+    const scoreDisplay = score % 1 === 0 ? score : score.toFixed(1);
+    const aantalFouten = quizLog.filter(q => !q.isJuist).length;
+    const aantalJuist  = Object.values(proverbStatus).filter(s => s === 'correct').length;
+
+    document.getElementById('final-score').innerText   = scoreDisplay + ' / ' + uniqueTotal;
+    document.getElementById('final-combo').innerText   = pct + '%';
+    document.getElementById('stats-correct').innerText = aantalJuist;
+    document.getElementById('stats-wrong').innerText   = aantalFouten;
+
+    let msg = "";
+    if      (pct >= 90) msg = "Wauw! Je bent een absolute taal-meester! 🏆";
+    else if (pct >= 70) msg = "Super gedaan! De meeste spreekwoorden ken je! ✨";
+    else if (pct >= 50) msg = "Goed op weg! Nog even oefenen. 💪";
+    else                msg = "Blijf oefenen, je komt er wel! 📚";
+    document.getElementById('result-msg').innerText = msg;
+
+    const badgeContainer = document.getElementById('groups-played-badge');
+    badgeContainer.innerHTML = '';
+    playedGroups.forEach(g => {
+        const span = document.createElement('span');
+        span.style.cssText = "background:rgba(59,130,246,0.2);border:1px solid rgba(59,130,246,0.4);color:#93c5fd;padding:4px 12px;border-radius:99px;font-size:.78rem;font-weight:700;";
+        span.textContent = GROUP_LABELS[g];
+        badgeContainer.appendChild(span);
+    });
+
+    if (pct >= 70) triggerConfetti({ particleCount: 150, spread: 70 });
+    saveToFirestore(pct);
+}
+
+function resetGame() {
+    document.getElementById('result-screen').classList.add('hidden');
+    document.getElementById('start-screen').classList.remove('hidden');
+    init();
+}
+
+window.onload = init;
+</script>
+
+
+<!-- FIREBASE compat SDK — zelfde als alle andere apps -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script>
+firebase.initializeApp({
+    apiKey:"AIzaSyCnQDVVAlK6jE-PPUUediRJMTbN0xqrLDE",
+    authDomain:"klaswebsite-database.firebaseapp.com",
+    projectId:"klaswebsite-database",
+    storageBucket:"klaswebsite-database.firebasestorage.app",
+    messagingSenderId:"42912327282",
+    appId:"1:42912327282:web:f13f2c706f6c42c115c4eb"
+});
+var _db          = firebase.firestore();
+var _currentUser = null;
+var _isGuest     = false;
+var COL_NAME     = "taal_spreekwoorden"; // vak = TAAL (niet wiskunde)
+
+// ── UPLOAD STATUS (style.display — NOOIT classList) ───────────────────────
+function setUploadStatus(type, msg) {
+    var box     = document.getElementById("upload-status");
+    var text    = document.getElementById("upload-status-text");
+    var spinner = document.getElementById("upload-spinner");
+    box.style.display    = "block";
+    spinner.style.display = (type === "loading") ? "inline-block" : "none";
+    if (type === "loading") {
+        box.style.background  = "rgba(30,41,59,0.95)";
+        box.style.borderColor = "rgba(59,130,246,0.5)";
+        box.style.color       = "#93c5fd";
+    } else if (type === "ok") {
+        box.style.background  = "rgba(22,163,74,0.25)";
+        box.style.borderColor = "rgba(74,222,128,0.5)";
+        box.style.color       = "#4ade80";
+    } else {
+        box.style.background  = "rgba(220,38,38,0.25)";
+        box.style.borderColor = "rgba(248,113,113,0.5)";
+        box.style.color       = "#f87171";
+    }
+    text.textContent = msg;
+    console.log("[spreekwoorden] " + type + ": " + msg);
+    if (type !== "loading") setTimeout(function(){ box.style.display = "none"; }, 5000);
+}
+
+// ── LOGIN (openApp gebruikt ALLEEN style.display — nooit h()/s() of classList) ─
+function klasLogin() {
+    var naam = (document.getElementById("klas-naam").value||"").trim().toLowerCase();
+    var code = (document.getElementById("klas-code").value||"").trim();
+    var err  = document.getElementById("klas-err");
+    err.style.display = "none";
+    if (!naam) { err.textContent="Vul je voornaam in."; err.style.display="block"; return; }
+    if (!code) { err.textContent="Vul je code in.";    err.style.display="block"; return; }
+
+    var btn = document.getElementById("login-btn");
+    btn.textContent = "Even wachten..."; btn.disabled = true;
+
+    _db.collection("leerlingen").doc(naam).get().then(function(doc) {
+        btn.textContent = "Inloggen"; btn.disabled = false;
+        if (!doc.exists) { err.textContent="Naam niet gevonden."; err.style.display="block"; return; }
+        var data = doc.data();
+        if (data.code !== code) { err.textContent="Verkeerde code."; err.style.display="block"; return; }
+        window._leerlingNaam = data.weergavenaam || (naam.charAt(0).toUpperCase() + naam.slice(1));
+        window._leerlingId   = naam;
+        _currentUser = { uid: naam, displayName: window._leerlingNaam };
+        _isGuest = false;
+        openApp(window._leerlingNaam, false);
+    }).catch(function(e) {
+        btn.textContent = "Inloggen"; btn.disabled = false;
+        err.textContent = "Fout: " + e.message; err.style.display = "block";
+    });
+}
+
+function klasGast() {
+    _isGuest = true; _currentUser = null;
+    window._leerlingId   = null;
+    window._leerlingNaam = "Gast";
+    openApp("Gast", true);
+}
+
+function openApp(naam, isGast) {
+    document.getElementById("login-screen").style.display = "none";
+    if (isGast) {
+        document.getElementById("gast-badge").style.display  = "block";
+        document.getElementById("user-badge").style.display  = "none";
+    } else {
+        document.getElementById("user-badge-naam").textContent = naam;
+        document.getElementById("user-badge").style.display    = "flex";
+        document.getElementById("gast-badge").style.display    = "none";
+    }
+}
+
+function doLogout() {
+    _currentUser = null; _isGuest = false;
+    window._leerlingId = null; window._leerlingNaam = null;
+    document.getElementById("login-screen").style.display = "flex";
+    document.getElementById("user-badge").style.display   = "none";
+    document.getElementById("gast-badge").style.display   = "none";
+    document.getElementById("klas-naam").value = "";
+    document.getElementById("klas-code").value = "";
+    document.getElementById("klas-err").style.display = "none";
+    document.getElementById("login-btn").disabled = false;
+    document.getElementById("login-btn").textContent = "Inloggen";
+}
+
+// ── OPSLAAN (alle oefeningen — vak TAAL, alle groepen zichtbaar) ──────────
+async function saveToFirestore(accuracy) {
+    if (_isGuest || !_currentUser) {
+        setUploadStatus("error", "❌ Niet opgeslagen: je speelt als gast.");
+        return;
+    }
+    if (!window._leerlingId) {
+        setUploadStatus("error", "❌ Geen leerling-ID. Log opnieuw in.");
+        return;
+    }
+
+    setUploadStatus("loading", "Bezig met opslaan...");
+
+    var groepenLabel   = playedGroups.map(function(g){ return GROUP_LABELS[g]; }).join(", ");
+    var groepenKort    = playedGroups.map(function(g){ return "Groep " + g; }).join(", ");
+    var scoreNum       = Math.round(score * 10) / 10;  // afronden op 1 decimaal
+
+    // Foutenanalyse per groep
+    var foutenPerGroep = {};
+    quizLog.filter(function(q){ return !q.isJuist; }).forEach(function(q) {
+        var lbl = q.groepLabel || ("Groep " + q.groep);
+        foutenPerGroep[lbl] = (foutenPerGroep[lbl]||0) + 1;
+    });
+    var extraOefenen = Object.entries(foutenPerGroep)
+        .sort(function(a,b){ return b[1]-a[1]; })
+        .map(function(e){ return e[0] + " (" + e[1] + "x fout)"; });
+
+    var record = {
+        leerlingId:      window._leerlingId,
+        leerlingNaam:    window._leerlingNaam || "Leerling",
+        vak:             "Taal",
+        mode:            groepenKort,
+        groepenGeoefend: playedGroups,
+        groepenLabel:    groepenLabel,
+        score:           scoreNum,       // bijv. 17.5
+        totalQ:          uniqueTotal,    // bijv. 20
+        percentage:      accuracy,       // % op basis van score/uniqueTotal
+        juist:           Object.values(proverbStatus).filter(function(s){return s==='correct';}).length,
+        fout:            quizLog.filter(function(q){return !q.isJuist;}).length,
+        tijd:            "",
+        hintsGebruikt:   0,
+        timestamp:       firebase.firestore.FieldValue.serverTimestamp(),
+        foutenAnalyse: {
+            extraOefenen:       extraOefenen,
+            foutenPerCategorie: foutenPerGroep
+        },
+        vragen: quizLog.map(function(q, i) {
+            return {
+                vraagNr:          i + 1,
+                vraag:            q.spreekwoord   || "",
+                categorie:        q.groepLabel    || "Spreekwoorden",
+                antwoordLeerling: q.gekozen       || "(leeg)",
+                juistAntwoord:    q.juistAntwoord || "",
+                isJuist:          q.isJuist       || false,
+                hintGebruikt:     false,
+                punten:           q.punten        || 0,
+                tijdSeconden:     0
+            };
+        })
+    };
+
+    console.log("[spreekwoorden] Opslaan naar " + COL_NAME + ":", record);
+
+    try {
+        var docRef = await _db.collection(COL_NAME).add(record);
+
+        // Registry — dashboard ontdekt collection automatisch, inclusief vak-info
+        await _db.collection("toets_registry").doc(COL_NAME).set({
+            naam:       "Taal – Spreekwoorden",
+            collection: COL_NAME,
+            vak:        "Taal",
+            lastSeen:   firebase.firestore.FieldValue.serverTimestamp()
+        }, { merge: true });
+
+        setUploadStatus("ok", "✅ Score opgeslagen! (ID: " + docRef.id.substring(0,8) + "…)");
+        console.log("[spreekwoorden] Succes! ID:", docRef.id);
+    } catch(e) {
+        console.error("[spreekwoorden] Fout:", e.code, e.message);
+        var uitleg = e.message || "Onbekende fout";
+        if (e.code === "permission-denied") uitleg = "Geen schrijfrechten. Contacteer de leerkracht.";
+        else if (e.code === "unavailable")  uitleg = "Geen internetverbinding. Probeer opnieuw.";
+        setUploadStatus("error", "❌ Opslaan mislukt: " + uitleg);
+    }
+}
+
+// ── EVENT LISTENERS (één DOMContentLoaded — nooit split over script-blokken) ──
+document.addEventListener("DOMContentLoaded", function() {
+    document.getElementById("login-btn").addEventListener("click", klasLogin);
+    document.getElementById("gast-btn").addEventListener("click", klasGast);
+    document.getElementById("logout-btn").addEventListener("click", doLogout);
+    document.getElementById("klas-naam").addEventListener("keypress", function(e) { if (e.key==="Enter") klasLogin(); });
+    document.getElementById("klas-code").addEventListener("keypress", function(e) { if (e.key==="Enter") klasLogin(); });
+});
+</script>
+
+</body>
+</html>
