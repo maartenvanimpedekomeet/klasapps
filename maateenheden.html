@@ -436,7 +436,7 @@
                     selectedQuestions.push(remainingPool.pop());
                 }
             }
-            else if (mode === 'ewicht') {
+            else if (mode === 'gewicht') {
                 state.totalQ = 10;
                 const units = MATEN_GROEPEN.gewicht; // g, kg, t
                 const categoryPool = QUESTION_POOL.filter(q => q.category === 'gewicht' && q.unit !== 'mg');
@@ -623,9 +623,13 @@
                 fb.innerHTML = "<span class='text-emerald-600 text-base'><i class='fa-solid fa-circle-check'></i> Schitterend! Dat is de juiste maat.</span>";
                 confetti({ particleCount: 35, spread: 60, origin: { y: 0.8 } });
             } else {
+            // We verhogen de foutensteller alleen als deze specifieke vraag nog niet eerder fout was
                 if (!state.huidigeVraagFoutGeweest) {
                     state.foutenAantal++;
-                }
+                    state.huidigeVraagFoutGeweest = true; // <-- DEZE REGEL VOEGEN WE TOE!
+    }
+    fb.innerHTML = `<span class='text-rose-600 text-base'><i class='fa-solid fa-circle-xmark'></i> Oei! Het juiste antwoord was: <b class='text-slate-800 text-lg font-black'>${q.unit}</b>.</span>`;
+}
                 fb.innerHTML = `<span class='text-rose-600 text-base'><i class='fa-solid fa-circle-xmark'></i> Oei! Het juiste antwoord was: <b class='text-slate-800 text-lg font-black'>${q.unit}</b>.</span>`;
             }
 
