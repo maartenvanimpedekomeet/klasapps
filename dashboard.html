@@ -64,6 +64,7 @@ input,select{font-family:inherit;}
     <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
       <button class="tab-btn active" id="tab-overzicht" onclick="showTab('overzicht')">📋 Feed</button>
       <button class="tab-btn" id="tab-klas" onclick="showTab('klas')">👥 Per leerling</button>
+      <button class="tab-btn" id="tab-matrix" onclick="showTab('matrix')">📊 Klasmatrix</button>
       <button class="tab-btn" id="tab-leerlingen" onclick="showTab('leerlingen')">⚙️ Leerlingen</button>
       <button class="btn btn-outline" onclick="exportCSV()" style="padding:8px 14px;font-size:.8rem;">⬇️ CSV export</button>
       <button class="btn btn-outline" onclick="loadAll()" style="padding:8px 14px;font-size:.8rem;">🔄 Vernieuwen</button>
@@ -76,13 +77,16 @@ input,select{font-family:inherit;}
     <div id="tab-overzicht-content">
       <div class="card">
         <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:16px;">
-          <h2 style="font-size:1rem;font-weight:800;color:#1e3a5f;margin:0;">🕐 Laatste 30 ingestuurde toetsen</h2>
+          <h2 style="font-size:1rem;font-weight:800;color:#1e3a5f;margin:0;">🕐 Laatste 30 ingestuurde resultaten</h2>
           <div style="display:flex;gap:8px;flex-wrap:wrap;">
             <select id="feed-filter-leerling" onchange="renderFeed()" style="padding:8px 12px;border:2px solid #e5e7eb;border-radius:.75rem;font-weight:700;font-size:.82rem;outline:none;">
               <option value="">Alle leerlingen</option>
             </select>
-            <select id="feed-filter-app" onchange="renderFeed()" style="padding:8px 12px;border:2px solid #e5e7eb;border-radius:.75rem;font-weight:700;font-size:.82rem;outline:none;">
+            <select id="feed-filter-vak" onchange="onVakFilterChange()" style="padding:8px 12px;border:2px solid #e5e7eb;border-radius:.75rem;font-weight:700;font-size:.82rem;outline:none;">
               <option value="">Alle vakken</option>
+            </select>
+            <select id="feed-filter-app" onchange="renderFeed()" style="padding:8px 12px;border:2px solid #e5e7eb;border-radius:.75rem;font-weight:700;font-size:.82rem;outline:none;">
+              <option value="">Alle vakonderdelen</option>
             </select>
           </div>
         </div>
@@ -116,8 +120,8 @@ input,select{font-family:inherit;}
       </div>
     </div>
 
-    <!-- TAB: LEERLINGEN BEHEREN -->
-    <div id="tab-leerlingen-content" class="hidden">
+      <!-- TAB: LEERLINGEN -->
+      <div id="tab-leerlingen-content" class="hidden">
       <div class="card">
         <h2 style="font-size:1rem;font-weight:800;color:#1e3a5f;margin-bottom:14px;">➕ Nieuwe leerling toevoegen</h2>
         <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;">
@@ -135,10 +139,118 @@ input,select{font-family:inherit;}
         <h2 style="font-size:1rem;font-weight:800;color:#1e3a5f;margin-bottom:14px;">👥 Huidige leerlingen</h2>
         <div id="leerlingen-lijst"></div>
       </div>
-    </div>
+    </div><!-- /tab-leerlingen -->
 
-  </div>
-</div>
+  </div><!-- /max-w -->
+</div><!-- /main-app -->
+
+      <!-- TAB: MATRIX -->
+      <div id="tab-matrix-content" class="hidden">
+        <!-- Filters balk -->
+        <div class="card" style="margin-bottom:12px;">
+          <div style="display:flex;align-items:center;flex-wrap:wrap;gap:12px;">
+            <div style="font-size:1rem;font-weight:800;color:#1e3a5f;">📊 Klasmatrix</div>
+            <!-- Vak filter -->
+            <select id="mx-filter-vak" onchange="renderMatrix()" style="padding:8px 12px;border:2px solid #e5e7eb;border-radius:.75rem;font-weight:700;font-size:.82rem;outline:none;">
+              <option value="">Alle vakken</option>
+            </select>
+            <!-- Begin datum -->
+            <div style="display:flex;align-items:center;gap:6px;">
+              <label style="font-size:.78rem;font-weight:700;color:#6b7280;white-space:nowrap;">Van:</label>
+              <input type="date" id="mx-datum-van" onchange="renderMatrix()" style="padding:7px 10px;border:2px solid #e5e7eb;border-radius:.75rem;font-size:.82rem;font-weight:600;outline:none;font-family:inherit;">
+            </div>
+            <!-- Eind datum -->
+            <div style="display:flex;align-items:center;gap:6px;">
+              <label style="font-size:.78rem;font-weight:700;color:#6b7280;white-space:nowrap;">Tot:</label>
+              <input type="date" id="mx-datum-tot" onchange="renderMatrix()" style="padding:7px 10px;border:2px solid #e5e7eb;border-radius:.75rem;font-size:.82rem;font-weight:600;outline:none;font-family:inherit;">
+            </div>
+            <button onclick="mxResetDatums()" class="btn btn-outline" style="padding:7px 12px;font-size:.78rem;">🗓 Alles</button>
+            <button onclick="mxVorigeWeek()" class="btn btn-outline" style="padding:7px 12px;font-size:.78rem;">Vorige week</button>
+            <button onclick="mxDezeMaand()" class="btn btn-outline" style="padding:7px 12px;font-size:.78rem;">Deze maand</button>
+            <div style="margin-left:auto;display:flex;gap:8px;">
+              <button onclick="mxToggleVolgorde()" class="btn btn-outline" id="mx-volgorde-btn" style="padding:7px 12px;font-size:.78rem;">✏️ Volgorde aanpassen</button>
+              <button onclick="mxSlaVolgordeOp()" id="mx-opslaan-btn" class="btn btn-green hidden" style="padding:7px 12px;font-size:.78rem;">💾 Opslaan</button>
+            </div>
+          </div>
+          <div id="mx-edit-hint" class="hidden" style="margin-top:10px;padding:8px 14px;background:#fef9c3;border:1px solid #fde68a;border-radius:8px;font-size:.8rem;font-weight:600;color:#92400e;">
+            ↕ Sleep rijen (leerinhoud) en kolommen (leerlingen) om de volgorde aan te passen. Klik "Opslaan" als je klaar bent.
+          </div>
+        </div>
+        <!-- Matrix tabel -->
+        <div id="mx-container" style="overflow-x:auto;overflow-y:auto;max-height:75vh;border-radius:1rem;box-shadow:0 4px 20px rgba(0,0,0,0.07);">
+          <div id="mx-inhoud" style="text-align:center;padding:2rem;color:#9ca3af;"><span class="spinner"></span> Laden...</div>
+        </div>
+      </div>
+
+    </div><!-- /max-w -->
+  </div><!-- /main-app -->
+
+<!-- CSS voor matrix -->
+<style>
+.mx-table { border-collapse:collapse; min-width:100%; background:white; }
+.mx-th-leerling {
+  position:sticky; top:0; z-index:20;
+  background:#1e3a5f; color:white;
+  padding:10px 14px; font-size:.82rem; font-weight:800;
+  white-space:nowrap; min-width:110px; text-align:center;
+  border-right:1px solid rgba(255,255,255,0.15);
+  cursor:grab;
+}
+.mx-th-leerling:first-child { left:0; z-index:30; min-width:200px; text-align:left; cursor:default; }
+.mx-th-vak {
+  position:sticky; left:0; z-index:15;
+  background:#f8fafc; color:#374151;
+  padding:10px 14px; font-size:.82rem; font-weight:700;
+  white-space:nowrap; border-right:2px solid #e5e7eb;
+  border-top:1px solid #e5e7eb;
+}
+.mx-th-vak-groep {
+  position:sticky; left:0; z-index:15;
+  background:#1e3a5f; color:white;
+  padding:8px 14px; font-size:.75rem; font-weight:800;
+  text-transform:uppercase; letter-spacing:.06em;
+  border-top:2px solid rgba(255,255,255,0.15);
+}
+.mx-cel {
+  padding:6px 10px; text-align:center; vertical-align:middle;
+  border:1px solid #f1f5f9; min-width:110px; min-height:44px;
+  position:relative;
+}
+.mx-cel-goed    { background:#f0fdf4; }
+.mx-cel-ok      { background:#fefce8; }
+.mx-cel-slecht  { background:#fff1f2; }
+.mx-cel-leeg    { background:#f8fafc; }
+.mx-badge {
+  display:inline-block;
+  padding:2px 8px; border-radius:99px;
+  font-size:.72rem; font-weight:800; white-space:nowrap; cursor:help;
+}
+.mx-badge-goed   { background:#dcfce7; color:#166534; }
+.mx-badge-ok     { background:#fef9c3; color:#713f12; }
+.mx-badge-slecht { background:#fee2e2; color:#991b1b; }
+.mx-fouten {
+  font-size:.68rem; color:#6b7280; font-weight:600;
+  margin-top:3px; line-height:1.3; max-width:100px;
+  text-overflow:ellipsis; overflow:hidden; white-space:nowrap;
+}
+.mx-datum { font-size:.65rem; color:#9ca3af; margin-top:2px; }
+.mx-dragging { opacity:0.4; }
+.mx-drag-over-col { border-left:3px solid #1d4ed8 !important; }
+.mx-drag-over-row { border-top:2px solid #1d4ed8 !important; }
+.mx-th-leerling[draggable="true"] { cursor:grab; }
+.mx-th-vak[draggable="true"] { cursor:grab; }
+/* Tooltip */
+.mx-tooltip {
+  display:none; position:absolute; bottom:calc(100% + 6px); left:50%;
+  transform:translateX(-50%); z-index:100;
+  background:#1e293b; color:white; border-radius:8px;
+  padding:8px 12px; font-size:.75rem; font-weight:600;
+  white-space:nowrap; box-shadow:0 4px 16px rgba(0,0,0,0.25);
+  pointer-events:none; min-width:160px; max-width:260px;
+  white-space:normal; line-height:1.4;
+}
+.mx-cel:hover .mx-tooltip { display:block; }
+</style>
 
 <!-- CSV EXPORT MODAL -->
 <div id="csv-modal" style="display:none;position:fixed;inset:0;z-index:80;background:rgba(0,0,0,.45);align-items:center;justify-content:center;padding:20px;">
@@ -194,11 +306,13 @@ firebase.initializeApp({
 const db = firebase.firestore();
 
 // ════════════════════════════════════════════════════════════════════════════
-// CONFIG — voeg hier optioneel labels toe voor nieuwe toetsen.
-// De app zal AUTOMATISCH alle *_toets collections ontdekken en laden.
-// Toevoegen van een label hier is enkel voor een mooiere weergave, NOOIT verplicht.
+// CONFIG
+// Voeg hier optioneel labels toe voor nieuwe apps. NOOIT verplicht —
+// de registry ontdekt nieuwe apps automatisch. Labels zijn enkel voor
+// mooiere weergave.
 // ════════════════════════════════════════════════════════════════════════════
 const COLLECTION_LABELS = {
+  // Wiskunde
   'getalbegrip_toets':       'Getalbegrip',
   'breuken_toets':           'Breuken',
   'geld_toets':              'Geld rekenen',
@@ -209,9 +323,34 @@ const COLLECTION_LABELS = {
   'gewicht_toets':           'Gewichten',
   'komma_toets':             'Kommagetallen',
   'tabellen_toets':          'Tabellen en Grafieken',
-  'kahoot_toets':            'Leren Leren — Klasquiz',
-  'etreavoir_toets':         'Frans — être & avoir',
+  'cijferen_toets':          'Cijferen (gehele getallen)',
+  'cijferen_komma_toets':    'Cijferen (kommagetallen)',
+  'lengte_toets':            'Lengtematen',
+  'juiste_maat_toets':       'De Juiste Maateenheid',
+  'hoofdrekenen_10_toets':         'Hoofdrekenen tot 10',
+  'hoofdrekenen_20_toets':         'Hoofdrekenen tot 20',
+  'hoofdrekenen_100_toets':        'Hoofdrekenen tot 100',
+  'hoofdrekenen_tafels_toets':     'Maaltafels',
+  'hoofdrekenen_deeltafels_toets': 'Deeltafels',
+  'rekenmachine_toets':      'Rekenmachine & Rekentaal',
+  // Taal
+  'taal_spreekwoorden':      'Spreekwoorden',
+  // Voeg nieuwe apps toe voor een mooier label, bv:
+  // 'taal_werkwoorden':     'Werkwoorden',
+  // 'wo_water':             'Water (WO)',
 };
+
+// Mapping collection → vak.
+// Wordt automatisch aangevuld via toets_registry (veld 'vak').
+// Hier enkel nodig als fallback voor apps zonder 'vak' veld in Firestore.
+const COLLECTION_VAK_FALLBACK = {
+  'taal_spreekwoorden': 'Taal',
+  // Alle overige collections worden als 'Wiskunde' beschouwd (fallback)
+};
+
+// Volgorde van vakken in de filter-dropdown.
+// Nieuwe vakken die via de registry binnenkomen, verschijnen automatisch daarna.
+const VAK_VOLGORDE = ['Wiskunde','Taal','WO','Leren Leren','Frans','SEO'];
 
 const MODE_LABELS = {
   'mix':'Grote Mix','aflezen':'Aflezen','herleiden':'Herleiden',
@@ -228,7 +367,18 @@ var knownCols    = [];      // Auto-ontdekte collections
 
 // ── HELPERS ───────────────────────────────────────────────────────────────
 function colLabel(col) {
-  return COLLECTION_LABELS[col] || col.replace(/_toets$/,'').replace(/_/g,' ');
+  return COLLECTION_LABELS[col] || col.replace(/_toets$/,'').replace(/^taal_/,'').replace(/^wo_/,'').replace(/_/g,' ');
+}
+function colVak(col, rawVak) {
+  // Prioriteit: 1. veld in Firestore-document, 2. fallback-tabel, 3. prefix-herkenning, 4. Wiskunde
+  if (rawVak) return rawVak;
+  if (COLLECTION_VAK_FALLBACK[col]) return COLLECTION_VAK_FALLBACK[col];
+  if (col.startsWith('taal_')) return 'Taal';
+  if (col.startsWith('wo_'))   return 'WO';
+  if (col.startsWith('ll_'))   return 'Leren Leren';
+  if (col.startsWith('seo_'))  return 'SEO';
+  if (col.startsWith('fr_'))   return 'Frans';
+  return 'Wiskunde'; // standaard fallback
 }
 function modeLabel(m) { return m ? (MODE_LABELS[m] || m) : ''; }
 function pctBadge(pct) {
@@ -240,6 +390,7 @@ function normRecord(raw, col) {
   return Object.assign({}, raw, {
     _col:         col,
     _label:       colLabel(col),
+    _vak:         colVak(col, raw.vak),
     _ts:          raw.timestamp ? raw.timestamp.seconds * 1000 : 0,
     _pct:         raw.percentage || 0,
     _score:       raw.score || 0,
@@ -274,10 +425,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // ── TABS ──────────────────────────────────────────────────────────────────
 function showTab(tab) {
-  ['overzicht','klas','leerlingen'].forEach(function(t) {
+  ['overzicht','klas','matrix','leerlingen'].forEach(function(t) {
     document.getElementById('tab-'+t+'-content').classList.toggle('hidden', t!==tab);
     document.getElementById('tab-'+t).classList.toggle('active', t===tab);
   });
+  if (tab === 'matrix') renderMatrix();
 }
 
 // ── LOAD ALL DATA ─────────────────────────────────────────────────────────
@@ -316,65 +468,136 @@ async function initieelLeerlingenAanmaken() {
   await loadLeerlingen();
 }
 
-// AUTO-DISCOVERY van collections:
-// Combineert de vaste COLLECTION_LABELS met collections die eerder ontdekt werden
-// en opgeslagen zijn in localStorage. Zo hoef je nooit manueel iets aan te passen:
-// zodra een nieuwe *_toets collection data bevat, verschijnt die automatisch.
+// AUTO-DISCOVERY via toets_registry:
+// Elke toets-app schrijft bij het opslaan naar toets_registry/{colName}.
+// Het dashboard leest die collectie eerst → alle ooit gebruikte collections
+// verschijnen automatisch, zonder dat je COLLECTION_LABELS ooit hoeft aan te passen.
 async function loadAllScores() {
   allRecords = [];
   knownCols  = [];
 
-  // Startlijst: alle geconfigureerde + eerder ontdekte collections
-  var toLoad = Object.keys(COLLECTION_LABELS);
+  // Stap 1: Lees de registry (collections die ooit een score hebben opgeslagen)
+  var registryCollections = [];
   try {
-    var cached = JSON.parse(localStorage.getItem('db_known_cols') || '[]');
+    var regSnap = await db.collection("toets_registry").get();
+    regSnap.forEach(function(doc) {
+      var d = doc.data();
+      if (d.collection) registryCollections.push({ col: d.collection, label: d.naam || colLabel(d.collection) });
+    });
+    console.log("[dashboard] Registry: " + registryCollections.map(function(r){return r.col;}).join(", "));
+  } catch(e) { console.log("[dashboard] Registry niet beschikbaar:", e.message); }
+
+  // Stap 2: Combineer registry + COLLECTION_LABELS + eerder ontdekte collections
+  var toLoad = Object.keys(COLLECTION_LABELS);
+  registryCollections.forEach(function(r) {
+    if (toLoad.indexOf(r.col) < 0) toLoad.push(r.col);
+  });
+  try {
+    var cached = JSON.parse(localStorage.getItem("db_known_cols") || "[]");
     cached.forEach(function(c) { if (toLoad.indexOf(c) < 0) toLoad.push(c); });
   } catch(e) {}
 
-  console.log('[loadAllScores] Collections te laden:', toLoad);
+  console.log("[loadAllScores] Collections te laden:", toLoad);
 
   for (var col of toLoad) {
     try {
-      var snap = await db.collection(col).orderBy('timestamp','desc').limit(500).get();
+      var snap = await db.collection(col).orderBy("timestamp","desc").limit(500).get();
       if (!snap.empty) {
         knownCols.push(col);
         snap.forEach(function(doc) {
           var r = normRecord(doc.data(), col);
           if (r._leerlingId) allRecords.push(r);
         });
-        console.log('[loadAllScores]', col, '→', snap.size, 'records geladen');
+        console.log("[loadAllScores]", col, "→", snap.size, "records geladen");
       }
-    } catch(e) { console.log('[loadAllScores] Skip', col, '(bestaat nog niet)'); }
+    } catch(e) { console.log("[loadAllScores] Skip", col, "(bestaat nog niet)"); }
   }
 
-  // Sla ontdekte collections op voor volgende sessie
-  try { localStorage.setItem('db_known_cols', JSON.stringify(knownCols)); } catch(e) {}
-
-  // Sorteer: nieuwste eerst
+  try { localStorage.setItem("db_known_cols", JSON.stringify(knownCols)); } catch(e) {}
   allRecords.sort(function(a,b) { return b._ts - a._ts; });
-  console.log('[loadAllScores] Totaal geladen:', allRecords.length, 'records');
+  console.log("[loadAllScores] Totaal geladen:", allRecords.length, "records");
 }
 
 // ── FILTERS OPVULLEN ──────────────────────────────────────────────────────
-function populateFilters() {
-  var appOpts = '<option value="">Alle vakken</option>';
-  knownCols.forEach(function(c) {
-    appOpts += '<option value="'+c+'">'+colLabel(c)+'</option>';
+function getVakkenUitData() {
+  // Verzamel alle unieke vakken uit de data, gesorteerd via VAK_VOLGORDE
+  var vakSet = {};
+  allRecords.forEach(function(d) { vakSet[d._vak] = true; });
+  // Sorteer: eerst bekende vakken op volgorde, daarna nieuwe alfabetisch
+  var result = VAK_VOLGORDE.filter(function(v) { return vakSet[v]; });
+  Object.keys(vakSet).forEach(function(v) {
+    if (result.indexOf(v) < 0) result.push(v);
   });
+  return result;
+}
 
-  var lOpts = '<option value="">Alle leerlingen</option>';
-  leerlingen.forEach(function(l) {
-    lOpts += '<option value="'+l.naam+'">'+l.weergavenaam+'</option>';
+function getColsVoorVak(vak) {
+  // Geef alle collections terug die bij het gegeven vak horen (of alles als leeg)
+  if (!vak) return knownCols;
+  return knownCols.filter(function(c) {
+    return allRecords.some(function(d) { return d._col === c && d._vak === vak; });
   });
+}
+
+function onVakFilterChange() {
+  // Bij verandering van vak: vakonderdelen herfilteren, feed herrenderen
+  var vak = document.getElementById('feed-filter-vak').value;
+  var colSel = document.getElementById('feed-filter-app');
+  var oldVal = colSel.value;
+
+  var cols = getColsVoorVak(vak);
+  colSel.innerHTML = '<option value="">Alle vakonderdelen</option>';
+  cols.forEach(function(c) {
+    colSel.innerHTML += '<option value="'+c+'">'+colLabel(c)+'</option>';
+  });
+  // Behoud selectie als die nog geldig is
+  if (cols.indexOf(oldVal) >= 0) colSel.value = oldVal;
+  renderFeed();
+}
+
+function populateFilters() {
+  // ── Vakken ──
+  var vakken = getVakkenUitData();
+  var vakOpts = '<option value="">Alle vakken</option>';
+  vakken.forEach(function(v) { vakOpts += '<option value="'+v+'">'+v+'</option>'; });
+  var vakSel = document.getElementById('feed-filter-vak');
+  var vakVal = vakSel ? vakSel.value : '';
+  if (vakSel) { vakSel.innerHTML = vakOpts; if (vakVal) vakSel.value = vakVal; }
+
+  // ── Vakonderdelen (gefilterd op huidig vak) ──
+  var curVak = vakSel ? vakSel.value : '';
+  var cols = getColsVoorVak(curVak);
+  var colOpts = '<option value="">Alle vakonderdelen</option>';
+  cols.forEach(function(c) { colOpts += '<option value="'+c+'">'+colLabel(c)+'</option>'; });
+
+  var allColOpts = '<option value="">Alle vakonderdelen</option>';
+  knownCols.forEach(function(c) { allColOpts += '<option value="'+c+'">'+colLabel(c)+'</option>'; });
 
   ['feed-filter-app','klas-filter-app','csv-app'].forEach(function(id) {
     var el = document.getElementById(id);
+    if (!el) return;
     var v = el.value;
-    el.innerHTML = appOpts;
-    el.value = v;
+    // feed-filter-app is cascaderend (gefilterd op vak), rest toont alles
+    el.innerHTML = (id === 'feed-filter-app') ? colOpts : allColOpts;
+    if (knownCols.indexOf(v) >= 0) el.value = v;
   });
+
+  // Matrix vak-filter
+  var mxVak = document.getElementById('mx-filter-vak');
+  if (mxVak) {
+    var mxVal = mxVak.value;
+    mxVak.innerHTML = '<option value="">Alle vakken</option>';
+    vakken.forEach(function(v) { mxVak.innerHTML += '<option value="'+v+'">'+v+'</option>'; });
+    if (mxVal) mxVak.value = mxVal;
+  }
+
+  // ── Leerlingen ──
+  var lOpts = '<option value="">Alle leerlingen</option>';
+  leerlingen.forEach(function(l) { lOpts += '<option value="'+l.naam+'">'+l.weergavenaam+'</option>'; });
+
   ['feed-filter-leerling','leerling-select','csv-leerling'].forEach(function(id) {
     var el = document.getElementById(id);
+    if (!el) return;
     var v = el.value;
     el.innerHTML = (id === 'leerling-select')
       ? '<option value="">-- Kies een leerling --</option>' + lOpts.replace('<option value="">Alle leerlingen</option>','')
@@ -384,12 +607,28 @@ function populateFilters() {
 }
 
 // ── RENDER FEED (laatste 30, chronologisch) ───────────────────────────────
+// Vak-badge kleuren
+var VAK_KLEUREN = {
+  'Wiskunde':     { bg:'#dbeafe', color:'#1d4ed8' },
+  'Taal':         { bg:'#dcfce7', color:'#15803d' },
+  'WO':           { bg:'#fef9c3', color:'#92400e' },
+  'Leren Leren':  { bg:'#f3e8ff', color:'#6d28d9' },
+  'Frans':        { bg:'#fce7f3', color:'#9d174d' },
+  'SEO':          { bg:'#ffedd5', color:'#c2410c' },
+};
+function vakBadgeStyle(vak) {
+  var k = VAK_KLEUREN[vak] || { bg:'#f1f5f9', color:'#475569' };
+  return 'background:'+k.bg+';color:'+k.color+';padding:2px 8px;border-radius:99px;font-size:.7rem;font-weight:800;white-space:nowrap;';
+}
+
 function renderFeed() {
   var filterL = document.getElementById('feed-filter-leerling').value;
+  var filterV = document.getElementById('feed-filter-vak') ? document.getElementById('feed-filter-vak').value : '';
   var filterA = document.getElementById('feed-filter-app').value;
 
   var records = allRecords.filter(function(d) {
     if (filterL && d._leerlingId !== filterL) return false;
+    if (filterV && d._vak !== filterV) return false;
     if (filterA && d._col !== filterA) return false;
     return true;
   }).slice(0, 30);
@@ -413,8 +652,11 @@ function renderFeed() {
     html += '<div style="width:38px;height:38px;border-radius:50%;background:#dbeafe;display:flex;align-items:center;justify-content:center;font-weight:900;color:#1d4ed8;font-size:1rem;flex-shrink:0;">'+lnaam[0].toUpperCase()+'</div>';
     html += '<div style="flex:1;min-width:0;">';
     html += '<div style="font-weight:800;color:#1e3a5f;font-size:.92rem;">'+lnaam+'</div>';
-    html += '<div style="font-size:.78rem;color:#6b7280;font-weight:600;">'+d._label+modeTxt+' · '+ts+'</div>';
-    html += '</div>';
+    html += '<div style="font-size:.78rem;color:#6b7280;font-weight:600;display:flex;align-items:center;gap:6px;flex-wrap:wrap;">';
+    html += '<span style="'+vakBadgeStyle(d._vak)+'">'+d._vak+'</span>';
+    html += '<span>'+d._label+modeTxt+'</span>';
+    html += '<span style="color:#9ca3af;">'+ts+'</span>';
+    html += '</div></div>';
     html += '<div style="text-align:right;flex-shrink:0;">';
     html += '<div style="font-size:1.1rem;font-weight:900;color:'+col+';">'+pct+'%</div>';
     html += '<div style="font-size:.75rem;color:#9ca3af;font-weight:600;">'+d._score+'/'+d._total+'</div>';
@@ -562,7 +804,10 @@ function openDetail(idx) {
   // Scoreblok
   html += '<div class="card"><div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:14px;">';
   html += '<div><div style="font-size:1rem;font-weight:800;color:#1e3a5f;">'+lnaam+'</div>';
-  html += '<div style="font-size:.82rem;color:#6b7280;">'+d._label+modeTxt+' · '+ts+'</div></div>';
+  html += '<div style="font-size:.82rem;color:#6b7280;display:flex;align-items:center;gap:6px;flex-wrap:wrap;">';
+  html += '<span style="'+vakBadgeStyle(d._vak)+'">'+d._vak+'</span>';
+  html += '<span>'+d._label+modeTxt+' · '+ts+'</span>';
+  html += '</div></div>';
   html += pctBadge(pct)+'</div>';
   html += '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;">';
   [{l:'Score',v:d._score+'/'+d._total},{l:'Percentage',v:pct+'%',c:col},{l:'Tijd',v:d._tijd||'—'},{l:'Hints',v:'💡 '+(d._hints||0)}].forEach(function(s){
@@ -711,13 +956,14 @@ function doExportCSV() {
 
   if (!rijen.length) { alert('Geen resultaten voor deze selectie.'); return; }
 
-  var lines = [['Datum','Leerling','Vak','Mode','Score','Totaal','Percentage','Tijd','Hints','Fouten_categorieen'].join(';')];
+  var lines = [['Datum','Leerling','Vak','Vakonderdeel','Mode','Score','Totaal','Percentage','Tijd','Hints','Fouten_categorieen'].join(';')];
   rijen.forEach(function(d) {
     var ts = d._ts ? new Date(d._ts).toLocaleString('nl-BE') : '';
     var fouten = (d.foutenAnalyse&&d.foutenAnalyse.extraOefenen) ? d.foutenAnalyse.extraOefenen.join(' | ') : '';
     lines.push([
       '"'+ts+'"',
       '"'+leerlingNaam(d._leerlingId)+'"',
+      '"'+(d._vak||'')+'"',
       '"'+d._label+'"',
       '"'+(modeLabel(d._mode)||'')+'"',
       d._score, d._total, d._pct,
@@ -732,7 +978,7 @@ function doExportCSV() {
   var url  = URL.createObjectURL(blob);
   var a    = document.createElement('a');
   a.href = url;
-  a.download = 'toetsen_'+(dagen>0?'laatste_'+dagen+'d':'alles')+'_'+new Date().toISOString().slice(0,10)+'.csv';
+  a.download = 'resultaten_'+(dagen>0?'laatste_'+dagen+'d':'alles')+'_'+new Date().toISOString().slice(0,10)+'.csv';
   document.body.appendChild(a); a.click();
   document.body.removeChild(a); URL.revokeObjectURL(url);
   document.getElementById('csv-modal').style.display = 'none';
@@ -772,6 +1018,359 @@ async function verwijderLeerling(naam,display) {
   if(!confirm('Ben je zeker dat je '+display+' wil verwijderen? Scores blijven bewaard.'))return;
   try{await db.collection('leerlingen').doc(naam).delete();await loadAll();}
   catch(e){alert('Fout: '+e.message);}
+}
+
+
+// ════════════════════════════════════════════════════════════════════════════
+// KLASMATRIX
+// ════════════════════════════════════════════════════════════════════════════
+
+// Standaard leerinhoudvolgorde — de gebruiker kan dit aanpassen via slepen
+// De sleutels zijn collection-namen of vak-labels
+var MX_STANDAARD_VOLGORDE_WISKUNDE = [
+  'hoofdrekenen_10_toets',
+  'hoofdrekenen_20_toets',
+  'hoofdrekenen_100_toets',
+  'hoofdrekenen_tafels_toets',
+  'hoofdrekenen_deeltafels_toets',
+  'rekenmachine_toets',
+  'geld_toets',
+  'getalbegrip_toets',
+  'cijferen_toets',
+  'lengte_toets',
+  'inhoudsmaten_toets',
+  'tabellen_toets',
+  'breuken_toets',
+  'meetkunde_toets',
+  'hoeken_meten_toets',
+  'komma_toets',
+  'cijferen_komma_toets',
+  'gewicht_toets',
+  'juiste_maat_toets',
+  'negatieve_getallen_toets',
+];
+
+var MX_STANDAARD_VOLGORDE_TAAL = [
+  'taal_spreekwoorden',
+];
+
+// Vak-kleur headers
+var MX_VAK_HEADER_KLEUR = {
+  'Wiskunde': '#1e3a5f',
+  'Taal':     '#14532d',
+  'WO':       '#78350f',
+  'Leren Leren': '#3b0764',
+  'Frans':    '#831843',
+  'SEO':      '#7c2d12',
+};
+
+// State voor drag-and-drop
+var mxEditMode  = false;
+var mxLeerlingVolgorde = [];  // array van leerling-ids
+var mxRijVolgorde = {};       // { 'Wiskunde': [col1, col2,...], 'Taal': [...] }
+var mxDragType  = null; // 'col' | 'row'
+var mxDragId    = null;
+var mxDragVak   = null;
+
+// Laad opgeslagen volgorde uit localStorage
+function mxLaadVolgorde() {
+  try {
+    var opgeslagen = JSON.parse(localStorage.getItem('mx_volgorde') || '{}');
+    if (opgeslagen.leerlingen) mxLeerlingVolgorde = opgeslagen.leerlingen;
+    if (opgeslagen.rijen) mxRijVolgorde = opgeslagen.rijen;
+  } catch(e) {}
+}
+
+function mxSlaVolgordeOp() {
+  try {
+    localStorage.setItem('mx_volgorde', JSON.stringify({
+      leerlingen: mxLeerlingVolgorde,
+      rijen: mxRijVolgorde
+    }));
+  } catch(e) {}
+  mxEditMode = false;
+  document.getElementById('mx-volgorde-btn').classList.remove('hidden');
+  document.getElementById('mx-opslaan-btn').classList.add('hidden');
+  document.getElementById('mx-edit-hint').classList.add('hidden');
+  renderMatrix();
+}
+
+function mxToggleVolgorde() {
+  mxEditMode = true;
+  document.getElementById('mx-volgorde-btn').classList.add('hidden');
+  document.getElementById('mx-opslaan-btn').classList.remove('hidden');
+  document.getElementById('mx-edit-hint').classList.remove('hidden');
+  renderMatrix();
+}
+
+function mxResetDatums() {
+  document.getElementById('mx-datum-van').value = '';
+  document.getElementById('mx-datum-tot').value = '';
+  renderMatrix();
+}
+
+function mxVorigeWeek() {
+  var nu = new Date();
+  var maandag = new Date(nu);
+  maandag.setDate(nu.getDate() - nu.getDay() - 6);
+  var zondag = new Date(maandag);
+  zondag.setDate(maandag.getDate() + 6);
+  document.getElementById('mx-datum-van').value = maandag.toISOString().slice(0,10);
+  document.getElementById('mx-datum-tot').value = zondag.toISOString().slice(0,10);
+  renderMatrix();
+}
+
+function mxDezeMaand() {
+  var nu = new Date();
+  var eerste = new Date(nu.getFullYear(), nu.getMonth(), 1);
+  var laatste = new Date(nu.getFullYear(), nu.getMonth()+1, 0);
+  document.getElementById('mx-datum-van').value = eerste.toISOString().slice(0,10);
+  document.getElementById('mx-datum-tot').value = laatste.toISOString().slice(0,10);
+  renderMatrix();
+}
+
+// Bepaal welke rijen (collections) zichtbaar zijn voor een vak
+function mxGetRijenVoorVak(vak) {
+  // Standaard volgorde per vak
+  var standaard = [];
+  if (vak === 'Wiskunde') standaard = MX_STANDAARD_VOLGORDE_WISKUNDE.slice();
+  else if (vak === 'Taal') standaard = MX_STANDAARD_VOLGORDE_TAAL.slice();
+
+  // Voeg ook collections toe die in de data zitten maar niet in de standaard
+  knownCols.forEach(function(c) {
+    if (colVak(c, null) === vak && standaard.indexOf(c) < 0) standaard.push(c);
+  });
+
+  // Filter op enkel collections die écht data hebben voor dit vak
+  standaard = standaard.filter(function(c) {
+    return allRecords.some(function(r){ return r._col === c; });
+  });
+
+  // Pas opgeslagen volgorde toe
+  if (mxRijVolgorde[vak]) {
+    var opgeslagen = mxRijVolgorde[vak].filter(function(c){ return standaard.indexOf(c) >= 0; });
+    standaard.forEach(function(c){ if (opgeslagen.indexOf(c) < 0) opgeslagen.push(c); });
+    return opgeslagen;
+  }
+  return standaard;
+}
+
+// Bepaal volgorde leerlingen
+function mxGetLeerlingVolgorde() {
+  var alle = leerlingen.map(function(l){ return l.naam; });
+  if (!mxLeerlingVolgorde.length) return alle;
+  var result = mxLeerlingVolgorde.filter(function(id){ return alle.indexOf(id) >= 0; });
+  alle.forEach(function(id){ if (result.indexOf(id) < 0) result.push(id); });
+  return result;
+}
+
+// Haal beste (meest recente) record op voor leerling+collection binnen datumrange
+function mxGetRecord(leerlingId, col, vanMs, totMs) {
+  var recs = allRecords.filter(function(r) {
+    if (r._leerlingId !== leerlingId) return false;
+    if (r._col !== col) return false;
+    if (vanMs && r._ts < vanMs) return false;
+    if (totMs && r._ts > totMs) return false;
+    return true;
+  });
+  if (!recs.length) return null;
+  return recs[0]; // gesorteerd nieuwste eerst
+}
+
+function mxPctKlasse(pct) {
+  if (pct === null) return '';
+  if (pct >= 70) return 'mx-cel-goed';
+  if (pct >= 50) return 'mx-cel-ok';
+  return 'mx-cel-slecht';
+}
+
+function mxBadgeKlasse(pct) {
+  if (pct >= 70) return 'mx-badge-goed';
+  if (pct >= 50) return 'mx-badge-ok';
+  return 'mx-badge-slecht';
+}
+
+function mxFormatDatum(ts) {
+  if (!ts) return '';
+  return new Date(ts).toLocaleDateString('nl-BE', {day:'numeric', month:'short'});
+}
+
+// ── RENDER MATRIX ─────────────────────────────────────────────────────────
+function renderMatrix() {
+  mxLaadVolgorde();
+
+  var filterVak  = document.getElementById('mx-filter-vak')  ? document.getElementById('mx-filter-vak').value  : '';
+  var datumVan   = document.getElementById('mx-datum-van')    ? document.getElementById('mx-datum-van').value    : '';
+  var datumTot   = document.getElementById('mx-datum-tot')    ? document.getElementById('mx-datum-tot').value    : '';
+
+  var vanMs = datumVan ? new Date(datumVan).getTime()                    : 0;
+  var totMs = datumTot ? new Date(datumTot).getTime() + 86400000 - 1    : 0; // inclusief einddatum
+
+  var vakken = filterVak ? [filterVak] : getVakkenUitData();
+  if (!vakken.length) {
+    document.getElementById('mx-inhoud').innerHTML = '<p style="color:#9ca3af;font-style:italic;padding:2rem;">Nog geen data beschikbaar.</p>';
+    return;
+  }
+
+  var leerlingIds = mxGetLeerlingVolgorde();
+  if (!leerlingIds.length) {
+    document.getElementById('mx-inhoud').innerHTML = '<p style="color:#9ca3af;font-style:italic;padding:2rem;">Geen leerlingen gevonden.</p>';
+    return;
+  }
+
+  var html = '<table class="mx-table" id="mx-tabel">';
+
+  // ── HEADER: leerlingen als kolommen ──────────────────────────────────────
+  html += '<thead><tr>';
+  html += '<th class="mx-th-leerling" style="position:sticky;top:0;left:0;z-index:30;min-width:200px;text-align:left;font-size:.72rem;text-transform:uppercase;letter-spacing:.06em;opacity:.8;">Leerinhoud</th>';
+
+  leerlingIds.forEach(function(id, ci) {
+    var naam = leerlingNaam(id);
+    var draggable = mxEditMode ? ' draggable="true"' : '';
+    var dragAttr  = mxEditMode ? ' ondragstart="mxColDragStart(event,\''+id+'\')" ondragover="mxColDragOver(event,'+ci+')" ondrop="mxColDrop(event,\''+id+'\','+ci+')" ondragend="mxDragEnd()"' : '';
+    html += '<th class="mx-th-leerling"'+draggable+dragAttr+' data-leerling="'+id+'">';
+    html += '<div style="display:flex;flex-direction:column;align-items:center;gap:4px;">';
+    html += '<div style="width:30px;height:30px;border-radius:50%;background:rgba(255,255,255,0.2);display:flex;align-items:center;justify-content:center;font-weight:900;font-size:.9rem;">'+naam[0].toUpperCase()+'</div>';
+    html += '<span>'+naam+'</span>';
+    if (mxEditMode) html += '<span style="font-size:.65rem;opacity:.6;margin-top:2px;">⠿ sleep</span>';
+    html += '</div></th>';
+  });
+  html += '</tr></thead>';
+
+  // ── BODY: vakken en collections als rijen ────────────────────────────────
+  html += '<tbody>';
+
+  vakken.forEach(function(vak) {
+    var rijen = mxGetRijenVoorVak(vak);
+    if (!rijen.length) return;
+
+    // Vak-groepheader
+    var hdrKleur = MX_VAK_HEADER_KLEUR[vak] || '#1e3a5f';
+    html += '<tr>';
+    html += '<td colspan="'+(leerlingIds.length+1)+'" class="mx-th-vak-groep" style="position:sticky;left:0;background:'+hdrKleur+';">'+vak+'</td>';
+    html += '</tr>';
+
+    // Rijen per collection
+    rijen.forEach(function(col, ri) {
+      var rijLabel = colLabel(col);
+      var draggable = mxEditMode ? ' draggable="true"' : '';
+      var dragAttr  = mxEditMode ? ' ondragstart="mxRijDragStart(event,\''+col+'\',\''+vak+'\')" ondragover="mxRijDragOver(event,'+ri+')" ondrop="mxRijDrop(event,\''+col+'\',\''+vak+'\','+ri+')" ondragend="mxDragEnd()"' : '';
+
+      html += '<tr>';
+      // Label-cel
+      html += '<td class="mx-th-vak"'+draggable+dragAttr+' data-col="'+col+'" data-vak="'+vak+'">';
+      html += '<div style="display:flex;align-items:center;gap:6px;">';
+      if (mxEditMode) html += '<span style="color:#9ca3af;font-size:.85rem;">⠿</span>';
+      html += rijLabel;
+      html += '</div></td>';
+
+      // Data-cellen per leerling
+      leerlingIds.forEach(function(id) {
+        var rec = mxGetRecord(id, col, vanMs, totMs);
+        if (!rec) {
+          html += '<td class="mx-cel mx-cel-leeg"><span style="color:#d1d5db;font-size:.8rem;">—</span></td>';
+          return;
+        }
+        var pct     = rec._pct;
+        var celKls  = mxPctKlasse(pct);
+        var bdgKls  = mxBadgeKlasse(pct);
+        var datum   = mxFormatDatum(rec._ts);
+        var modeTxt = (rec._mode && modeLabel(rec._mode) && modeLabel(rec._mode) !== rijLabel)
+                    ? '<br><span style="font-size:.65rem;color:#9ca3af;">'+modeLabel(rec._mode)+'</span>' : '';
+
+        // Fouten samenvatting voor tooltip
+        var foutenTxt = '';
+        if (rec.foutenAnalyse && rec.foutenAnalyse.extraOefenen && rec.foutenAnalyse.extraOefenen.length) {
+          foutenTxt = rec.foutenAnalyse.extraOefenen.slice(0,3).join('<br>');
+        }
+
+        // Korte foutenweergave in de cel
+        var celFouten = '';
+        if (rec.foutenAnalyse && rec.foutenAnalyse.extraOefenen && rec.foutenAnalyse.extraOefenen.length) {
+          var eerste = rec.foutenAnalyse.extraOefenen[0];
+          celFouten = '<div class="mx-fouten" title="'+rec.foutenAnalyse.extraOefenen.join('\n')+'">⚠ '+eerste+'</div>';
+        }
+
+        // Groepen (voor spreekwoorden etc.)
+        var groepenTxt = '';
+        if (rec.groepenLabel) {
+          groepenTxt = '<div class="mx-datum" style="color:#6b7280;margin-top:2px;" title="'+rec.groepenLabel+'">'+rec.groepenLabel.substring(0,30)+(rec.groepenLabel.length>30?'…':'')+'</div>';
+        }
+
+        html += '<td class="mx-cel '+celKls+'" onclick="openDetail('+allRecords.indexOf(rec)+')">';
+        html += '<div class="mx-tooltip">';
+        html += '<b>'+leerlingNaam(id)+' — '+rijLabel+'</b><br>';
+        html += datum+' · '+pct+'%  ('+rec._score+'/'+rec._total+')<br>';
+        if (foutenTxt) html += '<span style="color:#fca5a5;">'+foutenTxt+'</span>';
+        html += '</div>';
+        html += '<span class="mx-badge '+bdgKls+'">'+pct+'%</span>'+modeTxt;
+        if (rec.groepenLabel) html += groepenTxt;
+        else html += '<div class="mx-datum">'+datum+'</div>';
+        celFouten && (html += celFouten);
+        html += '</td>';
+      });
+      html += '</tr>';
+    });
+  });
+
+  html += '</tbody></table>';
+  document.getElementById('mx-inhoud').innerHTML = html;
+}
+
+// ── DRAG & DROP KOLOMMEN (leerlingen) ────────────────────────────────────
+function mxColDragStart(e, id) {
+  mxDragType = 'col'; mxDragId = id;
+  e.dataTransfer.effectAllowed = 'move';
+}
+function mxColDragOver(e, idx) {
+  e.preventDefault();
+  document.querySelectorAll('.mx-th-leerling').forEach(function(el){ el.classList.remove('mx-drag-over-col'); });
+  var ths = document.querySelectorAll('.mx-th-leerling[data-leerling]');
+  if (ths[idx]) ths[idx].classList.add('mx-drag-over-col');
+}
+function mxColDrop(e, targetId, targetIdx) {
+  e.preventDefault();
+  if (mxDragType !== 'col' || mxDragId === targetId) return mxDragEnd();
+  var volgorde = mxGetLeerlingVolgorde();
+  var fromIdx  = volgorde.indexOf(mxDragId);
+  if (fromIdx < 0) return mxDragEnd();
+  volgorde.splice(fromIdx, 1);
+  volgorde.splice(targetIdx, 0, mxDragId);
+  mxLeerlingVolgorde = volgorde;
+  mxDragEnd();
+  renderMatrix();
+}
+
+// ── DRAG & DROP RIJEN (leerinhoud) ────────────────────────────────────────
+function mxRijDragStart(e, col, vak) {
+  mxDragType = 'row'; mxDragId = col; mxDragVak = vak;
+  e.dataTransfer.effectAllowed = 'move';
+}
+function mxRijDragOver(e, idx) {
+  e.preventDefault();
+  document.querySelectorAll('.mx-th-vak[draggable]').forEach(function(el){ el.classList.remove('mx-drag-over-row'); });
+  var rows = document.querySelectorAll('.mx-th-vak[data-vak="'+(mxDragVak||'')+'"]');
+  if (rows[idx]) rows[idx].classList.add('mx-drag-over-row');
+}
+function mxRijDrop(e, targetCol, vak, targetIdx) {
+  e.preventDefault();
+  if (mxDragType !== 'row' || mxDragId === targetCol || mxDragVak !== vak) return mxDragEnd();
+  var rijen   = mxGetRijenVoorVak(vak);
+  var fromIdx = rijen.indexOf(mxDragId);
+  if (fromIdx < 0) return mxDragEnd();
+  rijen.splice(fromIdx, 1);
+  rijen.splice(targetIdx, 0, mxDragId);
+  if (!mxRijVolgorde) mxRijVolgorde = {};
+  mxRijVolgorde[vak] = rijen;
+  mxDragEnd();
+  renderMatrix();
+}
+
+function mxDragEnd() {
+  mxDragType = null; mxDragId = null; mxDragVak = null;
+  document.querySelectorAll('.mx-drag-over-col,.mx-drag-over-row').forEach(function(el){
+    el.classList.remove('mx-drag-over-col','mx-drag-over-row');
+  });
 }
 
 async function wijzigCode(naam,display) {
