@@ -1,0 +1,1410 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Woordenschat Oefenen</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <style>
+    :root {
+      --ink:    #1a1a2e;
+      --paper:  #f5f0e8;
+      --cream:  #ede8dc;
+      --accent: #c84b31;
+      --gold:   #e8a838;
+      --green:  #2d6a4f;
+      --blue:   #2563eb;
+      --muted:  #7a7060;
+      --card:   #ffffff;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'DM Sans', sans-serif; background: var(--paper); color: var(--ink); min-height: 100vh; }
+    .syne { font-family: 'Syne', sans-serif; }
+
+    /* ── SCHERMEN ── */
+    .scherm { display: none; min-height: 100vh; }
+    .scherm.actief { display: flex; flex-direction: column; }
+
+    /* ── LOGIN ── */
+    #s-login {
+      align-items: center; justify-content: center;
+      background: var(--ink); padding: 20px;
+    }
+    .login-kaart {
+      background: var(--paper); border-radius: 24px;
+      padding: 40px 32px; width: 100%; max-width: 380px;
+      box-shadow: 0 40px 80px rgba(0,0,0,.5); text-align: center;
+    }
+    .login-kaart .emoji { font-size: 3rem; display: block; margin-bottom: 12px; }
+    .login-kaart h1 { font-family: 'Syne', sans-serif; font-size: 1.8rem; font-weight: 800; margin-bottom: 4px; }
+    .login-kaart .sub { color: var(--muted); font-size: .88rem; margin-bottom: 28px; display: block; }
+    .veld { display: flex; flex-direction: column; gap: 5px; margin-bottom: 12px; text-align: left; }
+    .veld label { font-size: .7rem; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .07em; }
+    .veld input, .veld select {
+      width: 100%; padding: 12px 14px; border: 2px solid var(--cream);
+      border-radius: 11px; font-size: 1rem; background: white;
+      font-family: 'DM Sans', sans-serif; transition: border-color .2s; color: var(--ink);
+    }
+    .veld input:focus, .veld select:focus { outline: none; border-color: var(--accent); }
+    #login-fout { color: var(--accent); font-size: .82rem; margin: 6px 0; min-height: 18px; }
+    .btn-groot {
+      width: 100%; padding: 13px; border: none; border-radius: 12px;
+      font-size: 1rem; font-weight: 700; cursor: pointer;
+      font-family: 'Syne', sans-serif; transition: all .2s;
+      display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    }
+    .btn-accent { background: var(--accent); color: white; }
+    .btn-accent:hover { opacity: .88; transform: translateY(-1px); }
+    .btn-muted { background: var(--cream); color: var(--muted); margin-top: 8px; }
+    .btn-muted:hover { background: #ddd8cc; }
+
+    /* ── TOPBAR ── */
+    .topbar {
+      background: var(--ink); color: white;
+      padding: 12px 20px; display: flex;
+      justify-content: space-between; align-items: center;
+      flex-shrink: 0;
+    }
+    .topbar-naam { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 1rem; }
+    .topbar-sub { font-size: .72rem; color: rgba(255,255,255,.45); }
+    .btn-terug {
+      background: rgba(255,255,255,.12); color: white; border: none;
+      border-radius: 8px; padding: 6px 12px; font-size: .78rem;
+      font-weight: 600; cursor: pointer; font-family: 'Syne', sans-serif;
+      display: inline-flex; align-items: center; gap: 6px; transition: background .2s;
+    }
+    .btn-terug:hover { background: rgba(255,255,255,.22); }
+
+    /* ── HOOFDMENU ── */
+    #s-menu { background: var(--paper); }
+    .menu-body { flex: 1; padding: 28px 20px; max-width: 560px; margin: 0 auto; width: 100%; }
+    .welkom-blok {
+      background: var(--ink); color: white; border-radius: 20px;
+      padding: 24px; margin-bottom: 24px; position: relative; overflow: hidden;
+    }
+    .welkom-blok::after {
+      content: '📚'; font-size: 5rem; position: absolute;
+      right: 16px; top: 50%; transform: translateY(-50%); opacity: .15;
+    }
+    .welkom-blok h2 { font-family: 'Syne', sans-serif; font-size: 1.4rem; font-weight: 800; margin-bottom: 4px; }
+    .welkom-blok p { font-size: .88rem; color: rgba(255,255,255,.6); }
+    .sterren-rij { display: flex; gap: 4px; margin-top: 12px; }
+    .ster-item { font-size: 1.2rem; }
+
+    .menu-sectie-titel {
+      font-family: 'Syne', sans-serif; font-size: .72rem; font-weight: 800;
+      color: var(--muted); text-transform: uppercase; letter-spacing: .1em;
+      margin-bottom: 10px;
+    }
+    .menu-kaart {
+      background: white; border: 2px solid var(--cream);
+      border-radius: 16px; padding: 18px 20px; margin-bottom: 10px;
+      cursor: pointer; transition: all .18s; display: flex;
+      align-items: center; gap: 16px;
+    }
+    .menu-kaart:hover { border-color: var(--accent); transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,0,0,.08); }
+    .menu-kaart .icoon {
+      width: 48px; height: 48px; border-radius: 12px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.4rem; flex-shrink: 0;
+    }
+    .menu-kaart h3 { font-family: 'Syne', sans-serif; font-size: .98rem; font-weight: 800; margin-bottom: 2px; }
+    .menu-kaart p { font-size: .78rem; color: var(--muted); }
+    .menu-kaart .pijl { margin-left: auto; color: var(--muted); font-size: .9rem; flex-shrink: 0; }
+    .badge-nieuw {
+      background: var(--accent); color: white; font-size: .65rem;
+      font-weight: 700; padding: 2px 7px; border-radius: 20px;
+      font-family: 'Syne', sans-serif; margin-left: 6px; vertical-align: middle;
+    }
+
+    /* ── KEUZE SCHERM (woorden + modus) ── */
+    #s-keuze { background: var(--paper); }
+    .keuze-body { flex: 1; padding: 24px 20px; max-width: 560px; margin: 0 auto; width: 100%; overflow-y: auto; }
+    .keuze-sectie { margin-bottom: 28px; }
+    .keuze-sectie h2 { font-family: 'Syne', sans-serif; font-size: 1rem; font-weight: 800; margin-bottom: 12px; }
+    .keuze-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .keuze-kaart {
+      background: white; border: 2px solid var(--cream);
+      border-radius: 14px; padding: 14px 16px; cursor: pointer;
+      transition: all .18s; text-align: center;
+    }
+    .keuze-kaart:hover { border-color: var(--accent); }
+    .keuze-kaart.geselecteerd { border-color: var(--accent); background: #fff3f0; }
+    .keuze-kaart .keuze-icoon { font-size: 1.8rem; margin-bottom: 6px; }
+    .keuze-kaart h4 { font-family: 'Syne', sans-serif; font-size: .85rem; font-weight: 800; margin-bottom: 2px; }
+    .keuze-kaart p { font-size: .72rem; color: var(--muted); }
+    .keuze-kaart.geselecteerd h4 { color: var(--accent); }
+    .modi-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .modus-kaart {
+      background: white; border: 2px solid var(--cream);
+      border-radius: 12px; padding: 12px 14px; cursor: pointer;
+      transition: all .18s; display: flex; align-items: center; gap: 10px;
+    }
+    .modus-kaart:hover { border-color: var(--blue); }
+    .modus-kaart.geselecteerd { border-color: var(--blue); background: #eff6ff; }
+    .modus-kaart .m-icoon { font-size: 1.3rem; flex-shrink: 0; }
+    .modus-kaart h4 { font-family: 'Syne', sans-serif; font-size: .8rem; font-weight: 800; }
+    .modus-kaart p { font-size: .68rem; color: var(--muted); }
+    .modus-kaart.geselecteerd h4 { color: var(--blue); }
+    .start-balk {
+      position: sticky; bottom: 0; background: var(--paper);
+      padding: 16px 0 8px; border-top: 2px solid var(--cream);
+    }
+    .btn-start {
+      width: 100%; padding: 14px; background: var(--accent); color: white;
+      border: none; border-radius: 14px; font-size: 1.05rem; font-weight: 800;
+      font-family: 'Syne', sans-serif; cursor: pointer; transition: all .2s;
+      display: flex; align-items: center; justify-content: center; gap: 10px;
+    }
+    .btn-start:hover { opacity: .9; transform: translateY(-1px); }
+    .btn-start:disabled { opacity: .4; cursor: not-allowed; transform: none; }
+
+    /* ── OEFENSCHERM ── */
+    #s-oefen { background: var(--paper); }
+    .oefen-topbar {
+      background: var(--ink); color: white; padding: 12px 20px;
+      display: flex; align-items: center; gap: 12px; flex-shrink: 0;
+    }
+    .voortgang-balk-wrap { flex: 1; }
+    .voortgang-label { font-size: .7rem; color: rgba(255,255,255,.5); margin-bottom: 4px; }
+    .voortgang-balk { height: 6px; background: rgba(255,255,255,.15); border-radius: 3px; overflow: hidden; }
+    .voortgang-fill { height: 100%; background: var(--gold); border-radius: 3px; transition: width .3s; }
+    .vraag-teller { font-family: 'Syne', sans-serif; font-size: .85rem; font-weight: 800; white-space: nowrap; }
+
+    .oefen-body { flex: 1; padding: 20px; max-width: 600px; margin: 0 auto; width: 100%; overflow-y: auto; }
+
+    .vraag-kaart {
+      background: white; border-radius: 20px; padding: 28px 24px;
+      margin-bottom: 16px; border: 2px solid var(--cream);
+      box-shadow: 0 4px 16px rgba(0,0,0,.05);
+    }
+    .vraag-modus-label {
+      font-size: .68rem; font-weight: 700; color: var(--muted);
+      text-transform: uppercase; letter-spacing: .08em; margin-bottom: 12px;
+      display: flex; align-items: center; gap: 6px;
+    }
+    .vraag-woord {
+      font-family: 'Syne', sans-serif; font-size: 2rem; font-weight: 800;
+      color: var(--ink); margin-bottom: 8px; word-break: break-word;
+    }
+    .vraag-afbeelding {
+      width: 100%; max-height: 180px; object-fit: cover;
+      border-radius: 12px; margin-bottom: 12px; border: 2px solid var(--cream);
+    }
+    .vraag-tekst {
+      font-size: 1rem; color: var(--ink); margin-bottom: 16px;
+      line-height: 1.5;
+    }
+
+    /* Antwoord opties */
+    .opties-grid { display: flex; flex-direction: column; gap: 8px; }
+    .optie-knop {
+      width: 100%; padding: 13px 16px; background: #fafafa;
+      border: 2px solid var(--cream); border-radius: 12px;
+      font-size: .92rem; font-family: 'DM Sans', sans-serif;
+      cursor: pointer; text-align: left; transition: all .18s;
+      display: flex; align-items: center; gap: 10px; color: var(--ink);
+    }
+    .optie-knop:hover:not(:disabled) { border-color: var(--blue); background: #eff6ff; }
+    .optie-knop.correct { border-color: var(--green); background: #e8f5ee; color: var(--green); }
+    .optie-knop.fout { border-color: var(--accent); background: #fff0ee; color: var(--accent); }
+    .optie-knop:disabled { cursor: default; }
+    .optie-letter {
+      width: 26px; height: 26px; border-radius: 50%;
+      background: var(--cream); display: flex; align-items: center;
+      justify-content: center; font-size: .75rem; font-weight: 800;
+      flex-shrink: 0; font-family: 'Syne', sans-serif;
+    }
+    .optie-knop.correct .optie-letter { background: var(--green); color: white; }
+    .optie-knop.fout .optie-letter { background: var(--accent); color: white; }
+
+    /* Typen */
+    .typ-invoer {
+      width: 100%; padding: 14px 16px; font-size: 1.1rem;
+      border: 2px solid var(--cream); border-radius: 12px;
+      font-family: 'DM Sans', sans-serif; margin-bottom: 10px;
+      transition: border-color .2s; background: white; color: var(--ink);
+    }
+    .typ-invoer:focus { outline: none; border-color: var(--blue); }
+    .typ-invoer.correct { border-color: var(--green); background: #e8f5ee; }
+    .typ-invoer.fout { border-color: var(--accent); background: #fff0ee; }
+    .typ-invoer.hint { letter-spacing: .15em; font-size: 1.3rem; }
+
+    .feedback-blok {
+      padding: 12px 16px; border-radius: 12px; margin-top: 10px;
+      font-size: .88rem; font-weight: 600; display: none;
+    }
+    .feedback-blok.correct { background: #e8f5ee; color: var(--green); }
+    .feedback-blok.fout { background: #fff0ee; color: var(--accent); }
+
+    .btn-volgende {
+      width: 100%; padding: 13px; background: var(--ink); color: white;
+      border: none; border-radius: 12px; font-size: 1rem; font-weight: 800;
+      font-family: 'Syne', sans-serif; cursor: pointer; transition: all .2s;
+      margin-top: 12px; display: none;
+    }
+    .btn-volgende:hover { opacity: .85; }
+
+    .btn-controleer {
+      width: 100%; padding: 13px; background: var(--blue); color: white;
+      border: none; border-radius: 12px; font-size: 1rem; font-weight: 800;
+      font-family: 'Syne', sans-serif; cursor: pointer; transition: all .2s;
+      margin-top: 4px;
+    }
+    .btn-controleer:hover { opacity: .88; }
+
+    /* ── RESULTAAT ── */
+    #s-resultaat { background: var(--paper); align-items: center; justify-content: flex-start; }
+    .resultaat-body { flex: 1; padding: 28px 20px; max-width: 560px; margin: 0 auto; width: 100%; overflow-y: auto; }
+    .score-cirkel {
+      width: 140px; height: 140px; border-radius: 50%;
+      background: var(--ink); display: flex; flex-direction: column;
+      align-items: center; justify-content: center; margin: 0 auto 24px;
+    }
+    .score-getal { font-family: 'Syne', sans-serif; font-size: 2.5rem; font-weight: 800; color: white; line-height: 1; }
+    .score-label { font-size: .75rem; color: rgba(255,255,255,.5); }
+    .resultaat-titel { font-family: 'Syne', sans-serif; font-size: 1.5rem; font-weight: 800; text-align: center; margin-bottom: 6px; }
+    .resultaat-sub { text-align: center; color: var(--muted); font-size: .88rem; margin-bottom: 24px; }
+
+    .woord-resultaat-kaart {
+      background: white; border-radius: 12px; padding: 12px 16px;
+      margin-bottom: 8px; border: 2px solid var(--cream);
+      display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    }
+    .woord-resultaat-kaart .wr-woord { font-family: 'Syne', sans-serif; font-weight: 800; font-size: .95rem; }
+    .woord-resultaat-kaart .wr-sterren { font-size: 1rem; letter-spacing: 2px; }
+    .wr-score { font-size: .78rem; color: var(--muted); }
+
+    .resultaat-btns { display: flex; gap: 10px; margin-top: 20px; flex-wrap: wrap; }
+    .btn-opnieuw {
+      flex: 1; padding: 13px; background: var(--accent); color: white;
+      border: none; border-radius: 12px; font-size: .95rem; font-weight: 800;
+      font-family: 'Syne', sans-serif; cursor: pointer; transition: all .2s;
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+    }
+    .btn-opnieuw:hover { opacity: .88; }
+    .btn-menu {
+      flex: 1; padding: 13px; background: var(--cream); color: var(--ink);
+      border: none; border-radius: 12px; font-size: .95rem; font-weight: 800;
+      font-family: 'Syne', sans-serif; cursor: pointer; transition: all .2s;
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+    }
+    .btn-menu:hover { background: #ddd8cc; }
+
+    /* ── TAKEN SCHERM ── */
+    #s-taken { background: var(--paper); }
+    .taken-body { flex: 1; padding: 24px 20px; max-width: 560px; margin: 0 auto; width: 100%; }
+    .taak-kaart {
+      background: white; border: 2px solid var(--cream); border-radius: 16px;
+      padding: 18px 20px; margin-bottom: 12px; cursor: pointer;
+      transition: all .18s; display: flex; align-items: center; gap: 16px;
+    }
+    .taak-kaart:hover { border-color: var(--accent); transform: translateY(-1px); box-shadow: 0 4px 16px rgba(0,0,0,.07); }
+    .taak-kaart .taak-icoon { font-size: 2rem; flex-shrink: 0; }
+    .taak-kaart h3 { font-family: 'Syne', sans-serif; font-weight: 800; font-size: .95rem; margin-bottom: 2px; }
+    .taak-kaart p { font-size: .78rem; color: var(--muted); }
+    .taak-badge {
+      background: var(--accent); color: white; font-size: .7rem;
+      font-weight: 700; padding: 3px 9px; border-radius: 20px;
+      font-family: 'Syne', sans-serif; margin-left: auto; white-space: nowrap;
+    }
+    .taak-badge.gedaan { background: var(--green); }
+    .leeg-staat { text-align: center; padding: 48px 20px; color: var(--muted); }
+    .leeg-staat i { font-size: 2.5rem; opacity: .3; display: block; margin-bottom: 12px; }
+
+    /* ── VOORTGANG SCHERM ── */
+    #s-voortgang { background: var(--paper); }
+    .voortgang-body { flex: 1; padding: 24px 20px; max-width: 560px; margin: 0 auto; width: 100%; overflow-y: auto; }
+    .stat-rij { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 24px; }
+    .stat-blok {
+      background: white; border: 2px solid var(--cream); border-radius: 14px;
+      padding: 14px; text-align: center;
+    }
+    .stat-getal { font-family: 'Syne', sans-serif; font-size: 1.6rem; font-weight: 800; color: var(--ink); }
+    .stat-label { font-size: .7rem; color: var(--muted); font-weight: 600; }
+    .woord-voortgang-kaart {
+      background: white; border: 2px solid var(--cream); border-radius: 12px;
+      padding: 12px 16px; margin-bottom: 8px;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .wv-woord { font-family: 'Syne', sans-serif; font-weight: 800; font-size: .92rem; }
+    .wv-sterren { font-size: .95rem; }
+    .wv-info { font-size: .72rem; color: var(--muted); margin-top: 2px; }
+
+    /* ── LADEN ── */
+    .laden-overlay {
+      position: fixed; inset: 0; background: rgba(26,26,46,.7);
+      z-index: 999; display: none; align-items: center; justify-content: center;
+      flex-direction: column; gap: 16px;
+    }
+    .laden-overlay.actief { display: flex; }
+    .laden-spin { font-size: 2.5rem; color: var(--gold); animation: spin .7s linear infinite; display: inline-block; }
+    .laden-tekst { color: white; font-family: 'Syne', sans-serif; font-weight: 700; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    #version { position: fixed; bottom: 6px; left: 10px; font-size: .62rem; color: var(--muted); font-family: monospace; z-index: 10; }
+  </style>
+</head>
+<body>
+
+<!-- ══ LADEN ══ -->
+<div class="laden-overlay" id="laden">
+  <i class="fa-solid fa-circle-notch laden-spin"></i>
+  <div class="laden-tekst" id="laden-tekst">Laden…</div>
+</div>
+
+<!-- ══════════════════════════════════════════════════
+     S1: LOGIN
+══════════════════════════════════════════════════ -->
+<div class="scherm actief" id="s-login">
+  <div class="login-kaart">
+    <span class="emoji">📚</span>
+    <h1>Woordenschat</h1>
+    <span class="sub">Oefenen met woorden</span>
+
+    <div class="veld">
+      <label>Jouw naam</label>
+      <select id="login-naam">
+        <option value="">— Kies jouw naam —</option>
+        <option>ethanael</option>
+        <option>eulalie</option>
+        <option>gabriel</option>
+        <option>kobe</option>
+        <option>kriss</option>
+        <option>kylian</option>
+        <option>leila</option>
+        <option>stijn</option>
+      </select>
+    </div>
+    <div class="veld">
+      <label>Jouw code</label>
+      <input type="password" id="login-code" placeholder="••••••••">
+    </div>
+    <div id="login-fout"></div>
+    <button class="btn-groot btn-accent" onclick="doLogin()">
+      <i class="fa-solid fa-right-to-bracket"></i> Inloggen
+    </button>
+    <button class="btn-groot btn-muted" onclick="guestLogin()">
+      <i class="fa-solid fa-eye"></i> Verder als gast
+    </button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════
+     S2: HOOFDMENU
+══════════════════════════════════════════════════ -->
+<div class="scherm" id="s-menu">
+  <div class="topbar">
+    <div>
+      <div class="topbar-naam" id="menu-naam">Hallo!</div>
+      <div class="topbar-sub">Wat wil je doen?</div>
+    </div>
+    <button class="btn-terug" onclick="toonLogin()"><i class="fa-solid fa-right-from-bracket"></i> Uitloggen</button>
+  </div>
+  <div class="menu-body">
+    <div class="welkom-blok">
+      <h2 id="welkom-tekst">Hallo!</h2>
+      <p>Klaar om te oefenen?</p>
+      <div class="sterren-rij" id="menu-sterren"></div>
+    </div>
+
+    <div class="menu-sectie-titel">Oefenen</div>
+    <div class="menu-kaart" onclick="toonKeuze('vrij')">
+      <div class="icoon" style="background:#fff3f0;">📖</div>
+      <div>
+        <h3>Vrij oefenen</h3>
+        <p>Kies zelf je woorden en modus</p>
+      </div>
+      <i class="fa-solid fa-chevron-right pijl"></i>
+    </div>
+    <div class="menu-kaart" onclick="toonTaken()">
+      <div class="icoon" style="background:#eff6ff;">📋</div>
+      <div>
+        <h3>Taak van de meester <span class="badge-nieuw" id="taak-badge" style="display:none">Nieuw</span></h3>
+        <p>Oefeningen die klaarstaan voor jou</p>
+      </div>
+      <i class="fa-solid fa-chevron-right pijl"></i>
+    </div>
+
+    <div class="menu-sectie-titel" style="margin-top:20px;">Mijn voortgang</div>
+    <div class="menu-kaart" onclick="toonVoortgang()">
+      <div class="icoon" style="background:#e8f5ee;">⭐</div>
+      <div>
+        <h3>Mijn sterren</h3>
+        <p>Zie hoe goed je woorden kent</p>
+      </div>
+      <i class="fa-solid fa-chevron-right pijl"></i>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════
+     S3: WOORDKEUZE + MODUS
+══════════════════════════════════════════════════ -->
+<div class="scherm" id="s-keuze">
+  <div class="topbar">
+    <button class="btn-terug" onclick="toonMenu()"><i class="fa-solid fa-arrow-left"></i> Terug</button>
+    <div style="color:white;font-family:'Syne',sans-serif;font-weight:800;font-size:.95rem;">Oefenen instellen</div>
+    <div style="width:60px"></div>
+  </div>
+  <div class="keuze-body">
+    <!-- Woordselectie -->
+    <div class="keuze-sectie">
+      <h2>Welke woorden?</h2>
+      <div class="keuze-grid">
+        <div class="keuze-kaart" id="keuze-w0" onclick="selecteerWoorden(0)">
+          <div class="keuze-icoon">🆕</div>
+          <h4>Laatste 20</h4>
+          <p>De nieuwste woorden</p>
+        </div>
+        <div class="keuze-kaart" id="keuze-w1" onclick="selecteerWoorden(1)">
+          <div class="keuze-icoon">📅</div>
+          <h4>Afgelopen maand</h4>
+          <p>Woorden van de laatste 30 dagen</p>
+        </div>
+        <div class="keuze-kaart" id="keuze-w2" onclick="selecteerWoorden(2)">
+          <div class="keuze-icoon">🏫</div>
+          <h4>Dit schooljaar</h4>
+          <p>Alle woorden van dit jaar</p>
+        </div>
+        <div class="keuze-kaart" id="keuze-w3" onclick="selecteerWoorden(3)">
+          <div class="keuze-icoon">🎲</div>
+          <h4>Slimme keuze</h4>
+          <p>Woorden die je nog niet goed kent</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Moduskeuze -->
+    <div class="keuze-sectie">
+      <h2>Hoe wil je oefenen?</h2>
+      <div class="modi-grid">
+        <div class="modus-kaart" id="mod-0" onclick="selecteerModus(0)">
+          <div class="m-icoon">🔀</div>
+          <div><h4>Alles door elkaar</h4><p>Willekeurige oefening</p></div>
+        </div>
+        <div class="modus-kaart" id="mod-1" onclick="selecteerModus(1)">
+          <div class="m-icoon">🔗</div>
+          <div><h4>Betekenis kiezen</h4><p>4 betekenissen, kies de juiste</p></div>
+        </div>
+        <div class="modus-kaart" id="mod-2" onclick="selecteerModus(2)">
+          <div class="m-icoon">🖼️</div>
+          <div><h4>Afbeelding kiezen</h4><p>Koppel woord aan foto</p></div>
+        </div>
+        <div class="modus-kaart" id="mod-3" onclick="selecteerModus(3)">
+          <div class="m-icoon">💡</div>
+          <div><h4>Woord raden</h4><p>Betekenis staat er, typ het woord</p></div>
+        </div>
+        <div class="modus-kaart" id="mod-4" onclick="selecteerModus(4)">
+          <div class="m-icoon">🔤</div>
+          <div><h4>Overtypen</h4><p>Typ het woord over</p></div>
+        </div>
+        <div class="modus-kaart" id="mod-5" onclick="selecteerModus(5)">
+          <div class="m-icoon">🙈</div>
+          <div><h4>Blind typen</h4><p>Woord verdwijnt, typ uit hoofd</p></div>
+        </div>
+        <div class="modus-kaart" id="mod-6" onclick="selecteerModus(6)">
+          <div class="m-icoon">🧩</div>
+          <div><h4>Ontbrekende letters</h4><p>Vul de klinkers in</p></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="start-balk">
+      <button class="btn-start" id="btn-start" onclick="startOefening()" disabled>
+        <i class="fa-solid fa-play"></i> Start oefening
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════
+     S4: OEFENSCHERM
+══════════════════════════════════════════════════ -->
+<div class="scherm" id="s-oefen">
+  <div class="oefen-topbar">
+    <div class="voortgang-balk-wrap">
+      <div class="voortgang-label" id="oefen-modus-label">Oefenen</div>
+      <div class="voortgang-balk"><div class="voortgang-fill" id="voortgang-fill" style="width:0%"></div></div>
+    </div>
+    <div class="vraag-teller" id="vraag-teller">1 / 20</div>
+  </div>
+  <div class="oefen-body" id="oefen-body"></div>
+</div>
+
+<!-- ══════════════════════════════════════════════════
+     S5: RESULTAAT
+══════════════════════════════════════════════════ -->
+<div class="scherm" id="s-resultaat">
+  <div class="topbar">
+    <div class="topbar-naam">Klaar!</div>
+    <div></div>
+  </div>
+  <div class="resultaat-body">
+    <div class="score-cirkel">
+      <div class="score-getal" id="res-score">0/20</div>
+      <div class="score-label">score</div>
+    </div>
+    <div class="resultaat-titel" id="res-titel">Goed gedaan!</div>
+    <div class="resultaat-sub" id="res-sub"></div>
+
+    <div class="menu-sectie-titel">Woord per woord</div>
+    <div id="res-woorden"></div>
+
+    <div class="resultaat-btns">
+      <button class="btn-opnieuw" onclick="toonKeuze('vrij')">
+        <i class="fa-solid fa-rotate-right"></i> Opnieuw
+      </button>
+      <button class="btn-menu" onclick="toonMenu()">
+        <i class="fa-solid fa-house"></i> Menu
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════
+     S6: TAKEN
+══════════════════════════════════════════════════ -->
+<div class="scherm" id="s-taken">
+  <div class="topbar">
+    <button class="btn-terug" onclick="toonMenu()"><i class="fa-solid fa-arrow-left"></i> Terug</button>
+    <div style="color:white;font-family:'Syne',sans-serif;font-weight:800;font-size:.95rem;">Mijn taken</div>
+    <div style="width:60px"></div>
+  </div>
+  <div class="taken-body" id="taken-body">
+    <div class="leeg-staat"><i class="fa-solid fa-inbox"></i><p>Geen taken gevonden.</p></div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════
+     S7: VOORTGANG
+══════════════════════════════════════════════════ -->
+<div class="scherm" id="s-voortgang">
+  <div class="topbar">
+    <button class="btn-terug" onclick="toonMenu()"><i class="fa-solid fa-arrow-left"></i> Terug</button>
+    <div style="color:white;font-family:'Syne',sans-serif;font-weight:800;font-size:.95rem;">Mijn sterren</div>
+    <div style="width:60px"></div>
+  </div>
+  <div class="voortgang-body">
+    <div class="stat-rij">
+      <div class="stat-blok"><div class="stat-getal" id="stat-woorden">0</div><div class="stat-label">Woorden geleerd</div></div>
+      <div class="stat-blok"><div class="stat-getal" id="stat-sterren">0</div><div class="stat-label">Sterren totaal</div></div>
+      <div class="stat-blok"><div class="stat-getal" id="stat-sessies">0</div><div class="stat-label">Oefensessies</div></div>
+    </div>
+    <div class="menu-sectie-titel">Woorden & sterren</div>
+    <div id="voortgang-lijst"></div>
+  </div>
+</div>
+
+<div id="version">v1.0</div>
+
+<script>
+// ════════════════════════════════════════════════════
+// FIREBASE
+// ════════════════════════════════════════════════════
+firebase.initializeApp({
+  apiKey: "AIzaSyCnQDVVAlK6jE-PPUUediRJMTbN0xqrLDE",
+  authDomain: "klaswebsite-database.firebaseapp.com",
+  projectId: "klaswebsite-database"
+});
+var db = firebase.firestore();
+
+// ════════════════════════════════════════════════════
+// STATE
+// ════════════════════════════════════════════════════
+var CU = null;    // ingelogde leerling {naam, code, id}
+var GUEST = false;
+var alleWoorden = [];         // alle woorden uit Firestore
+var oefenWoorden = [];        // geselecteerde woorden voor deze sessie
+var vragen = [];              // gegenereerde vragenlijst
+var huidigVraagIndex = 0;
+var resultaten = [];          // [{woord, correct, modus}]
+var gekozenWoordselectie = -1;
+var gekozenModus = -1;
+var leerlingVoortgang = {};   // {woordId: {sterren, geprobeerd, correct}}
+
+var MODI_NAMEN = [
+  "Alles door elkaar","Betekenis kiezen","Afbeelding kiezen",
+  "Woord raden","Overtypen","Blind typen","Ontbrekende letters"
+];
+
+// ════════════════════════════════════════════════════
+// SCHERMEN
+// ════════════════════════════════════════════════════
+function toon(id) {
+  document.querySelectorAll(".scherm").forEach(function(s){ s.classList.remove("actief"); });
+  document.getElementById(id).classList.add("actief");
+  window.scrollTo(0,0);
+}
+function toonLogin()   { toon("s-login"); }
+function toonMenu()    { toon("s-menu"); updateMenu(); }
+function toonKeuze(type) {
+  gekozenWoordselectie = -1; gekozenModus = -1;
+  document.querySelectorAll(".keuze-kaart").forEach(function(k){ k.classList.remove("geselecteerd"); });
+  document.querySelectorAll(".modus-kaart").forEach(function(k){ k.classList.remove("geselecteerd"); });
+  document.getElementById("btn-start").disabled = true;
+  toon("s-keuze");
+}
+function toonTaken()    { toon("s-taken"); laadTaken(); }
+function toonVoortgang(){ toon("s-voortgang"); renderVoortgang(); }
+
+// ════════════════════════════════════════════════════
+// LOGIN
+// ════════════════════════════════════════════════════
+document.addEventListener("DOMContentLoaded", function(){
+  document.getElementById("login-code").addEventListener("keydown", function(e){
+    if (e.key === "Enter") doLogin();
+  });
+});
+
+function doLogin() {
+  var naam = document.getElementById("login-naam").value.trim().toLowerCase();
+  var code = document.getElementById("login-code").value.trim();
+  var fout = document.getElementById("login-fout");
+  fout.textContent = "";
+  if (!naam) { fout.textContent = "Kies eerst je naam."; return; }
+  if (!code) { fout.textContent = "Vul je code in."; return; }
+
+  var verwacht = naam + "2025";
+  if (code !== verwacht) {
+    fout.textContent = "Verkeerde code. Vraag het aan de meester.";
+    return;
+  }
+  CU = { naam: naam, code: code };
+  GUEST = false;
+  laadAlles();
+}
+
+function guestLogin() {
+  CU = { naam: "gast", code: "" };
+  GUEST = true;
+  laadAlles();
+}
+
+// ════════════════════════════════════════════════════
+// DATA LADEN
+// ════════════════════════════════════════════════════
+function laadAlles() {
+  toonLaden("Woorden laden…");
+  db.collection("woordenschat").orderBy("aangemaakt","desc").get({ source:"server" })
+    .then(function(snap){
+      alleWoorden = [];
+      snap.forEach(function(doc){
+        alleWoorden.push(Object.assign({ id: doc.id }, doc.data()));
+      });
+      return GUEST ? Promise.resolve() : laadVoortgangData();
+    })
+    .then(function(){
+      verbergLaden();
+      toonMenu();
+    })
+    .catch(function(e){ verbergLaden(); alert("Fout bij laden: " + e.message); });
+}
+
+function laadVoortgangData() {
+  return db.collection("woordenschat_voortgang")
+    .where("leerling","==", CU.naam).get({ source:"server" })
+    .then(function(snap){
+      leerlingVoortgang = {};
+      snap.forEach(function(doc){
+        var d = doc.data();
+        leerlingVoortgang[d.woordId] = { sterren: d.sterren||0, geprobeerd: d.geprobeerd||0, correct: d.correct||0, docId: doc.id };
+      });
+    });
+}
+
+// ════════════════════════════════════════════════════
+// MENU
+// ════════════════════════════════════════════════════
+function updateMenu() {
+  var naamTxt = GUEST ? "Gast" : (CU ? capitalize(CU.naam) : "");
+  document.getElementById("menu-naam").textContent = naamTxt;
+  document.getElementById("welkom-tekst").textContent = "Hallo " + naamTxt + "! 👋";
+
+  // Totaal sterren
+  var totSterren = 0;
+  Object.values(leerlingVoortgang).forEach(function(v){ totSterren += (v.sterren||0); });
+  var sterrenEl = document.getElementById("menu-sterren");
+  sterrenEl.innerHTML = totSterren > 0
+    ? '<span style="color:rgba(255,255,255,.7);font-size:.8rem;">⭐ ' + totSterren + ' sterren verzameld</span>'
+    : '<span style="color:rgba(255,255,255,.4);font-size:.8rem;">Nog geen sterren — begin met oefenen!</span>';
+
+  // Taken badge
+  laadTaakBadge();
+}
+
+function laadTaakBadge() {
+  if (GUEST) return;
+  db.collection("woordenschat_taken")
+    .where("leerling","==", CU.naam)
+    .where("gedaan","==", false)
+    .get({ source:"server" })
+    .then(function(snap){
+      var badge = document.getElementById("taak-badge");
+      if (snap.size > 0) { badge.style.display = "inline"; badge.textContent = snap.size + " nieuw"; }
+      else badge.style.display = "none";
+    }).catch(function(){});
+}
+
+// ════════════════════════════════════════════════════
+// WOORDSELECTIE
+// ════════════════════════════════════════════════════
+function selecteerWoorden(idx) {
+  gekozenWoordselectie = idx;
+  document.querySelectorAll(".keuze-kaart").forEach(function(k,i){
+    k.classList.toggle("geselecteerd", i === idx);
+  });
+  checkStartKnop();
+}
+
+function selecteerModus(idx) {
+  gekozenModus = idx;
+  document.querySelectorAll(".modus-kaart").forEach(function(k,i){
+    k.classList.toggle("geselecteerd", i === idx);
+  });
+  checkStartKnop();
+}
+
+function checkStartKnop() {
+  document.getElementById("btn-start").disabled = (gekozenWoordselectie === -1 || gekozenModus === -1);
+}
+
+function getWoordPool() {
+  var nu = Date.now();
+  var DAG = 86400000;
+  var schooljaarStart = getSchooljaarStart();
+  var pool = [];
+
+  if (gekozenWoordselectie === 0) {
+    // Laatste 20
+    pool = alleWoorden.slice(0, 20);
+  } else if (gekozenWoordselectie === 1) {
+    // Afgelopen 30 dagen
+    pool = alleWoorden.filter(function(w){
+      if (!w.aangemaakt || !w.aangemaakt.toDate) return false;
+      return nu - w.aangemaakt.toDate().getTime() <= 30 * DAG;
+    }).slice(0, 20);
+  } else if (gekozenWoordselectie === 2) {
+    // Dit schooljaar
+    pool = alleWoorden.filter(function(w){
+      if (!w.aangemaakt || !w.aangemaakt.toDate) return false;
+      return w.aangemaakt.toDate().getTime() >= schooljaarStart;
+    }).slice(0, 20);
+  } else if (gekozenWoordselectie === 3) {
+    // Slimme keuze: woorden met laagste sterren eerst
+    var gesorteerd = alleWoorden.slice().sort(function(a,b){
+      var sa = leerlingVoortgang[a.id] ? leerlingVoortgang[a.id].sterren : 0;
+      var sb = leerlingVoortgang[b.id] ? leerlingVoortgang[b.id].sterren : 0;
+      return sa - sb;
+    });
+    pool = gesorteerd.slice(0, 20);
+  }
+
+  return pool;
+}
+
+function getSchooljaarStart() {
+  var nu = new Date();
+  var jaar = nu.getFullYear();
+  var sept = new Date(jaar, 8, 1).getTime();
+  return nu.getTime() < sept ? new Date(jaar-1, 8, 1).getTime() : sept;
+}
+
+// ════════════════════════════════════════════════════
+// VRAGEN GENEREREN
+// ════════════════════════════════════════════════════
+function startOefening() {
+  oefenWoorden = getWoordPool();
+  if (oefenWoorden.length < 2) {
+    alert("Er zijn te weinig woorden om te oefenen. Voeg eerst meer woorden toe in de beheertool.");
+    return;
+  }
+  vragen = genereerVragen(oefenWoorden, gekozenModus);
+  huidigVraagIndex = 0;
+  resultaten = [];
+  toon("s-oefen");
+  toonVraag();
+}
+
+function genereerVragen(woorden, modus) {
+  var lijst = [];
+  // Zorg voor 20 vragen — woorden herhalen indien nodig
+  var pool = [];
+  while (pool.length < 20) pool = pool.concat(shuffle(woorden.slice()));
+  pool = pool.slice(0, 20);
+
+  pool.forEach(function(w){
+    var m = modus === 0 ? kiesModus(w) : modus;
+    lijst.push({ woord: w, modus: m });
+  });
+  return lijst;
+}
+
+function kiesModus(w) {
+  // Willekeurig, maar afbeelding-modus alleen als woord een afbeelding heeft
+  var beschikbaar = [1, 3, 4, 5, 6];
+  if (w.afbeelding) beschikbaar.push(2);
+  return beschikbaar[Math.floor(Math.random() * beschikbaar.length)];
+}
+
+// ════════════════════════════════════════════════════
+// VRAAG TONEN
+// ════════════════════════════════════════════════════
+function toonVraag() {
+  var q = vragen[huidigVraagIndex];
+  var pct = (huidigVraagIndex / vragen.length) * 100;
+  document.getElementById("voortgang-fill").style.width = pct + "%";
+  document.getElementById("vraag-teller").textContent = (huidigVraagIndex+1) + " / " + vragen.length;
+  document.getElementById("oefen-modus-label").textContent = MODI_NAMEN[q.modus];
+
+  var body = document.getElementById("oefen-body");
+  body.innerHTML = "";
+
+  var kaart = document.createElement("div");
+  kaart.className = "vraag-kaart";
+
+  var modusLbl = document.createElement("div");
+  modusLbl.className = "vraag-modus-label";
+  modusLbl.innerHTML = '<i class="fa-solid fa-star" style="color:var(--gold)"></i> ' + MODI_NAMEN[q.modus];
+  kaart.appendChild(modusLbl);
+
+  switch(q.modus) {
+    case 1: bouwBetekenisMC(kaart, q); break;
+    case 2: bouwAfbeeldingMC(kaart, q); break;
+    case 3: bouwWoordRaden(kaart, q); break;
+    case 4: bouwOvertypen(kaart, q, false); break;
+    case 5: bouwOvertypen(kaart, q, true); break;
+    case 6: bouwOntbrekend(kaart, q); break;
+    default: bouwBetekenisMC(kaart, q);
+  }
+
+  body.appendChild(kaart);
+}
+
+// ── MODUS 1: Betekenis MC ──
+function bouwBetekenisMC(kaart, q) {
+  var w = q.woord;
+  var el = document.createElement("div");
+  el.className = "vraag-woord";
+  el.textContent = w.woord;
+  kaart.appendChild(el);
+
+  if (w.afbeelding) {
+    var img = document.createElement("img");
+    img.className = "vraag-afbeelding";
+    img.src = w.afbeelding;
+    img.onerror = function(){ this.style.display="none"; };
+    kaart.appendChild(img);
+  }
+
+  var vraagTxt = document.createElement("div");
+  vraagTxt.className = "vraag-tekst";
+  vraagTxt.textContent = "Welke betekenis klopt bij dit woord?";
+  kaart.appendChild(vraagTxt);
+
+  var opties = maakOpties(w, "betekenis");
+  var grid = document.createElement("div");
+  grid.className = "opties-grid";
+  var letters = ["A","B","C","D"];
+  opties.forEach(function(opt, i){
+    var btn = document.createElement("button");
+    btn.className = "optie-knop";
+    btn.innerHTML = '<span class="optie-letter">' + letters[i] + '</span>' + escH(opt.tekst);
+    btn.addEventListener("click", (function(isCorrect, alleBtns){
+      return function(){
+        verwerkMC(isCorrect, btn, alleBtns, q);
+      };
+    })(opt.correct, null));
+    grid.appendChild(btn);
+  });
+  // Sla alle btns op voor feedback
+  kaart.appendChild(grid);
+  var alleBtns = grid.querySelectorAll(".optie-knop");
+  alleBtns.forEach(function(btn, i){
+    btn.addEventListener("click", function(){}, {once:true});
+  });
+  // Fix: herverbind met correcte referentie
+  Array.from(alleBtns).forEach(function(btn, i){
+    btn.onclick = (function(opt, b, alle){
+      return function(){
+        if (b.disabled) return;
+        verwerkMCKeuze(opt.correct, b, Array.from(alle), opties, q);
+      };
+    })(opties[i], btn, alleBtns);
+  });
+}
+
+function verwerkMCKeuze(isCorrect, gekozenBtn, alleBtns, opties, q) {
+  alleBtns.forEach(function(b, i){
+    b.disabled = true;
+    if (opties[i].correct) b.classList.add("correct");
+  });
+  if (!isCorrect) gekozenBtn.classList.add("fout");
+  toonFeedback(isCorrect, q);
+}
+
+// ── MODUS 2: Afbeelding MC ──
+function bouwAfbeeldingMC(kaart, q) {
+  var w = q.woord;
+  // Controleer of er genoeg woorden met afbeelding zijn
+  var metAfb = alleWoorden.filter(function(x){ return x.afbeelding && x.id !== w.id; });
+  if (!w.afbeelding || metAfb.length < 3) {
+    // Fallback naar betekenis MC
+    q.modus = 1;
+    bouwBetekenisMC(kaart, q);
+    return;
+  }
+  var el = document.createElement("div");
+  el.className = "vraag-woord";
+  el.textContent = w.woord;
+  kaart.appendChild(el);
+
+  var vraagTxt = document.createElement("div");
+  vraagTxt.className = "vraag-tekst";
+  vraagTxt.textContent = "Welke afbeelding past bij dit woord?";
+  kaart.appendChild(vraagTxt);
+
+  // 4 afbeeldingen: 1 correct + 3 foute
+  var foute = shuffle(metAfb).slice(0,3);
+  var opties = shuffle([{w:w, correct:true}].concat(foute.map(function(x){ return {w:x,correct:false}; })));
+
+  var grid = document.createElement("div");
+  grid.style.cssText = "display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px;";
+  opties.forEach(function(opt){
+    var div = document.createElement("div");
+    div.style.cssText = "border:3px solid var(--cream);border-radius:12px;overflow:hidden;cursor:pointer;transition:border-color .2s;";
+    var img = document.createElement("img");
+    img.src = opt.w.afbeelding;
+    img.style.cssText = "width:100%;height:100px;object-fit:cover;display:block;";
+    img.onerror = function(){ div.style.background="var(--cream)"; };
+    div.appendChild(img);
+    div.addEventListener("click", (function(o, d, alle){
+      return function(){
+        if (d.dataset.gebruikt) return;
+        alle.forEach(function(x){ x.dataset.gebruikt="1"; });
+        if (o.correct) d.style.borderColor = "var(--green)";
+        else { d.style.borderColor = "var(--accent)";
+          alle.forEach(function(x,i){ if(opties[i].correct) x.style.borderColor="var(--green)"; }); }
+        toonFeedback(o.correct, q);
+      };
+    })(opt, div, Array.from(grid.children).concat([div])));
+    grid.appendChild(div);
+  });
+  // Fix referentie na loop
+  var alleDivs = null;
+  Array.from(grid.children).forEach(function(div, i){
+    div.onclick = (function(opt, d){
+      return function(){
+        if (d.dataset.gebruikt) return;
+        var kinderen = Array.from(grid.children);
+        kinderen.forEach(function(x){ x.dataset.gebruikt="1"; });
+        kinderen.forEach(function(x,j){ if(opties[j] && opties[j].correct) x.style.borderColor="var(--green)"; });
+        if (!opt.correct) d.style.borderColor = "var(--accent)";
+        toonFeedback(opt.correct, q);
+      };
+    })(opties[i], div);
+  });
+  kaart.appendChild(grid);
+}
+
+// ── MODUS 3: Woord raden ──
+function bouwWoordRaden(kaart, q) {
+  var w = q.woord;
+  var vraagTxt = document.createElement("div");
+  vraagTxt.className = "vraag-tekst";
+  vraagTxt.style.fontSize = "1.05rem";
+  vraagTxt.innerHTML = "<strong>Betekenis:</strong> " + escH(w.betekenis || "Geen betekenis beschikbaar");
+  kaart.appendChild(vraagTxt);
+
+  if (w.zin) {
+    var zinTxt = document.createElement("div");
+    zinTxt.className = "vraag-tekst";
+    zinTxt.style.cssText = "font-size:.88rem;color:var(--muted);font-style:italic;margin-top:-8px;";
+    zinTxt.textContent = "💬 " + w.zin.replace(new RegExp(w.woord,"gi"), "___");
+    kaart.appendChild(zinTxt);
+  }
+
+  var hint = document.createElement("div");
+  hint.className = "vraag-tekst";
+  hint.style.cssText = "font-size:.82rem;color:var(--muted);";
+  hint.textContent = "Het woord heeft " + w.woord.length + " letters.";
+  kaart.appendChild(hint);
+
+  bouwTypInput(kaart, q, w.woord);
+}
+
+// ── MODUS 4 & 5: Overtypen / Blind ──
+function bouwOvertypen(kaart, q, blind) {
+  var w = q.woord;
+  var woordEl = document.createElement("div");
+  woordEl.className = "vraag-woord";
+  woordEl.id = "blind-woord";
+  woordEl.textContent = w.woord;
+  kaart.appendChild(woordEl);
+
+  var instrEl = document.createElement("div");
+  instrEl.className = "vraag-tekst";
+  instrEl.style.color = "var(--muted)";
+  instrEl.style.fontSize = ".88rem";
+  if (blind) {
+    instrEl.textContent = "Onthoud het woord! Het verdwijnt zo…";
+    setTimeout(function(){
+      woordEl.style.transition = "opacity .5s";
+      woordEl.style.opacity = "0";
+      instrEl.textContent = "Het woord is weg — typ het nu!";
+    }, 2500);
+  } else {
+    instrEl.textContent = "Typ het woord hieronder over.";
+  }
+  kaart.appendChild(instrEl);
+
+  bouwTypInput(kaart, q, w.woord);
+}
+
+// ── MODUS 6: Ontbrekende letters ──
+function bouwOntbrekend(kaart, q) {
+  var w = q.woord;
+  var klinkers = "aeiouAEIOU";
+  var patroon = w.woord.split("").map(function(c){
+    return klinkers.indexOf(c) >= 0 ? "_" : c;
+  }).join("");
+
+  var woordEl = document.createElement("div");
+  woordEl.className = "vraag-woord typ-invoer hint";
+  woordEl.style.cssText = "font-size:1.6rem;padding:12px;border:2px solid var(--cream);border-radius:12px;background:#fafafa;margin-bottom:10px;";
+  woordEl.textContent = patroon;
+  kaart.appendChild(woordEl);
+
+  var instrEl = document.createElement("div");
+  instrEl.className = "vraag-tekst";
+  instrEl.style.cssText = "color:var(--muted);font-size:.88rem;margin-bottom:10px;";
+  instrEl.textContent = "Vul de ontbrekende klinkers in. Typ het volledige woord.";
+  kaart.appendChild(instrEl);
+
+  if (w.betekenis) {
+    var betEl = document.createElement("div");
+    betEl.className = "vraag-tekst";
+    betEl.style.cssText = "font-size:.85rem;color:var(--muted);font-style:italic;margin-bottom:10px;";
+    betEl.textContent = "💡 " + w.betekenis;
+    kaart.appendChild(betEl);
+  }
+
+  bouwTypInput(kaart, q, w.woord);
+}
+
+// ── GEDEELD: Typ input ──
+function bouwTypInput(kaart, q, correct) {
+  var invoer = document.createElement("input");
+  invoer.type = "text";
+  invoer.className = "typ-invoer";
+  invoer.placeholder = "Typ hier je antwoord…";
+  invoer.autocomplete = "off";
+  invoer.autocorrect = "off";
+  invoer.spellcheck = false;
+  kaart.appendChild(invoer);
+
+  var feedback = document.createElement("div");
+  feedback.className = "feedback-blok";
+  kaart.appendChild(feedback);
+
+  var btnCtrl = document.createElement("button");
+  btnCtrl.className = "btn-controleer";
+  btnCtrl.textContent = "Controleer";
+  kaart.appendChild(btnCtrl);
+
+  var btnVlg = document.createElement("button");
+  btnVlg.className = "btn-volgende";
+  btnVlg.innerHTML = '<i class="fa-solid fa-arrow-right"></i> Volgende vraag';
+  kaart.appendChild(btnVlg);
+
+  setTimeout(function(){ invoer.focus(); }, 100);
+
+  function controleer() {
+    var antwoord = invoer.value.trim().toLowerCase();
+    var goed = antwoord === correct.toLowerCase();
+    invoer.disabled = true;
+    invoer.classList.add(goed ? "correct" : "fout");
+    feedback.style.display = "block";
+    feedback.className = "feedback-blok " + (goed ? "correct" : "fout");
+    if (goed) feedback.textContent = "✅ Correct!";
+    else feedback.innerHTML = "❌ Het juiste woord is: <strong>" + escH(correct) + "</strong>";
+    btnCtrl.style.display = "none";
+    btnVlg.style.display = "block";
+    slaResultaatOp(goed, q);
+  }
+
+  btnCtrl.addEventListener("click", controleer);
+  invoer.addEventListener("keydown", function(e){ if (e.key === "Enter") controleer(); });
+  btnVlg.addEventListener("click", volgendeVraag);
+}
+
+// ── FEEDBACK (MC) ──
+function toonFeedback(correct, q) {
+  slaResultaatOp(correct, q);
+  var kaart = document.querySelector(".vraag-kaart");
+  var fb = document.createElement("div");
+  fb.className = "feedback-blok " + (correct ? "correct" : "fout");
+  fb.style.display = "block";
+  fb.textContent = correct ? "✅ Correct!" : "❌ Niet juist.";
+  kaart.appendChild(fb);
+
+  var btnVlg = document.createElement("button");
+  btnVlg.className = "btn-volgende";
+  btnVlg.style.display = "block";
+  btnVlg.innerHTML = '<i class="fa-solid fa-arrow-right"></i> Volgende vraag';
+  btnVlg.addEventListener("click", volgendeVraag);
+  kaart.appendChild(btnVlg);
+}
+
+// ════════════════════════════════════════════════════
+// RESULTAAT VERWERKEN
+// ════════════════════════════════════════════════════
+function slaResultaatOp(correct, q) {
+  resultaten.push({ woord: q.woord, correct: correct, modus: q.modus });
+  // Voortgang updaten
+  if (!GUEST) updateVoortgangLokaal(q.woord.id, correct);
+}
+
+function updateVoortgangLokaal(woordId, correct) {
+  if (!leerlingVoortgang[woordId]) leerlingVoortgang[woordId] = { sterren:0, geprobeerd:0, correct:0 };
+  var v = leerlingVoortgang[woordId];
+  v.geprobeerd++;
+  if (correct) v.correct++;
+  // Sterren berekenen: 0-49% = 0, 50-74% = 1, 75-89% = 2, 90-100% = 3
+  var pct = v.geprobeerd > 0 ? v.correct / v.geprobeerd : 0;
+  v.sterren = pct >= .9 ? 3 : pct >= .75 ? 2 : pct >= .5 ? 1 : 0;
+}
+
+function volgendeVraag() {
+  huidigVraagIndex++;
+  if (huidigVraagIndex >= vragen.length) {
+    toonResultaat();
+  } else {
+    toonVraag();
+  }
+}
+
+// ════════════════════════════════════════════════════
+// RESULTAAT SCHERM
+// ════════════════════════════════════════════════════
+function toonResultaat() {
+  document.getElementById("voortgang-fill").style.width = "100%";
+  toon("s-resultaat");
+
+  var totaal = resultaten.length;
+  var correct = resultaten.filter(function(r){ return r.correct; }).length;
+  var pct = Math.round(correct / totaal * 100);
+
+  document.getElementById("res-score").textContent = correct + "/" + totaal;
+
+  var titel, sub;
+  if (pct >= 90) { titel = "Schitterend! 🌟"; sub = "Bijna alles goed — geweldig!"; }
+  else if (pct >= 70) { titel = "Goed gedaan! 👏"; sub = "Meer dan de helft goed — top!"; }
+  else if (pct >= 50) { titel = "Niet slecht! 💪"; sub = "De helft goed — blijf oefenen!"; }
+  else { titel = "Oefening baart kunst! 📚"; sub = "Probeer het nog eens — het lukt!"; }
+
+  document.getElementById("res-titel").textContent = titel;
+  document.getElementById("res-sub").textContent = sub;
+
+  // Per woord resultaat
+  var container = document.getElementById("res-woorden");
+  container.innerHTML = "";
+  // Groepeer per uniek woord
+  var perWoord = {};
+  resultaten.forEach(function(r){
+    var id = r.woord.id;
+    if (!perWoord[id]) perWoord[id] = { woord: r.woord, correct:0, totaal:0 };
+    perWoord[id].totaal++;
+    if (r.correct) perWoord[id].correct++;
+  });
+  Object.values(perWoord).forEach(function(pw){
+    var pct2 = pw.correct / pw.totaal;
+    var sterren = pct2 >= .9 ? "⭐⭐⭐" : pct2 >= .75 ? "⭐⭐" : pct2 >= .5 ? "⭐" : "☆";
+    var kaart = document.createElement("div");
+    kaart.className = "woord-resultaat-kaart";
+    kaart.innerHTML =
+      '<div><div class="wr-woord">' + escH(pw.woord.woord) + '</div>' +
+      '<div class="wr-score">' + pw.correct + '/' + pw.totaal + ' goed</div></div>' +
+      '<div class="wr-sterren">' + sterren + '</div>';
+    container.appendChild(kaart);
+  });
+
+  // Opslaan in Firestore
+  if (!GUEST) slaOefenResultaatOp(correct, totaal);
+}
+
+function slaOefenResultaatOp(correct, totaal) {
+  // Sessie opslaan
+  db.collection("woordenschat_resultaten").add({
+    leerling: CU.naam,
+    correct: correct,
+    totaal: totaal,
+    modus: gekozenModus,
+    woordselectie: gekozenWoordselectie,
+    datum: firebase.firestore.FieldValue.serverTimestamp()
+  }).catch(function(e){ console.error(e); });
+
+  // Voortgang per woord opslaan
+  var batch = db.batch();
+  Object.keys(leerlingVoortgang).forEach(function(woordId){
+    var v = leerlingVoortgang[woordId];
+    var ref;
+    if (v.docId) {
+      ref = db.collection("woordenschat_voortgang").doc(v.docId);
+    } else {
+      ref = db.collection("woordenschat_voortgang").doc();
+      v.docId = ref.id;
+    }
+    batch.set(ref, {
+      leerling: CU.naam,
+      woordId: woordId,
+      sterren: v.sterren,
+      geprobeerd: v.geprobeerd,
+      correct: v.correct,
+      bijgewerkt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+  });
+  batch.commit().catch(function(e){ console.error(e); });
+}
+
+// ════════════════════════════════════════════════════
+// TAKEN
+// ════════════════════════════════════════════════════
+function laadTaken() {
+  var body = document.getElementById("taken-body");
+  body.innerHTML = '<div class="leeg-staat"><i class="fa-solid fa-circle-notch" style="animation:spin .7s linear infinite;opacity:.3;"></i><p>Laden…</p></div>';
+
+  if (GUEST) {
+    body.innerHTML = '<div class="leeg-staat"><i class="fa-solid fa-lock"></i><p>Log in om je taken te zien.</p></div>';
+    return;
+  }
+
+  db.collection("woordenschat_taken")
+    .where("leerling","==", CU.naam)
+    .get({ source:"server" })
+    .then(function(snap){
+      body.innerHTML = "";
+      if (snap.size === 0) {
+        body.innerHTML = '<div class="leeg-staat"><i class="fa-solid fa-inbox"></i><p>Geen taken gevonden.</p></div>';
+        return;
+      }
+      snap.forEach(function(doc){
+        var t = Object.assign({ id: doc.id }, doc.data());
+        var kaart = document.createElement("div");
+        kaart.className = "taak-kaart";
+        kaart.innerHTML =
+          '<div class="taak-icoon">' + (t.gedaan ? "✅" : "📋") + '</div>' +
+          '<div><h3>' + escH(t.titel||"Taak") + '</h3>' +
+          '<p>' + escH(MODI_NAMEN[t.modus]||"Oefening") + ' · ' + (t.aantalWoorden||20) + ' woorden</p></div>' +
+          '<span class="taak-badge' + (t.gedaan?" gedaan":"") + '">' + (t.gedaan?"Gedaan":"Te doen") + '</span>';
+        kaart.addEventListener("click", (function(taak){ return function(){ startTaak(taak); }; })(t));
+        body.appendChild(kaart);
+      });
+    }).catch(function(e){ body.innerHTML = '<div class="leeg-staat"><i class="fa-solid fa-triangle-exclamation"></i><p>Fout: ' + e.message + '</p></div>'; });
+}
+
+function startTaak(taak) {
+  gekozenModus = taak.modus || 0;
+  gekozenWoordselectie = taak.woordselectie !== undefined ? taak.woordselectie : 0;
+  startOefening();
+}
+
+// ════════════════════════════════════════════════════
+// VOORTGANG
+// ════════════════════════════════════════════════════
+function renderVoortgang() {
+  if (GUEST) {
+    document.getElementById("voortgang-lijst").innerHTML = '<div class="leeg-staat"><i class="fa-solid fa-lock"></i><p>Log in om je voortgang te zien.</p></div>';
+    return;
+  }
+
+  var woordenMet = Object.keys(leerlingVoortgang).length;
+  var totSterren = 0;
+  Object.values(leerlingVoortgang).forEach(function(v){ totSterren += (v.sterren||0); });
+
+  // Sessies tellen
+  db.collection("woordenschat_resultaten")
+    .where("leerling","==", CU.naam).get({ source:"server" })
+    .then(function(snap){
+      document.getElementById("stat-woorden").textContent = woordenMet;
+      document.getElementById("stat-sterren").textContent = totSterren;
+      document.getElementById("stat-sessies").textContent = snap.size;
+    }).catch(function(){ });
+
+  var lijst = document.getElementById("voortgang-lijst");
+  lijst.innerHTML = "";
+
+  if (woordenMet === 0) {
+    lijst.innerHTML = '<div class="leeg-staat"><i class="fa-solid fa-star"></i><p>Nog geen woorden geoefend.</p></div>';
+    return;
+  }
+
+  alleWoorden.forEach(function(w){
+    var v = leerlingVoortgang[w.id];
+    var sterren = v ? v.sterren : 0;
+    var sterrenTxt = "☆☆☆";
+    if (sterren === 1) sterrenTxt = "⭐☆☆";
+    else if (sterren === 2) sterrenTxt = "⭐⭐☆";
+    else if (sterren === 3) sterrenTxt = "⭐⭐⭐";
+
+    var kaart = document.createElement("div");
+    kaart.className = "woord-voortgang-kaart";
+    kaart.innerHTML =
+      '<div><div class="wv-woord">' + escH(w.woord) + '</div>' +
+      (v ? '<div class="wv-info">' + v.correct + '/' + v.geprobeerd + ' goed</div>' : '<div class="wv-info">Nog niet geoefend</div>') +
+      '</div><div class="wv-sterren">' + sterrenTxt + '</div>';
+    lijst.appendChild(kaart);
+  });
+}
+
+// ════════════════════════════════════════════════════
+// HELPERS
+// ════════════════════════════════════════════════════
+function maakOpties(w, veld) {
+  // Correct antwoord + 3 foute
+  var correct = w[veld] || w.woord;
+  var foute = shuffle(alleWoorden.filter(function(x){ return x.id !== w.id && x[veld]; })).slice(0,3);
+  var opties = [{ tekst: correct, correct: true }].concat(
+    foute.map(function(x){ return { tekst: x[veld], correct: false }; })
+  );
+  return shuffle(opties);
+}
+
+function shuffle(arr) {
+  var a = arr.slice();
+  for (var i = a.length-1; i > 0; i--) {
+    var j = Math.floor(Math.random() * (i+1));
+    var t = a[i]; a[i] = a[j]; a[j] = t;
+  }
+  return a;
+}
+
+function capitalize(s) { return s ? s.charAt(0).toUpperCase() + s.slice(1) : s; }
+
+function escH(str) {
+  if (!str) return "";
+  return String(str).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")
+    .replace(/"/g,"&quot;").replace(/'/g,"&#39;");
+}
+
+function toonLaden(tekst) {
+  document.getElementById("laden-tekst").textContent = tekst || "Laden…";
+  document.getElementById("laden").classList.add("actief");
+}
+function verbergLaden() { document.getElementById("laden").classList.remove("actief"); }
+
+// MC helper - fix dubbele onclick
+function maakOpties(w, veld) {
+  var correct = w[veld] || "(geen betekenis)";
+  var foute = shuffle(alleWoorden.filter(function(x){ return x.id !== w.id && x[veld]; })).slice(0,3);
+  var opties = [{ tekst: correct, correct: true }].concat(
+    foute.map(function(x){ return { tekst: x[veld], correct: false }; })
+  );
+  return shuffle(opties);
+}
+</script>
+</body>
+</html>
