@@ -736,7 +736,16 @@ firebase.initializeApp({
 var _db          = firebase.firestore();
 var _currentUser = null;
 var _isGuest     = false;
-var COL_NAME     = "hoofdrekenen_toets";
+
+// Per categorie een eigen collection én registry-naam
+// Zo verschijnt elke categorie als apart vakonderdeel in het dashboard
+var CAT_CONFIG = {
+  'plusminus10':  { col: 'hoofdrekenen_10_toets',   naam: 'Hoofdrekenen tot 10' },
+  'plusminus20':  { col: 'hoofdrekenen_20_toets',   naam: 'Hoofdrekenen tot 20' },
+  'plusminus100': { col: 'hoofdrekenen_100_toets',  naam: 'Hoofdrekenen tot 100' },
+  'tafels':       { col: 'hoofdrekenen_tafels_toets',   naam: 'Maaltafels' },
+  'deeltafels':   { col: 'hoofdrekenen_deeltafels_toets', naam: 'Deeltafels' },
+};
 
 // ── UPLOAD STATUS (style.display — nooit classList) ───────────────────────
 function setUploadStatus(type, msg) {
@@ -843,8 +852,10 @@ async function saveToFirestore() {
 
   setUploadStatus("loading", "Bezig met opslaan...");
 
-  var catId   = state.category ? state.category.id : "onbekend";
+  var catId    = state.category ? state.category.id : "onbekend";
   var catLabel = state.category ? state.category.label : catId;
+  var catConf  = CAT_CONFIG[catId] || { col: 'hoofdrekenen_toets', naam: catLabel };
+  var COL_NAME = catConf.col;
   var results = state.results || [];
   var total   = results.length;
   var correct = results.filter(function(r){return r.correct;}).length;
@@ -868,6 +879,7 @@ async function saveToFirestore() {
   var record = {
     leerlingId:   window._leerlingId,
     leerlingNaam: window._leerlingNaam || "Leerling",
+    vak:          "Wiskunde",
     mode:         catLabel,
     score:        correct,
     totalQ:       total,
@@ -901,8 +913,9 @@ async function saveToFirestore() {
 
     // Registry — dashboard ontdekt collection automatisch
     await _db.collection("toets_registry").doc(COL_NAME).set({
-      naam:       "Hoofdrekenen",
+      naam:       catConf.naam,
       collection: COL_NAME,
+      vak:        "Wiskunde",
       lastSeen:   firebase.firestore.FieldValue.serverTimestamp()
     }, { merge: true });
 
