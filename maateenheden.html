@@ -436,7 +436,7 @@
                     selectedQuestions.push(remainingPool.pop());
                 }
             }
-            else if (mode === 'gewicht') {
+            else if (mode === 'toets-gewicht') {
                 state.totalQ = 10;
                 const units = MATEN_GROEPEN.gewicht; // g, kg, t
                 const categoryPool = QUESTION_POOL.filter(q => q.category === 'gewicht' && q.unit !== 'mg');
@@ -623,19 +623,14 @@
                 fb.innerHTML = "<span class='text-emerald-600 text-base'><i class='fa-solid fa-circle-check'></i> Schitterend! Dat is de juiste maat.</span>";
                 confetti({ particleCount: 35, spread: 60, origin: { y: 0.8 } });
             } else {
-            // We verhogen de foutensteller alleen als deze specifieke vraag nog niet eerder fout was
-                if (!state.huidigeVraagFoutGeweest) {
-                    state.foutenAantal++;
-                    state.huidigeVraagFoutGeweest = true; // <-- DEZE REGEL VOEGEN WE TOE!
-    }
-    fb.innerHTML = `<span class='text-rose-600 text-base'><i class='fa-solid fa-circle-xmark'></i> Oei! Het juiste antwoord was: <b class='text-slate-800 text-lg font-black'>${q.unit}</b>.</span>`;
-}
+                state.foutenAantal++;
                 fb.innerHTML = `<span class='text-rose-600 text-base'><i class='fa-solid fa-circle-xmark'></i> Oei! Het juiste antwoord was: <b class='text-slate-800 text-lg font-black'>${q.unit}</b>.</span>`;
             }
 
             // Sla op in geschiedenis voor eindrapport
             state.history.push({
                 question: q.text,
+                category: q.category || 'onbekend',
                 userAnswer: selectedOpt,
                 correctAnswer: q.unit,
                 isCorrect: isCorrect,
@@ -855,13 +850,17 @@ async function saveToFirestore() {
 
   setUploadStatus("loading", "Bezig met opslaan...");
 
-  var s      = window.state || {};
+  var s      = state;
   var h      = s.history || [];
   var mode   = s.currentMode || "onbekend";
   var label  = MAAT_LABELS[mode] || ("Maateenheden: " + mode);
-  var total  = s.totalQ || 10;
-  var correct = s.score || 0;
+
+  var correct = h.filter(function(i){ return i.isCorrect; }).length;
+  var total   = h.length;
+
   var pct    = total > 0 ? Math.round((correct/total)*100) : 0;
+
+  console.log('SCORE DEBUG', {correct,total,history:h});
 
   // Foutenanalyse per categorie (lengte/inhoud/gewicht)
   var foutenTelling = {};
