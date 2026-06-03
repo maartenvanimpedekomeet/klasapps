@@ -1,0 +1,858 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Oppervlakte & Omtrek Master</title>
+    <!-- Tailwind CSS, Confetti & FontAwesome -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800;900&display=swap');
+        body { font-family: 'Plus Jakarta Sans', sans-serif; }
+        .hidden { display: none !important; }
+        .card-anim { transition: transform 0.2s, box-shadow 0.2s; }
+        .card-anim:hover { transform: translateY(-2px); box-shadow: 0 10px 15px -3px rgba(0,0,0,0.08); }
+        
+        /* Grid cellen voor de interactieve bouwer */
+        .grid-cell {
+            aspect-ratio: 1;
+            transition: background-color 0.15s, border-color 0.15s;
+        }
+        
+        /* Voorkom tekstselectie tijdens het slepen op de grid */
+        .no-select {
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 min-h-screen pb-20 no-select">
+
+    <!-- NAVIGATIEBALK -->
+    <nav class="bg-white border-b border-slate-100 shadow-sm sticky top-0 z-40 px-6 py-4">
+        <div class="max-w-5xl mx-auto flex justify-between items-center">
+            <div class="flex items-center gap-3">
+                <div class="bg-indigo-600 text-white p-2.5 rounded-xl shadow-md shadow-indigo-600/20">
+                    <i class="fa-solid fa-shapes text-lg"></i>
+                </div>
+                <div>
+                    <span class="text-xs font-bold text-indigo-600 uppercase tracking-wider block">Wiskunde Trainer</span>
+                    <h1 class="text-lg font-bold text-slate-800 leading-tight">Oppervlakte & Omtrek Master</h1>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- HOOFDCONTAINER -->
+    <main class="max-w-4xl mx-auto px-4 mt-8">
+
+        <!-- PROGRESS BAR -->
+        <div id="progressContainer" class="hidden flex flex-col items-center mb-6 gap-2">
+            <div id="niveauLabel" class="text-xs font-bold text-slate-500 bg-slate-200/60 border border-slate-200 px-4 py-1.5 rounded-full uppercase tracking-wider">Onderdeel</div>
+            <div id="progressSectie" class="flex justify-center gap-2 text-3xl">
+                <div id="bullets-container" class="flex gap-1.5 flex-wrap justify-center"></div>
+            </div>
+        </div>
+
+        <!-- HOOFDMENU -->
+        <section id="menuSectie" class="space-y-6 animate-in fade-in duration-300">
+            <div class="text-center max-w-xl mx-auto mb-8">
+                <h2 class="text-3xl font-extrabold text-slate-800 tracking-tight">Omtrek en Oppervlakte meten</h2>
+                <p class="text-slate-500 mt-2 text-sm">Oefen met centimeters en meters op papier en in de echte wereld!</p>
+            </div>
+
+            <!-- OEFENMODULES GRID -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <button class="menu-btn card-anim bg-white p-6 border border-slate-200/60 rounded-3xl text-left flex flex-col justify-between hover:border-indigo-300 group transition-all" onclick="startOnderdeel('maateenheid', 'Wanneer wat gebruiken?')">
+                    <div class="w-12 h-12 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center text-xl group-hover:bg-blue-600 group-hover:text-white transition-colors mb-4"><i class="fa-solid fa-ruler"></i></div>
+                    <div>
+                        <h3 class="font-extrabold text-slate-800 text-lg">1. Wanneer wat gebruiken?</h3>
+                        <p class="text-xs text-slate-400 mt-1">Leer het difference tussen lengte (m/cm) en oppervlakte (m²/cm²).</p>
+                    </div>
+                </button>
+
+                <button class="menu-btn card-anim bg-white p-6 border border-slate-200/60 rounded-3xl text-left flex flex-col justify-between hover:border-indigo-300 group transition-all" onclick="startOnderdeel('berekenen', 'Omtrek & Oppervlakte berekenen')">
+                    <div class="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center justify-center text-xl group-hover:bg-emerald-600 group-hover:text-white transition-colors mb-4"><i class="fa-solid fa-calculator"></i></div>
+                    <div>
+                        <h3 class="font-extrabold text-slate-800 text-lg">2. Berekenen</h3>
+                        <p class="text-xs text-slate-400 mt-1">Bereken de omtrek en oppervlakte van getekende rechthoeken.</p>
+                    </div>
+                </button>
+
+                <button class="menu-btn card-anim bg-white p-6 border border-slate-200/60 rounded-3xl text-left flex flex-col justify-between hover:border-indigo-300 group transition-all" onclick="startOnderdeel('bouwen', 'Rechthoek bouwen')">
+                    <div class="w-12 h-12 bg-amber-50 text-amber-600 rounded-2xl flex items-center justify-center text-xl group-hover:bg-amber-600 group-hover:text-white transition-colors mb-4"><i class="fa-solid fa-hammer"></i></div>
+                    <div>
+                        <h3 class="font-extrabold text-slate-800 text-lg">3. Bouwen op raster</h3>
+                        <p class="text-xs text-slate-400 mt-1">Teken zelf interactief rechthoeken met een gevraagde maat.</p>
+                    </div>
+                </button>
+            </div>
+            
+            <!-- GROTE TOETS KNOP -->
+            <div class="pt-4 border-t border-slate-200">
+                <button class="w-full bg-indigo-50 text-indigo-600 border border-indigo-100 font-black p-5 rounded-3xl hover:bg-indigo-600 hover:text-white transition-all flex items-center justify-center gap-3 text-lg cursor-pointer shadow-sm" onclick="startOnderdeel('toets', 'De Grote Toets')">
+                    <i class="fa-solid fa-graduation-cap text-xl"></i> START DE GROTE TOETS (15 VRAGEN)
+                </button>
+            </div>
+        </section>
+
+        <!-- ACTIEVE OEFENING SCHERM -->
+        <section id="oefeningSectie" class="hidden">
+            <div class="bg-white p-6 md:p-8 rounded-[2rem] shadow-xl border border-slate-100 relative">
+                <!-- Sluit/Terugknop -->
+                <button class="absolute top-5 right-5 text-slate-300 hover:text-rose-500 transition-colors cursor-pointer text-xl" onclick="openExitModal()">
+                    <i class="fa-solid fa-circle-xmark"></i>
+                </button>
+
+                <!-- Vraagstelling -->
+                <div class="bg-indigo-50 border border-indigo-100 p-6 rounded-2xl text-center mb-6">
+                    <p class="text-xs font-bold text-indigo-400 uppercase tracking-widest mb-1.5" id="opdrachtType">OPDRACHT</p>
+                    <h2 class="text-lg md:text-xl font-extrabold text-slate-800 leading-relaxed" id="opdrachtZin">Laden...</h2>
+                </div>
+
+                <!-- DYNAMISCHE INTERFACES -->
+                <div class="space-y-6">
+                    
+                    <!-- MODULE 1: MULTIPLE CHOICE (Wanneer wat?) -->
+                    <div id="mc-container" class="hidden grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-xl mx-auto">
+                        <!-- Knoppen worden hier dynamisch gerenderd -->
+                    </div>
+
+                    <!-- MODULE 2: RECHTHOEK VISUALISATIE + INPUTS (Berekenen) -->
+                    <div id="calc-container" class="hidden flex flex-col items-center">
+                        <!-- SVG met dynamische rechthoek -->
+                        <div id="svg-wrap" class="bg-slate-50 border border-slate-200 rounded-2xl p-4 flex justify-center items-center w-full max-w-sm mb-6 h-48">
+                            <!-- SVG comes here -->
+                        </div>
+                        
+                        <!-- Invoervelden voor Omtrek & Oppervlakte -->
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full max-w-md">
+                            <div class="bg-slate-50 border border-slate-200/80 p-4 rounded-2xl flex flex-col items-center">
+                                <label class="text-xs font-black text-slate-400 uppercase mb-2">Bereken de Omtrek</label>
+                                <div class="flex items-center gap-2">
+                                    <input type="number" id="inputOmtrek" autocomplete="off" class="w-24 p-3 text-center text-xl font-bold rounded-xl border-2 border-slate-200 outline-none focus:border-indigo-500" placeholder="?">
+                                    <span class="text-slate-600 font-extrabold text-lg" id="unitOmtrek">cm</span>
+                                </div>
+                            </div>
+                            <div class="bg-slate-50 border border-slate-200/80 p-4 rounded-2xl flex flex-col items-center">
+                                <label class="text-xs font-black text-slate-400 uppercase mb-2">Bereken de Oppervlakte</label>
+                                <div class="flex items-center gap-2">
+                                    <input type="number" id="inputOppervlakte" autocomplete="off" class="w-24 p-3 text-center text-xl font-bold rounded-xl border-2 border-slate-200 outline-none focus:border-indigo-500" placeholder="?">
+                                    <span class="text-slate-600 font-extrabold text-lg" id="unitOppervlakte">cm²</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- MODULE 3: INTERACTIEVE RASter-tekenaar (Bouwen) -->
+                    <div id="grid-container" class="hidden flex flex-col lg:flex-row items-center justify-center gap-8">
+                        <!-- Sorteerraster -->
+                        <div class="flex flex-col items-center">
+                            <div class="text-xs font-bold text-slate-500 mb-2 bg-slate-200/50 px-3 py-1 rounded-full flex items-center gap-1.5 select-none">
+                                <span>🟩</span> Elk vakje op het raster stelt exact 1 <span id="gridUnitLabel">cm²</span> voor
+                            </div>
+                            <div id="draw-grid" class="grid grid-cols-10 gap-0.5 p-1 bg-slate-300 rounded-2xl w-[280px] h-[280px] sm:w-[320px] sm:h-[320px] select-none shadow-md">
+                                <!-- 100 cells (10x10) -->
+                            </div>
+                            <p class="text-xs text-slate-400 font-semibold mt-3 flex items-center gap-1.5"><i class="fa-solid fa-hand-pointer text-indigo-500"></i> Klik en sleep op het raster om je rechthoek te tekenen</p>
+                        </div>
+
+                        <!-- Live statistieken van getekende figuur -->
+                        <div class="bg-slate-50 border border-slate-200 p-6 rounded-3xl w-full max-w-xs space-y-4">
+                            <h3 class="text-sm font-black text-slate-400 uppercase tracking-wider text-center border-b border-slate-200 pb-2">Jouw getekende figuur</h3>
+                            <div class="grid grid-cols-2 gap-4 text-center">
+                                <div class="bg-white p-3 rounded-xl border border-slate-100">
+                                    <span class="block text-[10px] font-bold text-slate-400 uppercase">Lengte</span>
+                                    <span id="liveLengte" class="text-xl font-black text-slate-700">0 cm</span>
+                                </div>
+                                <div class="bg-white p-3 rounded-xl border border-slate-100">
+                                    <span class="block text-[10px] font-bold text-slate-400 uppercase">Breedte</span>
+                                    <span id="liveBreedte" class="text-xl font-black text-slate-700">0 cm</span>
+                                </div>
+                            </div>
+                            <div class="space-y-2 pt-2 border-t border-dashed border-slate-200">
+                                <div class="flex justify-between items-center text-sm">
+                                    <span class="font-bold text-slate-500">Omtrek:</span>
+                                    <span id="liveOmtrek" class="font-extrabold text-slate-800 text-base">0 cm</span>
+                                </div>
+                                <div class="flex justify-between items-center text-sm">
+                                    <span class="font-bold text-slate-500">Oppervlakte:</span>
+                                    <span id="liveOppervlakte" class="font-extrabold text-slate-800 text-base">0 cm²</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- FEEDBACK EN TIP SECTIES -->
+                    <div id="feedback" class="hidden p-5 rounded-2xl font-bold text-center animate-in fade-in duration-150"></div>
+                    <div id="tipBox" class="hidden p-5 bg-amber-50 border border-amber-100 rounded-2xl text-amber-800 text-sm leading-relaxed">
+                        <strong class="flex items-center gap-1.5 mb-1"><i class="fa-solid fa-lightbulb"></i> Tip / Formule hulp:</strong>
+                        <span id="tipTekst">Tip tekst komt hier.</span>
+                    </div>
+
+                    <!-- NAKIEK- EN DOORGAANKNOPPEN -->
+                    <div class="flex gap-3 max-w-md mx-auto">
+                        <button id="check-btn" onclick="controleerAntwoord()" class="flex-1 py-4 bg-indigo-600 hover:bg-indigo-700 text-white font-black rounded-2xl transition-all shadow-md cursor-pointer">
+                            Controleer
+                        </button>
+                        <button id="next-btn" onclick="volgendeVraag()" class="hidden flex-1 py-4 bg-slate-900 hover:bg-black text-white font-black rounded-2xl transition-all shadow-md cursor-pointer">
+                            Volgende vraag <i class="fa-solid fa-arrow-right ml-1"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- EXIT TOETS MODAL -->
+        <div id="exit-modal" class="hidden fixed inset-0 bg-slate-900/45 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+            <div class="bg-white rounded-3xl p-8 max-w-sm w-full text-center shadow-2xl border border-slate-100 space-y-6">
+                <div class="text-4xl">⚠️</div>
+                <div class="space-y-2">
+                    <h3 class="text-xl font-extrabold text-slate-800">Stoppen met de oefening?</h3>
+                    <p class="text-slate-500 text-sm">Je voortgang van deze ronde gaat verloren.</p>
+                </div>
+                <div class="flex gap-3">
+                    <button onclick="closeExitModal()" class="flex-1 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl transition-all cursor-pointer">
+                        Blijf oefenen
+                    </button>
+                    <button onclick="confirmExit()" class="flex-1 py-3 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-xl transition-all cursor-pointer">
+                        Stoppen
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- EIND SCHERM / RAPPORT CARD -->
+        <section id="eindSectie" class="hidden text-center max-w-2xl mx-auto bg-white p-8 rounded-[2.5rem] shadow-xl border border-slate-100">
+            <div class="w-20 h-20 bg-amber-50 text-amber-500 text-4xl flex items-center justify-center rounded-2xl mx-auto mb-4">
+                <i class="fa-solid fa-crown animate-bounce"></i>
+            </div>
+            <h2 class="text-3xl font-extrabold text-slate-800">Prachtig geoefend!</h2>
+            <p class="text-slate-400 text-xs mt-1">Hieronder zie je jouw gedetailleerde resultaten.</p>
+            
+            <div class="grid grid-cols-3 gap-4 my-6">
+                <div class="bg-indigo-50 p-4 rounded-2xl border border-indigo-100/60">
+                    <span class="block text-[10px] text-indigo-400 font-black uppercase mb-1">Score</span>
+                    <span id="score-val" class="text-2xl font-black text-indigo-600">0/10</span>
+                </div>
+                <div class="bg-emerald-50 p-4 rounded-2xl border border-emerald-100/60">
+                    <span class="block text-[10px] text-emerald-400 font-black uppercase mb-1">Nauwkeurigheid</span>
+                    <span id="percent-val" class="text-2xl font-black text-emerald-600">0%</span>
+                </div>
+                <div class="bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                    <span class="block text-[10px] text-slate-400 font-black uppercase mb-1">Voltooid in</span>
+                    <span id="time-val" class="text-xl font-black text-slate-700">0:00</span>
+                </div>
+            </div>
+
+            <!-- FOUTENANALYSIS -->
+            <div class="text-left space-y-4">
+                <h3 class="text-xl font-extrabold text-slate-800 flex items-center gap-2">
+                    <i class="fa-solid fa-clipboard-list text-indigo-500"></i> Foutenanalyse per opgave
+                </h3>
+                <div id="mistake-list" class="space-y-3 max-h-[350px] overflow-y-auto pr-2">
+                    <!-- Wordt dynamisch gevuld -->
+                </div>
+            </div>
+
+            <button class="w-full mt-8 bg-slate-950 text-white font-bold py-4 rounded-2xl hover:bg-black transition-all shadow-md cursor-pointer" onclick="stopOefening()">
+                <i class="fa-solid fa-house mr-2"></i> Terug naar hoofdmenu
+            </button>
+        </section>
+
+    </main>
+
+    <script>
+        // --- DATASET VOOR MODULE 1 (Wanneer wat?) ---
+        const MAATEENHEID_DATA = [
+            { situatie: "De omtrek van een klaslokaal meten", correct: "m", opties: ["m", "cm", "m²", "cm²"], tip: "Omtrek is een lengte, en een klaslokaal is vrij groot. We gebruiken meters (m)." },
+            { situatie: "De oppervlakte van de speelplaats", correct: "m²", opties: ["m", "cm", "m²", "cm²"], tip: "De speelplaats is een groot vlak. Voor de oppervlakte van grote vlakken gebruiken we vierkante meters (m²)." },
+            { situatie: "De lengte van een nieuw potlood", correct: "cm", opties: ["m", "cm", "m²", "cm²"], tip: "Dit is een korte lengte, we meten dit in centimeters (cm)." },
+            { situatie: "De oppervlakte van een kleine postzegel", correct: "cm²", opties: ["m", "cm", "m²", "cm²"], tip: "Een postzegel is een heel klein vlakje, dus we meten dit in vierkante centimeters (cm²)." },
+            { situatie: "De dikte van een leesboek", correct: "cm", opties: ["m", "cm", "m²", "cm²"], tip: "Dit is een korte lengte, dus centimeters (cm)." },
+            { situatie: "De oppervlakte van de vloer in jouw slaapkamer", correct: "m²", opties: ["m", "cm", "m²", "cm²"], tip: "De vloer is een groot vlak, dus vierkante meter (m²)." },
+            { situatie: "De hoogte van een flatgebouw", correct: "m", opties: ["m", "cm", "m²", "cm²"], tip: "De hoogte is een lengte. Een gebouw is groot, we meten in meters (m)." },
+            { situatie: "De oppervlakte van het scherm van een smartphone", correct: "cm²", opties: ["m", "cm", "m²", "cm²"], tip: "Een smartphone is klein, de oppervlakte van het scherm meten we in vierkante centimeters (cm²)." },
+            { situatie: "De omtrek van een wiskundeschrift", correct: "cm", opties: ["m", "cm", "m²", "cm²"], tip: "De omtrek is de lengte rondom. Omdat het schrift klein is, gebruiken we centimeter (cm)." },
+            { situatie: "De oppervlakte van de deur van de koelkast", correct: "m²", opties: ["m", "cm", "m²", "cm²"], tip: "De deur is een relatief groot vlak, dus we schatten dit in m²." }
+        ];
+
+        // --- CONSTRUCTIE CHALLENGES (Valid rectangles fitting inside 10x10 grid) ---
+        const CONSTRUCT_DATA = [
+            { oppervlakte: 12, omtrek: 14, unit: 'cm', tip: "Zoek twee getallen die vermenigvuldigd 12 zijn (A) en samen de helft van de omtrek vormen (7). Probeer een rechthoek van 3 cm bij 4 cm!" },
+            { oppervlakte: 16, omtrek: 16, unit: 'cm', tip: "De oppervlakte is 16. Omdat het een vierkant is, zijn lengte en breedte gelijk: 4 cm bij 4 cm." },
+            { oppervlakte: 10, omtrek: 14, unit: 'cm', tip: "Welke twee getallen maken vermenigvuldigd 10? Juist, 2 en 5! Een rechthoek van 2 cm bij 5 cm." },
+            { oppervlakte: 18, omtrek: 18, unit: 'cm', tip: "Vermenigvuldigd moet het 18 zijn, opgeteld de helft van 18 (dus 9). Probeer 3 cm bij 6 cm." },
+            { oppervlakte: 20, omtrek: 18, unit: 'cm', tip: "Oppervlakte is 20, en de helft van de omtrek is 9. Probeer een rechthoek van 4 cm bij 5 cm." },
+            { oppervlakte: 9,  omtrek: 12, unit: 'cm', tip: "Dit is een vierkant. Welke zijde maakt oppervlakte 9? Probeer 3 cm bij 3 cm." },
+            { oppervlakte: 24, omtrek: 20, unit: 'cm', tip: "Vermenigvuldigd 24, opgeteld 10 (de helft van 20). Probeer 4 cm bij 6 cm!" },
+            { oppervlakte: 8,  omtrek: 12, unit: 'cm', tip: "Welke getallen maken vermenigvuldigd 8 en opgeteld 6? Probeer 2 cm bij 4 cm." },
+            { oppervlakte: 15, omtrek: 16, unit: 'cm', tip: "Vermenigvuldigd 15 en opgeteld 8. Probeer een rechthoek van 3 cm bij 5 cm." },
+            { oppervlakte: 14, omtrek: 18, unit: 'cm', tip: "Welke twee getallen maken vermenigvuldigd 14? 2 en 7! Probeer een rechthoek van 2 cm bij 7 cm." },
+            // Extra meters (m) uitdagingen toegevoegd voor afwisseling in de bouwer
+            { oppervlakte: 6,  omtrek: 10, unit: 'm',  tip: "Welke twee getallen maken vermenigvuldigd 6 en opgeteld 5 (de helft van 10)? Probeer een rechthoek van 2 m bij 3 m." },
+            { oppervlakte: 4,  omtrek: 10, unit: 'm',  tip: "Vermenigvuldigd 4, opgeteld 5 (de helft van 10). Probeer een rechthoek van 1 m bij 4 m." }
+        ];
+
+        // --- APP STATE ---
+        let state = {
+            currentMode: '', // 'maateenheid', 'berekenen', 'bouwen', 'toets'
+            questions: [],
+            currentIndex: 0,
+            score: 0,
+            hintsUsed: 0,
+            startTime: null,
+            history: [],
+            totalQ: 10,
+            
+            // Grid-drawing selectiecoördinaten
+            isDrawing: false,
+            startCell: null, // {r, c}
+            currentCell: null, // {r, c}
+            selectedRect: null // {r1, c1, r2, c2}
+        };
+
+        function shuffle(array) {
+            let arr = [...array];
+            for (let i = arr.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [arr[i], arr[j]] = [arr[j], arr[i]];
+            }
+            return arr;
+        }
+
+        // --- SPEL & TOETS GENERATOR ---
+        function genereerVragen(mode) {
+            let pool = [];
+            
+            if (mode === 'maateenheid') {
+                state.totalQ = 10;
+                pool = shuffle(MAATEENHEID_DATA).slice(0, 10).map(q => ({
+                    type: 'maateenheid',
+                    situatie: q.situatie,
+                    correct: q.correct,
+                    opties: q.opties,
+                    tip: q.tip
+                }));
+            } 
+            else if (mode === 'berekenen') {
+                state.totalQ = 10;
+                for (let i = 0; i < 10; i++) {
+                    let w = Math.floor(Math.random() * 6) + 2; // 2 tot 7
+                    let h = Math.floor(Math.random() * 5) + 2; // 2 tot 6
+                    let unit = Math.random() > 0.5 ? 'cm' : 'm';
+                    pool.push({
+                        type: 'berekenen',
+                        width: w,
+                        height: h,
+                        unit: unit,
+                        omtrek: 2 * (w + h),
+                        oppervlakte: w * h,
+                        tip: `Formules: Omtrek = 2 × (lengte + breedte) = 2 × (${w} + ${h}) = ${2 * (w + h)} ${unit}. Oppervlakte = lengte × breedte = ${w} × ${h} = ${w * h} ${unit}².`
+                    });
+                }
+            } 
+            else if (mode === 'bouwen') {
+                state.totalQ = 10;
+                pool = shuffle(CONSTRUCT_DATA).slice(0, 10).map(q => ({
+                    type: 'bouwen',
+                    targetOpp: q.oppervlakte,
+                    targetOmtrek: q.omtrek,
+                    unit: q.unit || 'cm',
+                    tip: q.tip
+                }));
+            } 
+            else if (mode === 'toets') {
+                state.totalQ = 15;
+                // Mix van exact 5 vragen uit elke module
+                const m1 = shuffle(MAATEENHEID_DATA).slice(0, 5).map(q => ({
+                    type: 'maateenheid',
+                    situatie: q.situatie,
+                    correct: q.correct,
+                    opties: q.opties,
+                    tip: q.tip
+                }));
+                
+                const m2 = [];
+                for (let i = 0; i < 5; i++) {
+                    let w = Math.floor(Math.random() * 6) + 2;
+                    let h = Math.floor(Math.random() * 5) + 2;
+                    let unit = Math.random() > 0.5 ? 'cm' : 'm';
+                    m2.push({
+                        type: 'berekenen',
+                        width: w,
+                        height: h,
+                        unit: unit,
+                        omtrek: 2 * (w + h),
+                        oppervlakte: w * h,
+                        tip: `Omtrek = 2 × (${w} + ${h}) = ${2 * (w + h)} ${unit}. Oppervlakte = ${w} × ${h} = ${w * h} ${unit}².`
+                    });
+                }
+
+                const m3 = shuffle(CONSTRUCT_DATA).slice(0, 5).map(q => ({
+                    type: 'bouwen',
+                    targetOpp: q.oppervlakte,
+                    targetOmtrek: q.omtrek,
+                    unit: q.unit || 'cm',
+                    tip: q.tip
+                }));
+
+                pool = shuffle([...m1, ...m2, ...m3]);
+            }
+
+            state.questions = pool;
+        }
+
+        // --- OPSTART FUNCTIE ---
+        window.startOnderdeel = function(mode, label) {
+            state.currentMode = mode;
+            state.currentIndex = 0;
+            state.score = 0;
+            state.hintsUsed = 0;
+            state.history = [];
+            state.startTime = new Date();
+
+            document.getElementById("niveauLabel").innerText = label;
+
+            genereerVragen(mode);
+            buildProgressBullets();
+            showView("game-view");
+            laadVraag();
+        }
+
+        function showView(view) {
+            document.getElementById("menuSectie").classList.toggle("hidden", view !== "menu-view");
+            document.getElementById("oefeningSectie").classList.toggle("hidden", view !== "game-view");
+            document.getElementById("eindSectie").classList.toggle("hidden", view !== "end-view");
+            document.getElementById("progressContainer").classList.toggle("hidden", view !== "game-view");
+            window.scrollTo(0, 0);
+        }
+
+        function buildProgressBullets() {
+            const container = document.getElementById("bullets-container");
+            container.innerHTML = "";
+            for (let i = 0; i < state.totalQ; i++) {
+                const bullet = document.createElement("span");
+                bullet.id = `bullet-${i}`;
+                bullet.className = "w-4 h-4 rounded-full bg-slate-200 border-2 border-slate-300 transition-all duration-300";
+                container.appendChild(bullet);
+            }
+        }
+
+        function updateProgressBullets() {
+            for (let i = 0; i < state.totalQ; i++) {
+                const bullet = document.createElement("span");
+                bullet.id = `bullet-${i}`;
+                if (bullet) {
+                    if (i < state.currentIndex) {
+                        bullet.className = "w-4 h-4 rounded-full bg-emerald-500 border-2 border-emerald-600";
+                    } else if (i === state.currentIndex) {
+                        bullet.className = "w-4 h-4 rounded-full bg-indigo-600 border-2 border-indigo-700 animate-pulse";
+                    } else {
+                        bullet.className = "w-4 h-4 rounded-full bg-slate-200 border-2 border-slate-300";
+                    }
+                }
+            }
+        }
+
+        // --- INTERFACES RENDERING ---
+        function laadVraag() {
+            const q = state.questions[state.currentIndex];
+
+            // Reset knoppen & weergaven
+            document.getElementById("mc-container").classList.add("hidden");
+            document.getElementById("calc-container").classList.add("hidden");
+            document.getElementById("grid-container").classList.add("hidden");
+            document.getElementById("feedback").classList.add("hidden");
+            document.getElementById("tipBox").classList.add("hidden");
+            document.getElementById("next-btn").classList.add("hidden");
+            document.getElementById("check-btn").classList.remove("hidden");
+
+            // Schrijf de opdracht bovenin
+            document.getElementById("opdrachtType").innerText = `Vraag ${state.currentIndex + 1} van ${state.totalQ}`;
+
+            updateProgressBullets();
+
+            if (q.type === 'maateenheid') {
+                renderMaateenheid(q);
+            } else if (q.type === 'berekenen') {
+                renderBerekenen(q);
+            } else if (q.type === 'bouwen') {
+                renderBouwen(q);
+            }
+        }
+
+        // 1. Render Maateenheden Quiz
+        function renderMaateenheid(q) {
+            document.getElementById("opdrachtZin").innerHTML = `Welke maateenheid hoort het beste bij:<br><b class="text-indigo-600 text-lg sm:text-xl block mt-1">"${q.situatie}"</b>`;
+            const mc = document.getElementById("mc-container");
+            mc.classList.remove("hidden");
+            mc.innerHTML = "";
+
+            // Omdat we multiple choice knoppen gebruiken, verbergen we de nakijkknop onderaan
+            document.getElementById("check-btn").classList.add("hidden");
+
+            q.opties.forEach(opt => {
+                const btn = document.createElement("button");
+                btn.className = "p-5 bg-white border-2 border-slate-200 rounded-3xl font-extrabold text-slate-800 text-lg hover:border-indigo-500 hover:bg-indigo-50/50 transition-all text-center cursor-pointer active:scale-95";
+                btn.innerText = opt;
+                btn.onclick = () => selecteerOptie(opt, btn);
+                mc.appendChild(btn);
+            });
+        }
+
+        function selecteerOptie(keuze, btnElement) {
+            const q = state.questions[state.currentIndex];
+            const isCorrect = (keuze === q.correct);
+
+            // Blokkeer de knoppen en zet direct de kleuren
+            document.querySelectorAll("#mc-container button").forEach(btn => {
+                btn.disabled = true;
+                if (btn.innerText === q.correct) {
+                    btn.className = "p-5 bg-emerald-500 border-2 border-emerald-600 text-white rounded-3xl font-extrabold text-lg text-center shadow-md";
+                } else if (btn === btnElement) {
+                    btn.className = "p-5 bg-rose-500 border-2 border-rose-600 text-white rounded-3xl font-extrabold text-lg text-center shadow-md";
+                } else {
+                    btn.className = "p-5 bg-slate-100 border-2 border-slate-200 text-slate-300 rounded-3xl font-bold text-lg text-center opacity-60";
+                }
+            });
+
+            verwerkUitkomst(isCorrect, keuze, q.correct);
+        }
+
+        // 2. Render Berekenen van Rechthoek
+        function renderBerekenen(q) {
+            document.getElementById("opdrachtZin").innerText = "Bereken de omtrek en de oppervlakte van deze rechthoek:";
+            const calc = document.getElementById("calc-container");
+            calc.classList.remove("hidden");
+
+            // Eenheden vullen
+            document.getElementById("unitOmtrek").innerText = q.unit;
+            document.getElementById("unitOppervlakte").innerText = `${q.unit}²`;
+
+            // Inputs leegmaken
+            const omtrekInp = document.getElementById("inputOmtrek");
+            const oppInp = document.getElementById("inputOppervlakte");
+            omtrekInp.value = "";
+            oppInp.value = "";
+            omtrekInp.disabled = false;
+            oppInp.disabled = false;
+            omtrekInp.className = "w-24 p-3 text-center text-xl font-bold rounded-xl border-2 border-slate-200 outline-none focus:border-indigo-500";
+            oppInp.className = "w-24 p-3 text-center text-xl font-bold rounded-xl border-2 border-slate-200 outline-none focus:border-indigo-500";
+
+            // SVG met afmetingen tekenen
+            const svgWrap = document.getElementById("svg-wrap");
+            const pixelW = q.width * 25;
+            const pixelH = q.height * 25;
+
+            svgWrap.innerHTML = `
+                <svg width="250" height="150" viewBox="0 0 250 150" class="overflow-visible">
+                    <!-- Rechthoek met raster-achtige vulling -->
+                    <rect x="${125 - pixelW/2}" y="${75 - pixelH/2}" width="${pixelW}" height="${pixelH}" fill="#e0e7ff" stroke="#4f46e5" stroke-width="3" rx="4" />
+                    
+                    <!-- Breedte (boven) -->
+                    <text x="125" y="${75 - pixelH/2 - 10}" font-family="Plus Jakarta Sans" font-weight="800" font-size="14" fill="#312e81" text-anchor="middle">${q.width} ${q.unit}</text>
+                    
+                    <!-- Lengte (zijkant) -->
+                    <text x="${125 - pixelW/2 - 12}" y="79" font-family="Plus Jakarta Sans" font-weight="800" font-size="14" fill="#312e81" text-anchor="end">${q.height} ${q.unit}</text>
+                </svg>
+            `;
+            setTimeout(() => omtrekInp.focus(), 150);
+        }
+
+        // 3. Render Bouwen van Rechthoek op Raster
+        function renderBouwen(q) {
+            const unit = q.unit || 'cm';
+            // Toegevoegd: Duidelijk vermelden dat elk getekend vakje 1 cm² of 1 m² representeert om verwarring over beeldschermafmetingen op te vangen
+            document.getElementById("opdrachtZin").innerHTML = `Teken een rechthoek met:<br>Oppervlakte = <span class="text-indigo-600 font-extrabold">${q.targetOpp} ${unit}²</span> en Omtrek = <span class="text-indigo-600 font-extrabold">${q.targetOmtrek} ${unit}</span>.<br><span class="text-slate-500 font-bold text-sm block mt-1"><i class="fa-solid fa-circle-info text-indigo-400"></i> Elk vakje op het raster stelt exact 1 ${unit}² voor.</span>`;
+            document.getElementById("grid-container").classList.remove("hidden");
+
+            // Schaal-labels dynamisch vullen
+            document.getElementById("gridUnitLabel").innerText = `${unit}²`;
+
+            // Sorteerraster leegmaken en opbouwen
+            const grid = document.getElementById("draw-grid");
+            grid.innerHTML = "";
+
+            state.selectedRect = null;
+            state.startCell = null;
+            state.currentCell = null;
+            state.isDrawing = false;
+
+            updateLiveStats(0, 0, unit);
+
+            for (let r = 0; r < 10; r++) {
+                for (let c = 0; c < 10; c++) {
+                    const cell = document.createElement("div");
+                    cell.id = `cell-${r}-${c}`;
+                    cell.dataset.row = r;
+                    cell.dataset.col = c;
+                    cell.className = "grid-cell bg-white border border-slate-200 rounded-md cursor-pointer hover:bg-indigo-50/50";
+                    
+                    // Bind muis en touch events
+                    cell.onmousedown = (e) => startDrag(e, r, c);
+                    cell.onmouseenter = () => updateDrag(r, c);
+                    
+                    // Mobile Touch afhandeling
+                    cell.addEventListener("touchstart", (e) => {
+                        e.preventDefault();
+                        startDrag(e, r, c);
+                    }, { passive: false });
+
+                    grid.appendChild(cell);
+                }
+            }
+
+            // Global mouse/touch up handeling
+            document.onmouseup = () => stopDrag();
+            document.addEventListener("touchend", () => stopDrag(), { passive: true });
+
+            // Touchmove afhandeling op grid level (omdat vinger over andere elementen schuift)
+            grid.ontouchmove = (e) => {
+                if (!state.isDrawing) return;
+                e.preventDefault();
+                const touch = e.touches[0];
+                const target = document.elementFromPoint(touch.clientX, touch.clientY);
+                if (target && target.dataset && target.dataset.row !== undefined) {
+                    updateDrag(parseInt(target.dataset.row), parseInt(target.dataset.col));
+                }
+            };
+        }
+
+        // --- RASTER DRAWING MECHANICS ---
+        function startDrag(e, r, c) {
+            state.isDrawing = true;
+            state.startCell = { r, c };
+            state.currentCell = { r, c };
+            updateSelection();
+        }
+
+        function updateDrag(r, c) {
+            if (!state.isDrawing) return;
+            state.currentCell = { r, c };
+            updateSelection();
+        }
+
+        function stopDrag() {
+            state.isDrawing = false;
+        }
+
+        function updateSelection() {
+            if (!state.startCell || !state.currentCell) return;
+
+            const r1 = Math.min(state.startCell.r, state.currentCell.r);
+            const r2 = Math.max(state.startCell.r, state.currentCell.r);
+            const c1 = Math.min(state.startCell.c, state.currentCell.c);
+            const c2 = Math.max(state.startCell.c, state.currentCell.c);
+
+            state.selectedRect = { r1, c1, r2, c2 };
+
+            const w = (c2 - c1) + 1;
+            const h = (r2 - r1) + 1;
+
+            const q = state.questions[state.currentIndex];
+            const unit = q.unit || 'cm';
+            updateLiveStats(w, h, unit);
+
+            // Kleur de cellen op het raster
+            for (let r = 0; r < 10; r++) {
+                for (let c = 0; c < 10; c++) {
+                    const cell = document.getElementById(`cell-${r}-${c}`);
+                    if (r >= r1 && r <= r2 && c >= c1 && c <= c2) {
+                        cell.className = "grid-cell bg-indigo-500 border border-indigo-600 rounded-md cursor-pointer";
+                    } else {
+                        cell.className = "grid-cell bg-white border border-slate-200 rounded-md cursor-pointer hover:bg-indigo-50/50";
+                    }
+                }
+            }
+        }
+
+        function updateLiveStats(w, h, unit) {
+            const omtrek = w > 0 && h > 0 ? 2 * (w + h) : 0;
+            const opp = w * h;
+
+            document.getElementById("liveLengte").innerText = `${w} ${unit}`;
+            document.getElementById("liveBreedte").innerText = `${h} ${unit}`;
+            document.getElementById("liveOmtrek").innerText = `${omtrek} ${unit}`;
+            document.getElementById("liveOppervlakte").innerText = `${opp} ${unit}²`;
+        }
+
+        // --- CONTROLEREN VAN DE OPGEVEN ANTWOORDEN ---
+        function controleerAntwoord() {
+            const q = state.questions[state.currentIndex];
+            let isCorrect = false;
+            let userDisplay = "";
+            let correctDisplay = "";
+
+            if (q.type === 'berekenen') {
+                const omtrekInp = document.getElementById("inputOmtrek");
+                const oppInp = document.getElementById("inputOppervlakte");
+                
+                const userOmtrek = parseInt(omtrekInp.value);
+                const userOpp = parseInt(oppInp.value);
+
+                if (isNaN(userOmtrek) || isNaN(userOpp)) {
+                    // Geen waarschuwingen via alert(), toon een feedbackbericht
+                    const fb = document.getElementById("feedback");
+                    fb.innerHTML = "<span class='text-rose-500 font-extrabold'><i class='fa-solid fa-triangle-exclamation'></i> Vul beide velden in!</span>";
+                    fb.classList.remove("hidden");
+                    return;
+                }
+
+                isCorrect = (userOmtrek === q.omtrek && userOpp === q.oppervlakte);
+                userDisplay = `Omtrek: ${userOmtrek}${q.unit}, Oppervlakte: ${userOpp}${q.unit}²`;
+                correctDisplay = `Omtrek: ${q.omtrek}${q.unit}, Oppervlakte: ${q.oppervlakte}${q.unit}²`;
+
+                omtrekInp.disabled = true;
+                oppInp.disabled = true;
+                omtrekInp.className = "w-24 p-3 text-center text-xl font-bold rounded-xl border-2 border-slate-200 outline-none " + (userOmtrek === q.omtrek ? 'border-emerald-500 bg-emerald-50 text-emerald-800' : 'border-rose-500 bg-rose-50 text-rose-800');
+                oppInp.className = "w-24 p-3 text-center text-xl font-bold rounded-xl border-2 border-slate-200 outline-none " + (userOpp === q.oppervlakte ? 'border-emerald-500 bg-emerald-50 text-emerald-800' : 'border-rose-500 bg-rose-50 text-rose-800');
+            } 
+            else if (q.type === 'bouwen') {
+                if (!state.selectedRect) {
+                    const fb = document.getElementById("feedback");
+                    fb.innerHTML = "<span class='text-rose-500 font-extrabold'><i class='fa-solid fa-triangle-exclamation'></i> Teken eerst een rechthoek op het raster!</span>";
+                    fb.classList.remove("hidden");
+                    return;
+                }
+
+                const w = (state.selectedRect.c2 - state.selectedRect.c1) + 1;
+                const h = (state.selectedRect.r2 - state.selectedRect.r1) + 1;
+
+                const userOpp = w * h;
+                const userOmtrek = 2 * (w + h);
+                const unit = q.unit || 'cm';
+
+                isCorrect = (userOpp === q.targetOpp && userOmtrek === q.targetOmtrek);
+                userDisplay = `Getekend: ${w}x${h} ${unit} (Omtrek: ${userOmtrek} ${unit}, Oppervlakte: ${userOpp} ${unit}²)`;
+                correctDisplay = `Doel: Omtrek ${q.targetOmtrek} ${unit}, Oppervlakte ${q.targetOpp} ${unit}²`;
+
+                // Raster blokkeren voor aanpassingen
+                document.querySelectorAll(".grid-cell").forEach(cell => {
+                    cell.onmousedown = null;
+                    cell.onmouseenter = null;
+                });
+            }
+
+            verwerkUitkomst(isCorrect, userDisplay, correctDisplay);
+        }
+
+        function verwerkUitkomst(isCorrect, user, correct) {
+            const q = state.questions[state.currentIndex];
+            const fb = document.getElementById("feedback");
+            const tipBox = document.getElementById("tipBox");
+            const tipTekst = document.getElementById("tipTekst");
+
+            fb.classList.remove("hidden");
+            
+            if (isCorrect) {
+                state.score++;
+                fb.innerHTML = "🎉 Super! Je antwoord is helemaal juist.";
+                fb.className = "p-5 rounded-2xl font-bold text-center bg-emerald-50 text-emerald-700 border border-emerald-100 shadow-sm animate-bounce";
+                
+                confetti({ particleCount: 30, spread: 60, origin: { y: 0.8 }, colors: ['#4f46e5', '#10b981'] });
+            } else {
+                fb.innerHTML = "❌ Helaas! Dat is niet juist.";
+                fb.className = "p-5 rounded-2xl font-bold text-center bg-rose-50 text-rose-700 border border-rose-100 shadow-sm";
+                
+                // Formule hulp bij een fout
+                tipTekst.innerHTML = q.tip;
+                tipBox.classList.remove("hidden");
+            }
+
+            // Sla de geschiedenis op
+            let catName = q.type === 'maateenheid' ? 'Wanneer wat?' : (q.type === 'berekenen' ? 'Berekenen' : 'Bouwen op raster');
+            const unit = q.unit || 'cm';
+            state.history.push({
+                title: q.type === 'maateenheid' ? `Gekozen eenheid voor: "${q.situatie}"` : (q.type === 'berekenen' ? `Rechthoek ${q.width}x${q.height} ${unit} meten` : `Rechthoek bouwen (Doel: ${q.targetOpp} ${unit}² / ${q.targetOmtrek} ${unit})`),
+                category: catName,
+                user: user,
+                correct: correct,
+                isCorrect: isCorrect
+            });
+
+            document.getElementById("check-btn").classList.add("hidden");
+            document.getElementById("next-btn").classList.remove("hidden");
+        }
+
+        function volgendeVraag() {
+            state.currentIndex++;
+            if (state.currentIndex < state.totalQ) {
+                laadVraag();
+            } else {
+                state.endTime = new Date();
+                sluitSessieAf();
+            }
+        }
+
+        // --- SESSION FINISH & ERROR ANALYSIS ---
+        function sluitSessieAf() {
+            showView("end-view");
+            const roundedScore = Math.round(state.score * 10) / 10;
+            const percent = Math.round((roundedScore / state.totalQ) * 100);
+
+            document.getElementById("score-val").innerText = `${state.score}/${state.totalQ}`;
+            document.getElementById("percent-val").innerText = `${percent}%`;
+
+            // Tijd berekenen
+            const timeDiff = Math.round((state.endTime - state.startTime) / 1000); // in seconden
+            const mins = Math.floor(timeDiff / 60);
+            const secs = timeDiff % 60;
+            document.getElementById("time-val").innerText = `${mins}:${secs.toString().padStart(2, '0')}`;
+
+            const list = document.getElementById("mistake-list");
+            list.innerHTML = "";
+
+            state.history.forEach((h, idx) => {
+                const card = document.createElement("div");
+                card.className = "p-4 rounded-2xl border flex flex-col gap-2 " + 
+                    (h.isCorrect ? "bg-emerald-50/30 border-emerald-100" : "bg-rose-50/30 border-rose-100");
+                
+                card.innerHTML = `
+                    <div class="flex justify-between items-center text-xs font-bold ${h.isCorrect ? 'text-emerald-600' : 'text-rose-600'}">
+                        <span>OPGAVE ${idx + 1} (${h.category})</span>
+                        <span>${h.isCorrect ? '✓ JUIST' : '✕ FOUT'}</span>
+                    </div>
+                    <div class="text-slate-800 text-sm font-semibold">${h.title}</div>
+                    <div class="text-xs text-slate-500 mt-1 border-t border-dashed pt-1.5 flex justify-between flex-wrap gap-2">
+                        <span>Jouw keuze: <strong class="${h.isCorrect ? 'text-emerald-700' : 'text-rose-700'}">${h.user}</strong></span>
+                        ${!h.isCorrect ? `<span>Juiste antwoord: <strong class="text-slate-800">${h.correct}</strong></span>` : ''}
+                    </div>
+                `;
+                list.appendChild(card);
+            });
+
+            if (percent === 100) {
+                confetti({ particleCount: 150, spread: 80, origin: { y: 0.6 } });
+            }
+        }
+
+        window.stopOefening = function() {
+            showView("menu-view");
+        }
+
+        // --- EXIT MODAL CONTROLS ---
+        window.openExitModal = function() {
+            document.getElementById("exit-modal").classList.remove("hidden");
+        }
+
+        window.closeExitModal = function() {
+            document.getElementById("exit-modal").classList.add("hidden");
+        }
+
+        window.confirmExit = function() {
+            closeExitModal();
+            showView("menu-view");
+        }
+
+        // Start in het hoofdmenu
+        window.onload = function() {
+            showView("menu-view");
+        }
+    </script>
+</body>
+</html>
