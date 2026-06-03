@@ -24,6 +24,19 @@
 
     @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
+    @keyframes inputFlashGreen {
+      0%   { border-color: #22c55e; background: #f0fdf4; }
+      80%  { border-color: #22c55e; background: #f0fdf4; }
+      100% { border-color: #22c55e; background: #f0fdf4; }
+    }
+    @keyframes inputFlashRed {
+      0%   { border-color: #ef4444; background: #fff1f2; }
+      80%  { border-color: #ef4444; background: #fff1f2; }
+      100% { border-color: #ef4444; background: #fff1f2; }
+    }
+    .input-correct { animation: inputFlashGreen 0.35s ease forwards; border-color: #22c55e !important; background: #f0fdf4 !important; }
+    .input-wrong   { animation: inputFlashRed   0.35s ease forwards; border-color: #ef4444 !important; background: #fff1f2 !important; }
+
     </style>
 
 </head>
@@ -248,7 +261,81 @@ function generateQuestion(cat) {
 
 
 
-// --- RENDER FUNCTIES ---
+// --- ROULEREND BLOK VAN 4 (alleen plusminus) ---
+// Vult een shuffled queue: [+zonder, +met, -zonder, -met] in willekeurige volgorde
+var _rolQueue = [];
+
+function _shuffleArray(arr) {
+    for (var i = arr.length - 1; i > 0; i--) {
+        var j = Math.floor(Math.random() * (i + 1));
+        var tmp = arr[i]; arr[i] = arr[j]; arr[j] = tmp;
+    }
+    return arr;
+}
+
+function _refillQueue() {
+    _rolQueue = _rolQueue.concat(_shuffleArray(['plus_geen','plus_brug','min_geen','min_brug']));
+}
+
+function generateQuestionForType(cat, type) {
+    // Genereer een som van het gevraagde type (plus/min, brug/geen)
+    var op = type.startsWith('plus') ? '+' : '-';
+    var wantBridge = type.endsWith('brug');
+    var a, b, ans;
+    var maxAttempts = 100;
+    for (var att = 0; att < maxAttempts; att++) {
+        if (cat.range === 10) {
+            if (op === '+') {
+                ans = Math.floor(Math.random() * 11);
+                a = Math.floor(Math.random() * (ans + 1));
+                b = ans - a;
+            } else {
+                a = Math.floor(Math.random() * 11);
+                b = Math.floor(Math.random() * (a + 1));
+                ans = a - b;
+            }
+            // range 10 heeft geen brug-concept — geef altijd terug
+            return { text: a+' '+op+' '+b, ans: (op==='+' ? a+b : a-b),
+                     meta: { a, b, op, range: cat.range, isBridge: false } };
+        } else if (cat.range === 20) {
+            if (op === '+') {
+                a = Math.floor(Math.random() * 18) + 1;
+                b = Math.floor(Math.random() * (20 - a)) + 1;
+                ans = a + b;
+            } else {
+                a = Math.floor(Math.random() * 20) + 1;
+                b = Math.floor(Math.random() * a) + 1;
+                ans = a - b;
+            }
+        } else { // 100
+            if (op === '+') {
+                a = Math.floor(Math.random() * 90) + 5;
+                b = Math.floor(Math.random() * (100 - a)) + 1;
+                ans = a + b;
+            } else {
+                a = Math.floor(Math.random() * 95) + 5;
+                b = Math.floor(Math.random() * a) + 1;
+                ans = a - b;
+            }
+        }
+        var isBridge = isBridgeOperation(a, b, op, cat.range);
+        if (isBridge === wantBridge) {
+            return { text: a+' '+op+' '+b, ans: (op==='+' ? a+b : a-b),
+                     meta: { a, b, op, range: cat.range, isBridge } };
+        }
+    }
+    // Fallback: gewone willekeurige som als type niet lukt
+    return generateQuestion(cat);
+}
+
+function nextQuestion(cat) {
+    if (!cat.id.includes('plusminus') || cat.range === 10) {
+        return generateQuestion(cat);
+    }
+    if (_rolQueue.length === 0) _refillQueue();
+    var type = _rolQueue.shift();
+    return generateQuestionForType(cat, type);
+}
 
 
 
@@ -401,6 +488,20 @@ function renderResults() {
     const correctCount = state.results.filter(r => r.correct).length;
 
     const wrongCount = state.results.length - correctCount;
+    const totalCount = state.results.length;
+
+    // Tempo-sterren: gebaseerd op aantal sommen in 120 seconden
+    function getTempoSterren(n) {
+        if (n >= 30) return { sterren: 5, label: 'Uitstekend tempo 🚀' };
+        if (n >= 22) return { sterren: 4, label: 'Snel tempo' };
+        if (n >= 15) return { sterren: 3, label: 'Goed tempo' };
+        if (n >= 8)  return { sterren: 2, label: 'Rustig tempo' };
+        return          { sterren: 1, label: 'Heel traag' };
+    }
+    const tempo = getTempoSterren(totalCount);
+    const sterrenHTML = Array.from({length: 5}, (_, i) =>
+        `<span style="font-size:2rem;color:${i < tempo.sterren ? '#f59e0b' : '#e2e8f0'};">★</span>`
+    ).join('');
 
     const analysis = analyzeResults();
 
@@ -427,9 +528,9 @@ function renderResults() {
 
     </div>
 
-    <div class="grid grid-cols-2 gap-4 mb-8">
+    <div class="grid grid-cols-3 gap-4 mb-6">
 
-    <div class="bg-emerald-50 border border-emerald-100 p-6 rounded-3xl text-center">
+    <div class="bg-emerald-50 border border-emerald-100 p-5 rounded-3xl text-center">
 
     <div class="text-emerald-600 font-bold text-4xl mb-1">${correctCount}</div>
 
@@ -437,7 +538,7 @@ function renderResults() {
 
     </div>
 
-    <div class="bg-rose-50 border border-rose-100 p-6 rounded-3xl text-center">
+    <div class="bg-rose-50 border border-rose-100 p-5 rounded-3xl text-center">
 
     <div class="text-rose-600 font-bold text-4xl mb-1">${wrongCount}</div>
 
@@ -445,6 +546,19 @@ function renderResults() {
 
     </div>
 
+    <div class="bg-slate-100 border border-slate-200 p-5 rounded-3xl text-center">
+
+    <div class="text-slate-700 font-bold text-4xl mb-1">${totalCount}</div>
+
+    <div class="text-slate-600 font-medium text-sm">Totaal</div>
+
+    </div>
+
+    </div>
+
+    <div class="bg-amber-50 border border-amber-100 rounded-3xl p-5 mb-8 text-center">
+      <div style="margin-bottom:4px;">${sterrenHTML}</div>
+      <div style="font-weight:700;font-size:1rem;color:#92400e;">${tempo.label}</div>
     </div>
 
     <div class="bg-white border-2 border-slate-100 rounded-3xl p-6 mb-8">
@@ -550,7 +664,9 @@ function startQuiz(catId) {
 
     state.category = categories.find(c => c.id === catId);
 
-    state.questions = [generateQuestion(state.category)];
+    _rolQueue = []; // reset roulerend blok bij nieuwe sessie
+
+    state.questions = [nextQuestion(state.category)];
 
     state.currentIndex = 0;
 
@@ -610,6 +726,8 @@ function handleAnswer(e) {
 
     const currentQ = state.questions[state.currentIndex];
 
+    const isCorrect = val === currentQ.ans;
+
     
 
     state.results.push({
@@ -618,17 +736,19 @@ function handleAnswer(e) {
 
     userAns: val,
 
-    correct: val === currentQ.ans
+    correct: isCorrect
 
     });
 
+    // Visuele feedback: kleur invoerveld groen of rood
+    input.disabled = true;
+    input.classList.add(isCorrect ? 'input-correct' : 'input-wrong');
 
-
-    state.currentIndex++;
-
-    state.questions.push(generateQuestion(state.category));
-
-    render();
+    setTimeout(function() {
+      state.currentIndex++;
+      state.questions.push(nextQuestion(state.category));
+      if (state.view === 'quiz') render();
+    }, 350);
 
 }
 
