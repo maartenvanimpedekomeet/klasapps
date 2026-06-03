@@ -89,6 +89,7 @@
             from { transform: scale(0.7); opacity: 0; }
             to { transform: scale(1); opacity: 1; }
         }
+        @keyframes spin { to { transform: rotate(360deg); } }
         
         /* SVG interactive parts */
         .plant-part-hit {
@@ -104,6 +105,40 @@
     </style>
 </head>
 <body class="min-h-screen leaf-bg pb-16">
+
+<!-- LOGIN SCHERM (fixed overlay — app zichtbaar op achtergrond) -->
+<div id="login-screen" style="position:fixed;inset:0;z-index:9999;background:linear-gradient(135deg,#14532d,#16a34a);display:flex;align-items:center;justify-content:center;padding:20px;">
+  <div style="background:white;border-radius:24px;padding:2.5rem 2rem;width:100%;max-width:380px;box-shadow:0 25px 50px rgba(0,0,0,0.25);text-align:center;display:flex;flex-direction:column;gap:12px;">
+    <div style="font-size:3rem">🌱</div>
+    <h1 style="font-size:1.5rem;font-weight:900;color:#1f2937;margin:0;font-family:'Baloo 2',cursive;">Delen van de Plant</h1>
+    <p style="color:#6b7280;font-size:.9rem;margin:0;">Voer je naam en code in</p>
+    <div id="klas-err" style="display:none;color:#dc2626;font-size:.85rem;font-weight:700;background:#fee2e2;border:1px solid #fca5a5;padding:8px 12px;border-radius:8px;"></div>
+    <input type="text" id="klas-naam" placeholder="Jouw voornaam"
+      style="width:100%;padding:14px;border:2px solid #e5e7eb;border-radius:12px;font-family:inherit;font-size:1rem;font-weight:600;text-align:center;outline:none;"
+      autocomplete="off" autocapitalize="words">
+    <input type="password" id="klas-code" placeholder="Jouw code"
+      style="width:100%;padding:14px;border:2px solid #e5e7eb;border-radius:12px;font-family:inherit;font-size:1rem;font-weight:600;text-align:center;outline:none;"
+      autocomplete="off">
+    <button id="login-btn"
+      style="width:100%;background:#16a34a;color:white;border:none;border-radius:12px;padding:14px;font-family:inherit;font-size:1rem;font-weight:700;cursor:pointer;">
+      Inloggen
+    </button>
+    <button id="gast-btn"
+      style="width:100%;background:transparent;border:2px solid #e5e7eb;border-radius:12px;padding:12px;font-family:inherit;font-size:.9rem;font-weight:700;color:#6b7280;cursor:pointer;">
+      Doorgaan als gast (geen opslag)
+    </button>
+    <div style="font-size:.75rem;color:#9ca3af;">
+      <a href="dashboard.html" style="color:#16a34a;font-weight:700;text-decoration:none;">Leerkracht? Klik hier</a>
+    </div>
+  </div>
+</div>
+
+<!-- User badge (style.display — nooit classList) -->
+<div id="user-badge" style="display:none;position:fixed;top:62px;right:14px;z-index:50;align-items:center;gap:8px;background:white;border:1px solid #bbf7d0;border-radius:10px;padding:5px 12px;font-size:.8rem;font-weight:700;color:#15803d;box-shadow:0 2px 8px rgba(0,0,0,.08);">
+  <span id="user-badge-naam"></span>
+  <button id="logout-btn" style="background:none;border:none;cursor:pointer;color:#94a3b8;font-size:.75rem;padding:2px 6px;border-left:1px solid #e5e7eb;margin-left:4px;font-family:inherit;">↩ Uit</button>
+</div>
+<div id="gast-badge" style="display:none;position:fixed;top:62px;right:14px;z-index:50;background:#fefce8;border:1px solid #fde68a;border-radius:8px;padding:4px 10px;font-size:.75rem;font-weight:700;color:#d97706;">👤 Gast – niet opgeslagen</div>
 
 <!-- NAVBAR -->
 <nav class="bg-white border-b border-green-100 shadow-sm sticky top-0 z-40 px-6 py-3">
@@ -562,6 +597,12 @@
             <button onclick="showView('menu')" class="px-6 py-3 bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold rounded-2xl transition-all">🏠 Menu</button>
             <button id="result-retry-btn" class="px-6 py-3 bg-green-500 hover:bg-green-600 text-white font-bold rounded-2xl transition-all">🔄 Opnieuw</button>
         </div>
+
+        <!-- Upload status (style.display — nooit classList) -->
+        <div id="upload-status" style="display:none;padding:10px 14px;border-radius:10px;border:2px solid;font-size:.85rem;font-weight:700;text-align:center;margin-top:14px;">
+          <span id="upload-spinner" style="display:inline-block;width:13px;height:13px;border:2px solid #e5e7eb;border-top-color:#16a34a;border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle;margin-right:6px;"></span>
+          <span id="upload-status-text">Bezig met opslaan...</span>
+        </div>
     </div>
 </section>
 
@@ -649,19 +690,19 @@ const BLOEM_DATA = {
 };
 
 const QUIZ_VRAGEN = [
-    { vraag: 'Welk deel maakt voedsel voor de plant?', antwoord: 'Blad', opties: ['Blad', 'Wortel', 'Stengel', 'Bloem'], uitleg: 'Het blad vangt zonlicht op en maakt daarmee voedsel voor de plant.' },
+    { vraag: 'Welk deel maakt van het licht van de zon voedsel voor de plant?', antwoord: 'Blad', opties: ['Blad', 'Wortel', 'Stengel', 'Bloem'], uitleg: 'Het blad vangt zonlicht op en maakt daarmee voedsel voor de plant.' },
     { vraag: 'Welk deel zuigt water op uit de grond?', antwoord: 'Wortels', opties: ['Stengel', 'Blad', 'Wortels', 'Bloem'], uitleg: 'De wortels zitten in de grond en zuigen water op.' },
     { vraag: 'Wat doet de stengel?', antwoord: 'Water brengen naar alle delen', opties: ['Voedsel maken', 'Water brengen naar alle delen', 'Bijen aantrekken', 'Zaden maken'], uitleg: 'De stengel brengt water van de wortels naar de bladeren en de bloem.' },
     { vraag: 'Welk deel van de bloem trekt bijen aan?', antwoord: 'Kroonblad', opties: ['Stamper', 'Kelkblad', 'Bloembodem', 'Kroonblad'], uitleg: 'De kroonbladen zijn fel gekleurd. Dat trekt bijen en vlinders aan.' },
     { vraag: 'Wat maakt de meeldraad?', antwoord: 'Stuifmeel', opties: ['Nectar', 'Zaad', 'Stuifmeel', 'Vruchten'], uitleg: 'De meeldraad maakt stuifmeel. Dat zijn kleine gele korreltjes.' },
     { vraag: 'Welk deel beschermt de bloem als ze nog dicht is?', antwoord: 'Kelkblad', opties: ['Kroonblad', 'Meeldraad', 'Stamper', 'Kelkblad'], uitleg: 'De kelkbladen zitten onder de bloem en beschermen haar als ze nog dicht is.' },
-    { vraag: 'Wat groeit er als stuifmeel op de stamper valt?', antwoord: 'Een zaad', opties: ['Een wortel', 'Een zaad', 'Een blad', 'Een stengel'], uitleg: 'Als stuifmeel op de stamper valt, groeit er een zaad. Uit dat zaad komt een nieuwe plant.' },
+    { vraag: 'Wat groeit er als stuifmeel op de stamper valt?', antwoord: 'Een vrucht met zaad', opties: ['Een wortel', 'Een vrucht met zaad', 'Een blad', 'Een stengel'], uitleg: 'Als stuifmeel op de stamper valt, groeit er een zaad. Uit dat zaad komt een nieuwe plant.' },
     { vraag: 'Waarvoor heeft het blad zonlicht nodig?', antwoord: 'Om voedsel te maken', opties: ['Om water op te zuigen', 'Om voedsel te maken', 'Om bijen aan te trekken', 'Om te groeien in de grond'], uitleg: 'Het blad vangt zonlicht op en gebruikt dat om voedsel te maken voor de plant.' },
-    { vraag: 'Wat verbindt de bloem met de stengel?', antwoord: 'Bloembodem', opties: ['Kelkblad', 'Kroonblad', 'Bloembodem', 'Meeldraad'], uitleg: 'De bloembodem zit onderaan de bloem en verbindt haar met de stengel.' },
+    { vraag: 'Waarmee zit de bloem vast aan de stengel?', antwoord: 'Bloembodem', opties: ['Kelkblad', 'Kroonblad', 'Bloembodem', 'Meeldraad'], uitleg: 'De bloembodem zit onderaan de bloem en verbindt haar met de stengel.' },
     { vraag: 'Waarom zijn bloemen fel gekleurd?', antwoord: 'Om bijen en vlinders te lokken', opties: ['Om water op te slaan', 'Om bijen en vlinders te lokken', 'Om sneller te groeien', 'Om meer zonlicht op te vangen'], uitleg: 'Felle kleuren trekken bijen en vlinders aan. Die brengen stuifmeel van bloem tot bloem.' },
     { vraag: 'Waarvoor zorgen de wortels nog meer, naast water opzuigen?', antwoord: 'De plant vasthouden in de grond', opties: ['Voedsel maken', 'Bijen aantrekken', 'De plant vasthouden in de grond', 'Stuifmeel maken'], uitleg: 'De wortels houden de plant stevig vast zodat ze niet omvalt.' },
     { vraag: 'Een bij neemt stuifmeel mee naar een andere bloem. Hoe noemen we dat?', antwoord: 'Bestuiving', opties: ['Groei', 'Bestuiving', 'Fotosynthese', 'Voeding'], uitleg: 'Als een bij stuifmeel meeneemt van de ene bloem naar de andere, noemen we dat bestuiving.' },
-    { vraag: 'Welk deel van de bloem maakt zaden?', antwoord: 'Stamper', opties: ['Meeldraad', 'Kelkblad', 'Stamper', 'Kroonblad'], uitleg: 'De stamper vangt stuifmeel op en maakt daarna zaden.' },
+    { vraag: 'Welk deel van de bloem maakt zaden?', antwoord: 'Stamper', opties: ['Stengel', 'Kelkblad', 'Stamper', 'Kroonblad'], uitleg: 'De stamper vangt stuifmeel op en maakt daarna zaden.' },
     { vraag: 'Welk deel houdt de plant recht?', antwoord: 'Stengel', opties: ['Wortel', 'Stengel', 'Bloem', 'Blad'], uitleg: 'De stengel houdt de plant recht en brengt water naar alle delen.' },
     { vraag: 'Uit wat groeit een nieuwe plant?', antwoord: 'Een zaad', opties: ['Een blad', 'Een zaad', 'Een wortel', 'Een bloem'], uitleg: 'Uit een zaad groeit een nieuwe plant.' },
 ];
@@ -683,9 +724,10 @@ let quizMode = 'oefenen';
 let quizVragen = [];
 let quizIndex = 0;
 let quizScore = 0;
-let quizHistory = [];
+let quizHistory = [];  // NOOIT 'history' als variabelenaam — window.history conflict!
 let quizAnswered = false;
 let lastQuizMode = 'oefenen';
+let quizVraagStartTijd = 0;  // tijdstip (ms) waarop de huidige vraag begon
 
 let sleepDragItem = null;
 let sleepDragSource = null;
@@ -985,6 +1027,7 @@ function updateQuizDots() {
 function renderQuizQuestion() {
     const q = quizVragen[quizIndex];
     quizAnswered = false;
+    quizVraagStartTijd = Date.now();  // start tijdmeting voor deze vraag
 
     document.getElementById('quiz-q-num').textContent = `Vraag ${quizIndex + 1}/${quizVragen.length}`;
     document.getElementById('quiz-question').textContent = q.vraag;
@@ -1009,7 +1052,8 @@ function answerQuiz(chosen, q, btnEl) {
 
     const isCorrect = chosen === q.antwoord;
     if (isCorrect) quizScore++;
-    quizHistory.push({ vraag: q.vraag, gekozen: chosen, juist: q.antwoord, correct: isCorrect, uitleg: q.uitleg });
+    const tijdSeconden = parseFloat(((Date.now() - quizVraagStartTijd) / 1000).toFixed(1));
+    quizHistory.push({ vraag: q.vraag, gekozen: chosen, juist: q.antwoord, correct: isCorrect, uitleg: q.uitleg, tijdSeconden });
 
     // Color buttons
     document.querySelectorAll('#quiz-options button').forEach(btn => {
@@ -1064,6 +1108,11 @@ function showResult() {
     showView('result');
     const pct = Math.round((quizScore / quizVragen.length) * 100);
 
+    // Reset upload-status voor nieuwe run (style.display — nooit classList)
+    document.getElementById('upload-status').style.display = 'none';
+    document.getElementById('upload-status-text').textContent = 'Bezig met opslaan...';
+    document.getElementById('upload-spinner').style.display = 'inline-block';
+
     document.getElementById('result-score').textContent = `${quizScore}/${quizVragen.length}`;
     document.getElementById('result-pct').textContent = `${pct}%`;
 
@@ -1096,14 +1145,208 @@ function showResult() {
     }
 
     document.getElementById('result-retry-btn').onclick = () => startQuiz(lastQuizMode);
+
+    // Opslaan enkel bij toets-modus
+    if (quizMode === 'toets') {
+        document.getElementById('upload-status').style.display = 'block';
+        saveToFirestore(pct);
+    }
 }
 
 // ============================
 // INIT
 // ============================
 document.addEventListener('DOMContentLoaded', () => {
-    showView('menu');
+    // menu wordt getoond NADAT de leerling inlogt via openApp()
+    // Hier enkel de login-knoppen registreren
+    document.getElementById('login-btn').addEventListener('click', klasLogin);
+    document.getElementById('gast-btn').addEventListener('click', klasGast);
+    document.getElementById('logout-btn').addEventListener('click', doLogout);
+    document.getElementById('klas-naam').addEventListener('keypress', e => { if (e.key === 'Enter') klasLogin(); });
+    document.getElementById('klas-code').addEventListener('keypress', e => { if (e.key === 'Enter') klasLogin(); });
 });
+</script>
+
+<!-- FIREBASE compat SDK — geen type="module", geen anonymous auth -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script>
+firebase.initializeApp({
+    apiKey:"AIzaSyCnQDVVAlK6jE-PPUUediRJMTbN0xqrLDE",
+    authDomain:"klaswebsite-database.firebaseapp.com",
+    projectId:"klaswebsite-database",
+    storageBucket:"klaswebsite-database.firebasestorage.app",
+    messagingSenderId:"42912327282",
+    appId:"1:42912327282:web:f13f2c706f6c42c115c4eb"
+});
+var _db          = firebase.firestore();
+var _currentUser = null;
+var _isGuest     = false;
+var COL_NAME     = "wo_delen_plant";  // vak=WO, prefix wo_ → dashboard herkent automatisch
+
+// ── UPLOAD STATUS (style.display — NOOIT classList) ───────────────────────
+function setUploadStatus(type, msg) {
+    var box     = document.getElementById("upload-status");
+    var text    = document.getElementById("upload-status-text");
+    var spinner = document.getElementById("upload-spinner");
+    if (!box) return;
+    box.style.display    = "block";
+    spinner.style.display = (type === "loading") ? "inline-block" : "none";
+    if (type === "loading") {
+        box.style.background  = "#f0fdf4"; box.style.borderColor = "#86efac"; box.style.color = "#15803d";
+    } else if (type === "ok") {
+        box.style.background  = "#f0fdf4"; box.style.borderColor = "#4ade80"; box.style.color = "#166534";
+    } else {
+        box.style.background  = "#fff1f2"; box.style.borderColor = "#fecdd3"; box.style.color = "#be123c";
+    }
+    text.textContent = msg;
+    console.log("[delen_plant saveToFirestore] " + type + ": " + msg);
+}
+
+// ── LOGIN (openApp gebruikt ALLEEN style.display — nooit classList) ────────
+function klasLogin() {
+    var naam = (document.getElementById("klas-naam").value||"").trim().toLowerCase();
+    var code = (document.getElementById("klas-code").value||"").trim();
+    var err  = document.getElementById("klas-err");
+    err.style.display = "none";
+    if (!naam) { err.textContent="Vul je voornaam in."; err.style.display="block"; return; }
+    if (!code) { err.textContent="Vul je code in.";    err.style.display="block"; return; }
+    var btn = document.getElementById("login-btn");
+    btn.textContent = "Even wachten..."; btn.disabled = true;
+    _db.collection("leerlingen").doc(naam).get().then(function(doc) {
+        btn.textContent = "Inloggen"; btn.disabled = false;
+        if (!doc.exists) { err.textContent="Naam niet gevonden."; err.style.display="block"; return; }
+        var data = doc.data();
+        if (data.code !== code) { err.textContent="Verkeerde code."; err.style.display="block"; return; }
+        window._leerlingNaam = data.weergavenaam || (naam.charAt(0).toUpperCase()+naam.slice(1));
+        window._leerlingId   = naam;
+        _currentUser = { uid: naam, displayName: window._leerlingNaam };
+        _isGuest = false;
+        openApp(window._leerlingNaam, false);
+    }).catch(function(e) {
+        btn.textContent = "Inloggen"; btn.disabled = false;
+        err.textContent = "Fout: " + e.message; err.style.display = "block";
+    });
+}
+
+function klasGast() {
+    _isGuest = true; _currentUser = null;
+    window._leerlingId   = null;
+    window._leerlingNaam = "Gast";
+    openApp("Gast", true);
+}
+
+function openApp(naam, isGast) {
+    // ALLEEN style.display — nooit classList
+    // (app gebruikt .hidden { display:none !important } → zou style.display blokkeren)
+    document.getElementById("login-screen").style.display = "none";
+    if (isGast) {
+        document.getElementById("gast-badge").style.display  = "block";
+        document.getElementById("user-badge").style.display  = "none";
+    } else {
+        document.getElementById("user-badge-naam").textContent = naam;
+        document.getElementById("user-badge").style.display    = "flex";
+        document.getElementById("gast-badge").style.display    = "none";
+    }
+    // Menu tonen na login
+    showView('menu');
+}
+
+function doLogout() {
+    _currentUser = null; _isGuest = false;
+    window._leerlingId = null; window._leerlingNaam = null;
+    document.getElementById("login-screen").style.display = "flex";
+    document.getElementById("user-badge").style.display   = "none";
+    document.getElementById("gast-badge").style.display   = "none";
+    document.getElementById("klas-naam").value = "";
+    document.getElementById("klas-code").value = "";
+    document.getElementById("klas-err").style.display = "none";
+    document.getElementById("login-btn").disabled = false;
+    document.getElementById("login-btn").textContent = "Inloggen";
+}
+
+// ── OPSLAAN (enkel bij toets-modus) ──────────────────────────────────────
+async function saveToFirestore(pct) {
+    if (_isGuest || !_currentUser) {
+        setUploadStatus("error", "❌ Niet opgeslagen: je speelt als gast.");
+        return;
+    }
+    if (!window._leerlingId) {
+        setUploadStatus("error", "❌ Geen leerling-ID. Log opnieuw in.");
+        return;
+    }
+
+    setUploadStatus("loading", "Bezig met opslaan...");
+
+    var totaal  = quizHistory.length;
+    var juist   = quizHistory.filter(function(h){ return h.correct; }).length;
+    var totaalTijd = quizHistory.reduce(function(s,h){ return s + (h.tijdSeconden||0); }, 0);
+
+    // Foutenanalyse
+    var foutenTelling = {};
+    var extraOefenen  = [];
+    quizHistory.filter(function(h){ return !h.correct; }).forEach(function(h) {
+        var cat = "Delen van de plant/bloem";
+        foutenTelling[cat] = (foutenTelling[cat]||0) + 1;
+        extraOefenen.push(h.vraag + " (juist: " + h.juist + ")");
+    });
+
+    var record = {
+        leerlingId:   window._leerlingId,
+        leerlingNaam: window._leerlingNaam || "Leerling",
+        vak:          "WO",
+        vakonderdeel: "Delen van de plant en de bloem",
+        mode:         "Toets",
+        score:        juist,
+        totalQ:       totaal,
+        percentage:   pct,
+        tijd:         parseFloat(totaalTijd.toFixed(1)) + "s",
+        gemTijdPerVraag: totaal > 0 ? parseFloat((totaalTijd/totaal).toFixed(1)) : 0,
+        hintsGebruikt: 0,
+        timestamp:    firebase.firestore.FieldValue.serverTimestamp(),
+        foutenAnalyse: {
+            extraOefenen:       extraOefenen,
+            foutenPerCategorie: foutenTelling
+        },
+        vragen: quizHistory.map(function(h, i) {
+            return {
+                vraagNr:          i + 1,
+                vraag:            h.vraag        || "",
+                categorie:        "Delen van de plant/bloem",
+                antwoordLeerling: h.gekozen      || "(leeg)",
+                juistAntwoord:    h.juist        || "",
+                isJuist:          h.correct      || false,
+                uitleg:           h.uitleg       || "",
+                hintGebruikt:     false,
+                punten:           h.correct ? 1 : 0,
+                tijdSeconden:     h.tijdSeconden || 0
+            };
+        })
+    };
+
+    console.log("[delen_plant saveToFirestore] Opslaan naar " + COL_NAME + ":", record);
+
+    try {
+        var docRef = await _db.collection(COL_NAME).add(record);
+
+        // Registry — dashboard ontdekt collection automatisch + vak=WO
+        await _db.collection("toets_registry").doc(COL_NAME).set({
+            naam:       "WO – Delen van de Plant",
+            collection: COL_NAME,
+            vak:        "WO",
+            lastSeen:   firebase.firestore.FieldValue.serverTimestamp()
+        }, { merge: true });
+
+        setUploadStatus("ok", "✅ Score opgeslagen! (ID: " + docRef.id.substring(0,8) + "…)");
+        console.log("[delen_plant saveToFirestore] Succes! ID:", docRef.id);
+    } catch(e) {
+        console.error("[delen_plant saveToFirestore] Fout:", e.code, e.message);
+        var uitleg = e.message || "Onbekende fout";
+        if (e.code === "permission-denied") uitleg = "Geen schrijfrechten. Contacteer de leerkracht.";
+        else if (e.code === "unavailable")  uitleg = "Geen internetverbinding. Probeer opnieuw.";
+        setUploadStatus("error", "❌ Opslaan mislukt: " + uitleg);
+    }
+}
 </script>
 </body>
 </html>
