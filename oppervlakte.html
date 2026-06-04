@@ -28,9 +28,44 @@
             -ms-user-select: none;
             user-select: none;
         }
+        @keyframes spin { to { transform: rotate(360deg); } }
     </style>
 </head>
 <body class="bg-slate-50 min-h-screen pb-20 no-select">
+
+<!-- LOGIN SCHERM (fixed overlay — app zichtbaar op achtergrond) -->
+<div id="login-screen" style="position:fixed;inset:0;z-index:9999;background:linear-gradient(135deg,#312e81,#4f46e5);display:flex;align-items:center;justify-content:center;padding:20px;">
+  <div style="background:white;border-radius:24px;padding:2.5rem 2rem;width:100%;max-width:380px;box-shadow:0 25px 50px rgba(0,0,0,0.25);text-align:center;display:flex;flex-direction:column;gap:12px;">
+    <div style="font-size:3rem">📐</div>
+    <h1 style="font-size:1.5rem;font-weight:900;color:#1f2937;margin:0;">Oppervlakte & Omtrek</h1>
+    <p style="color:#6b7280;font-size:.9rem;margin:0;">Voer je naam en code in</p>
+    <div id="klas-err" style="display:none;color:#dc2626;font-size:.85rem;font-weight:700;background:#fee2e2;border:1px solid #fca5a5;padding:8px 12px;border-radius:8px;"></div>
+    <input type="text" id="klas-naam" placeholder="Jouw voornaam"
+      style="width:100%;padding:14px;border:2px solid #e5e7eb;border-radius:12px;font-family:inherit;font-size:1rem;font-weight:600;text-align:center;outline:none;"
+      autocomplete="off" autocapitalize="words">
+    <input type="password" id="klas-code" placeholder="Jouw code"
+      style="width:100%;padding:14px;border:2px solid #e5e7eb;border-radius:12px;font-family:inherit;font-size:1rem;font-weight:600;text-align:center;outline:none;"
+      autocomplete="off">
+    <button id="login-btn"
+      style="width:100%;background:#4f46e5;color:white;border:none;border-radius:12px;padding:14px;font-family:inherit;font-size:1rem;font-weight:700;cursor:pointer;">
+      Inloggen
+    </button>
+    <button id="gast-btn"
+      style="width:100%;background:transparent;border:2px solid #e5e7eb;border-radius:12px;padding:12px;font-family:inherit;font-size:.9rem;font-weight:700;color:#6b7280;cursor:pointer;">
+      Doorgaan als gast (geen opslag)
+    </button>
+    <div style="font-size:.75rem;color:#9ca3af;">
+      <a href="dashboard.html" style="color:#4f46e5;font-weight:700;text-decoration:none;">Leerkracht? Klik hier</a>
+    </div>
+  </div>
+</div>
+
+<!-- User badge (style.display — nooit classList) -->
+<div id="user-badge" style="display:none;position:fixed;top:68px;right:14px;z-index:50;align-items:center;gap:8px;background:white;border:1px solid #e0e7ff;border-radius:10px;padding:5px 12px;font-size:.8rem;font-weight:700;color:#4338ca;box-shadow:0 2px 8px rgba(0,0,0,.08);">
+  <span id="user-badge-naam"></span>
+  <button id="logout-btn" style="background:none;border:none;cursor:pointer;color:#94a3b8;font-size:.75rem;padding:2px 6px;border-left:1px solid #e5e7eb;margin-left:4px;font-family:inherit;">↩ Uit</button>
+</div>
+<div id="gast-badge" style="display:none;position:fixed;top:68px;right:14px;z-index:50;background:#fefce8;border:1px solid #fde68a;border-radius:8px;padding:4px 10px;font-size:.75rem;font-weight:700;color:#d97706;">👤 Gast – niet opgeslagen</div>
 
     <!-- NAVIGATIEBALK -->
     <nav class="bg-white border-b border-slate-100 shadow-sm sticky top-0 z-40 px-6 py-4">
@@ -48,7 +83,7 @@
     </nav>
 
     <!-- HOOFDCONTAINER -->
-    <main class="max-w-4xl mx-auto px-4 mt-8">
+    <main class="max-w-5xl mx-auto px-4 mt-8">
 
         <!-- PROGRESS BAR -->
         <div id="progressContainer" class="hidden flex flex-col items-center mb-6 gap-2">
@@ -65,13 +100,13 @@
                 <p class="text-slate-500 mt-2 text-sm">Oefen met centimeters en meters op papier en in de echte wereld!</p>
             </div>
 
-            <!-- OEFENMODULES GRID -->
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <!-- OEFENMODULES GRID (Nu 4-koloms layout!) -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 <button class="menu-btn card-anim bg-white p-6 border border-slate-200/60 rounded-3xl text-left flex flex-col justify-between hover:border-indigo-300 group transition-all" onclick="startOnderdeel('maateenheid', 'Wanneer wat gebruiken?')">
                     <div class="w-12 h-12 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center text-xl group-hover:bg-blue-600 group-hover:text-white transition-colors mb-4"><i class="fa-solid fa-ruler"></i></div>
                     <div>
-                        <h3 class="font-extrabold text-slate-800 text-lg">1. Wanneer wat gebruiken?</h3>
-                        <p class="text-xs text-slate-400 mt-1">Leer het verschil tussen lengte (m/cm) en oppervlakte (m²/cm²).</p>
+                        <h3 class="font-extrabold text-slate-800 text-lg">1. Wanneer wat?</h3>
+                        <p class="text-xs text-slate-400 mt-1">Verschil tussen lengte (m/cm) en oppervlakte (m²/cm²).</p>
                     </div>
                 </button>
 
@@ -90,10 +125,18 @@
                         <p class="text-xs text-slate-400 mt-1">Teken zelf interactief rechthoeken met een gevraagde maat.</p>
                     </div>
                 </button>
+
+                <button class="menu-btn card-anim bg-white p-6 border border-slate-200/60 rounded-3xl text-left flex flex-col justify-between hover:border-indigo-300 group transition-all" onclick="startOnderdeel('context', 'Realistische verhalen')">
+                    <div class="w-12 h-12 bg-rose-50 text-rose-600 rounded-2xl flex items-center justify-center text-xl group-hover:bg-rose-600 group-hover:text-white transition-colors mb-4"><i class="fa-solid fa-book"></i></div>
+                    <div>
+                        <h3 class="font-extrabold text-slate-800 text-lg">4. Echte verhalen</h3>
+                        <p class="text-xs text-slate-400 mt-1">Schilderen, hekken bouwen, tegels leggen en meer in de praktijk.</p>
+                    </div>
+                </button>
             </div>
             
             <!-- GROTE TOETS KNOP -->
-            <div class="pt-4 border-t border-slate-200">
+            <div class="pt-4 border-t border-slate-200 max-w-2xl mx-auto">
                 <button class="w-full bg-indigo-50 text-indigo-600 border border-indigo-100 font-black p-5 rounded-3xl hover:bg-indigo-600 hover:text-white transition-all flex items-center justify-center gap-3 text-lg cursor-pointer shadow-sm" onclick="startOnderdeel('toets', 'De Grote Toets')">
                     <i class="fa-solid fa-graduation-cap text-xl"></i> START DE GROTE TOETS (15 VRAGEN)
                 </button>
@@ -101,7 +144,7 @@
         </section>
 
         <!-- ACTIEVE OEFENING SCHERM -->
-        <section id="oefeningSectie" class="hidden">
+        <section id="oefeningSectie" class="hidden max-w-2xl mx-auto">
             <div class="bg-white p-6 md:p-8 rounded-[2rem] shadow-xl border border-slate-100 relative">
                 <!-- Sluit/Terugknop -->
                 <button class="absolute top-5 right-5 text-slate-300 hover:text-rose-500 transition-colors cursor-pointer text-xl" onclick="openExitModal()">
@@ -187,6 +230,17 @@
                         </div>
                     </div>
 
+                    <!-- MODULE 4: DEDICATED SINGLE VALUE INPUT (Echte verhalen) -->
+                    <div id="single-input-container" class="hidden flex flex-col items-center">
+                        <div class="bg-slate-50 border border-slate-200 p-6 rounded-3xl flex flex-col items-center w-full max-w-sm">
+                            <label class="text-xs font-black text-slate-400 uppercase mb-3" id="singleInputLabel">Jouw Antwoord</label>
+                            <div class="flex items-center gap-2.5">
+                                <input type="text" id="inputSingle" autocomplete="off" class="w-48 p-4.5 text-center text-2xl font-bold rounded-2xl border-2 border-slate-200 outline-none focus:border-indigo-500 focus:bg-white" placeholder="?">
+                                <span class="text-slate-600 font-extrabold text-xl" id="unitSingle">m²</span>
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- FEEDBACK EN TIP SECTIES -->
                     <div id="feedback" class="hidden p-5 rounded-2xl font-bold text-center animate-in fade-in duration-150"></div>
                     <div id="tipBox" class="hidden p-5 bg-amber-50 border border-amber-100 rounded-2xl text-amber-800 text-sm leading-relaxed">
@@ -262,6 +316,12 @@
             <button class="w-full mt-8 bg-slate-950 text-white font-bold py-4 rounded-2xl hover:bg-black transition-all shadow-md cursor-pointer" onclick="stopOefening()">
                 <i class="fa-solid fa-house mr-2"></i> Terug naar hoofdmenu
             </button>
+
+            <!-- Upload status (style.display — nooit classList) -->
+            <div id="upload-status" style="display:none;padding:10px 14px;border-radius:10px;border:2px solid;font-size:.85rem;font-weight:700;text-align:center;margin-top:12px;">
+              <span id="upload-spinner" style="display:inline-block;width:13px;height:13px;border:2px solid #e5e7eb;border-top-color:#4f46e5;border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle;margin-right:6px;"></span>
+              <span id="upload-status-text">Bezig met opslaan...</span>
+            </div>
         </section>
 
     </main>
@@ -281,7 +341,7 @@
             { situatie: "De oppervlakte van de deur", correct: "m²", opties: ["m", "cm", "m²", "cm²"], tip: "De deur is een relatief groot vlak, dus we schatten dit in m²." },
             { situatie: "De oppervlakte van een voetbalveld", correct: "m²", opties: ["m", "cm", "m²", "cm²"], tip: "Een voetbalveld is een heel groot oppervlak, dat drukken we uit in vierkante meters (m²)." },
             { situatie: "De lengte van een lieveheersbeestje", correct: "cm", opties: ["m", "cm", "m²", "cm²"], tip: "Een lieveheersbeestje is heel klein, we meten dit in centimeters (cm) of millimeters." },
-            { situatie: "De oppervlakte van een  tafel in de refter", correct: "m²", opties: ["m", "cm", "m²", "cm²"], tip: "Een eettafel is een groot plat oppervlak, dit meten we in vierkante meters (m²)." },
+            { situatie: "De oppervlakte van een tafel in de refter", correct: "m²", opties: ["m", "cm", "m²", "cm²"], tip: "Een eettafel is een groot plat oppervlak, dit meten we in vierkante meters (m²)." },
             { nickname: "schoolbord", situatie: "De omtrek van de smart-tv in de klas", correct: "m", opties: ["m", "cm", "m²", "cm²"], tip: "De omtrek is een lengte omheen. Een schoolbord is een paar meter lang, dus we meten in meters (m)." },
             { situatie: "De oppervlakte van een pannenkoek", correct: "cm²", opties: ["m", "cm", "m²", "cm²"], tip: "Een pannenkoek is plat en relatief klein, we meten de oppervlakte in vierkante centimeters (cm²)." },
             { situatie: "De breedte van je klasbank", correct: "cm", opties: ["m", "cm", "m²", "cm²"], tip: "De breedte is een lengte en een klasbank is minder dan een meter breed, dus we meten in centimeters (cm)." },
@@ -308,14 +368,208 @@
             { oppervlakte: 8,  omtrek: 12, unit: 'cm', tip: "Welke getallen maken vermenigvuldigd 8 en opgeteld 6? Probeer 2 cm bij 4 cm." },
             { oppervlakte: 15, omtrek: 16, unit: 'cm', tip: "Vermenigvuldigd 15 en opgeteld 8. Probeer een rechthoek van 3 cm bij 5 cm." },
             { oppervlakte: 14, omtrek: 18, unit: 'cm', tip: "Welke twee getallen maken vermenigvuldigd 14? 2 en 7! Probeer een rechthoek van 2 cm bij 7 cm." },
-            // Extra meters (m) uitdagingen toegevoegd voor afwisseling in de bouwer
             { oppervlakte: 6,  omtrek: 10, unit: 'm',  tip: "Welke twee getallen maken vermenigvuldigd 6 en opgeteld 5 (de helft van 10)? Probeer een rechthoek van 2 m bij 3 m." },
             { oppervlakte: 4,  omtrek: 10, unit: 'm',  tip: "Vermenigvuldigd 4, opgeteld 5 (de helft van 10). Probeer een rechthoek van 1 m bij 4 m." }
         ];
 
+        // --- CONTEXT COUPLING STORIES POOL (10 sets of 2 questions each = 20 questions total) ---
+        const CONTEXT_DATA_POOL = [
+            // Verhaallijn 1: De geschilderde muur (Oppervlakte & Verfbehoefte)
+            [
+                {
+                    type: 'context',
+                    title: "De geschilderde muur (Deel 1)",
+                    prompt: "Een muur in de klas is 6 meter lang en 4 meter hoog. Wat is de oppervlakte van deze muur?",
+                    unit: "m²",
+                    answer: 24,
+                    tip: "Oppervlakte van een rechthoek = lengte × breedte. Dus: 6 m × 4 m = 24 m²."
+                },
+                {
+                    type: 'context',
+                    title: "De geschilderde muur (Deel 2)",
+                    prompt: "De muur heeft een oppervlakte van exact 24 m². Je wilt deze muur schilderen met exact 2 lagen verf. Voor hoeveel m² aan muuroppervlakte heb je in totaal verf nodig? (Schrijf alleen het getal)",
+                    unit: "m²",
+                    answer: 48,
+                    tip: "Vermenigvuldig de oppervlakte van de muur met het aantal verflagen: 24 m² × 2 lagen = 48 m²."
+                }
+            ],
+            // Verhaallijn 2: De verfemmer (Inhoud & Capaciteit)
+            [
+                {
+                    type: 'context',
+                    title: "De verfemmer (Deel 1)",
+                    prompt: "Een muur in je slaapkamer is 5 meter lang en 2 meter hoog. Wat is de oppervlakte van deze muur?",
+                    unit: "m²",
+                    answer: 10,
+                    tip: "Oppervlakte van een rechthoek = lengte × breedte. Dus: 5 m × 2 m = 10 m²."
+                },
+                {
+                    type: 'context',
+                    title: "De verfemmer (Deel 2)",
+                    prompt: "De muur heeft een oppervlakte van 10 m². In jouw verfemmer zit nog genoeg verf om in totaal 50 m² te schilderen. Heb je hiermee genoeg verf over om de muur te schilderen? Typ 'ja' of 'nee'.",
+                    unit: "",
+                    answer: "ja",
+                    isTextAns: true,
+                    tip: "Vergelijk de hoeveelheid verf die je hebt (50 m²) met wat je nodig hebt (10 m²). Omdat 50 meer is dan 10, heb je ruim voldoende verf. Het antwoord is 'ja'."
+                }
+            ],
+            // Verhaallijn 3: Boer Jef en zijn weide (Omtrek & Prikkeldraad)
+            [
+                {
+                    type: 'context',
+                    title: "Boer Jef en zijn weide (Deel 1)",
+                    prompt: "Boer Jef wil prikkeldraad rondom zijn rechthoekige weide spannen. De weide is 20 meter lang en 10 meter breed. Wat is de omtrek van deze weide (dus 1 ronde draad)?",
+                    unit: "m",
+                    answer: 60,
+                    tip: "Omtrek van een rechthoek = 2 × (lengte + breedte). Dus: 2 × (20 m + 10 m) = 2 × 30 m = 60 m."
+                },
+                {
+                    type: 'context',
+                    title: "Boer Jef en zijn weide (Deel 2)",
+                    prompt: "De omtrek van de weide van boer Jef is exact 60 meter. Om te zorgen dat de schapen niet ontsnappen, wil hij de draad exact 3 keer helemaal rondom de weide spannen. Hoeveel meter prikkeldraad heeft boer Jef in totaal nodig? (Schrijf alleen het getal)",
+                    unit: "m",
+                    answer: 180,
+                    tip: "Vermenigvuldig de omtrek van de weide met het aantal draden dat hij wil spannen: 60 m × 3 draden = 180 m."
+                }
+            ],
+            // Verhaallijn 4: De nieuwe slaapkamervloer (Tegels & Budget)
+            [
+                {
+                    type: 'context',
+                    title: "De nieuwe slaapkamervloer (Deel 1)",
+                    prompt: "Je krijgt een nieuwe vloer in je slaapkamer. De kamer is 4 meter lang en 2 meter breed. Hoeveel m² aan tegels moet je kopen om de hele vloer te bedekken?",
+                    unit: "m²",
+                    answer: 8,
+                    tip: "Oppervlakte van een rechthoek = lengte × breedte. Dus: 4 m × 2 m = 8 m²."
+                },
+                {
+                    type: 'context',
+                    title: "De nieuwe slaapkamervloer (Deel 2)",
+                    prompt: "De vloer heeft een oppervlakte van exact 8 m². De tegels die je hebt uitgekozen kosten exact € 30 per m². Hoeveel euro kosten de tegels voor jouw hele vloer in totaal? (Schrijf alleen het getal)",
+                    unit: "euro",
+                    answer: 240,
+                    tip: "Vermenigvuldig de totale oppervlakte met de prijs per vierkante meter: 8 m² × € 30 = € 240."
+                }
+            ],
+            // Verhaallijn 5: Het sportveld kalken (Lijnen & Omtrek)
+            [
+                {
+                    type: 'context',
+                    title: "Het sportveld kalken (Deel 1)",
+                    prompt: "De groendienst gaat de kalklijnen trekken rondom het voetbalveld. Het veld is 100 meter lang en 50 meter breed. Hoeveel meter aan kalklijnen moeten ze trekken om de buitenrand (omtrek) te kalken?",
+                    unit: "m",
+                    answer: 300,
+                    tip: "Omtrek van een rechthoek = 2 × (lengte + breedte). Dus: 2 × (100 m + 50 m) = 2 × 150 m = 300 m."
+                },
+                {
+                    type: 'context',
+                    title: "Het sportveld kalken (Deel 2)",
+                    prompt: "De kalklijnen hebben een totale lengte van 300 meter. Met 1 emmer kalkvloeistof kan de kalkmachine exact 150 meter aan kalklijnen trekken. Hoeveel emmers kalk heeft de groendienst in totaal nodig? (Schrijf alleen het getal)",
+                    unit: "emmers",
+                    answer: 2,
+                    tip: "Deel de totale lengte van de kalklijnen door het bereik van één emmer: 300 m ÷ 150 m = 2 emmers."
+                }
+            ],
+            // Verhaallijn 6: Het schoolbord omlijsten (Houten Latten)
+            [
+                {
+                    type: 'context',
+                    title: "Het schoolbord omlijsten (Deel 1)",
+                    prompt: "Het schoolbord in de klas is 3 meter lang en 1 meter hoog. We willen een nieuwe houten omlijsting rondom het bord maken. Hoeveel meter omlijsting (omtrek) hebben we hiervoor nodig?",
+                    unit: "m",
+                    answer: 8,
+                    tip: "Omtrek van een rechthoek = 2 × (lengte + breedte). Dus: 2 × (3 m + 1 m) = 2 × 4 m = 8 m."
+                },
+                {
+                    type: 'context',
+                    title: "Het schoolbord omlijsten (Deel 2)",
+                    prompt: "De omtrek van het schoolbord is exact 8 meter. De houten latten kosten € 5 per lopende meter. Wat kost de houten omlijsting in totaal? (Schrijf alleen het getal)",
+                    unit: "euro",
+                    answer: 40,
+                    tip: "Vermenigvuldig de omtrek van het bord met de prijs per meter houten lat: 8 m × € 5 = € 40."
+                }
+            ],
+            // Verhaallijn 7: Een moestuin aanleggen (Oppervlakte & Compost)
+            [
+                {
+                    type: 'context',
+                    title: "Een moestuin aanleggen (Deel 1)",
+                    prompt: "Je legt in de tuin een rechthoekige moestuin aan. De moestuin wordt 8 meter lang en 5 meter breed. Wat is de oppervlakte van deze moestuin?",
+                    unit: "m²",
+                    answer: 40,
+                    tip: "Oppervlakte van een rechthoek = lengte × breedte. Dus: 8 m × 5 m = 40 m²."
+                },
+                {
+                    type: 'context',
+                    title: "Een moestuin aanleggen (Deel 2)",
+                    prompt: "De moestuin heeft een oppervlakte van exact 40 m². Per m² hebben we 10 kg compost nodig om de grond goed vruchtbaar te maken. Hoeveel kg compost moeten we in totaal kopen? (Schrijf alleen het getal)",
+                    unit: "kg",
+                    answer: 400,
+                    tip: "Vermenigvuldig de totale oppervlakte met de benodigde compost per vierkante meter: 40 m² × 10 kg = 400 kg."
+                }
+            ],
+            // Verhaallijn 8: Een poster ophangen (Centimeters & Karton)
+            [
+                {
+                    type: 'context',
+                    title: "Een poster ophangen (Deel 1)",
+                    prompt: "Je maakt een poster voor een aardrijkskundeproject. De poster is 80 cm lang en 50 cm breed. Wat is de oppervlakte van deze poster in cm²?",
+                    unit: "cm²",
+                    answer: 4000,
+                    tip: "Oppervlakte van een rechthoek = lengte × breedte. Dus: 80 cm × 50 cm = 4000 cm²."
+                },
+                {
+                    type: 'context',
+                    title: "Een poster ophangen (Deel 2)",
+                    prompt: "De poster heeft een oppervlakte van exact 4000 cm². Je plakt de poster op een groot stuk karton met een oppervlakte van 5000 cm². Hoeveel cm² van het karton blijft er onbedekt over? (Schrijf alleen het getal)",
+                    unit: "cm²",
+                    answer: 1000,
+                    tip: "Trek de oppervlakte van de poster af van de totale oppervlakte van het karton: 5000 cm² - 4000 cm² = 1000 cm²."
+                }
+            ],
+            // Verhaallijn 9: Het zwembad afdekken (Zeil & Prijs)
+            [
+                {
+                    type: 'context',
+                    title: "Het zwembad afdekken (Deel 1)",
+                    prompt: "Het rechthoekige opblaaszwembad is 8 meter lang en 4 meter breed. Welke oppervlakte moet een zeil minimaal hebben om het zwembad helemaal af te dekken?",
+                    unit: "m²",
+                    answer: 32,
+                    tip: "Oppervlakte van een rechthoek = lengte × breedte. Dus: 8 m × 4 m = 32 m²."
+                },
+                {
+                    type: 'context',
+                    title: "Het zwembad afdekken (Deel 2)",
+                    prompt: "Het afdekzeil heeft een oppervlakte van exact 32 m². Je koopt een stevig zeil dat € 12 per m² kost. Hoeveel euro kost dit afdekzeil in totaal? (Schrijf alleen het getal)",
+                    unit: "euro",
+                    answer: 384,
+                    tip: "Vermenigvuldig de oppervlakte van het zeil met de prijs per vierkante meter: 32 m² × € 12 = € 384."
+                }
+            ],
+            // Verhaallijn 10: Een zandbak omlijnen (Symmetrie & Balken)
+            [
+                {
+                    type: 'context',
+                    title: "Een zandbak omlijnen (Deel 1)",
+                    prompt: "De vierkante zandbak op de speelplaats is 3 meter lang en 3 meter breed. We willen een rubberen stootrand helemaal rondom leggen. Wat is de omtrek van de zandbak?",
+                    unit: "m",
+                    answer: 12,
+                    tip: "Omtrek van een vierkant = 4 × zijde. Dus: 4 × 3 m = 12 m. (Of: 2 × (3 m + 3 m) = 12 m)."
+                },
+                {
+                    type: 'context',
+                    title: "Een zandbak omlijnen (Deel 2)",
+                    prompt: "De omtrek van de zandbak is exact 12 meter. De rubberen balken voor de rand worden verkocht in stukken van exact 2 meter lang. Hoeveel van deze balken moeten we kopen? (Schrijf alleen het getal)",
+                    unit: "balken",
+                    answer: 6,
+                    tip: "Deel de totale benodigde omtrek door de lengte van één rubberen balk: 12 m ÷ 2 m = 6 balken."
+                }
+            ]
+        ];
+
         // --- APP STATE ---
         let state = {
-            currentMode: '', // 'maateenheid', 'berekenen', 'bouwen', 'toets'
+            currentMode: '', // 'maateenheid', 'berekenen', 'bouwen', 'context', 'toets'
             questions: [],
             currentIndex: 0,
             score: 0,
@@ -381,11 +635,20 @@
                     unit: q.unit || 'cm',
                     tip: q.tip
                 }));
-            } 
+            }
+            else if (mode === 'context') {
+                state.totalQ = 10;
+                // Kies 5 willekeurige verhaallijnen en voeg ze in volgorde (Deel 1 & Deel 2) toe
+                let gekozenVerhalen = shuffle(CONTEXT_DATA_POOL).slice(0, 5);
+                gekozenVerhalen.forEach(paar => {
+                    pool.push(paar[0]);
+                    pool.push(paar[1]);
+                });
+            }
             else if (mode === 'toets') {
                 state.totalQ = 15;
-                // Mix van exact 5 vragen uit elke module (inclusief 5 unieke en verschillende uit de maateenheid databank van 25)
-                const m1 = shuffle(MAATEENHEID_DATA).slice(0, 5).map(q => ({
+                // Grote Mix: 3x maateenheid, 4x berekenen, 4x bouwen, 4x context (2 complete verhaallijnen)
+                const m1 = shuffle(MAATEENHEID_DATA).slice(0, 3).map(q => ({
                     type: 'maateenheid',
                     situatie: q.situatie,
                     correct: q.correct,
@@ -394,7 +657,7 @@
                 }));
                 
                 const m2 = [];
-                for (let i = 0; i < 5; i++) {
+                for (let i = 0; i < 4; i++) {
                     let w = Math.floor(Math.random() * 6) + 2;
                     let h = Math.floor(Math.random() * 5) + 2;
                     let unit = Math.random() > 0.5 ? 'cm' : 'm';
@@ -409,7 +672,7 @@
                     });
                 }
 
-                const m3 = shuffle(CONSTRUCT_DATA).slice(0, 5).map(q => ({
+                const m3 = shuffle(CONSTRUCT_DATA).slice(0, 4).map(q => ({
                     type: 'bouwen',
                     targetOpp: q.oppervlakte,
                     targetOmtrek: q.omtrek,
@@ -417,7 +680,26 @@
                     tip: q.tip
                 }));
 
-                pool = shuffle([...m1, ...m2, ...m3]);
+                const m4 = [];
+                let gekozenVerhalen = shuffle(CONTEXT_DATA_POOL).slice(0, 2); // 2 complete verhalen (4 vragen)
+                gekozenVerhalen.forEach(paar => {
+                    m4.push(paar[0]);
+                    m4.push(paar[1]);
+                });
+
+                // Let op: we schudden m1, m2 en m3 door elkaar, en m4 voegen we gepaard in of we husselen de hele lijst.
+                // Om te zorgen dat de context-verhaallijnen direct op elkaar aansluiten (Deel 1 -> Deel 2),
+                // bouwen we de toets stap voor stap op.
+                const restMix = shuffle([...m1, ...m2, ...m3]);
+                
+                // Voeg de verhalen gecontroleerd in
+                pool = [
+                    restMix[0], restMix[1],
+                    m4[0], m4[1], // Verhaal 1
+                    restMix[2], restMix[3], restMix[4],
+                    m4[2], m4[3], // Verhaal 2
+                    restMix[5], restMix[6], restMix[7], restMix[8], restMix[9], restMix[10]
+                ];
             }
 
             state.questions = pool;
@@ -431,6 +713,7 @@
             state.hintsUsed = 0;
             state.history = [];
             state.startTime = new Date();
+            state.questionStartTime = new Date();  // tijdmeting per vraag
 
             document.getElementById("niveauLabel").innerText = label;
 
@@ -497,6 +780,7 @@
             document.getElementById("mc-container").classList.add("hidden");
             document.getElementById("calc-container").classList.add("hidden");
             document.getElementById("grid-container").classList.add("hidden");
+            document.getElementById("single-input-container").classList.add("hidden");
             document.getElementById("feedback").classList.add("hidden");
             document.getElementById("tipBox").classList.add("hidden");
             document.getElementById("next-btn").classList.add("hidden");
@@ -513,6 +797,8 @@
                 renderBerekenen(q);
             } else if (q.type === 'bouwen') {
                 renderBouwen(q);
+            } else if (q.type === 'context') {
+                renderContext(q);
             }
         }
 
@@ -652,6 +938,23 @@
             };
         }
 
+        // 4. Render Realistische Contextvragen
+        function renderContext(q) {
+            document.getElementById("opdrachtZin").innerHTML = `<span class="text-indigo-600 font-extrabold text-base block mb-1">${q.title}</span><span class="text-slate-800 text-lg font-bold">${q.prompt}</span>`;
+            const singleContainer = document.getElementById("single-input-container");
+            singleContainer.classList.remove("hidden");
+
+            const singleInp = document.getElementById("inputSingle");
+            singleInp.value = "";
+            singleInp.disabled = false;
+            singleInp.placeholder = "?";
+            singleInp.className = "w-48 p-4.5 text-center text-2xl font-bold rounded-2xl border-2 border-slate-200 outline-none focus:border-indigo-500 focus:bg-white";
+
+            document.getElementById("unitSingle").innerText = q.unit;
+
+            setTimeout(() => singleInp.focus(), 150);
+        }
+
         // --- RASTER DRAWING MECHANICS ---
         function startDrag(e, r, c) {
             state.isDrawing = true;
@@ -765,6 +1068,31 @@
                     cell.onmouseenter = null;
                 });
             }
+            else if (q.type === 'context') {
+                const singleInp = document.getElementById("inputSingle");
+                const rawVal = singleInp.value.trim().toLowerCase();
+
+                if (!rawVal) {
+                    const fb = document.getElementById("feedback");
+                    fb.innerHTML = "<span class='text-rose-500 font-extrabold'><i class='fa-solid fa-triangle-exclamation'></i> Vul eerst een antwoord in!</span>";
+                    fb.classList.remove("hidden");
+                    return;
+                }
+
+                if (q.isTextAns) {
+                    isCorrect = (rawVal === q.answer.toLowerCase());
+                } else {
+                    const numVal = parseFloat(rawVal.replace(',', '.'));
+                    isCorrect = (numVal === q.answer);
+                }
+
+                userDisplay = `${singleInp.value} ${q.unit}`;
+                correctDisplay = `${q.answer} ${q.unit}`;
+
+                singleInp.disabled = true;
+                singleInp.className = "w-48 p-4.5 text-center text-2xl font-bold rounded-2xl border-2 outline-none " + 
+                    (isCorrect ? 'border-emerald-500 bg-emerald-50 text-emerald-800' : 'border-rose-500 bg-rose-50 text-rose-800');
+            }
 
             verwerkUitkomst(isCorrect, userDisplay, correctDisplay);
         }
@@ -793,15 +1121,18 @@
             }
 
             // Sla de geschiedenis direct op om de voortgangskleur te bepalen
-            let catName = q.type === 'maateenheid' ? 'Wanneer wat?' : (q.type === 'berekenen' ? 'Berekenen' : 'Bouwen op raster');
+            let catName = q.type === 'maateenheid' ? 'Wanneer wat?' : (q.type === 'berekenen' ? 'Berekenen' : (q.type === 'bouwen' ? 'Bouwen op raster' : 'Verhaallijn'));
             const unit = q.unit || 'cm';
+            const tijdSeconden = parseFloat(((new Date() - state.questionStartTime) / 1000).toFixed(1));
             state.history.push({
-                title: q.type === 'maateenheid' ? `Gekozen eenheid voor: "${q.situatie}"` : (q.type === 'berekenen' ? `Rechthoek ${q.width}x${q.height} ${unit} meten` : `Rechthoek bouwen (Doel: ${q.targetOpp} ${unit}² / ${q.targetOmtrek} ${unit})`),
+                title: q.type === 'maateenheid' ? `Gekozen eenheid voor: "${q.situatie}"` : (q.type === 'berekenen' ? `Rechthoek ${q.width}x${q.height} ${unit} meten` : (q.type === 'bouwen' ? `Rechthoek bouwen (Doel: ${q.targetOpp} ${unit}² / ${q.targetOmtrek} ${unit})` : `${q.title}: ${q.prompt}`)),
                 category: catName,
                 user: user,
                 correct: correct,
-                isCorrect: isCorrect
+                isCorrect: isCorrect,
+                tijdSeconden: tijdSeconden
             });
+            state.questionStartTime = new Date();  // reset voor volgende vraag
 
             // Kleur het voortgangsbolletje direct in
             updateProgressBullets(true, isCorrect);
@@ -825,6 +1156,11 @@
             showView("end-view");
             const roundedScore = Math.round(state.score * 10) / 10;
             const percent = Math.round((roundedScore / state.totalQ) * 100);
+
+            // Reset upload-status voor nieuwe run (style.display — nooit classList)
+            document.getElementById("upload-status").style.display = "none";
+            document.getElementById("upload-status-text").textContent = "Bezig met opslaan...";
+            document.getElementById("upload-spinner").style.display = "inline-block";
 
             document.getElementById("score-val").innerText = `${state.score}/${state.totalQ}`;
             document.getElementById("percent-val").innerText = `${percent}%`;
@@ -860,6 +1196,12 @@
             if (percent === 100) {
                 confetti({ particleCount: 150, spread: 80, origin: { y: 0.6 } });
             }
+
+            // Opslaan enkel bij toets-modus
+            if (state.currentMode === 'toets') {
+                document.getElementById('upload-status').style.display = 'block';
+                saveToFirestore(roundedScore, state.totalQ, percent);
+            }
         }
 
         window.stopOefening = function() {
@@ -880,10 +1222,190 @@
             showView("menu-view");
         }
 
-        // Start in het hoofdmenu
-        window.onload = function() {
-            showView("menu-view");
-        }
+        // Menu wordt getoond na login via openApp() — NIET bij window.onload
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('login-btn').addEventListener('click', klasLogin);
+            document.getElementById('gast-btn').addEventListener('click', klasGast);
+            document.getElementById('logout-btn').addEventListener('click', doLogout);
+            document.getElementById('klas-naam').addEventListener('keypress', function(e){ if(e.key==='Enter') klasLogin(); });
+            document.getElementById('klas-code').addEventListener('keypress', function(e){ if(e.key==='Enter') klasLogin(); });
+        });
     </script>
+
+<!-- FIREBASE compat SDK — geen type="module", geen anonymous auth -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script>
+firebase.initializeApp({
+    apiKey:"AIzaSyCnQDVVAlK6jE-PPUUediRJMTbN0xqrLDE",
+    authDomain:"klaswebsite-database.firebaseapp.com",
+    projectId:"klaswebsite-database",
+    storageBucket:"klaswebsite-database.firebasestorage.app",
+    messagingSenderId:"42912327282",
+    appId:"1:42912327282:web:f13f2c706f6c42c115c4eb"
+});
+var _db          = firebase.firestore();
+var _currentUser = null;
+var _isGuest     = false;
+var COL_NAME     = "wiskunde_oppervlakte";
+
+// ── UPLOAD STATUS (style.display — NOOIT classList) ───────────────────────
+function setUploadStatus(type, msg) {
+    var box     = document.getElementById("upload-status");
+    var text    = document.getElementById("upload-status-text");
+    var spinner = document.getElementById("upload-spinner");
+    if (!box) return;
+    box.style.display    = "block";
+    spinner.style.display = (type === "loading") ? "inline-block" : "none";
+    if (type === "loading") {
+        box.style.background  = "#eef2ff"; box.style.borderColor = "#c7d2fe"; box.style.color = "#3730a3";
+    } else if (type === "ok") {
+        box.style.background  = "#f0fdf4"; box.style.borderColor = "#86efac"; box.style.color = "#15803d";
+    } else {
+        box.style.background  = "#fff1f2"; box.style.borderColor = "#fecdd3"; box.style.color = "#be123c";
+    }
+    text.textContent = msg;
+    console.log("[oppervlakte saveToFirestore] " + type + ": " + msg);
+}
+
+// ── LOGIN (openApp gebruikt ALLEEN style.display — nooit classList) ────────
+function klasLogin() {
+    var naam = (document.getElementById("klas-naam").value||"").trim().toLowerCase();
+    var code = (document.getElementById("klas-code").value||"").trim();
+    var err  = document.getElementById("klas-err");
+    err.style.display = "none";
+    if (!naam) { err.textContent="Vul je voornaam in."; err.style.display="block"; return; }
+    if (!code) { err.textContent="Vul je code in.";    err.style.display="block"; return; }
+    var btn = document.getElementById("login-btn");
+    btn.textContent = "Even wachten..."; btn.disabled = true;
+    _db.collection("leerlingen").doc(naam).get().then(function(doc) {
+        btn.textContent = "Inloggen"; btn.disabled = false;
+        if (!doc.exists) { err.textContent="Naam niet gevonden."; err.style.display="block"; return; }
+        var data = doc.data();
+        if (data.code !== code) { err.textContent="Verkeerde code."; err.style.display="block"; return; }
+        window._leerlingNaam = data.weergavenaam || (naam.charAt(0).toUpperCase()+naam.slice(1));
+        window._leerlingId   = naam;
+        _currentUser = { uid: naam, displayName: window._leerlingNaam };
+        _isGuest = false;
+        openApp(window._leerlingNaam, false);
+    }).catch(function(e) {
+        btn.textContent = "Inloggen"; btn.disabled = false;
+        err.textContent = "Fout: " + e.message; err.style.display = "block";
+    });
+}
+
+function klasGast() {
+    _isGuest = true; _currentUser = null;
+    window._leerlingId   = null;
+    window._leerlingNaam = "Gast";
+    openApp("Gast", true);
+}
+
+function openApp(naam, isGast) {
+    // ALLEEN style.display — nooit classList
+    // (.hidden { display:none !important } zou style.display overschrijven)
+    document.getElementById("login-screen").style.display = "none";
+    if (isGast) {
+        document.getElementById("gast-badge").style.display  = "block";
+        document.getElementById("user-badge").style.display  = "none";
+    } else {
+        document.getElementById("user-badge-naam").textContent = naam;
+        document.getElementById("user-badge").style.display    = "flex";
+        document.getElementById("gast-badge").style.display    = "none";
+    }
+    // Menu tonen na login — niet bij window.onload
+    showView("menu-view");
+}
+
+function doLogout() {
+    _currentUser = null; _isGuest = false;
+    window._leerlingId = null; window._leerlingNaam = null;
+    document.getElementById("login-screen").style.display = "flex";
+    document.getElementById("user-badge").style.display   = "none";
+    document.getElementById("gast-badge").style.display   = "none";
+    document.getElementById("klas-naam").value = "";
+    document.getElementById("klas-code").value = "";
+    document.getElementById("klas-err").style.display = "none";
+    document.getElementById("login-btn").disabled = false;
+    document.getElementById("login-btn").textContent = "Inloggen";
+}
+
+// ── OPSLAAN (enkel bij toets-modus) ──────────────────────────────────────
+async function saveToFirestore(score, total, pct) {
+    if (_isGuest || !_currentUser) {
+        setUploadStatus("error", "❌ Niet opgeslagen: je speelt als gast.");
+        return;
+    }
+    if (!window._leerlingId) {
+        setUploadStatus("error", "❌ Geen leerling-ID. Log opnieuw in.");
+        return;
+    }
+    setUploadStatus("loading", "Bezig met opslaan...");
+
+    var h = state.history || [];
+    var totaalTijd = h.reduce(function(s,q){ return s + (q.tijdSeconden||0); }, 0);
+
+    // Foutenanalyse per categorie
+    var foutenTelling = {};
+    var extraOefenen  = [];
+    h.filter(function(q){ return !q.isCorrect; }).forEach(function(q) {
+        var cat = q.category || "Oppervlakte";
+        foutenTelling[cat] = (foutenTelling[cat]||0) + 1;
+        extraOefenen.push(q.title + " — juist: " + q.correct);
+    });
+
+    var record = {
+        leerlingId:   window._leerlingId,
+        leerlingNaam: window._leerlingNaam || "Leerling",
+        vak:          "Wiskunde",
+        vakonderdeel: "Oppervlakte en omtrek",
+        mode:         "Toets",
+        score:        score,
+        totalQ:       total,
+        percentage:   pct,
+        tijd:         parseFloat(totaalTijd.toFixed(1)) + "s",
+        gemTijdPerVraag: total > 0 ? parseFloat((totaalTijd/total).toFixed(1)) : 0,
+        hintsGebruikt: state.hintsUsed || 0,
+        timestamp:    firebase.firestore.FieldValue.serverTimestamp(),
+        foutenAnalyse: {
+            extraOefenen:       extraOefenen,
+            foutenPerCategorie: foutenTelling
+        },
+        vragen: h.map(function(q, i) {
+            return {
+                vraagNr:          i + 1,
+                vraag:            q.title        || "",
+                categorie:        q.category     || "Oppervlakte",
+                antwoordLeerling: q.user         || "(leeg)",
+                juistAntwoord:    q.correct      || "",
+                isJuist:          q.isCorrect    || false,
+                hintGebruikt:     false,
+                punten:           q.isCorrect ? 1 : 0,
+                tijdSeconden:     q.tijdSeconden || 0
+            };
+        })
+    };
+
+    console.log("[oppervlakte saveToFirestore] Opslaan naar " + COL_NAME + ":", record);
+
+    try {
+        var docRef = await _db.collection(COL_NAME).add(record);
+        await _db.collection("toets_registry").doc(COL_NAME).set({
+            naam:       "Oppervlakte & Omtrek",
+            collection: COL_NAME,
+            vak:        "Wiskunde",
+            lastSeen:   firebase.firestore.FieldValue.serverTimestamp()
+        }, { merge: true });
+        setUploadStatus("ok", "✅ Score opgeslagen! (ID: " + docRef.id.substring(0,8) + "…)");
+        console.log("[oppervlakte saveToFirestore] Succes! ID:", docRef.id);
+    } catch(e) {
+        console.error("[oppervlakte saveToFirestore] Fout:", e.code, e.message);
+        var uitleg = e.message || "Onbekende fout";
+        if (e.code === "permission-denied") uitleg = "Geen schrijfrechten.";
+        else if (e.code === "unavailable")  uitleg = "Geen internet.";
+        setUploadStatus("error", "❌ Opslaan mislukt: " + uitleg);
+    }
+}
+</script>
 </body>
 </html>
