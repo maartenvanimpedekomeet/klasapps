@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Woordenschat Beheer — Meester</title>
+  <title>Woordenschat Beheer</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
@@ -269,12 +269,12 @@
     <div id="login-error"></div>
 
     <div class="api-section">
-      <p><i class="fa-solid fa-wand-magic-sparkles"></i> Groq AI (optioneel — gratis via console.groq.com)</p>
+      <p><i class="fa-solid fa-wand-magic-sparkles"></i> OpenRouter AI (optioneel — gratis via openrouter.ai)</p>
       <div class="login-field" style="margin-bottom:0;">
         <label>Google AI Studio API-sleutel</label>
-        <input type="text" id="login-apikey" class="small" placeholder="gsk_…">
+        <input type="text" id="login-apikey" class="small" placeholder="sk-or-…">
       </div>
-      <div class="hint">Gratis account op console.groq.com → API Keys. Sleutel begint met gsk_</div>
+      <div class="hint">Gratis account op openrouter.ai → Keys. Sleutel begint met sk-or-</div>
     </div>
   </div>
 </div>
@@ -362,7 +362,7 @@
     <h3 style="color:var(--green)"><i class="fa-solid fa-wand-magic-sparkles"></i> AI-assistent</h3>
     <div id="ai-spinner" style="display:none;">
       <i class="fa-solid fa-circle-notch spin" style="font-size:2rem;color:var(--green);"></i>
-      <p style="margin-top:10px;color:var(--muted);font-size:.9rem;">Betekenis genereren via Groq AI…</p>
+      <p style="margin-top:10px;color:var(--muted);font-size:.9rem;">Betekenis genereren via OpenRouter…</p>
     </div>
     <div id="ai-result" style="display:none;">
       <p class="sub">Nakijken en aanpassen indien nodig, dan overnemen.</p>
@@ -394,10 +394,10 @@
     <p class="sub">De sleutel wordt lokaal opgeslagen in je browser en staat nooit in de code.</p>
     <div class="field-group" style="margin-bottom:12px;">
       <label>API-sleutel</label>
-      <input type="text" id="apikey-input" placeholder="gsk_…" style="border:2px solid var(--cream);border-radius:9px;padding:10px 12px;font-size:.9rem;font-family:'DM Sans',sans-serif;background:#fafafa;width:100%;">
+      <input type="text" id="apikey-input" placeholder="sk-or-…" style="border:2px solid var(--cream);border-radius:9px;padding:10px 12px;font-size:.9rem;font-family:'DM Sans',sans-serif;background:#fafafa;width:100%;">
     </div>
     <p style="font-size:.75rem;color:var(--muted);">
-      Haal je gratis sleutel op via <a href="https://console.groq.com" target="_blank" style="color:var(--green);">console.groq.com</a> → API Keys (begint met <code>gsk_</code>)
+      Haal je gratis sleutel op via <a href="https://console.groq.com" target="_blank" style="color:var(--green);">openrouter.ai</a> → Keys → Create Key (begint met <code>sk-or-</code>)
     </p>
     <div class="modal-btns">
       <button class="btn-cancel" onclick="closeApiKeyModal()">Annuleren</button>
@@ -423,7 +423,7 @@
 <!-- SAVE TOAST -->
 <div id="save-toast"><i class="fa-solid fa-cloud-arrow-up"></i> Opgeslagen</div>
 
-<div id="version">v0.12</div>
+<div id="version">v0.16</div>
 
 <script>
 // ════════════════════════════════════════════
@@ -454,7 +454,7 @@ document.addEventListener("DOMContentLoaded", function() {
     if (e.key === "Enter") doLogin();
   });
   // Laad opgeslagen API key in veld
-  var opgeslagen = localStorage.getItem("gemini_api_key") || "";
+  var opgeslagen = localStorage.getItem("ai_api_key") || "";
   document.getElementById("login-apikey").value = opgeslagen;
 });
 
@@ -466,7 +466,7 @@ function doLogin() {
   }
   // API key opslaan indien ingevuld
   var key = document.getElementById("login-apikey").value.trim();
-  if (key) localStorage.setItem("gemini_api_key", key);
+  if (key) localStorage.setItem("ai_api_key", key);
 
   document.getElementById("login-overlay").style.display = "none";
   laadWoorden();
@@ -485,7 +485,7 @@ function uitloggen() {
 // API KEY MODAL
 // ════════════════════════════════════════════
 function openApiKeyModal() {
-  document.getElementById("apikey-input").value = localStorage.getItem("gemini_api_key") || "";
+  document.getElementById("apikey-input").value = localStorage.getItem("ai_api_key") || "";
   document.getElementById("apikey-modal").style.display = "flex";
 }
 function closeApiKeyModal() {
@@ -494,7 +494,7 @@ function closeApiKeyModal() {
 function slaApiKeyOp() {
   var key = document.getElementById("apikey-input").value.trim();
   if (key) {
-    localStorage.setItem("gemini_api_key", key);
+    localStorage.setItem("ai_api_key", key);
     showToast("🔑 API-sleutel opgeslagen");
   }
   closeApiKeyModal();
@@ -805,7 +805,7 @@ function updateUrl(id, url) {
 }
 
 // ════════════════════════════════════════════
-// AI MODAL — via Gemini, key uit localStorage
+// AI MODAL — via OpenRouter, key uit localStorage
 // ════════════════════════════════════════════
 function openAiModal(woordId) {
   aiDoelWoordId = woordId;
@@ -823,7 +823,7 @@ function openAiModal(woordId) {
     woordTekst = obj ? obj.woord : "";
   }
 
-  var apiKey = localStorage.getItem("gemini_api_key") || "";
+  var apiKey = localStorage.getItem("ai_api_key") || "";
   if (!apiKey) {
     openApiKeyModal();
     return;
@@ -838,14 +838,16 @@ function openAiModal(woordId) {
 
   var SYSTEEM = "Je bent een leerkracht in het buitengewoon onderwijs (België) die woordverklaringen schrijft voor leerlingen van 11-13 jaar met leermoeilijkheden en een beperkte woordenschat.\n\nRegels:\n- Schrijf altijd in het Nederlands\n- Gebruik KORTE, eenvoudige zinnen (max 12 woorden per zin)\n- Gebruik GEEN moeilijke woorden in je uitleg\n- Wees concreet en beeldend\n- De betekenis mag maximaal 2 zinnen zijn\n- De voorbeeldzin gebruikt het woord in een herkenbare, alledaagse situatie (thuis, school, vrienden)\n\nAntwoord ENKEL met geldige JSON, geen uitleg, geen markdown:\n{\"betekenis\": \"...\", \"zin\": \"...\"}";
 
-  fetch("https://api.groq.com/openai/v1/chat/completions", {
+  fetch("https://openrouter.ai/api/v1/chat/completions", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      "Authorization": "Bearer " + apiKey
+      "Authorization": "Bearer " + apiKey,
+      "HTTP-Referer": "https://maartenvanimpedekomeet.github.io",
+      "X-Title": "Woordenschat Beheer"
     },
     body: JSON.stringify({
-      model: "llama-3.3-70b-versatile",
+      model: "openrouter/auto",
       temperature: 0.4,
       max_tokens: 300,
       messages: [
