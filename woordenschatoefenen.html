@@ -367,17 +367,7 @@
 
     <div class="veld">
       <label>Jouw naam</label>
-      <select id="login-naam">
-        <option value="">— Kies jouw naam —</option>
-        <option>ethanael</option>
-        <option>eulalie</option>
-        <option>gabriel</option>
-        <option>kobe</option>
-        <option>kriss</option>
-        <option>kylian</option>
-        <option>leila</option>
-        <option>stijn</option>
-      </select>
+      <input type="text" id="login-naam" placeholder="Voornaam" autocomplete="off" autocapitalize="words">
     </div>
     <div class="veld">
       <label>Jouw code</label>
@@ -655,27 +645,50 @@ function toonVoortgang(){ toon("s-voortgang"); renderVoortgang(); }
 // LOGIN
 // ════════════════════════════════════════════════════
 document.addEventListener("DOMContentLoaded", function(){
+  document.getElementById("login-naam").addEventListener("keydown", function(e){
+    if (e.key === "Enter") document.getElementById("login-code").focus();
+  });
   document.getElementById("login-code").addEventListener("keydown", function(e){
     if (e.key === "Enter") doLogin();
   });
 });
 
 function doLogin() {
-  var naam = document.getElementById("login-naam").value.trim().toLowerCase();
-  var code = document.getElementById("login-code").value.trim();
+  var naam = (document.getElementById("login-naam").value || "").trim().toLowerCase();
+  var code = (document.getElementById("login-code").value || "").trim();
   var fout = document.getElementById("login-fout");
   fout.textContent = "";
-  if (!naam) { fout.textContent = "Kies eerst je naam."; return; }
+  if (!naam) { fout.textContent = "Vul je voornaam in."; return; }
   if (!code) { fout.textContent = "Vul je code in."; return; }
 
-  var verwacht = naam + "2025";
-  if (code !== verwacht) {
-    fout.textContent = "Verkeerde code. Vraag het aan de meester.";
-    return;
-  }
-  CU = { naam: naam, code: code };
-  GUEST = false;
-  laadAlles();
+  var btn = document.querySelector("#s-login .btn-accent");
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Even wachten...';
+
+  db.collection("leerlingen").doc(naam).get().then(function(doc) {
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fa-solid fa-right-to-bracket"></i> Inloggen';
+    if (!doc.exists) {
+      fout.textContent = "Naam niet gevonden. Controleer je spelling.";
+      return;
+    }
+    var data = doc.data();
+    if (data.code !== code) {
+      fout.textContent = "Verkeerde code. Vraag het aan de meester.";
+      return;
+    }
+    CU = {
+      naam: naam,
+      code: code,
+      weergavenaam: data.weergavenaam || (naam.charAt(0).toUpperCase() + naam.slice(1))
+    };
+    GUEST = false;
+    laadAlles();
+  }).catch(function(e) {
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fa-solid fa-right-to-bracket"></i> Inloggen';
+    fout.textContent = "Fout: " + e.message;
+  });
 }
 
 function guestLogin() {
