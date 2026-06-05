@@ -3,9 +3,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Woordenschat Beheer</title>
+  <title>Woordenschat Beheer — Meester</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
@@ -20,8 +20,8 @@
       --muted:  #7a7060;
     }
     * { box-sizing: border-box; }
-    body { font-family: 'DM Sans', sans-serif; background: var(--paper); color: var(--ink); min-height: 100vh; margin: 0; }
-    h1,h2,h3,.syne { font-family: 'Syne', sans-serif; }
+    body { font-family: 'Century Gothic','CenturyGothic','AppleGothic','Nunito',sans-serif; background: var(--paper); color: var(--ink); min-height: 100vh; margin: 0; }
+    h1,h2,h3,.syne { font-family: 'Century Gothic','CenturyGothic','AppleGothic','Nunito',sans-serif; }
 
     /* ── LOGIN OVERLAY ── */
     #login-overlay {
@@ -38,7 +38,7 @@
     }
     .login-emoji { font-size: 3rem; margin-bottom: 14px; display: block; }
     .login-card h2 {
-      font-family: 'Syne', sans-serif;
+      font-family: 'Century Gothic','CenturyGothic','AppleGothic','Nunito',sans-serif;
       font-size: 2.2rem; font-weight: 800;
       color: var(--ink); margin: 0 0 6px;
       line-height: 1.1; word-break: break-word;
@@ -56,7 +56,7 @@
     .login-field input {
       width: 100%; padding: 12px 14px; border: 2px solid var(--cream);
       border-radius: 11px; font-size: 1rem; background: white;
-      font-family: 'DM Sans', sans-serif; transition: border-color .2s; color: var(--ink);
+      font-family: 'Century Gothic','CenturyGothic','AppleGothic','Nunito',sans-serif; transition: border-color .2s; color: var(--ink);
     }
     .login-field input:focus { outline: none; border-color: var(--accent); }
     .login-field input.small { font-size: .85rem; padding: 10px 14px; }
@@ -89,7 +89,7 @@
     .btn-accent {
       background: var(--accent); color: white; border: none;
       border-radius: 10px; padding: 11px 22px; font-size: .95rem;
-      font-weight: 700; cursor: pointer; font-family: 'Syne', sans-serif;
+      font-weight: 700; cursor: pointer; font-family: 'Century Gothic','CenturyGothic','AppleGothic','Nunito',sans-serif;
       transition: opacity .2s, transform .1s; display: inline-flex; align-items: center; gap: 8px;
     }
     .btn-accent:hover { opacity: .88; transform: translateY(-1px); }
@@ -97,7 +97,7 @@
       background: rgba(255,255,255,.1); color: white;
       border: 1px solid rgba(255,255,255,.2); border-radius: 8px;
       padding: 6px 13px; font-size: .78rem; font-weight: 600;
-      cursor: pointer; font-family: 'Syne', sans-serif; transition: background .2s;
+      cursor: pointer; font-family: 'Century Gothic','CenturyGothic','AppleGothic','Nunito',sans-serif; transition: background .2s;
       display: inline-flex; align-items: center; gap: 6px;
     }
     .btn-sm:hover { background: rgba(255,255,255,.2); }
@@ -105,7 +105,7 @@
       background: var(--cream); border: none; border-radius: 8px;
       padding: 7px 12px; cursor: pointer; font-size: .8rem; font-weight: 600;
       color: var(--muted); transition: all .2s;
-      display: inline-flex; align-items: center; gap: 6px; font-family: 'DM Sans', sans-serif;
+      display: inline-flex; align-items: center; gap: 6px; font-family: 'Century Gothic','CenturyGothic','AppleGothic','Nunito',sans-serif;
     }
     .btn-icon:hover { background: var(--ink); color: white; }
     .btn-icon.danger:hover { background: var(--accent); color: white; }
@@ -120,20 +120,20 @@
     #zoek-input {
       flex: 1; min-width: 160px; padding: 10px 14px;
       border: 2px solid var(--cream); border-radius: 10px;
-      font-size: .9rem; font-family: 'DM Sans', sans-serif;
+      font-size: .9rem; font-family: 'Century Gothic','CenturyGothic','AppleGothic','Nunito',sans-serif;
       background: white; transition: border-color .2s;
     }
     #zoek-input:focus { outline: none; border-color: var(--gold); }
     #datum-filter {
       padding: 10px 14px; border: 2px solid var(--cream);
       border-radius: 10px; font-size: .85rem;
-      font-family: 'DM Sans', sans-serif; background: white; cursor: pointer;
+      font-family: 'Century Gothic','CenturyGothic','AppleGothic','Nunito',sans-serif; background: white; cursor: pointer;
     }
     .stat-badge {
       background: white; border: 2px solid var(--cream);
       border-radius: 20px; padding: 6px 14px;
       font-size: .8rem; font-weight: 700; color: var(--muted);
-      font-family: 'Syne', sans-serif; white-space: nowrap;
+      font-family: 'Century Gothic','CenturyGothic','AppleGothic','Nunito',sans-serif; white-space: nowrap;
     }
 
     /* ── ADD FORM ── */
@@ -142,7 +142,7 @@
       border-radius: 16px; padding: 20px; margin-bottom: 26px;
     }
     #add-form h2 {
-      font-family: 'Syne', sans-serif; font-size: 1rem;
+      font-family: 'Century Gothic','CenturyGothic','AppleGothic','Nunito',sans-serif; font-size: 1rem;
       font-weight: 800; color: var(--ink); margin: 0 0 16px;
       display: flex; align-items: center; gap: 8px;
     }
@@ -153,7 +153,7 @@
     .field-group input, .field-group textarea {
       border: 2px solid var(--cream); border-radius: 9px;
       padding: 9px 12px; font-size: .9rem;
-      font-family: 'DM Sans', sans-serif; background: #fafafa;
+      font-family: 'Century Gothic','CenturyGothic','AppleGothic','Nunito',sans-serif; background: #fafafa;
       transition: border-color .2s; resize: none; color: var(--ink);
     }
     .field-group input:focus, .field-group textarea:focus { outline: none; border-color: var(--gold); background: white; }
@@ -170,14 +170,14 @@
       background: white; border-radius: 18px; padding: 30px;
       max-width: 480px; width: 100%; box-shadow: 0 30px 60px rgba(0,0,0,.2);
     }
-    .modal-box h3 { font-family: 'Syne', sans-serif; font-size: 1.15rem; font-weight: 800; margin: 0 0 8px; }
+    .modal-box h3 { font-family: 'Century Gothic','CenturyGothic','AppleGothic','Nunito',sans-serif; font-size: 1.15rem; font-weight: 800; margin: 0 0 8px; }
     .modal-box p.sub { color: var(--muted); font-size: .85rem; margin: 0 0 16px; }
     .ai-result-field { display: flex; flex-direction: column; gap: 4px; margin-bottom: 12px; }
     .ai-result-field label { font-size: .7rem; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .07em; }
     .ai-result-field textarea {
       border: 2px solid var(--cream); border-radius: 9px;
       padding: 9px 12px; font-size: .9rem;
-      font-family: 'DM Sans', sans-serif; resize: none; height: 72px;
+      font-family: 'Century Gothic','CenturyGothic','AppleGothic','Nunito',sans-serif; resize: none; height: 72px;
       transition: border-color .2s;
     }
     .ai-result-field textarea:focus { outline: none; border-color: var(--gold); }
@@ -185,7 +185,7 @@
     .btn-cancel {
       background: var(--cream); border: none; border-radius: 8px;
       padding: 10px 18px; cursor: pointer; font-weight: 600;
-      font-family: 'Syne', sans-serif; color: var(--ink);
+      font-family: 'Century Gothic','CenturyGothic','AppleGothic','Nunito',sans-serif; color: var(--ink);
     }
     #ai-spinner { text-align: center; padding: 28px; color: var(--green); }
     .spin { animation: spin .7s linear infinite; display: inline-block; }
@@ -200,7 +200,7 @@
     }
     .woord-card:hover { border-color: #d4ccb8; box-shadow: 0 3px 12px rgba(0,0,0,.05); }
     .card-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; }
-    .woord-title { font-family: 'Syne', sans-serif; font-size: 1.2rem; font-weight: 800; color: var(--ink); }
+    .woord-title { font-family: 'Century Gothic','CenturyGothic','AppleGothic','Nunito',sans-serif; font-size: 1.2rem; font-weight: 800; color: var(--ink); }
     .woord-datum { font-size: .72rem; color: var(--muted); font-weight: 500; margin-top: 2px; }
     .card-actions { display: flex; gap: 6px; flex-shrink: 0; }
     .card-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
@@ -221,7 +221,7 @@
 
     /* ── DATE GROUPS ── */
     .datum-groep-label {
-      font-family: 'Syne', sans-serif; font-size: .72rem; font-weight: 800;
+      font-family: 'Century Gothic','CenturyGothic','AppleGothic','Nunito',sans-serif; font-size: .72rem; font-weight: 800;
       color: var(--muted); text-transform: uppercase; letter-spacing: .1em;
       padding: 4px 0 8px; border-bottom: 2px solid var(--cream);
       margin-bottom: 10px; margin-top: 24px;
@@ -231,7 +231,7 @@
     .confirm-box { max-width: 360px; }
     .confirm-box p { color: var(--muted); font-size: .9rem; margin: 0 0 20px; }
     .confirm-btns { display: flex; gap: 10px; justify-content: flex-end; }
-    .btn-danger { background: var(--accent); color: white; border: none; border-radius: 8px; padding: 10px 18px; cursor: pointer; font-weight: 700; font-family: 'Syne', sans-serif; }
+    .btn-danger { background: var(--accent); color: white; border: none; border-radius: 8px; padding: 10px 18px; cursor: pointer; font-weight: 700; font-family: 'Century Gothic','CenturyGothic','AppleGothic','Nunito',sans-serif; }
 
     /* ── SAVE TOAST ── */
     #save-toast {
@@ -240,11 +240,124 @@
       padding: 10px 20px; border-radius: 30px; font-size: .85rem;
       font-weight: 700; display: none; align-items: center; gap: 8px;
       box-shadow: 0 6px 20px rgba(45,106,79,.35); z-index: 800;
-      font-family: 'Syne', sans-serif;
+      font-family: 'Century Gothic','CenturyGothic','AppleGothic','Nunito',sans-serif;
     }
 
     .empty-state { text-align: center; padding: 56px 20px; color: var(--muted); }
     .empty-state i { font-size: 2.8rem; opacity: .3; display: block; margin-bottom: 14px; }
+
+    /* ── TAKEN PANEL ── */
+    #taken-panel {
+      position: fixed; inset: 0; z-index: 800;
+      background: rgba(0,0,0,.45);
+      display: none; align-items: flex-start; justify-content: flex-end;
+    }
+    .taken-sidebar {
+      background: var(--paper); width: 100%; max-width: 680px; height: 100vh;
+      overflow-y: auto; box-shadow: -8px 0 40px rgba(0,0,0,.2);
+      display: flex; flex-direction: column;
+    }
+    .taken-header {
+      background: var(--ink); color: white; padding: 16px 24px;
+      display: flex; justify-content: space-between; align-items: center;
+      position: sticky; top: 0; z-index: 10; flex-shrink: 0;
+    }
+    .taken-header h2 { font-size: 1.1rem; font-weight: 800; margin: 0; }
+    .taken-tabs {
+      display: flex; gap: 0; background: white;
+      border-bottom: 2px solid var(--cream); flex-shrink: 0;
+    }
+    .taken-tab {
+      flex: 1; padding: 12px; text-align: center; cursor: pointer;
+      font-size: .82rem; font-weight: 700; color: var(--muted);
+      border-bottom: 3px solid transparent; transition: all .2s;
+    }
+    .taken-tab.actief { color: var(--accent); border-bottom-color: var(--accent); }
+    .taken-body { padding: 20px; flex: 1; }
+
+    /* Taak aanmaken form */
+    .taak-form-sectie { margin-bottom: 22px; }
+    .taak-form-sectie h3 {
+      font-size: .72rem; font-weight: 800; color: var(--muted);
+      text-transform: uppercase; letter-spacing: .08em; margin-bottom: 10px;
+    }
+    .taak-input {
+      width: 100%; padding: 10px 14px; border: 2px solid var(--cream);
+      border-radius: 10px; font-size: .92rem; background: white;
+      transition: border-color .2s; margin-bottom: 0;
+    }
+    .taak-input:focus { outline: none; border-color: var(--gold); }
+    .preset-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .preset-kaart {
+      background: white; border: 2px solid var(--cream); border-radius: 12px;
+      padding: 11px 14px; cursor: pointer; transition: all .18s;
+      display: flex; align-items: center; gap: 10px;
+    }
+    .preset-kaart:hover { border-color: var(--accent); }
+    .preset-kaart.geselecteerd { border-color: var(--accent); background: #fff3f0; }
+    .preset-kaart .p-icoon { font-size: 1.3rem; flex-shrink: 0; }
+    .preset-kaart h4 { font-size: .82rem; font-weight: 800; margin-bottom: 1px; }
+    .preset-kaart p { font-size: .68rem; color: var(--muted); }
+    .preset-kaart.geselecteerd h4 { color: var(--accent); }
+
+    .modus-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .modus-kaart {
+      background: white; border: 2px solid var(--cream); border-radius: 10px;
+      padding: 10px 12px; cursor: pointer; transition: all .18s;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .modus-kaart:hover { border-color: var(--blue,#2563eb); }
+    .modus-kaart.geselecteerd { border-color: var(--blue,#2563eb); background: #eff6ff; }
+    .modus-kaart .m-icoon { font-size: 1.1rem; flex-shrink: 0; }
+    .modus-kaart h4 { font-size: .78rem; font-weight: 800; }
+    .modus-kaart.geselecteerd h4 { color: var(--blue,#2563eb); }
+
+    /* Leerling selectie */
+    .leerling-grid { display: flex; flex-wrap: wrap; gap: 8px; }
+    .leerling-chip {
+      background: white; border: 2px solid var(--cream); border-radius: 20px;
+      padding: 6px 14px; cursor: pointer; font-size: .82rem; font-weight: 700;
+      transition: all .18s;
+    }
+    .leerling-chip:hover { border-color: var(--green); }
+    .leerling-chip.geselecteerd { background: var(--green); border-color: var(--green); color: white; }
+    .leerling-chip.iedereen { border-color: var(--gold); }
+    .leerling-chip.iedereen.geselecteerd { background: var(--gold); border-color: var(--gold); color: white; }
+
+    /* Woord selectie tabel */
+    .woord-selectie-tabel { width: 100%; border-collapse: collapse; }
+    .woord-selectie-tabel th {
+      font-size: .68rem; font-weight: 800; color: var(--muted);
+      text-transform: uppercase; letter-spacing: .07em;
+      padding: 6px 10px; border-bottom: 2px solid var(--cream); text-align: left;
+    }
+    .woord-selectie-tabel td { padding: 8px 10px; border-bottom: 1px solid var(--cream); font-size: .85rem; vertical-align: middle; }
+    .woord-selectie-tabel tr:hover td { background: #fafaf7; }
+    .woord-selectie-tabel tr.geselecteerd td { background: #fff3f0; }
+    .score-bar-wrap { width: 60px; height: 6px; background: var(--cream); border-radius: 3px; display: inline-block; vertical-align: middle; }
+    .score-bar-fill { height: 100%; border-radius: 3px; background: var(--green); transition: width .3s; }
+    .score-bar-fill.laag { background: var(--accent); }
+    .score-bar-fill.midden { background: var(--gold); }
+
+    /* Bestaande taken lijst */
+    .taak-item {
+      background: white; border: 2px solid var(--cream); border-radius: 12px;
+      padding: 14px 16px; margin-bottom: 10px;
+      display: flex; justify-content: space-between; align-items: center; gap: 12px;
+    }
+    .taak-item h4 { font-size: .9rem; font-weight: 800; margin-bottom: 2px; }
+    .taak-item p { font-size: .74rem; color: var(--muted); }
+    .taak-item-badges { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 4px; }
+    .taak-badge-item {
+      font-size: .66rem; font-weight: 700; padding: 2px 8px;
+      border-radius: 10px; background: var(--cream); color: var(--muted);
+    }
+    .btn-verwijder-taak {
+      background: none; border: none; color: var(--muted); cursor: pointer;
+      padding: 6px; border-radius: 6px; transition: all .2s; flex-shrink: 0;
+    }
+    .btn-verwijder-taak:hover { background: #fff0ee; color: var(--accent); }
+
     #version { position: fixed; bottom: 6px; left: 10px; font-size: .65rem; color: var(--muted); font-family: monospace; }
   </style>
 </head>
@@ -290,6 +403,9 @@
   <div class="topbar-right">
     <button class="btn-sm" onclick="openApiKeyModal()" title="API key instellen">
       <i class="fa-solid fa-key"></i> AI-sleutel
+    </button>
+    <button class="btn-sm" onclick="openTakenPanel()" style="background:rgba(232,168,56,.2);border-color:var(--gold);color:var(--gold);">
+      <i class="fa-solid fa-clipboard-list"></i> Taken
     </button>
     <button class="btn-sm" onclick="herlaadLijst()" title="Lijst opnieuw laden">
       <i class="fa-solid fa-rotate-right"></i> Vernieuwen
@@ -394,7 +510,7 @@
     <p class="sub">De sleutel wordt lokaal opgeslagen in je browser en staat nooit in de code.</p>
     <div class="field-group" style="margin-bottom:12px;">
       <label>API-sleutel</label>
-      <input type="text" id="apikey-input" placeholder="sk-or-…" style="border:2px solid var(--cream);border-radius:9px;padding:10px 12px;font-size:.9rem;font-family:'DM Sans',sans-serif;background:#fafafa;width:100%;">
+      <input type="text" id="apikey-input" placeholder="sk-or-…" style="border:2px solid var(--cream);border-radius:9px;padding:10px 12px;font-size:.9rem;font-family:'Century Gothic','CenturyGothic','AppleGothic','Nunito',sans-serif;background:#fafafa;width:100%;">
     </div>
     <p style="font-size:.75rem;color:var(--muted);">
       Haal je gratis sleutel op via <a href="https://console.groq.com" target="_blank" style="color:var(--green);">openrouter.ai</a> → Keys → Create Key (begint met <code>sk-or-</code>)
@@ -423,7 +539,123 @@
 <!-- SAVE TOAST -->
 <div id="save-toast"><i class="fa-solid fa-cloud-arrow-up"></i> Opgeslagen</div>
 
-<div id="version">v0.16</div>
+
+<!-- ══════════════════════════════════════════
+     TAKEN PANEL
+══════════════════════════════════════════ -->
+<div id="taken-panel">
+  <div class="taken-sidebar">
+    <div class="taken-header">
+      <h2><i class="fa-solid fa-clipboard-list"></i> Taken beheren</h2>
+      <button class="btn-sm" onclick="closeTakenPanel()"><i class="fa-solid fa-xmark"></i> Sluiten</button>
+    </div>
+    <div class="taken-tabs">
+      <div class="taken-tab actief" id="tab-nieuw" onclick="takenTab('nieuw')">➕ Nieuwe taak</div>
+      <div class="taken-tab" id="tab-bestaand" onclick="takenTab('bestaand')">📋 Bestaande taken</div>
+    </div>
+    <div class="taken-body">
+
+      <!-- TAB: NIEUWE TAAK -->
+      <div id="taken-tab-nieuw">
+
+        <!-- Titel -->
+        <div class="taak-form-sectie">
+          <h3>Titel van de taak</h3>
+          <input type="text" class="taak-input" id="taak-titel" placeholder="bijv. Woorden hoofdstuk 3 — week 2">
+        </div>
+
+        <!-- Voor wie -->
+        <div class="taak-form-sectie">
+          <h3>Voor wie?</h3>
+          <div class="leerling-grid" id="leerling-grid">
+            <div class="leerling-chip iedereen geselecteerd" data-leerling="iedereen" onclick="toggleLeerling(this)">👥 Iedereen</div>
+            <div class="leerling-chip" data-leerling="ethanael" onclick="toggleLeerling(this)">Ethanael</div>
+            <div class="leerling-chip" data-leerling="eulalie" onclick="toggleLeerling(this)">Eulalie</div>
+            <div class="leerling-chip" data-leerling="gabriel" onclick="toggleLeerling(this)">Gabriel</div>
+            <div class="leerling-chip" data-leerling="kobe" onclick="toggleLeerling(this)">Kobe</div>
+            <div class="leerling-chip" data-leerling="kriss" onclick="toggleLeerling(this)">Kriss</div>
+            <div class="leerling-chip" data-leerling="kylian" onclick="toggleLeerling(this)">Kylian</div>
+            <div class="leerling-chip" data-leerling="leila" onclick="toggleLeerling(this)">Leila</div>
+            <div class="leerling-chip" data-leerling="stijn" onclick="toggleLeerling(this)">Stijn</div>
+          </div>
+        </div>
+
+        <!-- Woord preset -->
+        <div class="taak-form-sectie">
+          <h3>Woordselectie — snelkeuze</h3>
+          <div class="preset-grid">
+            <div class="preset-kaart" id="preset-0" onclick="selecteerPreset(0)">
+              <div class="p-icoon">🆕</div>
+              <div><h4>Laatste 20</h4><p>Meest recente woorden</p></div>
+            </div>
+            <div class="preset-kaart" id="preset-1" onclick="selecteerPreset(1)">
+              <div class="p-icoon">📅</div>
+              <div><h4>Laatste 30 dagen</h4><p>Nieuwe woorden deze maand</p></div>
+            </div>
+            <div class="preset-kaart" id="preset-2" onclick="selecteerPreset(2)">
+              <div class="p-icoon">🏫</div>
+              <div><h4>Dit schooljaar</h4><p>Alle woorden van dit jaar</p></div>
+            </div>
+            <div class="preset-kaart" id="preset-3" onclick="selecteerPreset(3)">
+              <div class="p-icoon">⚠️</div>
+              <div><h4>Meeste fouten</h4><p>Woorden met laagste score</p></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Handmatige woordselectie -->
+        <div class="taak-form-sectie">
+          <h3>Woorden handmatig selecteren <span id="taak-woord-teller" style="color:var(--accent);font-weight:800;"></span></h3>
+          <div style="font-size:.75rem;color:var(--muted);margin-bottom:8px;">Klik om woorden toe te voegen of te verwijderen. Score = gemiddelde van afgelopen 30 dagen.</div>
+          <div style="overflow-x:auto;">
+            <table class="woord-selectie-tabel" id="woord-selectie-tabel">
+              <thead>
+                <tr>
+                  <th style="width:32px;"></th>
+                  <th>Woord</th>
+                  <th>Datum</th>
+                  <th>Score (30d)</th>
+                </tr>
+              </thead>
+              <tbody id="woord-selectie-body"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Oefenmodus -->
+        <div class="taak-form-sectie">
+          <h3>Soort oefening</h3>
+          <div class="modus-grid" id="taak-modus-grid">
+            <div class="modus-kaart geselecteerd" data-modus="0" onclick="selecteerTaakModus(this)"><div class="m-icoon">🔀</div><div><h4>Alles door elkaar</h4></div></div>
+            <div class="modus-kaart" data-modus="1" onclick="selecteerTaakModus(this)"><div class="m-icoon">🔗</div><div><h4>Betekenis kiezen</h4></div></div>
+            <div class="modus-kaart" data-modus="2" onclick="selecteerTaakModus(this)"><div class="m-icoon">🖼️</div><div><h4>Afbeelding kiezen</h4></div></div>
+            <div class="modus-kaart" data-modus="3" onclick="selecteerTaakModus(this)"><div class="m-icoon">💡</div><div><h4>Woord raden</h4></div></div>
+            <div class="modus-kaart" data-modus="4" onclick="selecteerTaakModus(this)"><div class="m-icoon">🔤</div><div><h4>Overtypen</h4></div></div>
+            <div class="modus-kaart" data-modus="5" onclick="selecteerTaakModus(this)"><div class="m-icoon">🙈</div><div><h4>Blind typen</h4></div></div>
+            <div class="modus-kaart" data-modus="6" onclick="selecteerTaakModus(this)"><div class="m-icoon">🧩</div><div><h4>Ontbrekende letters</h4></div></div>
+          </div>
+        </div>
+
+        <!-- Opslaan -->
+        <button class="btn-accent" style="width:100%;justify-content:center;padding:14px;font-size:1rem;" onclick="slaaTaakOp()">
+          <i class="fa-solid fa-paper-plane"></i> Taak klaarzetten
+        </button>
+        <div id="taak-opslaan-fout" style="color:var(--accent);font-size:.82rem;margin-top:8px;min-height:18px;"></div>
+
+      </div><!-- /tab nieuw -->
+
+      <!-- TAB: BESTAANDE TAKEN -->
+      <div id="taken-tab-bestaand" style="display:none;">
+        <div id="bestaande-taken-lijst">
+          <div style="text-align:center;padding:32px;color:var(--muted);font-size:.88rem;">Laden…</div>
+        </div>
+      </div>
+
+    </div><!-- /taken-body -->
+  </div><!-- /taken-sidebar -->
+</div>
+
+<div id="version">v0.18</div>
 
 <script>
 // ════════════════════════════════════════════
@@ -933,11 +1165,292 @@ function datumTekst(ts) {
   return ts.toDate().toLocaleDateString("nl-BE", { weekday:"long", day:"numeric", month:"long", year:"numeric" });
 }
 
+function capitalize(s){ return s ? s.charAt(0).toUpperCase()+s.slice(1) : s; }
+
 function escH(str) {
   if (!str) return "";
   return String(str).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")
     .replace(/"/g,"&quot;").replace(/'/g,"&#39;");
 }
+
+// ════════════════════════════════════════════
+// TAKEN PANEL
+// ════════════════════════════════════════════
+var taakGeselecteerdeWoorden = new Set();
+var taakPreset = -1;
+var taakModus = 0;
+var woordScores = {}; // {woordId: gemiddelde score 0-100}
+
+var LEERLINGEN = ["ethanael","eulalie","gabriel","kobe","kriss","kylian","leila","stijn"];
+var MODI_NAMEN_B = ["Alles door elkaar","Betekenis kiezen","Afbeelding kiezen","Woord raden","Overtypen","Blind typen","Ontbrekende letters"];
+
+function openTakenPanel() {
+  document.getElementById("taken-panel").style.display = "flex";
+  laadWoordScores();
+  renderWoordSelectieTabel();
+  takenTab("nieuw");
+}
+
+function closeTakenPanel() {
+  document.getElementById("taken-panel").style.display = "none";
+}
+
+// Klik buiten sidebar sluit panel
+document.addEventListener("DOMContentLoaded", function(){
+  document.getElementById("taken-panel").addEventListener("click", function(e){
+    if (e.target === this) closeTakenPanel();
+  });
+});
+
+function takenTab(tab) {
+  document.getElementById("taken-tab-nieuw").style.display = tab === "nieuw" ? "block" : "none";
+  document.getElementById("taken-tab-bestaand").style.display = tab === "bestaand" ? "block" : "none";
+  document.getElementById("tab-nieuw").classList.toggle("actief", tab === "nieuw");
+  document.getElementById("tab-bestaand").classList.toggle("actief", tab === "bestaand");
+  if (tab === "bestaand") laadBestaandeTaken();
+}
+
+// ── Leerlingen ──
+function toggleLeerling(el) {
+  var leerling = el.dataset.leerling;
+  if (leerling === "iedereen") {
+    // Iedereen: deselecteer individuelen
+    document.querySelectorAll("#leerling-grid .leerling-chip:not(.iedereen)").forEach(function(c){
+      c.classList.remove("geselecteerd");
+    });
+    el.classList.add("geselecteerd");
+  } else {
+    document.querySelector(".leerling-chip.iedereen").classList.remove("geselecteerd");
+    el.classList.toggle("geselecteerd");
+    // Als niemand meer geselecteerd: terug naar iedereen
+    var anySelected = Array.from(document.querySelectorAll("#leerling-grid .leerling-chip:not(.iedereen)"))
+      .some(function(c){ return c.classList.contains("geselecteerd"); });
+    if (!anySelected) document.querySelector(".leerling-chip.iedereen").classList.add("geselecteerd");
+  }
+}
+
+function getGeselecteerdeLeerlingen() {
+  if (document.querySelector(".leerling-chip.iedereen.geselecteerd")) return LEERLINGEN;
+  return Array.from(document.querySelectorAll("#leerling-grid .leerling-chip:not(.iedereen).geselecteerd"))
+    .map(function(c){ return c.dataset.leerling; });
+}
+
+// ── Preset ──
+function selecteerPreset(idx) {
+  taakPreset = idx;
+  document.querySelectorAll(".preset-kaart").forEach(function(k,i){
+    k.classList.toggle("geselecteerd", i === idx);
+  });
+  // Selecteer automatisch woorden
+  taakGeselecteerdeWoorden.clear();
+  var pool = getPresetWoorden(idx);
+  pool.forEach(function(w){ taakGeselecteerdeWoorden.add(w.id); });
+  renderWoordSelectieTabel();
+}
+
+function getPresetWoorden(idx) {
+  var nu = Date.now(); var DAG = 86400000;
+  var schooljaarStart = getSchooljaarStartB();
+  if (idx === 0) return alleWoorden.slice(0, 20);
+  if (idx === 1) return alleWoorden.filter(function(w){
+    return w.aangemaakt && w.aangemaakt.toDate && nu - w.aangemaakt.toDate().getTime() <= 30*DAG;
+  }).slice(0,20);
+  if (idx === 2) return alleWoorden.filter(function(w){
+    return w.aangemaakt && w.aangemaakt.toDate && w.aangemaakt.toDate().getTime() >= schooljaarStart;
+  }).slice(0,20);
+  if (idx === 3) {
+    return alleWoorden.slice().sort(function(a,b){
+      return (woordScores[a.id]||100) - (woordScores[b.id]||100);
+    }).slice(0,20);
+  }
+  return [];
+}
+
+function getSchooljaarStartB() {
+  var nu = new Date(); var jaar = nu.getFullYear();
+  var sept = new Date(jaar,8,1).getTime();
+  return nu.getTime() < sept ? new Date(jaar-1,8,1).getTime() : sept;
+}
+
+// ── Modus ──
+function selecteerTaakModus(el) {
+  taakModus = parseInt(el.dataset.modus);
+  document.querySelectorAll(".modus-kaart").forEach(function(k){ k.classList.remove("geselecteerd"); });
+  el.classList.add("geselecteerd");
+}
+
+// ── Woord scores laden ──
+function laadWoordScores() {
+  var nu = Date.now(); var DAG = 86400000;
+  db.collection("woordenschat_voortgang")
+    .where("bijgewerkt", ">=", new Date(nu - 30*DAG))
+    .get({ source:"server" })
+    .then(function(snap){
+      var sommen = {}; var tellers = {};
+      snap.forEach(function(doc){
+        var d = doc.data();
+        if (!d.woordId || !d.geprobeerd) return;
+        var pct = Math.round(d.correct / d.geprobeerd * 100);
+        if (!sommen[d.woordId]) { sommen[d.woordId]=0; tellers[d.woordId]=0; }
+        sommen[d.woordId] += pct; tellers[d.woordId]++;
+      });
+      woordScores = {};
+      Object.keys(sommen).forEach(function(id){
+        woordScores[id] = Math.round(sommen[id]/tellers[id]);
+      });
+      renderWoordSelectieTabel();
+    }).catch(function(){});
+}
+
+// ── Woord selectie tabel ──
+function renderWoordSelectieTabel() {
+  var tbody = document.getElementById("woord-selectie-body");
+  if (!tbody) return;
+  tbody.innerHTML = "";
+  alleWoorden.forEach(function(w){
+    var geselecteerd = taakGeselecteerdeWoorden.has(w.id);
+    var score = woordScores[w.id];
+    var scoreHtml = "";
+    if (score !== undefined) {
+      var kleur = score >= 75 ? "" : score >= 50 ? "midden" : "laag";
+      scoreHtml = '<div class="score-bar-wrap"><div class="score-bar-fill ' + kleur + '" style="width:' + score + '%"></div></div>'
+        + ' <span style="font-size:.72rem;color:var(--muted);">' + score + '%</span>';
+    } else {
+      scoreHtml = '<span style="font-size:.72rem;color:var(--muted);">—</span>';
+    }
+    var datum = "";
+    if (w.aangemaakt && w.aangemaakt.toDate) {
+      datum = w.aangemaakt.toDate().toLocaleDateString("nl-BE",{day:"numeric",month:"short"});
+    }
+    var tr = document.createElement("tr");
+    if (geselecteerd) tr.classList.add("geselecteerd");
+    tr.innerHTML =
+      '<td><input type="checkbox" ' + (geselecteerd?"checked":"") + ' style="width:16px;height:16px;cursor:pointer;accent-color:var(--accent);"></td>' +
+      '<td style="font-weight:700;">' + escH(w.woord) + '</td>' +
+      '<td style="color:var(--muted);font-size:.78rem;">' + datum + '</td>' +
+      '<td>' + scoreHtml + '</td>';
+    tr.style.cursor = "pointer";
+    tr.addEventListener("click", (function(id, row){
+      return function(e){
+        if (e.target.tagName === "INPUT") return; // checkbox zelf
+        toggleWoord(id, row);
+      };
+    })(w.id, tr));
+    tr.querySelector("input").addEventListener("change", (function(id, row){
+      return function(){ toggleWoord(id, row); };
+    })(w.id, tr));
+    tbody.appendChild(tr);
+  });
+  updateTaakWoordTeller();
+}
+
+function toggleWoord(id, row) {
+  if (taakGeselecteerdeWoorden.has(id)) {
+    taakGeselecteerdeWoorden.delete(id);
+    row.classList.remove("geselecteerd");
+    row.querySelector("input").checked = false;
+  } else {
+    taakGeselecteerdeWoorden.add(id);
+    row.classList.add("geselecteerd");
+    row.querySelector("input").checked = true;
+  }
+  updateTaakWoordTeller();
+}
+
+function updateTaakWoordTeller() {
+  var el = document.getElementById("taak-woord-teller");
+  if (el) el.textContent = taakGeselecteerdeWoorden.size > 0 ? "(" + taakGeselecteerdeWoorden.size + " geselecteerd)" : "";
+}
+
+// ── Taak opslaan ──
+function slaaTaakOp() {
+  var foutEl = document.getElementById("taak-opslaan-fout");
+  foutEl.textContent = "";
+  var titel = document.getElementById("taak-titel").value.trim();
+  if (!titel) { foutEl.textContent = "Geef de taak een titel."; return; }
+  var leerlingen = getGeselecteerdeLeerlingen();
+  if (!leerlingen.length) { foutEl.textContent = "Selecteer minstens één leerling."; return; }
+  var woordIds = Array.from(taakGeselecteerdeWoorden);
+  if (!woordIds.length) { foutEl.textContent = "Selecteer minstens één woord."; return; }
+
+  var batch = db.batch();
+  var aangemaakt = firebase.firestore.FieldValue.serverTimestamp();
+  leerlingen.forEach(function(leerling){
+    var ref = db.collection("woordenschat_taken").doc();
+    batch.set(ref, {
+      titel: titel,
+      leerling: leerling,
+      woordIds: woordIds,
+      modus: taakModus,
+      woordselectie: taakPreset,
+      aantalWoorden: woordIds.length,
+      gedaan: false,
+      aangemaakt: aangemaakt
+    });
+  });
+  batch.commit()
+    .then(function(){
+      showToast("📋 Taak klaargezet voor " + leerlingen.length + " leerling(en)!");
+      // Reset
+      document.getElementById("taak-titel").value = "";
+      taakGeselecteerdeWoorden.clear();
+      taakPreset = -1;
+      taakModus = 0;
+      document.querySelectorAll(".preset-kaart").forEach(function(k){ k.classList.remove("geselecteerd"); });
+      document.querySelectorAll(".modus-kaart").forEach(function(k,i){ k.classList.toggle("geselecteerd", i===0); });
+      document.querySelector(".leerling-chip.iedereen").classList.add("geselecteerd");
+      document.querySelectorAll(".leerling-chip:not(.iedereen)").forEach(function(c){ c.classList.remove("geselecteerd"); });
+      renderWoordSelectieTabel();
+    })
+    .catch(function(e){ foutEl.textContent = "Fout: " + e.message; });
+}
+
+// ── Bestaande taken laden ──
+function laadBestaandeTaken() {
+  var el = document.getElementById("bestaande-taken-lijst");
+  el.innerHTML = '<div style="text-align:center;padding:32px;color:var(--muted);">Laden…</div>';
+  db.collection("woordenschat_taken")
+    .orderBy("aangemaakt","desc")
+    .get({ source:"server" })
+    .then(function(snap){
+      if (snap.size === 0) {
+        el.innerHTML = '<div style="text-align:center;padding:32px;color:var(--muted);">Geen taken gevonden.</div>';
+        return;
+      }
+      el.innerHTML = "";
+      snap.forEach(function(doc){
+        var t = Object.assign({ id: doc.id }, doc.data());
+        var div = document.createElement("div");
+        div.className = "taak-item";
+        var datum = t.aangemaakt && t.aangemaakt.toDate
+          ? t.aangemaakt.toDate().toLocaleDateString("nl-BE",{day:"numeric",month:"short",year:"numeric"}) : "?";
+        div.innerHTML =
+          '<div style="flex:1;">' +
+            '<h4>' + escH(t.titel||"Taak") + '</h4>' +
+            '<p>' + capitalize(t.leerling) + ' · ' + datum + '</p>' +
+            '<div class="taak-item-badges">' +
+              '<span class="taak-badge-item">' + (MODI_NAMEN_B[t.modus]||"?") + '</span>' +
+              '<span class="taak-badge-item">' + (t.aantalWoorden||"?") + ' woorden</span>' +
+              '<span class="taak-badge-item" style="' + (t.gedaan ? 'background:#e8f5ee;color:var(--green);' : 'background:#fff3f0;color:var(--accent);') + '">' +
+                (t.gedaan ? '✅ Gedaan' : '⏳ Te doen') + '</span>' +
+            '</div>' +
+          '</div>' +
+          '<button class="btn-verwijder-taak" onclick="verwijderTaak(\"' + doc.id + '\",this)" title="Verwijder taak">' +
+            '<i class="fa-solid fa-trash"></i></button>';
+        el.appendChild(div);
+      });
+    }).catch(function(e){
+      el.innerHTML = '<div style="color:var(--accent);padding:16px;">Fout: ' + e.message + '</div>';
+    });
+}
+
+function verwijderTaak(id) {
+  if (!confirm("Taak verwijderen?")) return;
+  db.collection("woordenschat_taken").doc(id).delete()
+    .then(function(){ laadBestaandeTaken(); showToast("🗑 Taak verwijderd"); })
+    .catch(function(e){ alert("Fout: " + e.message); });
+}
+
 </script>
 </body>
 </html>
