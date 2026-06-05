@@ -67,7 +67,7 @@ input,select{font-family:inherit;}
       <button class="tab-btn" id="tab-matrix" onclick="showTab('matrix')">📊 Klasmatrix</button>
       <button class="tab-btn" id="tab-leerlingen" onclick="showTab('leerlingen')">⚙️ Leerlingen</button>
       <button class="btn btn-outline" onclick="exportCSV()" style="padding:8px 14px;font-size:.8rem;">⬇️ CSV export</button>
-      <button class="btn btn-outline" onclick="loadAll()" style="padding:8px 14px;font-size:.8rem;">🔄 Vernieuwen</button>
+      <button class="btn btn-outline" onclick="localStorage.removeItem('db_known_cols'); loadAll();" style="padding:8px 14px;font-size:.8rem;">🔄 Vernieuwen</button>
     </div>
   </nav>
 
@@ -333,19 +333,56 @@ const COLLECTION_LABELS = {
   'hoofdrekenen_tafels_toets':     'Maaltafels',
   'hoofdrekenen_deeltafels_toets': 'Deeltafels',
   'rekenmachine_toets':      'Rekenmachine & Rekentaal',
-  // Taal
-  'taal_spreekwoorden':      'Spreekwoorden',
-  // Voeg nieuwe apps toe voor een mooier label, bv:
-  // 'taal_werkwoorden':     'Werkwoorden',
-  // 'wo_water':             'Water (WO)',
+  'kloklezen_toets':         'Kloklezen',
+  'wiskunde_oppervlakte':    'Oppervlakte & Omtrek',
+  // Taal / Nederlands
+  'taal_spreekwoorden':           'Spreekwoorden',
+  'taal_woordenboek':             'Woordenboek',
+  'taal_werkwoorden_vervoegen':   'Werkwoorden vervoegen',
+  'woordenschat_resultaten':      'Woordenschat oefenen',
+  // WO
+  'wo_delen_plant':               'Delen van de Plant',
+  // Leren Leren
+  'kahoot_toets':                 'Klasquiz',
+  // Frans
+  'etreavoir_toets':              'être & avoir',
+  'lichaamsdelen_toets':          'Lichaamsdelen (benoemen)',
+  'lichaamsdelen_beelden_toets':  'Lichaamsdelen (afbeeldingen)',
+  'franse_getallen_10_toets':     'Franse getallen (tot 10)',
+  'franse_getallen_100_toets':    'Franse getallen (tot 100)',
+  'franse_getallen_1000_toets':   'Franse getallen (tot 1000)',
+  'franse_getallen_10000_toets':  'Franse getallen (tot 10000)',
+  // Taal vervolg
+  'alfabetisch_rangschikken_toets': 'Alfabetisch rangschikken',
+  'hoofdletters_toets':             'Hoofdletters',
 };
 
 // Mapping collection → vak.
 // Wordt automatisch aangevuld via toets_registry (veld 'vak').
-// Hier enkel nodig als fallback voor apps zonder 'vak' veld in Firestore.
+// Hier ook als expliciete fallback voor apps die mogelijk geen 'vak' veld hebben.
 const COLLECTION_VAK_FALLBACK = {
-  'taal_spreekwoorden': 'Taal',
-  // Alle overige collections worden als 'Wiskunde' beschouwd (fallback)
+  // Taal
+  'taal_spreekwoorden':           'Taal',
+  'taal_woordenboek':             'Taal',
+  'taal_werkwoorden_vervoegen':   'Taal',
+  'alfabetisch_rangschikken_toets': 'Taal',
+  'hoofdletters_toets':           'Taal',
+  'woordenschat_resultaten':      'Taal',
+  // WO
+  'wo_delen_plant':               'WO',
+  // Leren Leren
+  'kahoot_toets':                 'Leren Leren',
+  // Frans
+  'etreavoir_toets':              'Frans',
+  'lichaamsdelen_toets':          'Frans',
+  'lichaamsdelen_beelden_toets':  'Frans',
+  'franse_getallen_10_toets':     'Frans',
+  'franse_getallen_100_toets':    'Frans',
+  'franse_getallen_1000_toets':   'Frans',
+  'franse_getallen_10000_toets':  'Frans',
+  // Wiskunde
+  'wiskunde_oppervlakte':         'Wiskunde',
+  'kloklezen_toets':              'Wiskunde',
 };
 
 // Volgorde van vakken in de filter-dropdown.
@@ -370,14 +407,23 @@ function colLabel(col) {
   return COLLECTION_LABELS[col] || col.replace(/_toets$/,'').replace(/^taal_/,'').replace(/^wo_/,'').replace(/_/g,' ');
 }
 function colVak(col, rawVak) {
-  // Prioriteit: 1. veld in Firestore-document, 2. fallback-tabel, 3. prefix-herkenning, 4. Wiskunde
-  if (rawVak) return rawVak;
+  // Prioriteit: 1. veld in Firestore-document (alleen als het een geldig vak is)
+  //             2. registry vak-info (uit toets_registry)
+  //             3. fallback-tabel, 4. prefix-herkenning, 5. Wiskunde
+  var GELDIGE_VAKKEN = ['Wiskunde','Taal','WO','Leren Leren','Frans','SEO','Nederlands'];
+  if (rawVak && GELDIGE_VAKKEN.indexOf(rawVak) >= 0) {
+    // Normaliseer "Nederlands" naar "Taal" voor consistentie
+    return rawVak === 'Nederlands' ? 'Taal' : rawVak;
+  }
+  // Registry-cache (wordt gevuld na loadAllScores)
+  if (typeof registryVakInfo !== 'undefined' && registryVakInfo[col]) return registryVakInfo[col];
   if (COLLECTION_VAK_FALLBACK[col]) return COLLECTION_VAK_FALLBACK[col];
   if (col.startsWith('taal_')) return 'Taal';
   if (col.startsWith('wo_'))   return 'WO';
   if (col.startsWith('ll_'))   return 'Leren Leren';
-  if (col.startsWith('seo_'))  return 'SEO';
   if (col.startsWith('fr_'))   return 'Frans';
+  if (col.startsWith('seo_'))  return 'SEO';
+  if (col.startsWith('ned_') || col.startsWith('nl_')) return 'Taal';
   return 'Wiskunde'; // standaard fallback
 }
 function modeLabel(m) { return m ? (MODE_LABELS[m] || m) : ''; }
@@ -400,6 +446,8 @@ function normRecord(raw, col) {
     _leerlingId:  raw.leerlingId || '',
     _leerlingNaam:raw.leerlingNaam || raw.leerlingId || '?',
     _mode:        raw.mode || '',
+    _tempoSterren: raw.tempoSterren !== undefined ? raw.tempoSterren : null,
+    _tempoLabel:   raw.tempoLabel   || '',
   });
 }
 function leerlingNaam(id) {
@@ -468,6 +516,9 @@ async function initieelLeerlingenAanmaken() {
   await loadLeerlingen();
 }
 
+// Cache van vak-info uit de registry — wordt gevuld bij loadAllScores
+var registryVakInfo = {}; // col → vak
+
 // AUTO-DISCOVERY via toets_registry:
 // Elke toets-app schrijft bij het opslaan naar toets_registry/{colName}.
 // Het dashboard leest die collectie eerst → alle ooit gebruikte collections
@@ -475,6 +526,7 @@ async function initieelLeerlingenAanmaken() {
 async function loadAllScores() {
   allRecords = [];
   knownCols  = [];
+  registryVakInfo = {};
 
   // Stap 1: Lees de registry (collections die ooit een score hebben opgeslagen)
   var registryCollections = [];
@@ -482,7 +534,11 @@ async function loadAllScores() {
     var regSnap = await db.collection("toets_registry").get();
     regSnap.forEach(function(doc) {
       var d = doc.data();
-      if (d.collection) registryCollections.push({ col: d.collection, label: d.naam || colLabel(d.collection) });
+      if (d.collection) {
+        registryCollections.push({ col: d.collection, label: d.naam || colLabel(d.collection) });
+        // Sla vak-info op uit de registry zodat colVak() dit kan gebruiken
+        if (d.vak) registryVakInfo[d.collection] = d.vak;
+      }
     });
     console.log("[dashboard] Registry: " + registryCollections.map(function(r){return r.col;}).join(", "));
   } catch(e) { console.log("[dashboard] Registry niet beschikbaar:", e.message); }
@@ -521,13 +577,22 @@ async function loadAllScores() {
 // ── FILTERS OPVULLEN ──────────────────────────────────────────────────────
 function getVakkenUitData() {
   // Verzamel alle unieke vakken uit de data, gesorteerd via VAK_VOLGORDE
+  // Defensief: filter op bekende vakken OF strings die geen collection-naam zijn
   var vakSet = {};
-  allRecords.forEach(function(d) { vakSet[d._vak] = true; });
+  allRecords.forEach(function(d) {
+    var v = d._vak;
+    // _vak mag geen lege string zijn en mag niet lijken op een collection-naam (geen underscore-patroon)
+    if (v && typeof v === 'string' && v.length > 0) {
+      vakSet[v] = true;
+    }
+  });
   // Sorteer: eerst bekende vakken op volgorde, daarna nieuwe alfabetisch
   var result = VAK_VOLGORDE.filter(function(v) { return vakSet[v]; });
   Object.keys(vakSet).forEach(function(v) {
     if (result.indexOf(v) < 0) result.push(v);
   });
+  // Zekerheidshalve: gooi alles weg dat eruitziet als een collection-naam (bevat underscore)
+  result = result.filter(function(v) { return v.indexOf('_') < 0; });
   return result;
 }
 
@@ -660,6 +725,10 @@ function renderFeed() {
     html += '<div style="text-align:right;flex-shrink:0;">';
     html += '<div style="font-size:1.1rem;font-weight:900;color:'+col+';">'+pct+'%</div>';
     html += '<div style="font-size:.75rem;color:#9ca3af;font-weight:600;">'+d._score+'/'+d._total+'</div>';
+    if (d._tempoSterren !== null) {
+      var sterrenTxt = '⭐'.repeat(d._tempoSterren) + '☆'.repeat(5 - d._tempoSterren);
+      html += '<div style="font-size:.7rem;color:#9ca3af;" title="Tempo: '+d._tempoLabel+'">'+sterrenTxt+'</div>';
+    }
     html += '</div>';
     html += '<div style="flex-shrink:0;">'+pctBadge(pct)+'</div>';
     if (d._tijd) html += '<div style="font-size:.75rem;color:#9ca3af;flex-shrink:0;white-space:nowrap;">⏱ '+d._tijd+'</div>';
@@ -815,7 +884,17 @@ function openDetail(idx) {
     html += '<div style="font-size:1.4rem;font-weight:800;color:'+(s.c||'#1d4ed8')+';">'+s.v+'</div>';
     html += '<div style="font-size:.7rem;font-weight:700;color:#9ca3af;text-transform:uppercase;margin-top:3px;">'+s.l+'</div></div>';
   });
-  html += '</div></div>';
+  html += '</div>';
+  // Tempo-sterren (enkel bij records die dit veld hebben)
+  if (d._tempoSterren !== null && d._tempoSterren !== undefined) {
+    html += '<div style="background:#f8fafc;border:1px solid #e5e7eb;border-radius:1rem;padding:14px;text-align:center;margin-top:10px;">';
+    html += '<div style="font-size:.7rem;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px;">Tempo</div>';
+    html += '<div style="font-size:1.6rem;">' + '⭐'.repeat(d._tempoSterren) + '☆'.repeat(5 - d._tempoSterren) + '</div>';
+    html += '<div style="font-size:.82rem;font-weight:700;color:#374151;margin-top:2px;">' + (d._tempoLabel||'') + '</div>';
+    html += '<div style="font-size:.72rem;color:#9ca3af;margin-top:2px;">' + d._total + ' vragen in 2 min</div>';
+    html += '</div>';
+  }
+  html += '</div>';
 
   // Foutenanalyse
   if (d.foutenAnalyse && d.foutenAnalyse.extraOefenen && d.foutenAnalyse.extraOefenen.length) {
@@ -1052,6 +1131,29 @@ var MX_STANDAARD_VOLGORDE_WISKUNDE = [
 
 var MX_STANDAARD_VOLGORDE_TAAL = [
   'taal_spreekwoorden',
+  'taal_woordenboek',
+  'taal_werkwoorden_vervoegen',
+  'woordenschat_resultaten',
+  'alfabetisch_rangschikken_toets',
+  'hoofdletters_toets',
+];
+
+var MX_STANDAARD_VOLGORDE_WO = [
+  'wo_delen_plant',
+];
+
+var MX_STANDAARD_VOLGORDE_LEREN = [
+  'kahoot_toets',
+];
+
+var MX_STANDAARD_VOLGORDE_FRANS = [
+  'etreavoir_toets',
+  'lichaamsdelen_toets',
+  'lichaamsdelen_beelden_toets',
+  'franse_getallen_10_toets',
+  'franse_getallen_100_toets',
+  'franse_getallen_1000_toets',
+  'franse_getallen_10000_toets',
 ];
 
 // Vak-kleur headers
@@ -1133,8 +1235,11 @@ function mxDezeMaand() {
 function mxGetRijenVoorVak(vak) {
   // Standaard volgorde per vak
   var standaard = [];
-  if (vak === 'Wiskunde') standaard = MX_STANDAARD_VOLGORDE_WISKUNDE.slice();
-  else if (vak === 'Taal') standaard = MX_STANDAARD_VOLGORDE_TAAL.slice();
+  if      (vak === 'Wiskunde')    standaard = MX_STANDAARD_VOLGORDE_WISKUNDE.slice();
+  else if (vak === 'Taal')        standaard = MX_STANDAARD_VOLGORDE_TAAL.slice();
+  else if (vak === 'WO')          standaard = MX_STANDAARD_VOLGORDE_WO.slice();
+  else if (vak === 'Leren Leren') standaard = MX_STANDAARD_VOLGORDE_LEREN.slice();
+  else if (vak === 'Frans')       standaard = MX_STANDAARD_VOLGORDE_FRANS.slice();
 
   // Voeg ook collections toe die in de data zitten maar niet in de standaard
   knownCols.forEach(function(c) {
