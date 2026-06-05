@@ -1237,14 +1237,42 @@ function toonResultaat() {
 }
 
 function slaOefenResultaatOp(correct, totaal) {
-  // Sessie opslaan
+  var pct = totaal > 0 ? Math.round((correct / totaal) * 100) : 0;
+  var leerlingNaam = capitalize(CU.naam);
+
+  // Sessie opslaan — veldnamen conform dashboard
   db.collection("woordenschat_resultaten").add({
-    leerling: CU.naam,
-    correct: correct,
-    totaal: totaal,
-    modus: gekozenModus,
-    woordselectie: gekozenWoordselectie,
-    datum: firebase.firestore.FieldValue.serverTimestamp()
+    // Dashboard-velden
+    leerlingId:   CU.naam,
+    leerlingNaam: leerlingNaam,
+    vak:          "Taal",
+    mode:         gekozenModus + " (" + gekozenWoordselectie + ")",
+    score:        correct,
+    totalQ:       totaal,
+    percentage:   pct,
+    tijd:         "",
+    hintsGebruikt: 0,
+    timestamp:    firebase.firestore.FieldValue.serverTimestamp(),
+    foutenAnalyse: {
+      extraOefenen:       [],
+      foutenPerCategorie: { "Woordenschat": totaal - correct }
+    },
+    vragen: [],
+    // Originele velden (behouden voor woordenschat_voortgang logica)
+    leerling:       CU.naam,
+    correct:        correct,
+    totaal:         totaal,
+    modus:          gekozenModus,
+    woordselectie:  gekozenWoordselectie,
+    datum:          firebase.firestore.FieldValue.serverTimestamp()
+  }).then(function() {
+    // Registry — dashboard ontdekt collection automatisch
+    db.collection("toets_registry").doc("woordenschat_resultaten").set({
+      naam:       "Taal – Woordenschat oefenen",
+      collection: "woordenschat_resultaten",
+      vak:        "Taal",
+      lastSeen:   firebase.firestore.FieldValue.serverTimestamp()
+    }, { merge: true }).catch(function(e){ console.error("registry:", e); });
   }).catch(function(e){ console.error(e); });
 
   // Voortgang per woord opslaan
