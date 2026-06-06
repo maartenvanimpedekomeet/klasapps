@@ -222,7 +222,7 @@ body { font-family: 'Nunito', sans-serif; background: var(--bg); min-height: 100
     <div class="step-badge">3</div>
     <div class="step-info">
       <div class="step-name">Brug bij optellen: E + E = TE <span class="tag tag-met">met brug</span></div>
-      <div class="step-desc">Splits de 2de term: aanvullen tot 10 (geel) + rest (groen)</div>
+      <div class="step-desc">Splits de 2de term:  tot 10 (geel) + rest (groen)</div>
       <div class="step-ex">9 + 4: splits 4 in 1+3 → 9+1=10 → 10+3=13</div>
     </div>
   </button>
@@ -291,7 +291,7 @@ body { font-family: 'Nunito', sans-serif; background: var(--bg); min-height: 100
     <div class="step-badge">5</div>
     <div class="step-info">
       <div class="step-name">TE ± E (met brug) <span class="tag tag-met">met brug</span></div>
-      <div class="step-desc">Aanvullen tot het volgende tiental met splitsbenen</div>
+      <div class="step-desc"> tot het volgende tiental met splitsbenen</div>
       <div class="step-ex">37+5: 37+3=40, dan 40+2=42</div>
     </div>
   </button>
@@ -540,7 +540,7 @@ function makeQ100(step){
       var bT=Math.floor(b/10)*10,bE=b%10,mid=a+bT,aanvul=10-(mid%10),brugT=mid+aanvul,rest=bE-aanvul;
       return {q:[a,'+',b,'=','?'],a:ans,step,type:'rij',
         ts1:{lbl:'Tientallen erbij:',f:a+' + '+bT+' =',ans:mid},
-        ts2:{lbl:'Aanvullen tot tiental:',f:mid+' + '+aanvul+' =',ans:brugT},
+        ts2:{lbl:' tot tiental:',f:mid+' + '+aanvul+' =',ans:brugT},
         ts3:{lbl:'Rest erbij:',f:brugT+' + '+rest+' =',ans:ans}};
     } else {
       var combos=[[72,35],[63,27],[85,36],[54,28],[83,47],[74,38],[92,45],[61,34],[53,26],[81,46]];
@@ -687,7 +687,7 @@ function buildTs(q){
     html+='<div class="sb-bottom">';
     html+='<div class="sb-box">';
     html+='<input class="sb-input kleur-geel" id="sb-geel" type="number" autocomplete="off" placeholder="?" onkeydown="sbKey(event,\'geel\')"/>';
-    if(isPlus) html+='<div class="sb-label">tot '+a+' aanvullen<br>tot tiental</div>';
+    if(isPlus) html+='<div class="sb-label"> '+a+' aanvullen<br>tot volgende tiental</div>';
     else       html+='<div class="sb-label">terug naar<br>tiental</div>';
     html+='</div>';
     html+='<div class="sb-box">';
