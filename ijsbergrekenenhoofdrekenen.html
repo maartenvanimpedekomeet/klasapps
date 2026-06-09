@@ -4,28 +4,75 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>IJsbergrekenen</title>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
 :root {
-  --bg: #fdf4f7; --surface: #ffffff;
-  --pink: #e8547a; --pink-light: #fce8ef; --pink-mid: #f4a7be; --pink-dark: #b03060;
-  --blue: #4a90d9; --blue-light: #e8f2fb; --blue-dark: #2d6fb0;
-  --yellow: #f5c842; --yellow-light: #fef9e5; --yellow-dark: #c9970a;
-  --green: #4caf6e; --green-light: #e8f7ed; --green-dark: #2d7a47;
-  --red: #e24b4a; --red-light: #fcebeb; --red-dark: #a32d2d;
-  --gray: #888; --gray-light: #f5f5f5; --gray-mid: #ddd;
-  --text: #2a1a2e; --text-muted: #7a6a7a;
-  --radius: 14px; --radius-sm: 9px;
+  --bg:#fdf4f7; --surface:#fff;
+  --pink:#e8547a; --pink-light:#fce8ef; --pink-mid:#f4a7be; --pink-dark:#b03060;
+  --blue:#4a90d9; --blue-light:#e8f2fb; --blue-dark:#2d6fb0;
+  --yellow:#f5c842; --yellow-light:#fef9e5; --yellow-dark:#c9970a;
+  --green:#4caf6e; --green-light:#e8f7ed; --green-dark:#2d7a47;
+  --red:#e24b4a; --red-light:#fcebeb; --red-dark:#a32d2d;
+  --orange:#f5a623; --orange-light:#fef3e2; --orange-dark:#8a5000;
+  --gray:#888; --gray-light:#f5f5f5; --gray-mid:#ddd; --text:#2a1a2e; --text-muted:#7a6a7a;
+  --radius:14px; --radius-sm:9px;
 }
-body { font-family: 'Nunito', sans-serif; background: var(--bg); min-height: 100vh; color: var(--text); }
-.app { max-width: 680px; margin: 0 auto; padding: 1.25rem 1rem 3rem; }
+body { font-family:'Nunito',sans-serif; background:var(--bg); min-height:100vh; color:var(--text); }
+.app { max-width:680px; margin:0 auto; padding:1.25rem 1rem 3rem; }
 
+/* LOGIN OVERLAY */
+#klas-login {
+  position:fixed; inset:0; background:rgba(40,0,20,0.55); z-index:9999;
+  display:flex; align-items:center; justify-content:center; padding:1rem;
+}
+.login-card {
+  background:var(--surface); border-radius:var(--radius); padding:2rem 1.75rem;
+  width:100%; max-width:380px; border:2px solid var(--pink-mid);
+  box-shadow:0 8px 40px rgba(180,0,80,0.18);
+}
+.login-card h2 { font-size:1.4rem; font-weight:900; color:var(--pink-dark); margin-bottom:0.25rem; text-align:center; }
+.login-card p { font-size:0.82rem; color:var(--text-muted); text-align:center; margin-bottom:1.25rem; }
+.login-inp {
+  width:100%; padding:0.7rem 0.9rem; border:2px solid var(--pink-mid);
+  border-radius:var(--radius-sm); font-family:'Nunito',sans-serif; font-size:1rem;
+  font-weight:700; color:var(--text); outline:none; margin-bottom:0.75rem;
+}
+.login-inp:focus { border-color:var(--pink); }
+.login-err { font-size:0.8rem; color:var(--red); font-weight:700; margin-bottom:0.5rem; display:none; }
+.login-btn-row { display:flex; gap:0.6rem; flex-direction:column; }
+
+/* NAV BAR */
+#nav-bar {
+  display:none; background:var(--surface); border-radius:var(--radius);
+  border:1.5px solid var(--pink-mid); padding:0.7rem 1rem;
+  margin-bottom:1.25rem; align-items:center; justify-content:space-between;
+}
+#nav-bar.show { display:flex; }
+.nav-user { font-size:0.85rem; font-weight:800; color:var(--pink-dark); }
+.nav-badge {
+  font-size:0.75rem; font-weight:700; padding:0.2rem 0.6rem;
+  border-radius:20px; background:var(--pink-light); color:var(--pink-dark); margin-left:0.4rem;
+}
+.nav-out { background:none; border:1.5px solid var(--pink-mid); border-radius:var(--radius-sm);
+  font-family:'Nunito',sans-serif; font-size:0.78rem; font-weight:700; color:var(--pink-dark);
+  padding:0.3rem 0.7rem; cursor:pointer; }
+.nav-out:hover { background:var(--pink-light); }
+
+/* HEADER */
 .header { text-align:center; margin-bottom:1.5rem; padding:1.25rem 1rem; background:var(--surface); border-radius:var(--radius); border:1.5px solid var(--pink-mid); position:relative; overflow:hidden; }
 .header::before { content:''; position:absolute; top:0; left:0; right:0; height:4px; background:linear-gradient(90deg,var(--pink),var(--yellow),var(--green)); }
 .header h1 { font-size:1.8rem; font-weight:900; color:var(--pink-dark); }
 .header p { font-size:0.88rem; color:var(--text-muted); margin-top:0.2rem; }
 .iceberg-icon { font-size:2.2rem; margin-bottom:0.25rem; display:block; }
+
+/* MODE TABS */
+.mode-tabs { display:flex; gap:0; margin-bottom:1.25rem; background:var(--surface); border-radius:var(--radius); border:1.5px solid var(--pink-mid); overflow:hidden; }
+.mode-tab { flex:1; padding:0.7rem; font-family:'Nunito',sans-serif; font-size:0.88rem; font-weight:800; cursor:pointer; border:none; background:none; color:var(--text-muted); transition:all 0.15s; }
+.mode-tab.active { background:var(--pink); color:white; }
+.mode-tab:hover:not(.active) { background:var(--pink-light); color:var(--pink-dark); }
 
 .screen { display:none; } .screen.active { display:block; }
 
@@ -57,16 +104,16 @@ body { font-family: 'Nunito', sans-serif; background: var(--bg); min-height: 100
 .btn-secondary:hover { border-color:var(--pink); }
 .action-row { display:flex; gap:0.6rem; margin-top:1.25rem; flex-wrap:wrap; }
 .back-btn { background:none; border:none; cursor:pointer; color:var(--pink); font-family:'Nunito',sans-serif; font-weight:700; font-size:0.82rem; padding:0.4rem 0; display:flex; align-items:center; gap:0.25rem; margin-bottom:0.75rem; }
-.back-btn:hover { color:var(--pink-dark); }
 
 .quiz-container { background:var(--surface); border-radius:var(--radius); border:1.5px solid var(--pink-mid); overflow:hidden; }
-.quiz-header { padding:0.9rem 1.1rem; background:var(--pink-light); border-bottom:1px solid var(--pink-mid); display:flex; align-items:center; justify-content:space-between; gap:0.75rem; }
+.quiz-header { padding:0.9rem 1.1rem; background:var(--pink-light); border-bottom:1px solid var(--pink-mid); display:flex; align-items:center; justify-content:space-between; gap:0.75rem; flex-wrap:wrap; }
 .quiz-mode-label { font-size:0.72rem; font-weight:800; color:var(--pink-dark); text-transform:uppercase; letter-spacing:0.5px; flex-shrink:0; }
 .quiz-progress-wrap { flex:1; max-width:180px; }
 .progress-bar { height:6px; background:var(--pink-mid); border-radius:3px; overflow:hidden; }
 .progress-fill { height:100%; background:var(--pink); border-radius:3px; transition:width 0.3s; }
 .progress-text { font-size:0.68rem; color:var(--text-muted); margin-top:2px; text-align:right; }
 .score-badge { font-size:0.82rem; font-weight:800; color:var(--green-dark); flex-shrink:0; }
+.toets-badge { font-size:0.68rem; font-weight:800; padding:0.2rem 0.5rem; border-radius:20px; background:#fff3e0; color:#e65100; }
 .quiz-body { padding:1.5rem 1.25rem; }
 
 /* TOGGLE STRIP */
@@ -79,17 +126,16 @@ body { font-family: 'Nunito', sans-serif; background: var(--bg); min-height: 100
 .toggle-knob::before { content:''; position:absolute; width:16px; height:16px; left:3px; top:3px; background:white; border-radius:50%; transition:0.2s; }
 .toggle-switch input:checked + .toggle-knob { background:var(--pink); }
 .toggle-switch input:checked + .toggle-knob::before { transform:translateX(18px); }
+.half-punt-note { font-size:0.72rem; color:var(--orange-dark); font-weight:700; background:var(--orange-light); padding:0.2rem 0.5rem; border-radius:6px; border:1px solid var(--orange); }
 
-/* 10-STRUCTUUR — blok van 2×5 bolletjes per 10 */
+/* 10-STRUCTUUR */
 .tien-structuur-wrap { margin-bottom:1.25rem; display:flex; gap:8px; flex-wrap:wrap; align-items:flex-start; justify-content:center; }
-.tien-blok10 { display:grid; grid-template-columns: repeat(5,1fr); gap:4px; padding:6px; background:var(--gray-light); border-radius:10px; border:2px solid var(--gray-mid); }
-/* bolletje types */
+.tien-blok10 { display:grid; grid-template-columns:repeat(5,1fr); gap:4px; padding:6px; background:var(--gray-light); border-radius:10px; border:2px solid var(--gray-mid); }
 .bol { width:22px; height:22px; border-radius:50%; border:2px solid; flex-shrink:0; }
-.bol-blauw  { background:#4a90d9; border-color:#2d6fb0; }
-.bol-leeg   { background:#e8e8e8; border-color:#bbb; }
-.bol-groen  { background:#4caf6e; border-color:#2d7a47; }
-.bol-rood   { background:#e24b4a; border-color:#a32d2d; }
-/* knipperende bolletjes */
+.bol-blauw { background:#4a90d9; border-color:#2d6fb0; }
+.bol-leeg  { background:#e8e8e8; border-color:#bbb; }
+.bol-groen { background:#4caf6e; border-color:#2d7a47; }
+.bol-rood  { background:#e24b4a; border-color:#a32d2d; }
 @keyframes knipperGroen { 0%,100%{background:#4caf6e;border-color:#2d7a47;} 50%{background:#c8f0d6;border-color:#9fddb8;} }
 @keyframes knipperRood  { 0%,100%{background:#e24b4a;border-color:#a32d2d;} 50%{background:#fcc;border-color:#f99;} }
 .bol-groen-knip { background:#4caf6e; border-color:#2d7a47; animation:knipperGroen 0.8s ease-in-out infinite; }
@@ -97,10 +143,10 @@ body { font-family: 'Nunito', sans-serif; background: var(--bg); min-height: 100
 
 /* OPGAVE */
 .sum-display { display:flex; align-items:center; justify-content:center; gap:0.6rem; margin:0.5rem 0 1.25rem; flex-wrap:wrap; }
-.sum-num  { font-size:2.8rem; font-weight:900; color:var(--text); line-height:1; }
-.sum-op   { font-size:2rem; font-weight:700; color:var(--text-muted); }
-.sum-box  { min-width:80px; height:64px; border:3px solid var(--pink); border-radius:var(--radius-sm); display:flex; align-items:center; justify-content:center; background:var(--surface); }
-.sum-box input { width:100%; height:100%; border:none; background:transparent; font-family:'Nunito',sans-serif; font-size:2.2rem; font-weight:900; text-align:center; color:var(--text); outline:none; }
+.sum-num { font-size:2.8rem; font-weight:900; color:var(--text); line-height:1; }
+.sum-op  { font-size:2rem; font-weight:700; color:var(--text-muted); }
+.sum-box { min-width:80px; height:64px; border:3px solid var(--pink); border-radius:var(--radius-sm); display:flex; align-items:center; justify-content:center; background:var(--surface); }
+.sum-box input { width:100%; height:100%; border:none; background:transparent; font-family:'Nunito',sans-serif; font-size:2rem; font-weight:900; text-align:center; color:var(--text); outline:none; }
 .sum-box input.correct { color:var(--green-dark); }
 .sum-box input.wrong   { color:var(--red); }
 
@@ -113,27 +159,26 @@ body { font-family: 'Nunito', sans-serif; background: var(--bg); min-height: 100
 .sb-bottom { display:flex; gap:1.5rem; }
 .sb-box { display:flex; flex-direction:column; align-items:center; gap:4px; }
 .sb-input { width:60px; height:52px; border:3px solid var(--gray-mid); border-radius:var(--radius-sm); font-family:'Nunito',sans-serif; font-size:1.6rem; font-weight:900; text-align:center; color:var(--text); background:var(--surface); outline:none; transition:border-color 0.15s; }
-.sb-input.kleur-geel  { border-color:var(--yellow);  background:var(--yellow-light); }
-.sb-input.kleur-groen { border-color:var(--green);   background:var(--green-light); }
+.sb-input.kleur-geel  { border-color:var(--yellow); background:var(--yellow-light); }
+.sb-input.kleur-groen { border-color:var(--green); background:var(--green-light); }
 .sb-input:focus { box-shadow:0 0 0 3px rgba(232,84,122,0.2); }
 .sb-input.correct { border-color:var(--green); background:var(--green-light); color:var(--green-dark); }
-.sb-input.wrong   { border-color:var(--red);   background:var(--red-light);   color:var(--red); }
+.sb-input.wrong   { border-color:var(--red); background:var(--red-light); color:var(--red); }
 .sb-input:disabled { opacity:0.7; }
 .sb-label { font-size:0.7rem; font-weight:700; color:var(--text-muted); text-align:center; line-height:1.2; }
 
-/* BRUG STAPPEN */
+/* BRUG BLOK */
 .brug-blok { margin-top:0.75rem; padding:0.75rem 1rem; background:var(--gray-light); border-radius:var(--radius-sm); border:1px solid var(--gray-mid); }
 .brug-stap { display:flex; align-items:center; gap:0.5rem; margin-bottom:0.5rem; flex-wrap:wrap; }
 .brug-stap:last-child { margin-bottom:0; }
-.brug-lbl  { font-size:0.82rem; font-weight:700; color:var(--text-muted); min-width:120px; }
-.brug-form { font-size:1.05rem; font-weight:800; font-family:monospace; color:var(--text); }
-.brug-res  { font-size:1.1rem; font-weight:900; color:var(--pink-dark); padding:0.15rem 0.5rem; background:var(--pink-light); border-radius:6px; }
-.brug-inp  { width:64px; height:42px; border:2px solid var(--pink-mid); border-radius:var(--radius-sm); font-family:'Nunito',sans-serif; font-size:1.1rem; font-weight:800; text-align:center; color:var(--text); background:var(--surface); outline:none; }
+.brug-lbl { font-size:0.82rem; font-weight:700; color:var(--text-muted); min-width:120px; }
+.brug-res { font-size:1.1rem; font-weight:900; color:var(--pink-dark); padding:0.15rem 0.5rem; background:var(--pink-light); border-radius:6px; }
+.brug-inp { width:64px; height:42px; border:2px solid var(--pink-mid); border-radius:var(--radius-sm); font-family:'Nunito',sans-serif; font-size:1.1rem; font-weight:800; text-align:center; color:var(--text); background:var(--surface); outline:none; }
 .brug-inp:focus { border-color:var(--pink); box-shadow:0 0 0 3px rgba(232,84,122,0.15); }
 .brug-inp.correct { border-color:var(--green); background:var(--green-light); color:var(--green-dark); }
-.brug-inp.wrong   { border-color:var(--red);   background:var(--red-light);   color:var(--red); }
+.brug-inp.wrong   { border-color:var(--red); background:var(--red-light); color:var(--red); }
 .brug-inp:disabled { background:var(--gray-light); }
-.brug-ok  { padding:0.35rem 0.75rem; font-size:0.82rem; }
+.brug-ok { padding:0.35rem 0.75rem; font-size:0.82rem; }
 .brug-locked { opacity:0.35; pointer-events:none; }
 
 /* TUSSENSTAP RIJEN */
@@ -145,7 +190,7 @@ body { font-family: 'Nunito', sans-serif; background: var(--bg); min-height: 100
 .ts-inp   { width:64px; height:40px; border:2px solid var(--pink-mid); border-radius:var(--radius-sm); font-family:'Nunito',sans-serif; font-size:1.1rem; font-weight:800; text-align:center; color:var(--text); background:var(--surface); outline:none; }
 .ts-inp:focus  { border-color:var(--pink); box-shadow:0 0 0 3px rgba(232,84,122,0.15); }
 .ts-inp.correct{ border-color:var(--green); background:var(--green-light); color:var(--green-dark); }
-.ts-inp.wrong  { border-color:var(--red);   background:var(--red-light);   color:var(--red); }
+.ts-inp.wrong  { border-color:var(--red); background:var(--red-light); color:var(--red); }
 .ts-inp:disabled { background:var(--gray-light); }
 .ts-ok { padding:0.3rem 0.7rem; font-size:0.82rem; }
 .ts-locked { opacity:0.35; pointer-events:none; }
@@ -153,8 +198,8 @@ body { font-family: 'Nunito', sans-serif; background: var(--bg); min-height: 100
 /* FEEDBACK */
 .fb { margin-top:0.75rem; padding:0.6rem 0.9rem; border-radius:var(--radius-sm); font-weight:700; font-size:0.88rem; display:none; }
 .fb.ok   { background:var(--green-light); color:var(--green-dark); border:1px solid #c0dd97; display:block; }
-.fb.fout { background:var(--red-light);   color:var(--red);        border:1px solid #f7c1c1; display:block; }
-.fb.tip  { background:var(--yellow-light);color:var(--yellow-dark);border:1px solid var(--yellow); display:block; }
+.fb.fout { background:var(--red-light); color:var(--red); border:1px solid #f7c1c1; display:block; }
+.fb.tip  { background:var(--yellow-light); color:var(--yellow-dark); border:1px solid var(--yellow); display:block; }
 
 .quiz-actions { display:flex; gap:0.6rem; margin-top:1.25rem; flex-wrap:wrap; }
 
@@ -162,6 +207,9 @@ body { font-family: 'Nunito', sans-serif; background: var(--bg); min-height: 100
 .result-screen { padding:2rem 1.5rem; text-align:center; }
 .result-score { font-size:3.2rem; font-weight:900; color:var(--pink-dark); }
 .result-emoji { font-size:2.5rem; margin:0.75rem 0; }
+
+/* versie */
+.version { position:fixed; bottom:6px; left:8px; font-size:0.6rem; color:#bbb; font-family:monospace; }
 
 @media(max-width:480px){
   .choice-grid{grid-template-columns:1fr;}
@@ -171,246 +219,389 @@ body { font-family: 'Nunito', sans-serif; background: var(--bg); min-height: 100
 </style>
 </head>
 <body>
-<div class="app">
 
-<div class="header">
-  <span class="iceberg-icon">🧊</span>
-  <h1>IJsbergrekenen</h1>
-  <p>Optellen en aftrekken stap voor stap</p>
-</div>
-
-<!-- HOOFDMENU -->
-<div id="screen-main" class="screen active">
-  <p style="font-size:0.75rem;font-weight:800;color:var(--pink-dark);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:0.75rem;">Kies wat je wilt oefenen</p>
-  <div class="choice-grid">
-    <button class="choice-btn" onclick="goTo20()">
-      <span class="btn-icon">🔢</span>
-      <span class="btn-label">Oefenen tot 20</span>
-      <span class="btn-sub">Optellen en aftrekken tot 20, met en zonder brug</span>
-    </button>
-    <button class="choice-btn" onclick="goTo100()">
-      <span class="btn-icon">💯</span>
-      <span class="btn-label">Oefenen tot 100</span>
-      <span class="btn-sub">Van tientallen tot de dubbele brug — rijgstrategie</span>
-    </button>
+<!-- LOGIN OVERLAY -->
+<div id="klas-login">
+  <div class="login-card">
+    <span style="font-size:2rem;display:block;text-align:center;margin-bottom:0.25rem">🧊</span>
+    <h2>IJsbergrekenen</h2>
+    <p>Meld je aan om te starten</p>
+    <input class="login-inp" type="text" id="login-naam" placeholder="Naam" autocomplete="off" autocapitalize="off">
+    <input class="login-inp" type="text" id="login-code" placeholder="Code" autocomplete="off" autocapitalize="off">
+    <div class="login-err" id="login-err">Naam of code klopt niet. Probeer opnieuw.</div>
+    <div class="login-btn-row">
+      <button class="btn btn-primary" onclick="doLogin()">Aanmelden</button>
+      <button class="btn btn-secondary" onclick="doGuest()">Spelen als gast (geen opslag)</button>
+    </div>
   </div>
 </div>
 
-<!-- KEUZE TOT 20 -->
-<div id="screen-20" class="screen">
-  <button class="back-btn" onclick="goMain()">← Terug</button>
-  <p style="font-size:0.75rem;font-weight:800;color:var(--pink-dark);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:0.75rem;">Rekenen tot 20 — kies je oefening(en)</p>
-  <div class="fase-header">Fase A — Zonder brug</div>
-  <button class="step-btn" data-step="20-1" onclick="toggleStep(this)">
-    <div class="step-badge">1</div>
-    <div class="step-info">
-      <div class="step-name">Getalopbouw: T + E <span class="tag tag-zonder">zonder brug</span></div>
-      <div class="step-desc">Een getal splitsen in tientallen en eenheden</div>
-      <div class="step-ex">10 + 4 = 14 | 14 - 4 = 10 | 14 - 10 = 4</div>
-    </div>
-  </button>
-  <button class="step-btn" data-step="20-2" onclick="toggleStep(this)">
-    <div class="step-badge">2</div>
-    <div class="step-info">
-      <div class="step-name">TE ± E (zonder brug) <span class="tag tag-zonder">zonder brug</span></div>
-      <div class="step-desc">Tiental blijft staan, alleen de eenheden veranderen</div>
-      <div class="step-ex">13 + 4 → hoeveel is 3 + 4? | 19 - 2 → hoeveel is 9 - 2?</div>
-    </div>
-  </button>
-  <div class="fase-header">Fase B — Met brug over het tiental</div>
-  <button class="step-btn" data-step="20-3" onclick="toggleStep(this)">
-    <div class="step-badge">3</div>
-    <div class="step-info">
-      <div class="step-name">Brug bij optellen: E + E = TE <span class="tag tag-met">met brug</span></div>
-      <div class="step-desc">Splits de 2de term:  tot 10 (geel) + rest (groen)</div>
-      <div class="step-ex">9 + 4: splits 4 in 1+3 → 9+1=10 → 10+3=13</div>
-    </div>
-  </button>
-  <button class="step-btn" data-step="20-4" onclick="toggleStep(this)">
-    <div class="step-badge">4</div>
-    <div class="step-info">
-      <div class="step-name">Brug bij aftrekken: TE - E = E <span class="tag tag-met">met brug</span></div>
-      <div class="step-desc">Terug naar 10 (geel), dan de rest eraf (groen)</div>
-      <div class="step-ex">14 - 6: splits 6 in 4+2 → 14-4=10 → 10-2=8</div>
-    </div>
-  </button>
-  <div class="fase-header">Fase C — Automatiseren</div>
-  <button class="step-btn" data-step="20-5" onclick="toggleStep(this)">
-    <div class="step-badge">★</div>
-    <div class="step-info">
-      <div class="step-name">Alles door elkaar</div>
-      <div class="step-desc">Alle soorten oefeningen gemengd — voor automatisering</div>
-      <div class="step-ex">13+5 / 8+7 / 16-4 / 13-6 ...</div>
-    </div>
-  </button>
-  <div class="action-row">
-    <button class="btn btn-primary" id="start-20-btn" onclick="startQuiz20()" disabled>Start oefening →</button>
-  </div>
-</div>
+<div class="app" id="main-app" style="display:none">
 
-<!-- KEUZE TOT 100 -->
-<div id="screen-100" class="screen">
-  <button class="back-btn" onclick="goMain()">← Terug</button>
-  <p style="font-size:0.75rem;font-weight:800;color:var(--pink-dark);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:0.75rem;">Rekenen tot 100 — kies je oefening(en)</p>
-  <div class="fase-header">Fase A — Zuivere tientallen</div>
-  <button class="step-btn" data-step="100-1" onclick="toggleStep(this)">
-    <div class="step-badge">1</div>
-    <div class="step-info">
-      <div class="step-name">T + T en T - T <span class="tag tag-zonder">zonder brug</span></div>
-      <div class="step-desc">Analoog: 3+4=7, dus 30+40=70</div>
-      <div class="step-ex">20+50=70 | 80-30=50</div>
+  <!-- NAV BAR -->
+  <div id="nav-bar">
+    <div>
+      <span class="nav-user" id="nav-naam"></span>
+      <span class="nav-badge" id="nav-rol"></span>
     </div>
-  </button>
-  <div class="fase-header">Fase B — Zonder brug</div>
-  <button class="step-btn" data-step="100-2" onclick="toggleStep(this)">
-    <div class="step-badge">2</div>
-    <div class="step-info">
-      <div class="step-name">Getalopbouw: T + E <span class="tag tag-zonder">zonder brug</span></div>
-      <div class="step-desc">Samenstellen en splitsen tot 100</div>
-      <div class="step-ex">40+7=47 | 47-7=40</div>
-    </div>
-  </button>
-  <button class="step-btn" data-step="100-3" onclick="toggleStep(this)">
-    <div class="step-badge">3</div>
-    <div class="step-info">
-      <div class="step-name">TE ± E (zonder brug) <span class="tag tag-zonder">zonder brug</span></div>
-      <div class="step-desc">Alleen eenheden veranderen, tiental blijft staan</div>
-      <div class="step-ex">54+3=57 | 89-5=84</div>
-    </div>
-  </button>
-  <button class="step-btn" data-step="100-4" onclick="toggleStep(this)">
-    <div class="step-badge">4</div>
-    <div class="step-info">
-      <div class="step-name">TE ± T (sprong van tien) <span class="tag tag-zonder">zonder brug</span></div>
-      <div class="step-desc">Springen met tientallen, eenheden blijven gelijk</div>
-      <div class="step-ex">35+20=55 | 76-40=36</div>
-    </div>
-  </button>
-  <div class="fase-header">Fase C — Eerste brug</div>
-  <button class="step-btn" data-step="100-5" onclick="toggleStep(this)">
-    <div class="step-badge">5</div>
-    <div class="step-info">
-      <div class="step-name">TE ± E (met brug) <span class="tag tag-met">met brug</span></div>
-      <div class="step-desc"> tot het volgende tiental met splitsbenen</div>
-      <div class="step-ex">37+5: 37+3=40, dan 40+2=42</div>
-    </div>
-  </button>
-  <div class="fase-header">Fase D — De grote finale (rijgstrategie)</div>
-  <button class="step-btn" data-step="100-6" onclick="toggleStep(this)">
-    <div class="step-badge">6</div>
-    <div class="step-info">
-      <div class="step-name">TE ± TE zonder brug — rijgen <span class="tag tag-zonder">zonder brug</span></div>
-      <div class="step-desc">Tientallen eerst rijgen, dan eenheden erbij</div>
-      <div class="step-ex">34+23: 34+20=54, 54+3=57</div>
-    </div>
-  </button>
-  <button class="step-btn" data-step="100-7" onclick="toggleStep(this)">
-    <div class="step-badge">7</div>
-    <div class="step-info">
-      <div class="step-name">TE ± TE met brug — dubbele brug <span class="tag tag-met">met brug</span></div>
-      <div class="step-desc">Rijgen + brug bij de eenheden</div>
-      <div class="step-ex">48+25: 48+20=68, 68+2=70, 70+3=73</div>
-    </div>
-  </button>
-  <button class="step-btn" data-step="100-8" onclick="toggleStep(this)">
-    <div class="step-badge">★</div>
-    <div class="step-info">
-      <div class="step-name">Alles door elkaar</div>
-      <div class="step-desc">Alle stappen gemengd voor automatisering</div>
-    </div>
-  </button>
-  <div class="action-row">
-    <button class="btn btn-primary" id="start-100-btn" onclick="startQuiz100()" disabled>Start oefening →</button>
+    <button class="nav-out" id="signout-btn">Afmelden</button>
   </div>
-</div>
 
-<!-- QUIZ -->
-<div id="screen-quiz" class="screen">
-  <button class="back-btn" onclick="goBack()">← Andere oefening kiezen</button>
-  <div class="quiz-container">
-    <div class="quiz-header">
-      <span class="quiz-mode-label" id="quiz-mode-label">Stap 1</span>
-      <div class="quiz-progress-wrap">
-        <div class="progress-bar"><div class="progress-fill" id="progress-fill" style="width:0%"></div></div>
-        <div class="progress-text" id="progress-text">0 / 10</div>
+  <div class="header">
+    <span class="iceberg-icon">🧊</span>
+    <h1>IJsbergrekenen</h1>
+    <p>Optellen en aftrekken stap voor stap</p>
+  </div>
+
+  <!-- MODE TABS (oefenen / toets) -->
+  <div class="mode-tabs">
+    <button class="mode-tab active" id="tab-oefen" onclick="setMode('oefenen')">🎯 Oefenen</button>
+    <button class="mode-tab" id="tab-toets" onclick="setMode('toets')">📝 Toets</button>
+  </div>
+
+  <!-- HOOFDMENU -->
+  <div id="screen-main" class="screen active">
+    <p style="font-size:0.75rem;font-weight:800;color:var(--pink-dark);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:0.75rem;">Kies wat je wilt oefenen</p>
+    <div class="choice-grid">
+      <button class="choice-btn" onclick="goTo20()">
+        <span class="btn-icon">🔢</span>
+        <span class="btn-label">Tot 20</span>
+        <span class="btn-sub">Optellen en aftrekken tot 20, met en zonder brug</span>
+      </button>
+      <button class="choice-btn" onclick="goTo100()">
+        <span class="btn-icon">💯</span>
+        <span class="btn-label">Tot 100</span>
+        <span class="btn-sub">Van tientallen tot de dubbele brug — rijgstrategie</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- KEUZE TOT 20 -->
+  <div id="screen-20" class="screen">
+    <button class="back-btn" onclick="goMain()">← Terug</button>
+    <p style="font-size:0.75rem;font-weight:800;color:var(--pink-dark);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:0.75rem;">Rekenen tot 20 — kies je oefening(en)</p>
+    <div class="fase-header">Fase A — Zonder brug</div>
+    <button class="step-btn" data-step="20-1" onclick="toggleStep(this)">
+      <div class="step-badge">1</div>
+      <div class="step-info">
+        <div class="step-name">Getalopbouw: T + E <span class="tag tag-zonder">zonder brug</span></div>
+        <div class="step-desc">Een getal splitsen in tientallen en eenheden</div>
+        <div class="step-ex">10+4=14 | 14-4=10 | 14-10=4</div>
       </div>
-      <span class="score-badge" id="score-badge">✓ 0</span>
+    </button>
+    <button class="step-btn" data-step="20-2" onclick="toggleStep(this)">
+      <div class="step-badge">2</div>
+      <div class="step-info">
+        <div class="step-name">TE ± E (zonder brug) <span class="tag tag-zonder">zonder brug</span></div>
+        <div class="step-desc">Tiental blijft staan, alleen de eenheden veranderen</div>
+        <div class="step-ex">13+4 → hoeveel is 3+4? | 19-2 → hoeveel is 9-2?</div>
+      </div>
+    </button>
+    <div class="fase-header">Fase B — Met brug over het tiental</div>
+    <button class="step-btn" data-step="20-3" onclick="toggleStep(this)">
+      <div class="step-badge">3</div>
+      <div class="step-info">
+        <div class="step-name">Brug bij optellen: E+E=TE <span class="tag tag-met">met brug</span></div>
+        <div class="step-desc">Splits de 2de term: aanvullen tot 10 + rest</div>
+        <div class="step-ex">9+4: splits 4 in 1+3 → 9+1=10 → 10+3=13</div>
+      </div>
+    </button>
+    <button class="step-btn" data-step="20-4" onclick="toggleStep(this)">
+      <div class="step-badge">4</div>
+      <div class="step-info">
+        <div class="step-name">Brug bij aftrekken: TE-E=E <span class="tag tag-met">met brug</span></div>
+        <div class="step-desc">Splits aftrektal in 10+rest → 10 min aftrekker + rest</div>
+        <div class="step-ex">14-9: split 14→10+4 → 10-9=1 → 1+4=5</div>
+      </div>
+    </button>
+    <div class="fase-header">Fase C — Automatiseren</div>
+    <button class="step-btn" data-step="20-5" onclick="toggleStep(this)">
+      <div class="step-badge">★</div>
+      <div class="step-info">
+        <div class="step-name">Alles door elkaar</div>
+        <div class="step-desc">Alle soorten oefeningen gemengd</div>
+        <div class="step-ex">13+5 / 8+7 / 16-4 / 13-6 ...</div>
+      </div>
+    </button>
+    <div class="action-row">
+      <button class="btn btn-primary" id="start-20-btn" onclick="startQuiz20()" disabled>Start →</button>
     </div>
-    <div class="quiz-body" id="quiz-body"></div>
   </div>
-</div>
 
-<!-- RESULTAAT -->
-<div id="screen-result" class="screen">
-  <div class="quiz-container">
-    <div class="result-screen" id="result-content"></div>
+  <!-- KEUZE TOT 100 -->
+  <div id="screen-100" class="screen">
+    <button class="back-btn" onclick="goMain()">← Terug</button>
+    <p style="font-size:0.75rem;font-weight:800;color:var(--pink-dark);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:0.75rem;">Rekenen tot 100 — kies je oefening(en)</p>
+    <div class="fase-header">Fase A — Zuivere tientallen</div>
+    <button class="step-btn" data-step="100-1" onclick="toggleStep(this)">
+      <div class="step-badge">1</div>
+      <div class="step-info">
+        <div class="step-name">T+T en T-T <span class="tag tag-zonder">zonder brug</span></div>
+        <div class="step-desc">Analoog: 3+4=7, dus 30+40=70</div>
+        <div class="step-ex">20+50=70 | 80-30=50</div>
+      </div>
+    </button>
+    <div class="fase-header">Fase B — Zonder brug</div>
+    <button class="step-btn" data-step="100-2" onclick="toggleStep(this)">
+      <div class="step-badge">2</div>
+      <div class="step-info">
+        <div class="step-name">Getalopbouw: T+E <span class="tag tag-zonder">zonder brug</span></div>
+        <div class="step-desc">Samenstellen en splitsen tot 100</div>
+        <div class="step-ex">40+7=47 | 47-7=40</div>
+      </div>
+    </button>
+    <button class="step-btn" data-step="100-3" onclick="toggleStep(this)">
+      <div class="step-badge">3</div>
+      <div class="step-info">
+        <div class="step-name">TE±E (zonder brug) <span class="tag tag-zonder">zonder brug</span></div>
+        <div class="step-desc">Alleen eenheden veranderen</div>
+        <div class="step-ex">54+3=57 | 89-5=84</div>
+      </div>
+    </button>
+    <button class="step-btn" data-step="100-4" onclick="toggleStep(this)">
+      <div class="step-badge">4</div>
+      <div class="step-info">
+        <div class="step-name">TE±T (sprong van tien) <span class="tag tag-zonder">zonder brug</span></div>
+        <div class="step-desc">Springen met tientallen</div>
+        <div class="step-ex">35+20=55 | 76-40=36</div>
+      </div>
+    </button>
+    <div class="fase-header">Fase C — Eerste brug</div>
+    <button class="step-btn" data-step="100-5" onclick="toggleStep(this)">
+      <div class="step-badge">5</div>
+      <div class="step-info">
+        <div class="step-name">TE±E (met brug) <span class="tag tag-met">met brug</span></div>
+        <div class="step-desc">Aanvullen tot volgend tiental / splitsen aftrektal</div>
+        <div class="step-ex">37+5: 37+3=40, 40+2=42 | 43-7: 10-7=3, 3+3=6, 40+6=46</div>
+      </div>
+    </button>
+    <div class="fase-header">Fase D — De grote finale (rijgstrategie)</div>
+    <button class="step-btn" data-step="100-6" onclick="toggleStep(this)">
+      <div class="step-badge">6</div>
+      <div class="step-info">
+        <div class="step-name">TE±TE zonder brug — rijgen <span class="tag tag-zonder">zonder brug</span></div>
+        <div class="step-desc">Tientallen eerst rijgen, dan eenheden</div>
+        <div class="step-ex">34+23: 34+20=54, 54+3=57</div>
+      </div>
+    </button>
+    <button class="step-btn" data-step="100-7" onclick="toggleStep(this)">
+      <div class="step-badge">7</div>
+      <div class="step-info">
+        <div class="step-name">TE±TE met brug — dubbele brug <span class="tag tag-met">met brug</span></div>
+        <div class="step-desc">Rijgen + brug bij de eenheden</div>
+        <div class="step-ex">48+25: 48+20=68, 68+2=70, 70+3=73</div>
+      </div>
+    </button>
+    <button class="step-btn" data-step="100-8" onclick="toggleStep(this)">
+      <div class="step-badge">★</div>
+      <div class="step-info">
+        <div class="step-name">Alles door elkaar</div>
+        <div class="step-desc">Alle stappen gemengd voor automatisering</div>
+      </div>
+    </button>
+    <div class="action-row">
+      <button class="btn btn-primary" id="start-100-btn" onclick="startQuiz100()" disabled>Start →</button>
+    </div>
   </div>
-</div>
+
+  <!-- QUIZ -->
+  <div id="screen-quiz" class="screen">
+    <button class="back-btn" onclick="goBack()">← Andere oefening kiezen</button>
+    <div class="quiz-container">
+      <div class="quiz-header">
+        <span class="quiz-mode-label" id="quiz-mode-label">Stap 1</span>
+        <div class="quiz-progress-wrap">
+          <div class="progress-bar"><div class="progress-fill" id="progress-fill" style="width:0%"></div></div>
+          <div class="progress-text" id="progress-text">0 / 20</div>
+        </div>
+        <span class="score-badge" id="score-badge">✓ 0</span>
+        <span class="toets-badge" id="toets-badge" style="display:none">TOETS</span>
+      </div>
+      <div class="quiz-body" id="quiz-body"></div>
+    </div>
+  </div>
+
+  <!-- RESULTAAT -->
+  <div id="screen-result" class="screen">
+    <div class="quiz-container">
+      <div class="result-screen" id="result-content"></div>
+    </div>
+  </div>
 
 </div><!-- .app -->
+<div class="version">v0.4</div>
 
 <script>
+// ─── FIREBASE ──────────────────────────────────────────────────────────────
+var FB_CONFIG = {
+  apiKey: "AIzaSyCnQDVVAlK6jE-PPUUediRJMTbN0xqrLDE",
+  authDomain: "klaswebsite-database.firebaseapp.com",
+  projectId: "klaswebsite-database"
+};
+firebase.initializeApp(FB_CONFIG);
+var db = firebase.firestore();
+
+// ─── AUTH STATE ────────────────────────────────────────────────────────────
+var CU = null;   // { naam, rol } of null
+var GUEST = false;
+
+function doLogin() {
+  var naam = document.getElementById('login-naam').value.trim().toLowerCase();
+  var code = document.getElementById('login-code').value.trim().toLowerCase();
+  var err  = document.getElementById('login-err');
+  err.style.display = 'none';
+  if (!naam || !code) { err.textContent='Vul naam en code in.'; err.style.display='block'; return; }
+  db.collection('leerlingen').where('code','==',code).get().then(function(snap){
+    if (snap.empty) { err.textContent='Naam of code klopt niet.'; err.style.display='block'; return; }
+    var doc = snap.docs[0].data();
+    if (doc.naam.toLowerCase() !== naam) { err.textContent='Naam of code klopt niet.'; err.style.display='block'; return; }
+    CU = { naam: doc.naam, rol: doc.rol || 'leerling' };
+    GUEST = false;
+    openApp();
+  }).catch(function(){ err.textContent='Verbindingsfout. Probeer opnieuw.'; err.style.display='block'; });
+}
+
+function doGuest() {
+  CU = { naam: 'Gast', rol: 'gast' };
+  GUEST = true;
+  openApp();
+}
+
+function openApp() {
+  document.getElementById('klas-login').style.display = 'none';
+  document.getElementById('main-app').style.display = 'block';
+  document.getElementById('nav-bar').classList.add('show');
+  document.getElementById('nav-naam').textContent = CU.naam;
+  document.getElementById('nav-rol').textContent = CU.rol === 'gast' ? 'Gast' : CU.rol === 'meester' ? 'Meester' : 'Leerling';
+}
+
+document.addEventListener('DOMContentLoaded', function(){
+  document.getElementById('signout-btn').addEventListener('click', function(){
+    CU = null; GUEST = false;
+    document.getElementById('main-app').style.display = 'none';
+    document.getElementById('nav-bar').classList.remove('show');
+    document.getElementById('klas-login').style.display = 'flex';
+    document.getElementById('login-naam').value = '';
+    document.getElementById('login-code').value = '';
+    goMain();
+  });
+  document.getElementById('login-code').addEventListener('keydown', function(e){
+    if (e.key==='Enter') doLogin();
+  });
+});
+
+// ─── SAVE TO FIRESTORE ─────────────────────────────────────────────────────
+function saveToFirestore(resultData) {
+  if (GUEST || !CU || CU.rol==='gast') return;
+  var col = 'ijsberg_toets';
+  var doc = Object.assign({}, resultData, {
+    leerling: CU.naam,
+    timestamp: firebase.firestore.FieldValue.serverTimestamp()
+  });
+  db.collection(col).add(doc);
+  db.collection('toets_registry').add({
+    leerling: CU.naam,
+    vak: 'wiskunde',
+    app: 'IJsbergrekenen',
+    titel: resultData.titel,
+    score: resultData.score,
+    maxScore: resultData.maxScore,
+    pct: Math.round((resultData.score/resultData.maxScore)*100),
+    timestamp: firebase.firestore.FieldValue.serverTimestamp()
+  });
+}
+
+// ─── APP STATE ─────────────────────────────────────────────────────────────
 var selectedSteps = [];
 var currentRange  = 0;
-var quizState     = { questions: [] };
-var TOTAL_QS      = 10;
+var appMode       = 'oefenen'; // 'oefenen' | 'toets'
+var quizState     = { questions:[] };
+var TOTAL_QS      = 20;
 var currentQ      = 0;
 var score         = 0;
-var waitingForNext = false; // true after check, enter → nextQuestion
+var waitingForNext = false;
+var qResults      = []; // per-question log for toets
+var qStartTime    = 0;  // ms timestamp when current question started
+var qHelpUsed     = false; // bolletjes or tussenstappen used this question
 
-// ─── Navigation ────────────────────────────────────────────────────────────
-function goMain(){ selectedSteps=[]; showScreen('screen-main'); }
-function goTo20(){ selectedSteps=[]; updateStartBtn(20); showScreen('screen-20'); }
-function goTo100(){ selectedSteps=[]; updateStartBtn(100); showScreen('screen-100'); }
-function goBack(){ showScreen(currentRange===20?'screen-20':'screen-100'); }
+function setMode(m) {
+  appMode = m;
+  document.getElementById('tab-oefen').classList.toggle('active', m==='oefenen');
+  document.getElementById('tab-toets').classList.toggle('active', m==='toets');
+}
 
-function showScreen(id){
+function goMain() { selectedSteps=[]; showScreen('screen-main'); }
+function goTo20()  { selectedSteps=[]; updateStartBtn(20);  showScreen('screen-20'); }
+function goTo100() { selectedSteps=[]; updateStartBtn(100); showScreen('screen-100'); }
+function goBack()  { showScreen(currentRange===20?'screen-20':'screen-100'); }
+
+function showScreen(id) {
   document.querySelectorAll('.screen').forEach(function(s){s.classList.remove('active');});
   document.getElementById(id).classList.add('active');
   window.scrollTo(0,0);
 }
 
-function toggleStep(btn){
-  var step=btn.getAttribute('data-step');
-  var idx=selectedSteps.indexOf(step);
-  if(idx===-1){selectedSteps.push(step);btn.classList.add('selected');btn.querySelector('.step-badge').style.cssText='background:var(--pink);color:white';}
-  else{selectedSteps.splice(idx,1);btn.classList.remove('selected');btn.querySelector('.step-badge').style.cssText='';}
+function toggleStep(btn) {
+  var step = btn.getAttribute('data-step');
+  var idx  = selectedSteps.indexOf(step);
+  if (idx===-1){ selectedSteps.push(step); btn.classList.add('selected'); btn.querySelector('.step-badge').style.cssText='background:var(--pink);color:white'; }
+  else { selectedSteps.splice(idx,1); btn.classList.remove('selected'); btn.querySelector('.step-badge').style.cssText=''; }
   updateStartBtn(step.startsWith('20')?20:100);
 }
-function updateStartBtn(r){
-  var has=selectedSteps.some(function(s){return s.startsWith(r+'-');});
-  var b=document.getElementById('start-'+r+'-btn'); if(b) b.disabled=!has;
+function updateStartBtn(r) {
+  var has = selectedSteps.some(function(s){return s.startsWith(r+'-');});
+  var b = document.getElementById('start-'+r+'-btn'); if(b) b.disabled=!has;
 }
 
-// ─── Start quiz ────────────────────────────────────────────────────────────
-function startQuiz20(){
-  currentRange=20; score=0; currentQ=0;
-  var steps=selectedSteps.slice();
-  if(steps.indexOf('20-5')!==-1) steps=['20-1','20-2','20-3','20-4'];
-  var qs=[]; for(var i=0;i<TOTAL_QS;i++) qs.push(makeQ20(steps[i%steps.length]));
-  shuffle(qs); quizState.questions=qs;
-  showScreen('screen-quiz'); renderQuestion();
-}
-function startQuiz100(){
-  currentRange=100; score=0; currentQ=0;
-  var steps=selectedSteps.slice();
-  if(steps.indexOf('100-8')!==-1) steps=['100-1','100-2','100-3','100-4','100-5','100-6','100-7'];
-  var qs=[]; for(var i=0;i<TOTAL_QS;i++) qs.push(makeQ100(steps[i%steps.length]));
-  shuffle(qs); quizState.questions=qs;
-  showScreen('screen-quiz'); renderQuestion();
+// ─── VRAAG GENERATIE ───────────────────────────────────────────────────────
+// Gebruik een deduplicatie-sleutel (q-string + type) om herhalingen te vermijden
+function generateUnique(makeFn, stepsToUse, n) {
+  var used = {};
+  var qs = [];
+  var maxTries = n * 40;
+  var tries = 0;
+  while (qs.length < n && tries < maxTries) {
+    tries++;
+    var step = stepsToUse[qs.length % stepsToUse.length];
+    var q = makeFn(step);
+    var key = q.q.join('') + q.type;
+    if (!used[key]) { used[key]=true; qs.push(q); }
+  }
+  // als niet genoeg unieke: vul aan zonder dedup
+  while (qs.length < n) {
+    qs.push(makeFn(stepsToUse[qs.length % stepsToUse.length]));
+  }
+  shuffle(qs);
+  return qs;
 }
 
-// ─── Vraag generatie ───────────────────────────────────────────────────────
-function makeQ20(step){
-  if(step==='20-1'){
-    var a=pick([11,12,13,14,15,16,17,18,19]);
-    var e=a%10;
-    var v=pick([0,1,2]);
+function startQuiz20() {
+  currentRange=20; score=0; currentQ=0; qResults=[];
+  var steps = selectedSteps.slice();
+  if (steps.indexOf('20-5')!==-1) steps=['20-1','20-2','20-3','20-4'];
+  quizState.questions = generateUnique(makeQ20, steps, TOTAL_QS);
+  quizState.selectedSteps = steps.slice();
+  showScreen('screen-quiz');
+  renderQuestion();
+}
+function startQuiz100() {
+  currentRange=100; score=0; currentQ=0; qResults=[];
+  var steps = selectedSteps.slice();
+  if (steps.indexOf('100-8')!==-1) steps=['100-1','100-2','100-3','100-4','100-5','100-6','100-7'];
+  quizState.questions = generateUnique(makeQ100, steps, TOTAL_QS);
+  quizState.selectedSteps = steps.slice();
+  showScreen('screen-quiz');
+  renderQuestion();
+}
+
+function makeQ20(step) {
+  if (step==='20-1') {
+    var a=pick([11,12,13,14,15,16,17,18,19]), e=a%10, v=pick([0,1,2]);
     if(v===0) return {q:[10,'+',e,'=','?'],a:a,step,type:'simple',bs:{mode:'plus',a:10,b:e}};
     if(v===1) return {q:[a,'-',e,'=','?'],a:10,step,type:'simple',bs:{mode:'min-e',a:a,b:e}};
-    return     {q:[a,'-',10,'=','?'],a:e,step,type:'simple',bs:{mode:'min-10',a:a,b:10}};
+    return {q:[a,'-',10,'=','?'],a:e,step,type:'simple',bs:{mode:'min-10',a:a,b:10}};
   }
-  if(step==='20-2'){
+  if (step==='20-2') {
     if(Math.random()>0.5){
       var base=pick([11,12,13,14,15,16]); var add=pick([1,2,3,4,5,6]);
       while((base%10)+add>=10||base+add>19) add=pick([1,2,3,4]);
@@ -425,40 +616,20 @@ function makeQ20(step){
         bs:{mode:'min-e',a:base,b:sub}};
     }
   }
-  if(step==='20-3'){
+  if (step==='20-3') {
     var pairs=[[7,3],[7,4],[7,5],[7,6],[8,2],[8,3],[8,4],[8,5],[8,6],[9,1],[9,2],[9,3],[9,4],[9,5],[6,4],[6,5],[6,6],[6,7],[6,8]];
-    var p=pick(pairs); var a=p[0],b=p[1],ans=a+b;
-    var geel=10-a, groen=b-geel;
-    return {q:[a,'+',b,'=','?'],a:ans,step,type:'brug-plus',
-      sgeel:geel,sgroen:groen,
-      bs:{mode:'brug-plus',a:a,b:b,geel:geel,groen:groen}};
+    var p=pick(pairs); var a=p[0],b=p[1],ans=a+b, geel=10-a, groen=b-geel;
+    return {q:[a,'+',b,'=','?'],a:ans,step,type:'brug-plus',sgeel:geel,sgroen:groen,bs:{mode:'brug-plus',a:a,b:b,geel:geel,groen:groen}};
   }
-  if(step==='20-4'){
-    // IJsberg-methode: splits het AFTREKTAL in 10 + losse eenheden
-    // 14 - 9: splits 14 → 10 + 4 → stap1: 10 - 9 = 1 (oranje) → stap2: 1 + 4 = 5
-    // Voorwaarde: b > (a%10) zodat er echt een brug is (losse eenheden zijn kleiner dan aftrekker)
-    var paren4=[
-      [11,2],[11,3],[11,4],[11,5],[11,6],[11,7],[11,8],[11,9],
-      [12,3],[12,4],[12,5],[12,6],[12,7],[12,8],[12,9],
-      [13,4],[13,5],[13,6],[13,7],[13,8],[13,9],
-      [14,5],[14,6],[14,7],[14,8],[14,9],
-      [15,6],[15,7],[15,8],[15,9],
-      [16,7],[16,8],[16,9],
-      [17,8],[17,9],
-      [18,9]
-    ];
-    var p4=pick(paren4); var a2=p4[0], b2=p4[1];
-    var ans2=a2-b2;
-    var eenheden4=a2%10;   // losse eenheden van aftrektal (4 in 14)
-    var oranje4=10-b2;     // 10 - aftrekker (uitkomst van stap 1)
-    return {q:[a2,'-',b2,'=','?'], a:ans2, step, type:'aftrek-ijsberg',
-      ag:a2, bg:b2, ee:eenheden4, or:oranje4,
-      bs:{mode:'brug-min',a:a2,b:b2}};
+  if (step==='20-4') {
+    var paren4=[[11,2],[11,3],[11,4],[11,5],[11,6],[11,7],[11,8],[11,9],[12,3],[12,4],[12,5],[12,6],[12,7],[12,8],[12,9],[13,4],[13,5],[13,6],[13,7],[13,8],[13,9],[14,5],[14,6],[14,7],[14,8],[14,9],[15,6],[15,7],[15,8],[15,9],[16,7],[16,8],[16,9],[17,8],[17,9],[18,9]];
+    var p4=pick(paren4); var a2=p4[0],b2=p4[1];
+    return {q:[a2,'-',b2,'=','?'],a:a2-b2,step,type:'aftrek-ijsberg',ag:a2,bg:b2,ee:a2%10,or:10-b2,bs:{mode:'brug-min',a:a2,b:b2}};
   }
   return makeQ20(pick(['20-1','20-2','20-3','20-4']));
 }
 
-function makeQ100(step){
+function makeQ100(step) {
   if(step==='100-1'){
     var ts=[10,20,30,40,50,60,70,80]; var a=pick(ts);
     if(Math.random()>0.5){var b=pick(ts.filter(function(t){return t+a<=100;}));
@@ -467,18 +638,18 @@ function makeQ100(step){
       return {q:[a,'-',b,'=','?'],a:a-b,step,type:'ts-simple',ts:{lbl:'Analogie: '+(a/10)+' - '+(b/10)+' = '+(a/10-b/10),f:a+' - '+b,ans:a-b}};}
   }
   if(step==='100-2'){
-    var t=pick([20,30,40,50,60,70]); var e=pick([1,2,3,4,5,6,7,8,9]); var c=t+e; var v=pick([0,1,2]);
+    var t=pick([20,30,40,50,60,70]),e=pick([1,2,3,4,5,6,7,8,9]),c=t+e,v=pick([0,1,2]);
     if(v===0) return {q:[t,'+',e,'=','?'],a:c,step,type:'simple'};
     if(v===1) return {q:[c,'-',e,'=','?'],a:t,step,type:'simple'};
     return {q:[c,'-',t,'=','?'],a:e,step,type:'simple'};
   }
   if(step==='100-3'){
     if(Math.random()>0.5){
-      var a=pick([21,22,31,33,41,42,51,53,61,62,71,72,81,83]); var b=pick([1,2,3,4,5]);
+      var a=pick([21,22,31,33,41,42,51,53,61,62,71,72,81,83]),b=pick([1,2,3,4,5]);
       while((a%10)+b>=10) b=pick([1,2,3]);
       return {q:[a,'+',b,'=','?'],a:a+b,step,type:'ts-simple',ts:{lbl:'Hoeveel is '+(a%10)+' + '+b+' ?',f:(a%10)+' + '+b,ans:(a%10)+b}};
     } else {
-      var a=pick([23,24,35,36,47,48,56,57,68,69,79,87,88]); var b=pick([1,2,3,4,5,6]);
+      var a=pick([23,24,35,36,47,48,56,57,68,69,79,87,88]),b=pick([1,2,3,4,5,6]);
       while((a%10)-b<0) b=pick([1,2,3]);
       return {q:[a,'-',b,'=','?'],a:a-b,step,type:'ts-simple',ts:{lbl:'Hoeveel is '+(a%10)+' - '+b+' ?',f:(a%10)+' - '+b,ans:(a%10)-b}};
     }
@@ -486,10 +657,10 @@ function makeQ100(step){
   if(step==='100-4'){
     var tens=[10,20,30,40];
     if(Math.random()>0.5){
-      var a=pick([21,23,32,34,41,43,25,36,47]); var b=pick(tens.filter(function(t){return a+t<=99;}));
+      var a=pick([21,23,32,34,41,43,25,36,47]),b=pick(tens.filter(function(t){return a+t<=99;}));
       return {q:[a,'+',b,'=','?'],a:a+b,step,type:'simple'};
     } else {
-      var a=pick([54,63,72,81,67,76,85,56,74]); var b=pick(tens.filter(function(t){return a-t>=10;}));
+      var a=pick([54,63,72,81,67,76,85,56,74]),b=pick(tens.filter(function(t){return a-t>=10;}));
       return {q:[a,'-',b,'=','?'],a:a-b,step,type:'simple'};
     }
   }
@@ -497,36 +668,26 @@ function makeQ100(step){
     if(Math.random()>0.5){
       var a=pick([27,28,36,37,38,46,47,48,56,57,58,67,68,76,77,87]);
       var b=pick([3,4,5,6,7,8,9]); while((a%10)+b<10) b++; while(a+b>99) a=pick([27,28,36,37,38,46,47,48]);
-      var geel=10-(a%10); var nextT=Math.ceil(a/10)*10; var groen=b-geel;
+      var geel=10-(a%10),nextT=Math.ceil(a/10)*10,groen=b-geel;
       return {q:[a,'+',b,'=','?'],a:a+b,step,type:'brug-plus',sgeel:geel,sgroen:groen,midT:nextT};
     } else {
-      // IJsberg-methode: splits aftrektal TE in T + E
-      // 43-7: split 43→40+3 → 10-7=3 (oranje) → 3+3=6 → 40+6=46
+      // IJsberg aftrekken: splits aftrektal TE in T+E → 10-b=or, or+e, T+result
       var kandidaten=[];
       var apool=[32,33,41,42,43,51,52,53,61,62,63,71,72,73,81,82,83,91,92];
-      for(var _i=0;_i<apool.length;_i++){
-        var _a=apool[_i]; var _e=_a%10; var _t=_a-_e;
-        for(var _b=2;_b<=9;_b++){
-          if(_b>_e && 10-_b>=0 && _a-_b>=1) kandidaten.push([_a,_b]);
-        }
-      }
-      var k5=pick(kandidaten); var a=k5[0],b=k5[1];
-      var eenheden5=a%10; var tiental5=a-eenheden5;
-      var oranje5=10-b;
-      return {q:[a,'-',b,'=','?'],a:a-b,step,type:'aftrek-ijsberg-100',
-        ag:a,bg:b,ee:eenheden5,or:oranje5,tien:tiental5,
-        bs:{mode:'brug-min',a:a,b:b}};
+      for(var _i=0;_i<apool.length;_i++){var _a=apool[_i],_e=_a%10,_t=_a-_e; for(var _b=2;_b<=9;_b++){if(_b>_e&&10-_b>=0&&_a-_b>=1) kandidaten.push([_a,_b]);}}
+      var k5=pick(kandidaten),a=k5[0],b=k5[1];
+      return {q:[a,'-',b,'=','?'],a:a-b,step,type:'aftrek-ijsberg-100',ag:a,bg:b,ee:a%10,or:10-b,tien:a-(a%10)};
     }
   }
   if(step==='100-6'){
     if(Math.random()>0.5){
-      var a=pick([21,23,32,34,41,43,22,31]); var bT=pick([10,20,30]); var bE=pick([1,2,3,4]);
+      var a=pick([21,23,32,34,41,43,22,31]),bT=pick([10,20,30]),bE=pick([1,2,3,4]);
       while((a%10)+bE>=10) bE=pick([1,2,3]); while(a+bT+bE>99) bT=10; var b=bT+bE;
       return {q:[a,'+',b,'=','?'],a:a+b,step,type:'rij',
         ts1:{lbl:'Tientallen erbij:',f:a+' + '+bT+' =',ans:a+bT},
         ts2:{lbl:'Eenheden erbij:',f:(a+bT)+' + '+bE+' =',ans:a+b}};
     } else {
-      var a=pick([54,63,72,65,74,83,57,76,85,67]); var bT=pick([10,20,30]); var bE=pick([1,2,3,4]);
+      var a=pick([54,63,72,65,74,83,57,76,85,67]),bT=pick([10,20,30]),bE=pick([1,2,3,4]);
       while((a%10)<bE) bE=pick([1,2,3]); while(a-bT-bE<10) bT=10; var b=bT+bE;
       return {q:[a,'-',b,'=','?'],a:a-b,step,type:'rij',
         ts1:{lbl:'Tientallen eraf:',f:a+' - '+bT+' =',ans:a-bT},
@@ -536,15 +697,15 @@ function makeQ100(step){
   if(step==='100-7'){
     if(Math.random()>0.5){
       var combos=[[38,25],[47,26],[36,28],[58,24],[27,35],[48,35],[37,46],[29,43],[56,27],[38,34]];
-      var c=pick(combos); var a=c[0],b=c[1],ans=a+b;
+      var c=pick(combos),a=c[0],b=c[1],ans=a+b;
       var bT=Math.floor(b/10)*10,bE=b%10,mid=a+bT,aanvul=10-(mid%10),brugT=mid+aanvul,rest=bE-aanvul;
       return {q:[a,'+',b,'=','?'],a:ans,step,type:'rij',
         ts1:{lbl:'Tientallen erbij:',f:a+' + '+bT+' =',ans:mid},
-        ts2:{lbl:' tot tiental:',f:mid+' + '+aanvul+' =',ans:brugT},
+        ts2:{lbl:'Aanvullen tot tiental:',f:mid+' + '+aanvul+' =',ans:brugT},
         ts3:{lbl:'Rest erbij:',f:brugT+' + '+rest+' =',ans:ans}};
     } else {
       var combos=[[72,35],[63,27],[85,36],[54,28],[83,47],[74,38],[92,45],[61,34],[53,26],[81,46]];
-      var c=pick(combos); var a=c[0],b=c[1],ans=a-b;
+      var c=pick(combos),a=c[0],b=c[1],ans=a-b;
       var bT=Math.floor(b/10)*10,bE=b%10,mid=a-bT,terugE=mid%10,prevT=Math.floor(mid/10)*10,rest=bE-terugE;
       return {q:[a,'-',b,'=','?'],a:ans,step,type:'rij',
         ts1:{lbl:'Tientallen eraf:',f:a+' - '+bT+' =',ans:mid},
@@ -555,103 +716,59 @@ function makeQ100(step){
   return makeQ100('100-1');
 }
 
-// ─── 10-structuur bolletjes ────────────────────────────────────────────────
-// Bouwt een visuele 10-structuur (blokjes van 2×5) voor een getal.
-// Elke 10 = één blokje. Binnen het blokje 2 rijen van 5.
-// kleurFn(idx) → css-klasse per bolletje
-function buildBolletjes(total, kleurFn){
+// ─── BOLLETJES ─────────────────────────────────────────────────────────────
+function buildBolletjes(total, kleurFn) {
   var html='<div class="tien-structuur-wrap">';
-  var aantalBlokken = Math.ceil(total/10);
-  for(var blok=0; blok<aantalBlokken; blok++){
+  var blokken=Math.ceil(total/10);
+  for(var bl=0;bl<blokken;bl++){
     html+='<div class="tien-blok10">';
-    for(var pos=0; pos<10; pos++){
-      var globalIdx = blok*10+pos;
-      if(globalIdx>=total){ html+='<div class="bol bol-leeg"></div>'; }
-      else { html+='<div class="bol '+kleurFn(globalIdx)+'"></div>'; }
+    for(var pos=0;pos<10;pos++){
+      var gi=bl*10+pos;
+      html+='<div class="bol '+(gi>=total?'bol-leeg':kleurFn(gi))+'"></div>';
     }
     html+='</div>';
   }
-  html+='</div>';
-  return html;
+  return html+'</div>';
 }
-
-function bolletjesVoorQ(q){
+function bolletjesVoorQ(q) {
   if(!q.bs) return '';
   var bs=q.bs;
-  if(bs.mode==='plus'){
-    // a blauwe + b groene knipperende
-    var totaal = bs.a + bs.b;
-    return buildBolletjes(totaal, function(i){
-      if(i < bs.a) return 'bol-blauw';
-      return 'bol-groen-knip';
-    });
-  }
-  if(bs.mode==='min-e' || bs.mode==='min-10'){
-    // a bolletjes waarvan de laatste b rood knipperen
-    var a=bs.a, b=bs.b;
-    return buildBolletjes(a, function(i){
-      if(i >= a-b) return 'bol-rood-knip';
-      return 'bol-blauw';
-    });
-  }
-  if(bs.mode==='brug-plus'){
-    // a blauw + geel (aanvulling tot 10) + groen (rest)
-    var a=bs.a, geel=bs.geel, groen=bs.groen;
-    var totaal=a+geel+groen;
-    return buildBolletjes(totaal, function(i){
-      if(i<a) return 'bol-blauw';
-      if(i<a+geel) return 'bol-groen-knip'; // geel knippert ook groen (aanvulling)
-      return 'bol-groen-knip';
-    });
-  }
-  if(bs.mode==='brug-min'){
-    // a bolletjes: de laatste (geel+groen) = b zijn rood
-    var a=bs.a, b=bs.b;
-    return buildBolletjes(a, function(i){
-      if(i>=a-b) return 'bol-rood-knip';
-      return 'bol-blauw';
-    });
-  }
-  // fallback: toon de totale waarde blauw
-  var totaal = q.q[0]; // eerste getal
-  return buildBolletjes(totaal, function(){ return 'bol-blauw'; });
+  if(bs.mode==='plus') return buildBolletjes(bs.a+bs.b, function(i){return i<bs.a?'bol-blauw':'bol-groen-knip';});
+  if(bs.mode==='min-e'||bs.mode==='min-10') return buildBolletjes(bs.a, function(i){return i>=bs.a-bs.b?'bol-rood-knip':'bol-blauw';});
+  if(bs.mode==='brug-plus'){var a=bs.a; return buildBolletjes(a+bs.b, function(i){return i<a?'bol-blauw':'bol-groen-knip';});}
+  if(bs.mode==='brug-min') return buildBolletjes(bs.a, function(i){return i>=bs.a-bs.b?'bol-rood-knip':'bol-blauw';});
+  return buildBolletjes(q.q[0], function(){return 'bol-blauw';});
 }
 
-// ─── Render vraag ──────────────────────────────────────────────────────────
-function renderQuestion(){
-  if(currentQ >= quizState.questions.length){ showResult(); return; }
-  var q = quizState.questions[currentQ];
-  waitingForNext = false;
+// ─── RENDER VRAAG ──────────────────────────────────────────────────────────
+function renderQuestion() {
+  if(currentQ>=quizState.questions.length){showResult();return;}
+  var q=quizState.questions[currentQ];
+  waitingForNext=false; qHelpUsed=false; qStartTime=Date.now();
 
   var pct=Math.round((currentQ/quizState.questions.length)*100);
   document.getElementById('progress-fill').style.width=pct+'%';
   document.getElementById('progress-text').textContent=currentQ+' / '+quizState.questions.length;
   document.getElementById('score-badge').textContent='✓ '+score;
+  document.getElementById('toets-badge').style.display = appMode==='toets'?'inline-block':'none';
 
-  var stepNames={'20-1':'Stap 1 — Getalopbouw','20-2':'Stap 2 — TE ± E zonder brug','20-3':'Stap 3 — Brug bij optellen','20-4':'Stap 4 — Brug bij aftrekken','100-1':'Stap 1 — T ± T','100-2':'Stap 2 — Getalopbouw','100-3':'Stap 3 — TE ± E zonder brug','100-4':'Stap 4 — TE ± T','100-5':'Stap 5 — TE ± E met brug','100-6':'Stap 6 — TE ± TE rijgen','100-7':'Stap 7 — Dubbele brug'};
+  var stepNames={'20-1':'Stap 1 — Getalopbouw','20-2':'Stap 2 — TE±E zonder brug','20-3':'Stap 3 — Brug optellen','20-4':'Stap 4 — Brug aftrekken','100-1':'Stap 1 — T±T','100-2':'Stap 2 — Getalopbouw','100-3':'Stap 3 — TE±E zonder brug','100-4':'Stap 4 — TE±T','100-5':'Stap 5 — TE±E met brug','100-6':'Stap 6 — TE±TE rijgen','100-7':'Stap 7 — Dubbele brug'};
   document.getElementById('quiz-mode-label').textContent=stepNames[q.step]||q.step;
 
   var hasBol = !!q.bs;
   var hasTs  = q.type!=='simple' && q.step!=='20-1';
 
   var html='';
-
-  // Toggle strip
   html+='<div class="toggle-strip">';
   if(hasBol) html+='<div class="toggle-item"><span class="toggle-label">Bolletjes</span><label class="toggle-switch"><input type="checkbox" id="tog-bol" onchange="togBol()"/><span class="toggle-knob"></span></label></div>';
   if(hasTs)  html+='<div class="toggle-item"><span class="toggle-label">Tussenstappen</span><label class="toggle-switch"><input type="checkbox" id="tog-ts" onchange="togTs()"/><span class="toggle-knob"></span></label></div>';
+  if(appMode==='toets') html+='<span class="half-punt-note">⚠ Hulp = ½ punt</span>';
   html+='</div>';
 
-  // Bolletjes (hidden)
   if(hasBol) html+='<div id="bolletjes-area" style="display:none">'+bolletjesVoorQ(q)+'</div>';
-
-  // Opgave
   html+='<div class="sum-display">'+buildSumParts(q.q)+'</div>';
+  if(hasTs)  html+='<div id="ts-area" style="display:none">'+buildTs(q)+'</div>';
 
-  // Tussenstappen (hidden)
-  if(hasTs) html+='<div id="ts-area" style="display:none">'+buildTs(q)+'</div>';
-
-  // Feedback + acties
   html+='<div class="fb" id="fb"></div>';
   html+='<div class="quiz-actions">';
   html+='<button class="btn btn-primary" id="check-btn" onclick="checkAnswer()">Controleer</button>';
@@ -659,7 +776,7 @@ function renderQuestion(){
   html+='</div>';
 
   document.getElementById('quiz-body').innerHTML=html;
-  setTimeout(function(){ var i=document.getElementById('answer-input'); if(i) i.focus(); },60);
+  setTimeout(function(){var i=document.getElementById('answer-input');if(i)i.focus();},60);
 }
 
 function buildSumParts(parts){
@@ -673,29 +790,18 @@ function buildSumParts(parts){
 
 function buildTs(q){
   var html='';
-  // Splitsbeen types
   if(q.type==='brug-plus'||q.type==='brug-min'){
-    var isPlus = q.type==='brug-plus';
-    var a=q.q[0], b=q.q[2];
-    var midT = q.midT || (isPlus ? 10 : 10);
-    html+='<div class="ts-area">';
-    html+='<div class="ts-title">Splits '+b+' in twee delen</div>';
-    // Splitsbeen figuur
+    var isPlus=q.type==='brug-plus', a=q.q[0],b=q.q[2], midT=q.midT||(isPlus?10:10);
+    html+='<div class="ts-area"><div class="ts-title">Splits '+b+' in twee delen</div>';
     html+='<div class="splitsbeen-wrap"><div class="splitsbeen">';
     html+='<div class="sb-top">'+b+'</div>';
-    html+='<div class="sb-lines"><svg viewBox="0 0 140 34" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M70 0 L28 34" stroke="#e8547a" stroke-width="2.5" stroke-dasharray="5 3"/><path d="M70 0 L112 34" stroke="#4caf6e" stroke-width="2.5" stroke-dasharray="5 3"/></svg></div>';
+    html+='<div class="sb-lines"><svg viewBox="0 0 140 34" fill="none"><path d="M70 0 L28 34" stroke="#e8547a" stroke-width="2.5" stroke-dasharray="5 3"/><path d="M70 0 L112 34" stroke="#4caf6e" stroke-width="2.5" stroke-dasharray="5 3"/></svg></div>';
     html+='<div class="sb-bottom">';
-    html+='<div class="sb-box">';
-    html+='<input class="sb-input kleur-geel" id="sb-geel" type="number" autocomplete="off" placeholder="?" onkeydown="sbKey(event,\'geel\')"/>';
-    if(isPlus) html+='<div class="sb-label"> '+a+' aanvullen<br>tot volgende tiental</div>';
-    else       html+='<div class="sb-label">terug naar<br>tiental</div>';
-    html+='</div>';
-    html+='<div class="sb-box">';
-    html+='<input class="sb-input kleur-groen" id="sb-groen" type="number" autocomplete="off" placeholder="?" disabled onkeydown="sbKey(event,\'groen\')"/>';
-    html+='<div class="sb-label">rest</div>';
-    html+='</div>';
-    html+='</div></div></div>'; // sb-bottom / splitsbeen / wrap
-    // Brug stappen (vergrendeld tot splitsbeen klaar)
+    html+='<div class="sb-box"><input class="sb-input kleur-geel" id="sb-geel" type="number" autocomplete="off" placeholder="?" onkeydown="sbKey(event,\'geel\')"/>';
+    html+='<div class="sb-label">'+(isPlus?'tot tiental aanvullen':'terug naar tiental')+'</div></div>';
+    html+='<div class="sb-box"><input class="sb-input kleur-groen" id="sb-groen" type="number" autocomplete="off" placeholder="?" disabled onkeydown="sbKey(event,\'groen\')"/>';
+    html+='<div class="sb-label">rest</div></div>';
+    html+='</div></div></div>';
     html+='<div id="brug-blok" class="brug-blok brug-locked">';
     if(isPlus){
       html+='<div class="brug-stap"><span class="brug-lbl">'+a+' + <span style="color:var(--yellow-dark);font-weight:900">[geel]</span> =</span><span class="brug-res">'+midT+'</span></div>';
@@ -706,343 +812,313 @@ function buildTs(q){
     }
     html+='<input class="brug-inp" id="brug-ans" type="number" autocomplete="off" placeholder="?" disabled onkeydown="brugAnsKey(event)"/>';
     html+='<button class="btn btn-primary brug-ok" id="brug-ok" onclick="checkBrugAns()" disabled>OK</button>';
-    html+='</div></div>'; // brug-stap / brug-blok
-    html+='</div>'; // ts-area
+    html+='</div></div></div>';
   }
-  // Aftrekken met brug - ijsberg methode (tot 20: stap 4, tot 100: stap 5 aftrek)
   else if(q.type==='aftrek-ijsberg'||q.type==='aftrek-ijsberg-100'){
-    var a=q.ag, b=q.bg, ee=q.ee, or=q.or;
-    html+='<div class="ts-area">';
-    html+='<div class="ts-title">Splits '+a+' in 10 en '+ee+'</div>';
-    // Visuele splitsing: [a] → [10] + [losse eenheden]
+    var a=q.ag,b=q.bg,ee=q.ee,or=q.or;
+    html+='<div class="ts-area"><div class="ts-title">Splits '+a+' in 10 en '+ee+'</div>';
     html+='<div style="display:flex;align-items:center;justify-content:center;gap:0.75rem;margin:0.5rem 0 1rem;flex-wrap:wrap">';
     html+='<div style="font-size:2rem;font-weight:900;padding:0.2rem 0.6rem;border:3px solid var(--pink);border-radius:9px;background:var(--pink-light)">'+a+'</div>';
     html+='<div style="font-size:1.5rem;color:var(--text-muted)">→</div>';
-    html+='<div style="font-size:1.6rem;font-weight:900;padding:0.2rem 0.5rem;border:3px solid #f5a623;border-radius:9px;background:#fef3e2;color:#8a5000">10</div>';
+    html+='<div style="font-size:1.6rem;font-weight:900;padding:0.2rem 0.5rem;border:3px solid var(--orange);border-radius:9px;background:var(--orange-light);color:var(--orange-dark)">10</div>';
     html+='<div style="font-size:1.4rem;color:var(--text-muted)">+</div>';
     html+='<div style="font-size:1.6rem;font-weight:900;padding:0.2rem 0.5rem;border:3px solid var(--green);border-radius:9px;background:var(--green-light);color:var(--green-dark)">'+ee+'</div>';
     html+='</div>';
-    // Stap 1: 10 - b = oranje
     html+='<div class="brug-stap" style="margin-bottom:0.6rem">';
-    html+='<span class="brug-lbl" style="color:#8a5000;font-weight:800">10 − '+b+' =</span>';
-    html+='<input class="brug-inp" id="ij-stap1" type="number" autocomplete="off" placeholder="?" style="border-color:#f5a623;background:#fef3e2" onkeydown="ijStap1Key(event)"/>';
-    html+='<button class="btn btn-primary brug-ok" id="ij-stap1-ok" onclick="checkIjStap1()" style="background:#f5a623;border:none">OK</button>';
+    html+='<span class="brug-lbl" style="color:var(--orange-dark);font-weight:800">10 − '+b+' =</span>';
+    html+='<input class="brug-inp" id="ij-stap1" type="number" autocomplete="off" placeholder="?" style="border-color:var(--orange);background:var(--orange-light)" onkeydown="ijStap1Key(event)"/>';
+    html+='<button class="btn btn-primary brug-ok" id="ij-stap1-ok" onclick="checkIjStap1()" style="background:var(--orange);border:none">OK</button>';
     html+='</div>';
-    // Stap 2: oranje + losse eenheden = antwoord (vergrendeld)
     html+='<div class="brug-stap brug-locked" id="ij-stap2-rij">';
-    html+='<span class="brug-lbl" style="font-weight:800"><span style="color:#8a5000">[oranje]</span> + '+ee+' =</span>';
+    html+='<span class="brug-lbl" style="font-weight:800"><span style="color:var(--orange-dark)">[oranje]</span> + '+ee+' =</span>';
     html+='<input class="brug-inp" id="ij-stap2" type="number" autocomplete="off" placeholder="?" disabled onkeydown="ijStap2Key(event)"/>';
     html+='<button class="btn btn-primary brug-ok" id="ij-stap2-ok" onclick="checkIjStap2()" disabled>OK</button>';
     html+='</div>';
     if(q.type==='aftrek-ijsberg-100'){
-      var tien=q.tien;
-      // Stap 3: tiental + uitkomst stap2 = eindantwoord
       html+='<div class="brug-stap brug-locked" id="ij-stap3-rij" style="margin-top:0.6rem">';
-      html+='<span class="brug-lbl" style="font-weight:800">'+tien+' + <span style="color:var(--green-dark)">[stap 2]</span> =</span>';
+      html+='<span class="brug-lbl" style="font-weight:800">'+q.tien+' + <span style="color:var(--green-dark)">[stap 2]</span> =</span>';
       html+='<input class="brug-inp" id="ij-stap3" type="number" autocomplete="off" placeholder="?" disabled onkeydown="ijStap3Key(event)"/>';
       html+='<button class="btn btn-primary brug-ok" id="ij-stap3-ok" onclick="checkIjStap3()" disabled>OK</button>';
       html+='</div>';
     }
-    html+='</div>'; // ts-area
-  }
-  // Eenvoudige tussenstap
-  else if(q.type==='ts-simple'){
-    html+='<div class="ts-area">';
-    html+=buildTsRow('ts1', q.ts, false);
     html+='</div>';
   }
-  // Rijgen (meerdere ts-rijen)
+  else if(q.type==='ts-simple'){
+    html+='<div class="ts-area">'+buildTsRow('ts1',q.ts,false)+'</div>';
+  }
   else if(q.type==='rij'){
     html+='<div class="ts-area">';
-    if(q.ts1) html+=buildTsRow('ts1', q.ts1, false);
-    if(q.ts2) html+=buildTsRow('ts2', q.ts2, true);
-    if(q.ts3) html+=buildTsRow('ts3', q.ts3, true);
+    if(q.ts1) html+=buildTsRow('ts1',q.ts1,false);
+    if(q.ts2) html+=buildTsRow('ts2',q.ts2,true);
+    if(q.ts3) html+=buildTsRow('ts3',q.ts3,true);
     html+='</div>';
   }
   return html;
 }
 
-function buildTsRow(id, ts, locked){
-  var cls = locked ? 'ts-row ts-locked' : 'ts-row';
-  return '<div class="'+cls+'" id="row-'+id+'">' +
-    '<span class="ts-label">'+ts.lbl+'</span>' +
-    '<span class="ts-form">'+ts.f+' =</span>' +
-    '<input class="ts-inp" id="'+id+'-inp" type="number" autocomplete="off" placeholder="?" '+(locked?'disabled':'')+' onkeydown="tsKey(event,\''+id+'\')" />' +
-    '<button class="btn btn-primary ts-ok" id="'+id+'-ok" onclick="checkTs(\''+id+'\')" '+(locked?'disabled':'')+'>OK</button>' +
+function buildTsRow(id,ts,locked){
+  var cls=locked?'ts-row ts-locked':'ts-row';
+  return '<div class="'+cls+'" id="row-'+id+'">'+
+    '<span class="ts-label">'+ts.lbl+'</span>'+
+    '<span class="ts-form">'+ts.f+' =</span>'+
+    '<input class="ts-inp" id="'+id+'-inp" type="number" autocomplete="off" placeholder="?" '+(locked?'disabled':'')+' onkeydown="tsKey(event,\''+id+'\')" />'+
+    '<button class="btn btn-primary ts-ok" id="'+id+'-ok" onclick="checkTs(\''+id+'\')" '+(locked?'disabled':'')+'>OK</button>'+
     '</div>';
 }
 
-// ─── Toggle bolletjes / tussenstappen ──────────────────────────────────────
+// ─── TOGGLES ───────────────────────────────────────────────────────────────
 function togBol(){
+  qHelpUsed=true;
   var a=document.getElementById('bolletjes-area');
-  if(a) a.style.display = document.getElementById('tog-bol').checked ? 'block' : 'none';
+  if(a) a.style.display=document.getElementById('tog-bol').checked?'block':'none';
 }
 function togTs(){
+  qHelpUsed=true;
   var a=document.getElementById('ts-area');
-  if(a) a.style.display = document.getElementById('tog-ts').checked ? 'block' : 'none';
-  if(document.getElementById('tog-ts').checked){
-    setTimeout(function(){
-      var f=document.querySelector('#ts-area .sb-input:not([disabled]), #ts-area .ts-inp:not([disabled])');
-      if(f) f.focus();
-    },60);
-  }
+  if(a) a.style.display=document.getElementById('tog-ts').checked?'block':'none';
+  if(document.getElementById('tog-ts').checked) setTimeout(function(){
+    var f=document.querySelector('#ts-area .sb-input:not([disabled]),#ts-area .ts-inp:not([disabled]),#ts-area .brug-inp:not([disabled])');
+    if(f) f.focus();
+  },60);
 }
 
-// ─── Tussenstap controle ───────────────────────────────────────────────────
-function tsKey(e,id){ if(e.key==='Enter'){ e.preventDefault(); checkTs(id); } }
-
+// ─── TUSSENSTAP CONTROLES ──────────────────────────────────────────────────
+function tsKey(e,id){if(e.key==='Enter'){e.preventDefault();checkTs(id);}}
 function checkTs(id){
-  var q=quizState.questions[currentQ];
-  var ts= q[id] || q.ts;
-  if(!ts) return;
-  var inp=document.getElementById(id+'-inp');
-  var val=parseInt(inp.value);
-  if(isNaN(val)){ showFb('Vul eerst een getal in!','tip'); return; }
+  var q=quizState.questions[currentQ], ts=q[id]||q.ts; if(!ts) return;
+  var inp=document.getElementById(id+'-inp'), val=parseInt(inp.value);
+  if(isNaN(val)){showFb('Vul eerst een getal in!','tip');return;}
   if(val===ts.ans){
     inp.classList.add('correct'); inp.disabled=true;
-    document.getElementById(id+'-ok').disabled=true;
-    document.getElementById(id+'-ok').style.opacity='0.4';
-    // Volgende rij ontgrendelen
-    var volgende = {ts1:'ts2', ts2:'ts3'}[id];
-    if(volgende && document.getElementById('row-'+volgende)){
-      document.getElementById('row-'+volgende).classList.remove('ts-locked');
-      var ni=document.getElementById(volgende+'-inp'); if(ni){ ni.disabled=false; setTimeout(function(){ni.focus();},60); }
-      var nb=document.getElementById(volgende+'-ok'); if(nb) nb.disabled=false;
-    } else {
-      // Geen volgende → focus antwoord
-      setTimeout(function(){ var i=document.getElementById('answer-input'); if(i) i.focus(); },60);
-    }
+    document.getElementById(id+'-ok').disabled=true; document.getElementById(id+'-ok').style.opacity='0.4';
+    var nxt={ts1:'ts2',ts2:'ts3'}[id];
+    if(nxt&&document.getElementById('row-'+nxt)){
+      document.getElementById('row-'+nxt).classList.remove('ts-locked');
+      var ni=document.getElementById(nxt+'-inp'); if(ni){ni.disabled=false;setTimeout(function(){ni.focus();},60);}
+      var nb=document.getElementById(nxt+'-ok'); if(nb) nb.disabled=false;
+    } else { setTimeout(function(){var i=document.getElementById('answer-input');if(i)i.focus();},60); }
     showFb('Juist! Ga verder.','ok');
   } else {
     inp.classList.add('wrong');
-    setTimeout(function(){ inp.classList.remove('wrong'); inp.value=''; inp.focus(); },700);
+    setTimeout(function(){inp.classList.remove('wrong');inp.value='';inp.focus();},700);
     showFb('Probeer opnieuw.','fout');
   }
 }
 
-// ─── Splitsbeen controle ───────────────────────────────────────────────────
-function sbKey(e, deel){ if(e.key==='Enter'){ e.preventDefault(); checkSb(deel); } }
-
+function sbKey(e,deel){if(e.key==='Enter'){e.preventDefault();checkSb(deel);}}
 function checkSb(deel){
-  var q=quizState.questions[currentQ];
-  var correct = deel==='geel' ? q.sgeel : q.sgroen;
-  var inp=document.getElementById('sb-'+deel);
-  var val=parseInt(inp.value);
-  if(isNaN(val)){ showFb('Vul een getal in!','tip'); return; }
+  var q=quizState.questions[currentQ], correct=deel==='geel'?q.sgeel:q.sgroen;
+  var inp=document.getElementById('sb-'+deel), val=parseInt(inp.value);
+  if(isNaN(val)){showFb('Vul een getal in!','tip');return;}
   if(val===correct){
     inp.classList.add('correct'); inp.disabled=true;
     if(deel==='geel'){
-      // Ontgrendel groen
-      var gi=document.getElementById('sb-groen');
-      gi.disabled=false; setTimeout(function(){ gi.focus(); },60);
+      var gi=document.getElementById('sb-groen'); gi.disabled=false; setTimeout(function(){gi.focus();},60);
       showFb('Juist! Vul nu de rest in.','ok');
     } else {
-      // Ontgrendel brug-blok
-      var bb=document.getElementById('brug-blok');
-      if(bb){ bb.classList.remove('brug-locked'); }
-      var ba=document.getElementById('brug-ans'); if(ba){ ba.disabled=false; setTimeout(function(){ ba.focus(); },60); }
+      var bb=document.getElementById('brug-blok'); if(bb) bb.classList.remove('brug-locked');
+      var ba=document.getElementById('brug-ans'); if(ba){ba.disabled=false;setTimeout(function(){ba.focus();},60);}
       var bok=document.getElementById('brug-ok'); if(bok) bok.disabled=false;
       showFb('Splitsen klaar! Werk nu de brug af.','ok');
     }
   } else {
     inp.classList.add('wrong');
-    var a=q.q[0], b=q.q[2], isPlus=q.type==='brug-plus';
-    var tip = deel==='geel'
-      ? (isPlus ? 'Hoeveel moet erbij om '+a+' tot het volgende tiental te brengen?' : 'Hoeveel moeten we aftrekken om terug naar het tiental te gaan?')
-      : 'Hoeveel is '+b+' - '+q.sgeel+'?';
-    setTimeout(function(){ inp.classList.remove('wrong'); inp.value=''; inp.focus(); },700);
+    var a=q.q[0],b=q.q[2],isPlus=q.type==='brug-plus';
+    var tip=deel==='geel'?(isPlus?'Hoeveel moet erbij om '+a+' tot het volgende tiental te brengen?':'Hoeveel moeten we aftrekken om terug naar het tiental te gaan?'):'Hoeveel is '+b+' - '+q.sgeel+'?';
+    setTimeout(function(){inp.classList.remove('wrong');inp.value='';inp.focus();},700);
     showFb(tip,'fout');
   }
 }
 
-function brugAnsKey(e){ if(e.key==='Enter'){ e.preventDefault(); checkBrugAns(); } }
-
+function brugAnsKey(e){if(e.key==='Enter'){e.preventDefault();checkBrugAns();}}
 function checkBrugAns(){
-  var q=quizState.questions[currentQ];
-  var inp=document.getElementById('brug-ans');
-  var val=parseInt(inp.value);
-  if(isNaN(val)){ showFb('Vul een getal in!','tip'); return; }
+  var q=quizState.questions[currentQ], inp=document.getElementById('brug-ans'), val=parseInt(inp.value);
+  if(isNaN(val)){showFb('Vul een getal in!','tip');return;}
   if(val===q.a){
     inp.classList.add('correct'); inp.disabled=true;
-    var bok=document.getElementById('brug-ok'); if(bok){ bok.disabled=true; bok.style.opacity='0.4'; }
-    // Kopieer naar hoofdantwoord
-    var main=document.getElementById('answer-input');
-    if(main){ main.value=q.a; main.focus(); }
+    var bok=document.getElementById('brug-ok'); if(bok){bok.disabled=true;bok.style.opacity='0.4';}
+    var main=document.getElementById('answer-input'); if(main){main.value=q.a;main.focus();}
     showFb('Brug klaar! Klik nu op Controleer.','ok');
   } else {
     inp.classList.add('wrong');
-    setTimeout(function(){ inp.classList.remove('wrong'); inp.value=''; inp.focus(); },700);
+    setTimeout(function(){inp.classList.remove('wrong');inp.value='';inp.focus();},700);
     showFb('Niet juist, probeer opnieuw.','fout');
   }
 }
 
-// ─── Hoofd-Enter afhandeling ───────────────────────────────────────────────
-// Globale enter-handler: als we wachten op "volgende" → ga naar volgende
-// Als we nog in de opgave bezig zijn → controleer
-function globalEnter(e){
-  if(e.key!=='Enter') return;
-  e.preventDefault();
-  if(waitingForNext){
-    nextQuestion();
+// ─── IJSBERG AFTREK STAPPEN ────────────────────────────────────────────────
+function ijStap1Key(e){if(e.key==='Enter'){e.preventDefault();checkIjStap1();}}
+function ijStap2Key(e){if(e.key==='Enter'){e.preventDefault();checkIjStap2();}}
+function ijStap3Key(e){if(e.key==='Enter'){e.preventDefault();checkIjStap3();}}
+
+function checkIjStap1(){
+  var q=quizState.questions[currentQ], inp=document.getElementById('ij-stap1'), val=parseInt(inp.value);
+  if(isNaN(val)){showFb('Vul een getal in!','tip');return;}
+  if(val===q.or){
+    inp.classList.add('correct'); inp.disabled=true;
+    document.getElementById('ij-stap1-ok').disabled=true; document.getElementById('ij-stap1-ok').style.opacity='0.4';
+    var rij2=document.getElementById('ij-stap2-rij');
+    if(rij2){ rij2.classList.remove('brug-locked'); rij2.querySelector('.brug-lbl').innerHTML='<span style="color:var(--orange-dark);font-weight:900">'+q.or+'</span> + '+q.ee+' ='; }
+    var inp2=document.getElementById('ij-stap2'); if(inp2){inp2.disabled=false;setTimeout(function(){inp2.focus();},60);}
+    var ok2=document.getElementById('ij-stap2-ok'); if(ok2) ok2.disabled=false;
+    showFb('Juist! 10 − '+q.bg+' = '+q.or+'. Ga verder.','ok');
   } else {
-    checkAnswer();
+    inp.classList.add('wrong');
+    setTimeout(function(){inp.classList.remove('wrong');inp.value='';inp.focus();},700);
+    showFb('Niet juist. Hoeveel is 10 − '+q.bg+' ?','fout');
+  }
+}
+function checkIjStap2(){
+  var q=quizState.questions[currentQ], inp=document.getElementById('ij-stap2'), val=parseInt(inp.value);
+  if(isNaN(val)){showFb('Vul een getal in!','tip');return;}
+  var verwacht=(q.type==='aftrek-ijsberg')?q.a:(q.or+q.ee);
+  if(val===verwacht){
+    inp.classList.add('correct'); inp.disabled=true;
+    document.getElementById('ij-stap2-ok').disabled=true; document.getElementById('ij-stap2-ok').style.opacity='0.4';
+    if(q.type==='aftrek-ijsberg'){
+      var main=document.getElementById('answer-input'); if(main){main.value=q.a;main.focus();}
+      showFb('Correct! Klik nu op Controleer.','ok');
+    } else {
+      var rij3=document.getElementById('ij-stap3-rij');
+      if(rij3){ rij3.classList.remove('brug-locked'); rij3.querySelector('.brug-lbl').innerHTML=q.tien+' + <span style="color:var(--green-dark);font-weight:900">'+verwacht+'</span> ='; }
+      var inp3=document.getElementById('ij-stap3'); if(inp3){inp3.disabled=false;setTimeout(function(){inp3.focus();},60);}
+      var ok3=document.getElementById('ij-stap3-ok'); if(ok3) ok3.disabled=false;
+      showFb('Juist! Ga nu naar stap 3.','ok');
+    }
+  } else {
+    inp.classList.add('wrong');
+    setTimeout(function(){inp.classList.remove('wrong');inp.value='';inp.focus();},700);
+    showFb('Niet juist. Hoeveel is '+q.or+' + '+q.ee+' ?','fout');
+  }
+}
+function checkIjStap3(){
+  var q=quizState.questions[currentQ], inp=document.getElementById('ij-stap3'), val=parseInt(inp.value);
+  if(isNaN(val)){showFb('Vul een getal in!','tip');return;}
+  if(val===q.a){
+    inp.classList.add('correct'); inp.disabled=true;
+    document.getElementById('ij-stap3-ok').disabled=true; document.getElementById('ij-stap3-ok').style.opacity='0.4';
+    var main=document.getElementById('answer-input'); if(main){main.value=q.a;main.focus();}
+    showFb('Uitstekend! Klik nu op Controleer.','ok');
+  } else {
+    inp.classList.add('wrong');
+    setTimeout(function(){inp.classList.remove('wrong');inp.value='';inp.focus();},700);
+    showFb('Niet juist. Hoeveel is '+q.tien+' + '+(q.or+q.ee)+' ?','fout');
   }
 }
 
-// Enter op de "volgende"-knop ook ondersteunen via document keydown
-document.addEventListener('keydown', function(e){
+// ─── ENTER AFHANDELING ─────────────────────────────────────────────────────
+function globalEnter(e){
   if(e.key!=='Enter') return;
-  // Alleen als we op het quiz-scherm zitten en wachten op volgende
+  e.preventDefault();
+  if(waitingForNext) nextQuestion(); else checkAnswer();
+}
+document.addEventListener('keydown',function(e){
+  if(e.key!=='Enter') return;
   if(!document.getElementById('screen-quiz').classList.contains('active')) return;
-  // Zorg dat we niet in een tussenstap-input zitten
-  var active = document.activeElement;
-  if(active && (active.classList.contains('ts-inp')||active.classList.contains('sb-input')||active.classList.contains('brug-inp'))) return;
-  if(waitingForNext){
-    e.preventDefault();
-    nextQuestion();
-  }
+  var act=document.activeElement;
+  if(act&&(act.classList.contains('ts-inp')||act.classList.contains('sb-input')||act.classList.contains('brug-inp'))) return;
+  if(waitingForNext){e.preventDefault();nextQuestion();}
 });
 
-// ─── Hoofd controle ────────────────────────────────────────────────────────
+// ─── HOOFD CONTROLE ────────────────────────────────────────────────────────
 function checkAnswer(){
-  if(waitingForNext) return; // al gecontroleerd
+  if(waitingForNext) return;
   var q=quizState.questions[currentQ];
-  var inp=document.getElementById('answer-input');
-  var val=parseInt(inp.value);
-  if(isNaN(val)){ showFb('Vul een getal in!','tip'); return; }
-
+  var inp=document.getElementById('answer-input'), val=parseInt(inp.value);
+  if(isNaN(val)){showFb('Vul een getal in!','tip');return;}
   inp.disabled=true;
   document.getElementById('check-btn').style.display='none';
   document.getElementById('next-btn').style.display='inline-block';
   waitingForNext=true;
 
-  if(val===q.a){
-    inp.classList.add('correct'); score++;
-    document.getElementById('score-badge').textContent='✓ '+score;
-    showFb(pick(['Uitstekend! 🎉','Super goed! ⭐','Bravo! 🌟','Correct! 👍','Perfect! 🏆']),'ok');
+  var tijdMs = Date.now()-qStartTime;
+  var isCorrect = val===q.a;
+  // Bij toets: hulp gebruikt = 0.5 punt max
+  var puntWaarde = (appMode==='toets' && qHelpUsed) ? 0.5 : 1;
+  var puntenVerdiend = isCorrect ? puntWaarde : 0;
+  if(isCorrect) score += puntenVerdiend;
+
+  // Log voor opslag
+  var opgave = q.q.map(function(p){return p==='?'?'_':p;}).join(' ');
+  qResults.push({
+    opgave: opgave,
+    stap: q.step,
+    stapNaam: document.getElementById('quiz-mode-label').textContent,
+    correct: isCorrect,
+    leerlingAntwoord: val,
+    juistAntwoord: q.a,
+    tijdMs: tijdMs,
+    hulpGebruikt: qHelpUsed,
+    punt: puntenVerdiend
+  });
+
+  document.getElementById('score-badge').textContent='✓ '+score;
+  if(isCorrect){
+    inp.classList.add('correct');
+    showFb(pick(['Uitstekend! 🎉','Super goed! ⭐','Bravo! 🌟','Correct! 👍','Perfect! 🏆'])+(qHelpUsed&&appMode==='toets'?' (½ punt — hulp gebruikt)':''),'ok');
   } else {
     inp.classList.add('wrong');
     showFb('Niet helemaal — het antwoord was '+q.a+'.','fout');
   }
 }
 
-function nextQuestion(){
-  currentQ++;
-  renderQuestion();
-}
+function nextQuestion(){ currentQ++; renderQuestion(); }
 
-function showFb(msg,type){
-  var el=document.getElementById('fb'); if(!el) return;
-  el.className='fb '+type; el.textContent=msg;
-}
+function showFb(msg,type){ var el=document.getElementById('fb'); if(!el) return; el.className='fb '+type; el.textContent=msg; }
 
-// ─── Resultaat ─────────────────────────────────────────────────────────────
+// ─── RESULTAAT ─────────────────────────────────────────────────────────────
 function showResult(){
-  var pct=Math.round((score/quizState.questions.length)*100);
-  var emoji=pct>=90?'🏆':pct>=70?'⭐':pct>=50?'👍':'💪';
-  var bericht=pct>=90?'Schitterend gedaan!':pct>=70?'Heel goed!':pct>=50?'Goed bezig, blijf oefenen!':'Oefening baart kunst!';
-  document.getElementById('result-content').innerHTML=
-    '<div class="result-emoji">'+emoji+'</div>'+
-    '<div class="result-score">'+score+' / '+quizState.questions.length+'</div>'+
-    '<div style="font-size:1rem;color:var(--text-muted);margin-top:0.25rem;">'+pct+'% correct</div>'+
-    '<p style="margin:1rem 0 1.5rem;color:var(--text-muted);font-size:0.9rem;font-weight:600">'+bericht+'</p>'+
+  var maxScore = TOTAL_QS; // max 1 per vraag
+  var pct = Math.round((score/maxScore)*100);
+  var emoji = pct>=90?'🏆':pct>=70?'⭐':pct>=50?'👍':'💪';
+  var bericht = pct>=90?'Schitterend gedaan!':pct>=70?'Heel goed!':pct>=50?'Goed bezig, blijf oefenen!':'Oefening baart kunst!';
+
+  // Titel samenstellen
+  var stepNames={'20-1':'Stap 1','20-2':'Stap 2','20-3':'Stap 3','20-4':'Stap 4','100-1':'Stap 1','100-2':'Stap 2','100-3':'Stap 3','100-4':'Stap 4','100-5':'Stap 5','100-6':'Stap 6','100-7':'Stap 7'};
+  var stappenTekst = quizState.selectedSteps.map(function(s){return stepNames[s]||s;}).join(' + ');
+  var titel = 'IJsbergrekenen tot '+currentRange+' — '+stappenTekst;
+
+  // Opslaan indien toets + ingelogd
+  if(appMode==='toets' && !GUEST && CU) {
+    saveToFirestore({
+      titel: titel,
+      bereik: currentRange,
+      stappen: quizState.selectedSteps,
+      score: score,
+      maxScore: maxScore,
+      pct: pct,
+      modus: appMode,
+      opgaven: qResults
+    });
+  }
+
+  var hulpAantal = qResults.filter(function(r){return r.hulpGebruikt;}).length;
+
+  var html = '<div class="result-emoji">'+emoji+'</div>'+
+    '<div style="font-size:0.78rem;color:var(--text-muted);margin-bottom:0.25rem;font-weight:700">'+titel+'</div>'+
+    '<div class="result-score">'+score.toFixed(1)+' / '+maxScore+'</div>'+
+    '<div style="font-size:1rem;color:var(--text-muted);margin-top:0.25rem;">'+pct+'% correct</div>';
+  if(hulpAantal>0) html+='<div style="font-size:0.82rem;color:var(--orange-dark);margin-top:0.4rem;">💡 '+hulpAantal+' keer hulpmiddelen gebruikt</div>';
+  if(appMode==='toets'&&!GUEST&&CU) html+='<div style="font-size:0.78rem;color:var(--green-dark);margin-top:0.3rem;font-weight:700">✓ Resultaten opgeslagen</div>';
+  html+='<p style="margin:1rem 0 1.5rem;color:var(--text-muted);font-size:0.9rem;font-weight:600">'+bericht+'</p>'+
     '<div style="display:flex;gap:0.6rem;justify-content:center;flex-wrap:wrap">'+
-    '<button class="btn btn-primary" onclick="herDoen()">Opnieuw proberen</button>'+
+    '<button class="btn btn-primary" onclick="herDoen()">Opnieuw</button>'+
     '<button class="btn btn-secondary" onclick="goBack()">Andere oefening</button>'+
     '<button class="btn btn-secondary" onclick="goMain()">Hoofdmenu</button>'+
     '</div>';
+
+  document.getElementById('result-content').innerHTML=html;
   showScreen('screen-result');
 }
 
 function herDoen(){
-  score=0; currentQ=0;
+  score=0; currentQ=0; qResults=[];
   if(currentRange===20) startQuiz20(); else startQuiz100();
 }
 
-// ─── IJsberg aftrek tussenstap controles ──────────────────────────────────
-function ijStap1Key(e){ if(e.key==='Enter'){ e.preventDefault(); checkIjStap1(); } }
-function ijStap2Key(e){ if(e.key==='Enter'){ e.preventDefault(); checkIjStap2(); } }
-function ijStap3Key(e){ if(e.key==='Enter'){ e.preventDefault(); checkIjStap3(); } }
-
-function checkIjStap1(){
-  var q=quizState.questions[currentQ];
-  var inp=document.getElementById('ij-stap1');
-  var val=parseInt(inp.value);
-  if(isNaN(val)){ showFb('Vul een getal in!','tip'); return; }
-  if(val===q.or){
-    inp.classList.add('correct'); inp.disabled=true;
-    document.getElementById('ij-stap1-ok').disabled=true;
-    document.getElementById('ij-stap1-ok').style.opacity='0.4';
-    // Ontgrendel stap 2, vervang [oranje] door echte waarde in label
-    var rij2=document.getElementById('ij-stap2-rij');
-    if(rij2){
-      rij2.classList.remove('brug-locked');
-      // Update label: vervang [oranje] door getal
-      rij2.querySelector('.brug-lbl').innerHTML='<span style="color:#8a5000;font-weight:900">'+q.or+'</span> + '+q.ee+' =';
-    }
-    var inp2=document.getElementById('ij-stap2'); if(inp2){ inp2.disabled=false; setTimeout(function(){inp2.focus();},60); }
-    var ok2=document.getElementById('ij-stap2-ok'); if(ok2) ok2.disabled=false;
-    showFb('Juist! '+10+' − '+q.bg+' = '+q.or+'. Ga verder.','ok');
-  } else {
-    inp.classList.add('wrong');
-    setTimeout(function(){ inp.classList.remove('wrong'); inp.value=''; inp.focus(); },700);
-    showFb('Niet juist. Hoeveel is 10 − '+q.bg+' ?','fout');
-  }
-}
-
-function checkIjStap2(){
-  var q=quizState.questions[currentQ];
-  var inp=document.getElementById('ij-stap2');
-  var val=parseInt(inp.value);
-  if(isNaN(val)){ showFb('Vul een getal in!','tip'); return; }
-  // Voor tot-20: verwacht eindantwoord. Voor tot-100: verwacht or+ee
-  var verwacht = (q.type==='aftrek-ijsberg') ? q.a : (q.or + q.ee);
-  if(val===verwacht){
-    inp.classList.add('correct'); inp.disabled=true;
-    document.getElementById('ij-stap2-ok').disabled=true;
-    document.getElementById('ij-stap2-ok').style.opacity='0.4';
-    if(q.type==='aftrek-ijsberg'){
-      // Tot 20: stap 2 = eindantwoord, kopieer naar antwoordveld
-      var main=document.getElementById('answer-input'); if(main){ main.value=q.a; main.focus(); }
-      showFb('Correct! Klik nu op Controleer.','ok');
-    } else {
-      // Tot 100: ontgrendel stap 3
-      var rij3=document.getElementById('ij-stap3-rij');
-      if(rij3){
-        rij3.classList.remove('brug-locked');
-        rij3.querySelector('.brug-lbl').innerHTML=q.tien+' + <span style="color:var(--green-dark);font-weight:900">'+verwacht+'</span> =';
-      }
-      var inp3=document.getElementById('ij-stap3'); if(inp3){ inp3.disabled=false; setTimeout(function(){inp3.focus();},60); }
-      var ok3=document.getElementById('ij-stap3-ok'); if(ok3) ok3.disabled=false;
-      showFb('Juist! Ga nu naar stap 3.','ok');
-    }
-  } else {
-    inp.classList.add('wrong');
-    setTimeout(function(){ inp.classList.remove('wrong'); inp.value=''; inp.focus(); },700);
-    showFb('Niet juist. Hoeveel is '+q.or+' + '+q.ee+' ?','fout');
-  }
-}
-
-function checkIjStap3(){
-  var q=quizState.questions[currentQ];
-  var inp=document.getElementById('ij-stap3');
-  var val=parseInt(inp.value);
-  if(isNaN(val)){ showFb('Vul een getal in!','tip'); return; }
-  if(val===q.a){
-    inp.classList.add('correct'); inp.disabled=true;
-    document.getElementById('ij-stap3-ok').disabled=true;
-    document.getElementById('ij-stap3-ok').style.opacity='0.4';
-    var main=document.getElementById('answer-input'); if(main){ main.value=q.a; main.focus(); }
-    showFb('Uitstekend! Klik nu op Controleer.','ok');
-  } else {
-    inp.classList.add('wrong');
-    setTimeout(function(){ inp.classList.remove('wrong'); inp.value=''; inp.focus(); },700);
-    showFb('Niet juist. Hoeveel is '+q.tien+' + '+(q.or+q.ee)+' ?','fout');
-  }
-}
-
-function pick(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
-function shuffle(a){ for(var i=a.length-1;i>0;i--){ var j=Math.floor(Math.random()*(i+1)); var t=a[i];a[i]=a[j];a[j]=t; } return a; }
+// ─── HULPFUNCTIES ──────────────────────────────────────────────────────────
+function pick(arr){return arr[Math.floor(Math.random()*arr.length)];}
+function shuffle(a){for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=a[i];a[i]=a[j];a[j]=t;}return a;}
 </script>
 </body>
 </html>
