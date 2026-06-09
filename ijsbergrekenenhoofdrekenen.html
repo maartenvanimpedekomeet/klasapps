@@ -226,8 +226,8 @@ body { font-family:'Nunito',sans-serif; background:var(--bg); min-height:100vh; 
     <span style="font-size:2rem;display:block;text-align:center;margin-bottom:0.25rem">🧊</span>
     <h2>IJsbergrekenen</h2>
     <p>Meld je aan om te starten</p>
-    <input class="login-inp" type="text" id="login-naam" placeholder="Naam" autocomplete="off" autocapitalize="off">
-    <input class="login-inp" type="text" id="login-code" placeholder="Code" autocomplete="off" autocapitalize="off">
+    <input class="login-inp" type="text" id="login-naam" placeholder="Naam" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false">
+    <input class="login-inp" type="password" id="login-code" placeholder="Code" autocomplete="new-password" autocapitalize="off">
     <div class="login-err" id="login-err">Naam of code klopt niet. Probeer opnieuw.</div>
     <div class="login-btn-row">
       <button class="btn btn-primary" onclick="doLogin()">Aanmelden</button>
@@ -255,8 +255,8 @@ body { font-family:'Nunito',sans-serif; background:var(--bg); min-height:100vh; 
 
   <!-- MODE TABS (oefenen / toets) -->
   <div class="mode-tabs">
-    <button class="mode-tab active" id="tab-oefen" onclick="setMode('oefenen')">🎯 Oefenen</button>
-    <button class="mode-tab" id="tab-toets" onclick="setMode('toets')">📝 Toets</button>
+    <button class="mode-tab active" id="tab-oefen" onclick="setModeGuard('oefenen')">🎯 Oefenen</button>
+    <button class="mode-tab" id="tab-toets" onclick="setModeGuard('toets')">📝 Toets</button>
   </div>
 
   <!-- HOOFDMENU -->
@@ -429,7 +429,7 @@ body { font-family:'Nunito',sans-serif; background:var(--bg); min-height:100vh; 
   </div>
 
 </div><!-- .app -->
-<div class="version">v0.4</div>
+<div class="version">v0.6</div>
 
 <script>
 // ─── FIREBASE ──────────────────────────────────────────────────────────────
@@ -499,15 +499,24 @@ function saveToFirestore(resultData) {
     timestamp: firebase.firestore.FieldValue.serverTimestamp()
   });
   db.collection(col).add(doc);
+  // Registreer collectie als bekend in dashboard (set+merge op vast doc-ID)
+  db.collection('toets_registry').doc(col).set({
+    naam:       'IJsbergrekenen',
+    collection: col,
+    vak:        'Wiskunde',
+    lastSeen:   firebase.firestore.FieldValue.serverTimestamp()
+  }, { merge: true });
+  // Individueel resultaat voor de feed
   db.collection('toets_registry').add({
-    leerling: CU.naam,
-    vak: 'wiskunde',
-    app: 'IJsbergrekenen',
-    titel: resultData.titel,
-    score: resultData.score,
-    maxScore: resultData.maxScore,
-    pct: Math.round((resultData.score/resultData.maxScore)*100),
-    timestamp: firebase.firestore.FieldValue.serverTimestamp()
+    leerling:   CU.naam,
+    vak:        'Wiskunde',
+    app:        'IJsbergrekenen',
+    titel:      resultData.titel,
+    score:      resultData.score,
+    maxScore:   resultData.maxScore,
+    pct:        Math.round((resultData.score / resultData.maxScore) * 100),
+    collection: col,
+    timestamp:  firebase.firestore.FieldValue.serverTimestamp()
   });
 }
 
@@ -524,6 +533,15 @@ var qResults      = []; // per-question log for toets
 var qStartTime    = 0;  // ms timestamp when current question started
 var qHelpUsed     = false; // bolletjes or tussenstappen used this question
 
+function setModeGuard(m) {
+  // Blokkeer wisselen als een reeks bezig is
+  if(document.getElementById('screen-quiz').classList.contains('active') ||
+     document.getElementById('screen-result').classList.contains('active')) {
+    showFb('Je kunt niet wisselen terwijl je bezig bent.','tip');
+    return;
+  }
+  setMode(m);
+}
 function setMode(m) {
   appMode = m;
   document.getElementById('tab-oefen').classList.toggle('active', m==='oefenen');
@@ -631,11 +649,28 @@ function makeQ20(step) {
 
 function makeQ100(step) {
   if(step==='100-1'){
-    var ts=[10,20,30,40,50,60,70,80]; var a=pick(ts);
-    if(Math.random()>0.5){var b=pick(ts.filter(function(t){return t+a<=100;}));
-      return {q:[a,'+',b,'=','?'],a:a+b,step,type:'ts-simple',ts:{lbl:'Analogie: '+(a/10)+' + '+(b/10)+' = '+(a/10+b/10),f:a+' + '+b,ans:a+b}};}
-    else{var b=pick(ts.filter(function(t){return t<a;}));
-      return {q:[a,'-',b,'=','?'],a:a-b,step,type:'ts-simple',ts:{lbl:'Analogie: '+(a/10)+' - '+(b/10)+' = '+(a/10-b/10),f:a+' - '+b,ans:a-b}};}
+    // Gebruik gecureerde paren om undefined te vermijden
+    if(Math.random()>0.5){
+      // Optellen: kies twee tientallen zodat som <= 100
+      var plusParen=[[10,10],[10,20],[10,30],[10,40],[10,50],[10,60],[10,70],[10,80],[10,90],
+        [20,10],[20,20],[20,30],[20,40],[20,50],[20,60],[20,70],[20,80],
+        [30,10],[30,20],[30,30],[30,40],[30,50],[30,60],[30,70],
+        [40,10],[40,20],[40,30],[40,40],[40,50],[40,60],
+        [50,10],[50,20],[50,30],[50,40],[50,50],
+        [60,10],[60,20],[60,30],[60,40],
+        [70,10],[70,20],[70,30],
+        [80,10],[80,20]];
+      var pp=pick(plusParen),a=pp[0],b=pp[1];
+      return {q:[a,'+',b,'=','?'],a:a+b,step,type:'ts-simple',ts:{lbl:'Analogie: '+(a/10)+' + '+(b/10)+' = '+(a/10+b/10),f:a+' + '+b,ans:a+b}};
+    } else {
+      // Aftrekken: grotere - kleinere tiental
+      var minParen=[[20,10],[30,10],[30,20],[40,10],[40,20],[40,30],
+        [50,10],[50,20],[50,30],[50,40],[60,10],[60,20],[60,30],[60,40],[60,50],
+        [70,10],[70,20],[70,30],[70,40],[70,50],[70,60],
+        [80,10],[80,20],[80,30],[80,40],[80,50],[80,60],[80,70]];
+      var mp=pick(minParen),a=mp[0],b=mp[1];
+      return {q:[a,'-',b,'=','?'],a:a-b,step,type:'ts-simple',ts:{lbl:'Analogie: '+(a/10)+' - '+(b/10)+' = '+(a/10-b/10),f:a+' - '+b,ans:a-b}};
+    }
   }
   if(step==='100-2'){
     var t=pick([20,30,40,50,60,70]),e=pick([1,2,3,4,5,6,7,8,9]),c=t+e,v=pick([0,1,2]);
@@ -676,7 +711,9 @@ function makeQ100(step) {
       var apool=[32,33,41,42,43,51,52,53,61,62,63,71,72,73,81,82,83,91,92];
       for(var _i=0;_i<apool.length;_i++){var _a=apool[_i],_e=_a%10,_t=_a-_e; for(var _b=2;_b<=9;_b++){if(_b>_e&&10-_b>=0&&_a-_b>=1) kandidaten.push([_a,_b]);}}
       var k5=pick(kandidaten),a=k5[0],b=k5[1];
-      return {q:[a,'-',b,'=','?'],a:a-b,step,type:'aftrek-ijsberg-100',ag:a,bg:b,ee:a%10,or:10-b,tien:a-(a%10)};
+      var _tien100=a-(a%10), _or100=_tien100-b;
+      // Antwoord = or + ee = (tien-b) + ee = a-b ✓ Geen stap 3 nodig
+      return {q:[a,'-',b,'=','?'],a:a-b,step,type:'aftrek-ijsberg-100',ag:a,bg:b,ee:a%10,or:_or100,tien:_tien100};
     }
   }
   if(step==='100-6'){
@@ -816,16 +853,19 @@ function buildTs(q){
   }
   else if(q.type==='aftrek-ijsberg'||q.type==='aftrek-ijsberg-100'){
     var a=q.ag,b=q.bg,ee=q.ee,or=q.or;
-    html+='<div class="ts-area"><div class="ts-title">Splits '+a+' in 10 en '+ee+'</div>';
+    var _splitLabel=(q.type==='aftrek-ijsberg-100')?(a+' in '+q.tien+' en '+ee):(a+' in 10 en '+ee);
+    html+='<div class="ts-area"><div class="ts-title">Splits '+_splitLabel+'</div>';
     html+='<div style="display:flex;align-items:center;justify-content:center;gap:0.75rem;margin:0.5rem 0 1rem;flex-wrap:wrap">';
     html+='<div style="font-size:2rem;font-weight:900;padding:0.2rem 0.6rem;border:3px solid var(--pink);border-radius:9px;background:var(--pink-light)">'+a+'</div>';
     html+='<div style="font-size:1.5rem;color:var(--text-muted)">→</div>';
-    html+='<div style="font-size:1.6rem;font-weight:900;padding:0.2rem 0.5rem;border:3px solid var(--orange);border-radius:9px;background:var(--orange-light);color:var(--orange-dark)">10</div>';
+    var _tierLabel=(q.type==='aftrek-ijsberg-100')?q.tien:10;
+    html+='<div style="font-size:1.6rem;font-weight:900;padding:0.2rem 0.5rem;border:3px solid var(--orange);border-radius:9px;background:var(--orange-light);color:var(--orange-dark)">'+_tierLabel+'</div>';
     html+='<div style="font-size:1.4rem;color:var(--text-muted)">+</div>';
     html+='<div style="font-size:1.6rem;font-weight:900;padding:0.2rem 0.5rem;border:3px solid var(--green);border-radius:9px;background:var(--green-light);color:var(--green-dark)">'+ee+'</div>';
     html+='</div>';
+    var _stap1lbl = (q.type==='aftrek-ijsberg-100') ? q.tien+' − '+b : '10 − '+b;
     html+='<div class="brug-stap" style="margin-bottom:0.6rem">';
-    html+='<span class="brug-lbl" style="color:var(--orange-dark);font-weight:800">10 − '+b+' =</span>';
+    html+='<span class="brug-lbl" style="color:var(--orange-dark);font-weight:800">'+_stap1lbl+' =</span>';
     html+='<input class="brug-inp" id="ij-stap1" type="number" autocomplete="off" placeholder="?" style="border-color:var(--orange);background:var(--orange-light)" onkeydown="ijStap1Key(event)"/>';
     html+='<button class="btn btn-primary brug-ok" id="ij-stap1-ok" onclick="checkIjStap1()" style="background:var(--orange);border:none">OK</button>';
     html+='</div>';
@@ -834,13 +874,7 @@ function buildTs(q){
     html+='<input class="brug-inp" id="ij-stap2" type="number" autocomplete="off" placeholder="?" disabled onkeydown="ijStap2Key(event)"/>';
     html+='<button class="btn btn-primary brug-ok" id="ij-stap2-ok" onclick="checkIjStap2()" disabled>OK</button>';
     html+='</div>';
-    if(q.type==='aftrek-ijsberg-100'){
-      html+='<div class="brug-stap brug-locked" id="ij-stap3-rij" style="margin-top:0.6rem">';
-      html+='<span class="brug-lbl" style="font-weight:800">'+q.tien+' + <span style="color:var(--green-dark)">[stap 2]</span> =</span>';
-      html+='<input class="brug-inp" id="ij-stap3" type="number" autocomplete="off" placeholder="?" disabled onkeydown="ijStap3Key(event)"/>';
-      html+='<button class="btn btn-primary brug-ok" id="ij-stap3-ok" onclick="checkIjStap3()" disabled>OK</button>';
-      html+='</div>';
-    }
+    // Stap 3 niet nodig: or + ee = eindantwoord
     html+='</div>';
   }
   else if(q.type==='ts-simple'){
@@ -949,7 +983,7 @@ function checkBrugAns(){
 // ─── IJSBERG AFTREK STAPPEN ────────────────────────────────────────────────
 function ijStap1Key(e){if(e.key==='Enter'){e.preventDefault();checkIjStap1();}}
 function ijStap2Key(e){if(e.key==='Enter'){e.preventDefault();checkIjStap2();}}
-function ijStap3Key(e){if(e.key==='Enter'){e.preventDefault();checkIjStap3();}}
+// ijStap3Key verwijderd — stap 3 niet meer nodig
 
 function checkIjStap1(){
   var q=quizState.questions[currentQ], inp=document.getElementById('ij-stap1'), val=parseInt(inp.value);
@@ -961,48 +995,32 @@ function checkIjStap1(){
     if(rij2){ rij2.classList.remove('brug-locked'); rij2.querySelector('.brug-lbl').innerHTML='<span style="color:var(--orange-dark);font-weight:900">'+q.or+'</span> + '+q.ee+' ='; }
     var inp2=document.getElementById('ij-stap2'); if(inp2){inp2.disabled=false;setTimeout(function(){inp2.focus();},60);}
     var ok2=document.getElementById('ij-stap2-ok'); if(ok2) ok2.disabled=false;
-    showFb('Juist! 10 − '+q.bg+' = '+q.or+'. Ga verder.','ok');
+    var _s1lbl2=(q.type==='aftrek-ijsberg-100')?q.tien:10;
+    showFb('Juist! '+_s1lbl2+' − '+q.bg+' = '+q.or+'. Ga verder.','ok');
   } else {
     inp.classList.add('wrong');
     setTimeout(function(){inp.classList.remove('wrong');inp.value='';inp.focus();},700);
-    showFb('Niet juist. Hoeveel is 10 − '+q.bg+' ?','fout');
+    var _s1lbl3=(q.type==='aftrek-ijsberg-100')?q.tien:10;
+    showFb('Niet juist. Hoeveel is '+_s1lbl3+' − '+q.bg+' ?','fout');
   }
 }
 function checkIjStap2(){
   var q=quizState.questions[currentQ], inp=document.getElementById('ij-stap2'), val=parseInt(inp.value);
   if(isNaN(val)){showFb('Vul een getal in!','tip');return;}
-  var verwacht=(q.type==='aftrek-ijsberg')?q.a:(q.or+q.ee);
+  // Stap 2 = eindantwoord voor beide types (tot 20: or+ee=q.a, tot 100: or+ee=q.a)
+  var verwacht = q.or + q.ee; // = q.a in beide gevallen
   if(val===verwacht){
     inp.classList.add('correct'); inp.disabled=true;
-    document.getElementById('ij-stap2-ok').disabled=true; document.getElementById('ij-stap2-ok').style.opacity='0.4';
-    if(q.type==='aftrek-ijsberg'){
-      var main=document.getElementById('answer-input'); if(main){main.value=q.a;main.focus();}
-      showFb('Correct! Klik nu op Controleer.','ok');
-    } else {
-      var rij3=document.getElementById('ij-stap3-rij');
-      if(rij3){ rij3.classList.remove('brug-locked'); rij3.querySelector('.brug-lbl').innerHTML=q.tien+' + <span style="color:var(--green-dark);font-weight:900">'+verwacht+'</span> ='; }
-      var inp3=document.getElementById('ij-stap3'); if(inp3){inp3.disabled=false;setTimeout(function(){inp3.focus();},60);}
-      var ok3=document.getElementById('ij-stap3-ok'); if(ok3) ok3.disabled=false;
-      showFb('Juist! Ga nu naar stap 3.','ok');
-    }
+    document.getElementById('ij-stap2-ok').disabled=true;
+    document.getElementById('ij-stap2-ok').style.opacity='0.4';
+    // Kopieer naar hoofdantwoord
+    var main=document.getElementById('answer-input');
+    if(main){ main.value=q.a; main.focus(); }
+    showFb('Correct! Klik nu op Controleer.','ok');
   } else {
     inp.classList.add('wrong');
     setTimeout(function(){inp.classList.remove('wrong');inp.value='';inp.focus();},700);
     showFb('Niet juist. Hoeveel is '+q.or+' + '+q.ee+' ?','fout');
-  }
-}
-function checkIjStap3(){
-  var q=quizState.questions[currentQ], inp=document.getElementById('ij-stap3'), val=parseInt(inp.value);
-  if(isNaN(val)){showFb('Vul een getal in!','tip');return;}
-  if(val===q.a){
-    inp.classList.add('correct'); inp.disabled=true;
-    document.getElementById('ij-stap3-ok').disabled=true; document.getElementById('ij-stap3-ok').style.opacity='0.4';
-    var main=document.getElementById('answer-input'); if(main){main.value=q.a;main.focus();}
-    showFb('Uitstekend! Klik nu op Controleer.','ok');
-  } else {
-    inp.classList.add('wrong');
-    setTimeout(function(){inp.classList.remove('wrong');inp.value='';inp.focus();},700);
-    showFb('Niet juist. Hoeveel is '+q.tien+' + '+(q.or+q.ee)+' ?','fout');
   }
 }
 
