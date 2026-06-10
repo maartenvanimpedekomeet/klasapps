@@ -163,6 +163,7 @@ body { font-family:'Nunito',sans-serif; background:var(--bg); min-height:100vh; 
 .sb-input.kleur-groen { border-color:var(--green); background:var(--green-light); }
 .sb-input:focus { box-shadow:0 0 0 3px rgba(232,84,122,0.2); }
 .sb-input.correct { border-color:var(--green); background:var(--green-light); color:var(--green-dark); }
+.sb-input.kleur-geel-ok { border-color:var(--yellow-dark) !important; background:var(--yellow-light) !important; color:var(--yellow-dark) !important; }
 .sb-input.wrong   { border-color:var(--red); background:var(--red-light); color:var(--red); }
 .sb-input:disabled { opacity:0.7; }
 .sb-label { font-size:0.7rem; font-weight:700; color:var(--text-muted); text-align:center; line-height:1.2; }
@@ -954,15 +955,18 @@ function checkSb(deel){
   if(val===correct){
     inp.disabled=true;
     if(deel==='geel'){
-      // Geel/oranje kleur behouden — groen vinkje toevoegen naast het vakje
-      inp.style.borderColor='var(--yellow-dark)';
-      inp.style.background='var(--yellow-light)';
-      inp.style.color='var(--yellow-dark)';
+      // Geel/oranje kleur behouden — verwijder .correct en .kleur-groen expliciet
+      inp.classList.remove('correct','wrong','kleur-groen');
+      inp.classList.add('kleur-geel-ok');
       // Vinkje naast het geel-vakje plaatsen
       var sbBox=inp.parentNode;
+      // Verwijder eerder vinkje als het er al staat
+      var oudVink=sbBox.querySelector('.sb-vinkje');
+      if(oudVink) sbBox.removeChild(oudVink);
       var vink=document.createElement('span');
+      vink.className='sb-vinkje';
       vink.textContent='✓';
-      vink.style.cssText='color:var(--green-dark);font-size:1.2rem;font-weight:900;margin-left:4px;flex-shrink:0;';
+      vink.style.cssText='color:var(--green-dark);font-size:1.3rem;font-weight:900;margin-left:6px;flex-shrink:0;line-height:1;';
       sbBox.appendChild(vink);
       var gi=document.getElementById('sb-groen'); gi.disabled=false; setTimeout(function(){gi.focus();},60);
       showFb('Juist! Vul nu de rest in.','ok');
