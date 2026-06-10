@@ -494,9 +494,13 @@ document.addEventListener('DOMContentLoaded', function(){
 function saveToFirestore(resultData) {
   if (GUEST || !CU || CU.rol==='gast') return;
   var col = 'ijsberg_toets';
+  var pctVal = Math.round((resultData.score / resultData.maxScore) * 100);
   var doc = Object.assign({}, resultData, {
-    leerling: CU.naam,
-    timestamp: firebase.firestore.FieldValue.serverTimestamp()
+    leerlingId:  CU.naam,    // dashboard leest leerlingId
+    leerling:    CU.naam,    // backwards compat
+    percentage:  pctVal,     // dashboard leest percentage
+    total:       resultData.maxScore, // dashboard leest total
+    timestamp:   firebase.firestore.FieldValue.serverTimestamp()
   });
   db.collection(col).add(doc);
   // Registreer collectie als bekend in dashboard (set+merge op vast doc-ID)
@@ -508,13 +512,14 @@ function saveToFirestore(resultData) {
   }, { merge: true });
   // Individueel resultaat voor de feed
   db.collection('toets_registry').add({
-    leerling:   CU.naam,
+    leerlingId:  CU.naam,
+    leerling:    CU.naam,
     vak:        'Wiskunde',
     app:        'IJsbergrekenen',
     titel:      resultData.titel,
     score:      resultData.score,
-    maxScore:   resultData.maxScore,
-    pct:        Math.round((resultData.score / resultData.maxScore) * 100),
+    total:      resultData.maxScore,
+    percentage: pctVal,
     collection: col,
     timestamp:  firebase.firestore.FieldValue.serverTimestamp()
   });
@@ -532,6 +537,8 @@ var waitingForNext = false;
 var qResults      = []; // per-question log for toets
 var qStartTime    = 0;  // ms timestamp when current question started
 var qHelpUsed     = false; // bolletjes or tussenstappen used this question
+var qRetry        = false; // true = leerling krijgt 2e kans na fout antwoord
+var qRetryFailed  = false; // true = ook 2e kans fout
 
 function setModeGuard(m) {
   // Blokkeer wisselen als een reeks bezig is
@@ -781,7 +788,7 @@ function bolletjesVoorQ(q) {
 function renderQuestion() {
   if(currentQ>=quizState.questions.length){showResult();return;}
   var q=quizState.questions[currentQ];
-  waitingForNext=false; qHelpUsed=false; qStartTime=Date.now();
+  waitingForNext=false; qHelpUsed=false; qRetry=false; qRetryFailed=false; qStartTime=Date.now();
 
   var pct=Math.round((currentQ/quizState.questions.length)*100);
   document.getElementById('progress-fill').style.width=pct+'%';
@@ -945,11 +952,22 @@ function checkSb(deel){
   var inp=document.getElementById('sb-'+deel), val=parseInt(inp.value);
   if(isNaN(val)){showFb('Vul een getal in!','tip');return;}
   if(val===correct){
-    inp.classList.add('correct'); inp.disabled=true;
+    inp.disabled=true;
     if(deel==='geel'){
+      // Geel/oranje kleur behouden — groen vinkje toevoegen naast het vakje
+      inp.style.borderColor='var(--yellow-dark)';
+      inp.style.background='var(--yellow-light)';
+      inp.style.color='var(--yellow-dark)';
+      // Vinkje naast het geel-vakje plaatsen
+      var sbBox=inp.parentNode;
+      var vink=document.createElement('span');
+      vink.textContent='✓';
+      vink.style.cssText='color:var(--green-dark);font-size:1.2rem;font-weight:900;margin-left:4px;flex-shrink:0;';
+      sbBox.appendChild(vink);
       var gi=document.getElementById('sb-groen'); gi.disabled=false; setTimeout(function(){gi.focus();},60);
       showFb('Juist! Vul nu de rest in.','ok');
     } else {
+      inp.classList.add('correct');
       var bb=document.getElementById('brug-blok'); if(bb) bb.classList.remove('brug-locked');
       var ba=document.getElementById('brug-ans'); if(ba){ba.disabled=false;setTimeout(function(){ba.focus();},60);}
       var bok=document.getElementById('brug-ok'); if(bok) bok.disabled=false;
@@ -1044,39 +1062,92 @@ function checkAnswer(){
   var q=quizState.questions[currentQ];
   var inp=document.getElementById('answer-input'), val=parseInt(inp.value);
   if(isNaN(val)){showFb('Vul een getal in!','tip');return;}
-  inp.disabled=true;
-  document.getElementById('check-btn').style.display='none';
-  document.getElementById('next-btn').style.display='inline-block';
-  waitingForNext=true;
 
-  var tijdMs = Date.now()-qStartTime;
   var isCorrect = val===q.a;
-  // Bij toets: hulp gebruikt = 0.5 punt max
-  var puntWaarde = (appMode==='toets' && qHelpUsed) ? 0.5 : 1;
-  var puntenVerdiend = isCorrect ? puntWaarde : 0;
-  if(isCorrect) score += puntenVerdiend;
 
-  // Log voor opslag
-  var opgave = q.q.map(function(p){return p==='?'?'_':p;}).join(' ');
-  qResults.push({
-    opgave: opgave,
-    stap: q.step,
-    stapNaam: document.getElementById('quiz-mode-label').textContent,
-    correct: isCorrect,
-    leerlingAntwoord: val,
-    juistAntwoord: q.a,
-    tijdMs: tijdMs,
-    hulpGebruikt: qHelpUsed,
-    punt: puntenVerdiend
-  });
-
-  document.getElementById('score-badge').textContent='✓ '+score;
   if(isCorrect){
+    // ── JUIST ──────────────────────────────────────────────────────────────
+    inp.disabled=true;
+    document.getElementById('check-btn').style.display='none';
+    document.getElementById('next-btn').style.display='inline-block';
+    waitingForNext=true;
+
+    var tijdMs = Date.now()-qStartTime;
+    var puntWaarde = (appMode==='toets' && qHelpUsed) ? 0.5 : 1;
+    var puntenVerdiend = puntWaarde;
+    score += puntenVerdiend;
+
+    var opgave = q.q.map(function(p){return p==='?'?'_':p;}).join(' ');
+    qResults.push({
+      opgave: opgave,
+      stap: q.step,
+      stapNaam: document.getElementById('quiz-mode-label').textContent,
+      correct: true,
+      tweedePogingCorrect: qRetry,  // juist na 1e fout
+      twedeKeerFout: false,
+      leerlingAntwoord: val,
+      juistAntwoord: q.a,
+      tijdMs: tijdMs,
+      hulpGebruikt: qHelpUsed,
+      punt: puntenVerdiend
+    });
+
+    document.getElementById('score-badge').textContent='✓ '+score;
+    // Groen oplichten
     inp.classList.add('correct');
-    showFb(pick(['Uitstekend! 🎉','Super goed! ⭐','Bravo! 🌟','Correct! 👍','Perfect! 🏆'])+(qHelpUsed&&appMode==='toets'?' (½ punt — hulp gebruikt)':''),'ok');
+    showFb(pick(['Uitstekend! 🎉','Super goed! ⭐','Bravo! 🌟','Correct! 👍','Perfect! 🏆'])
+      +(qRetry?' (na 2e poging)':'')
+      +(qHelpUsed&&appMode==='toets'?' (½ punt — hulp gebruikt)':''),'ok');
+
   } else {
+    // ── FOUT ──────────────────────────────────────────────────────────────
+    // Rood oplichten
     inp.classList.add('wrong');
-    showFb('Niet helemaal — het antwoord was '+q.a+'.','fout');
+
+    if(!qRetry){
+      // === 1e fout: leerling krijgt een 2e kans, hulp openen ===
+      qRetry = true;
+      showFb('Niet juist — probeer nog een keer! Het juiste antwoord is niet '+val+'.','fout');
+      setTimeout(function(){
+        inp.classList.remove('wrong');
+        inp.value='';
+        inp.disabled=false;
+        inp.focus();
+        // Hulpmiddelen automatisch openen
+        var togBol=document.getElementById('tog-bol');
+        var togTs=document.getElementById('tog-ts');
+        if(togBol&&!togBol.checked){ togBol.checked=true; togBol.dispatchEvent(new Event('change')); }
+        if(togTs&&!togTs.checked){ togTs.checked=true; togTs.dispatchEvent(new Event('change')); }
+        qHelpUsed=true; // hulp telt nu mee
+      }, 800);
+    } else {
+      // === 2e fout: doorgaan, log als mislukt ===
+      qRetryFailed = true;
+      inp.disabled=true;
+      document.getElementById('check-btn').style.display='none';
+      document.getElementById('next-btn').style.display='inline-block';
+      waitingForNext=true;
+
+      var tijdMs = Date.now()-qStartTime;
+      var opgave = q.q.map(function(p){return p==='?'?'_':p;}).join(' ');
+      qResults.push({
+        opgave: opgave,
+        stap: q.step,
+        stapNaam: document.getElementById('quiz-mode-label').textContent,
+        correct: false,
+        tweedePogingCorrect: false,
+        twedeKeerFout: true,  // zelfs na 2e kans fout
+        leerlingAntwoord: val,
+        juistAntwoord: q.a,
+        tijdMs: tijdMs,
+        hulpGebruikt: true,
+        punt: 0
+      });
+
+      document.getElementById('score-badge').textContent='✓ '+score;
+      showFb('Niet juist — het juiste antwoord was '+q.a+'. Ga verder.','fout');
+      setTimeout(function(){ inp.classList.remove('wrong'); },1200);
+    }
   }
 }
 
@@ -1110,13 +1181,21 @@ function showResult(){
     });
   }
 
-  var hulpAantal = qResults.filter(function(r){return r.hulpGebruikt;}).length;
+  var hulpAantal    = qResults.filter(function(r){return r.hulpGebruikt;}).length;
+  var twedeKeerFout = qResults.filter(function(r){return r.twedeKeerFout;});
+  var eersteKeerFout= qResults.filter(function(r){return !r.correct && !r.twedeKeerFout;});
 
   var html = '<div class="result-emoji">'+emoji+'</div>'+
     '<div style="font-size:0.78rem;color:var(--text-muted);margin-bottom:0.25rem;font-weight:700">'+titel+'</div>'+
     '<div class="result-score">'+score.toFixed(1)+' / '+maxScore+'</div>'+
     '<div style="font-size:1rem;color:var(--text-muted);margin-top:0.25rem;">'+pct+'% correct</div>';
   if(hulpAantal>0) html+='<div style="font-size:0.82rem;color:var(--orange-dark);margin-top:0.4rem;">💡 '+hulpAantal+' keer hulpmiddelen gebruikt</div>';
+  if(twedeKeerFout.length>0){
+    html+='<div style="font-size:0.82rem;color:var(--red);margin-top:0.4rem;font-weight:700">⚠️ '+twedeKeerFout.length+' som(men) 2× fout (ook na 2e kans):</div>';
+    html+='<div style="font-size:0.78rem;color:var(--red);margin-top:0.2rem;">';
+    twedeKeerFout.forEach(function(r){ html+='&nbsp;&nbsp;• '+r.opgave+' &rarr; juist: '+r.juistAntwoord+'<br>'; });
+    html+='</div>';
+  }
   if(appMode==='toets'&&!GUEST&&CU) html+='<div style="font-size:0.78rem;color:var(--green-dark);margin-top:0.3rem;font-weight:700">✓ Resultaten opgeslagen</div>';
   html+='<p style="margin:1rem 0 1.5rem;color:var(--text-muted);font-size:0.9rem;font-weight:600">'+bericht+'</p>'+
     '<div style="display:flex;gap:0.6rem;justify-content:center;flex-wrap:wrap">'+
