@@ -333,7 +333,6 @@ const COLLECTION_LABELS = {
   'hoofdrekenen_tafels_toets':     'Maaltafels',
   'hoofdrekenen_deeltafels_toets': 'Deeltafels',
   'rekenmachine_toets':      'Rekenmachine & Rekentaal',
-  'ijsberg_toets':           'IJsbergrekenen',
   'kloklezen_toets':         'Kloklezen',
   'wiskunde_oppervlakte':    'Oppervlakte & Omtrek',
   // Taal / Nederlands
@@ -384,7 +383,6 @@ const COLLECTION_VAK_FALLBACK = {
   // Wiskunde
   'wiskunde_oppervlakte':         'Wiskunde',
   'kloklezen_toets':              'Wiskunde',
-  'ijsberg_toets':                'Wiskunde',
 };
 
 // Volgorde van vakken in de filter-dropdown.
@@ -440,13 +438,13 @@ function normRecord(raw, col) {
     _label:       colLabel(col),
     _vak:         colVak(col, raw.vak),
     _ts:          raw.timestamp ? raw.timestamp.seconds * 1000 : 0,
-    _pct:         raw.percentage || 0,
+    _pct:         raw.percentage || raw.pct || 0,
     _score:       raw.score || 0,
-    _total:       raw.totalQ || raw.total || 0,
+    _total:       raw.totalQ || raw.total || raw.maxScore || 0,
     _tijd:        raw.tijd || (raw.timeSeconds ? Math.floor(raw.timeSeconds/60)+'m'+(raw.timeSeconds%60)+'s' : ''),
     _hints:       raw.hintsGebruikt !== undefined ? raw.hintsGebruikt : (raw.hintsUsed || 0),
-    _leerlingId:  raw.leerlingId || '',
-    _leerlingNaam:raw.leerlingNaam || raw.leerlingId || '?',
+    _leerlingId:  raw.leerlingId || raw.leerling || '',
+    _leerlingNaam:raw.leerlingNaam || raw.leerlingId || raw.leerling || '?',
     _mode:        raw.mode || '',
     _tempoSterren: raw.tempoSterren !== undefined ? raw.tempoSterren : null,
     _tempoLabel:   raw.tempoLabel   || '',
@@ -1114,7 +1112,6 @@ var MX_STANDAARD_VOLGORDE_WISKUNDE = [
   'hoofdrekenen_100_toets',
   'hoofdrekenen_tafels_toets',
   'hoofdrekenen_deeltafels_toets',
-  'ijsberg_toets',
   'rekenmachine_toets',
   'geld_toets',
   'getalbegrip_toets',
