@@ -448,6 +448,28 @@ function normRecord(raw, col) {
     _mode:        raw.mode || '',
     _tempoSterren: raw.tempoSterren !== undefined ? raw.tempoSterren : null,
     _tempoLabel:   raw.tempoLabel   || '',
+    // IJsberg: opgaven array → vragen mapping voor detail-view
+    vragen: (function(){
+      var src = raw.vragen || raw.opgaven;
+      if (!src || !src.length) return [];
+      return src.map(function(o, i){
+        return {
+          vraagNr: i+1,
+          vraag: o.opgave || o.vraag || '?',
+          isJuist: o.correct || false,
+          antwoordLeerling: o.leerlingAntwoord !== undefined ? o.leerlingAntwoord : (o.antwoord || '?'),
+          juistAntwoord: o.juistAntwoord !== undefined ? o.juistAntwoord : (o.correct_antwoord || '?'),
+          punten: o.punt !== undefined ? o.punt : (o.punten !== undefined ? o.punten : undefined),
+          categorie: o.stapNaam || o.categorie || '',
+          hintGebruikt: o.hulpGebruikt || o.hintGebruikt || false,
+          tijdMs: o.tijdMs || 0,
+          twedeKeerFout: o.twedeKeerFout || false,
+        };
+      });
+    })(),
+    // IJsberg: geselecteerde stappen (fase-info)
+    _stappen: raw.stappen || raw.selectedSteps || [],
+    _bereik: raw.bereik || null,
   });
 }
 function leerlingNaam(id) {
@@ -915,6 +937,19 @@ function openDetail(idx) {
   html += '<div id="ai-output" style="font-size:.88rem;color:#374151;line-height:1.6;min-height:36px;">Klik op "Analyseer" voor een gepersonaliseerde analyse van '+lnaam+'.</div>';
   html += '</div>';
 
+  // Fase/stappen info (IJsberg)
+  if (d._stappen && d._stappen.length) {
+    var stapLabels={'20-1':'Stap 1 — Getalbouw','20-2':'Stap 2 — TE±E (zonder brug)','20-3':'Stap 3 — Brug optellen','20-4':'Stap 4 — Brug aftrekken',
+      '100-1':'Stap 1 — T±T','100-2':'Stap 2 — Getalbouw','100-3':'Stap 3 — TE±E zonder brug','100-4':'Stap 4 — TE±T',
+      '100-5':'Stap 5 — TE±E met brug','100-6':'Stap 6 — TE±TE rijgen','100-7':'Stap 7 — Dubbele brug'};
+    html += '<div class="card" style="background:#eff6ff;border:1px solid #bfdbfe;">';
+    html += '<div style="font-weight:800;color:#1e3a5f;margin-bottom:6px;">📊 Geoefende fase'+(d._stappen.length>1?'s':'')+(d._bereik?' (tot '+d._bereik+')':'')+'</div>';
+    d._stappen.forEach(function(s){
+      html += '<div style="font-size:.88rem;color:#1d4ed8;font-weight:600;margin-bottom:3px;">• '+(stapLabels[s]||s)+'</div>';
+    });
+    html += '</div>';
+  }
+
   // Vragenlijst
   if (d.vragen && d.vragen.length) {
     html += '<div class="card"><h3 style="font-size:.95rem;font-weight:800;color:#374151;margin-bottom:12px;">📋 Alle vragen & antwoorden ('+d.vragen.length+')</h3>';
@@ -924,14 +959,18 @@ function openDetail(idx) {
       var bd2 = ok?'#bbf7d0':'#fecdd3';
       html += '<div style="background:'+bg2+';border:1px solid '+bd2+';border-radius:.75rem;padding:12px 14px;margin-bottom:8px;">';
       html += '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;flex-wrap:wrap;">';
-      if (v.instr) html += '<div style="font-size:.68rem;font-weight:800;color:#6b7280;text-transform:uppercase;letter-spacing:.06em;width:100%;margin-bottom:2px;">'+v.instr+'</div>';
       html += '<div style="font-weight:700;color:#1e293b;font-size:.88rem;flex:1;">'+(ok?'✅':'❌')+' '+v.vraagNr+'. '+v.vraag+'</div>';
       if (v.punten !== undefined) html += '<div style="font-size:.75rem;font-weight:700;color:#6b7280;white-space:nowrap;">'+String(v.punten).replace('.',',')+'pt</div>';
       html += '</div>';
       html += '<div style="margin-top:5px;font-size:.82rem;color:#6b7280;">Antwoord: <b style="color:'+(ok?'#16a34a':'#dc2626')+';">'+v.antwoordLeerling+'</b>';
       if (!ok) html += ' → juist: <b style="color:#1e293b;">'+v.juistAntwoord+'</b>';
       html += '</div>';
-      if (v.categorie) html += '<div style="font-size:.72rem;color:#9ca3af;margin-top:3px;">'+v.categorie+(v.hintGebruikt?' · 💡 hint':'')+'</div>';
+      var metaItems = [];
+      if (v.categorie) metaItems.push(v.categorie);
+      if (v.hintGebruikt) metaItems.push('💡 hulp gebruikt');
+      if (v.twedeKeerFout) metaItems.push('⚠️ 2× fout');
+      if (v.tijdMs) metaItems.push('⏱ '+Math.round(v.tijdMs/1000)+'s');
+      if (metaItems.length) html += '<div style="font-size:.72rem;color:#9ca3af;margin-top:3px;">'+metaItems.join(' · ')+'</div>';
       html += '</div>';
     });
     html += '</div>';
