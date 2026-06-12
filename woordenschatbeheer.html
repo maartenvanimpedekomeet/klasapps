@@ -636,6 +636,15 @@
           </div>
         </div>
 
+        <!-- Aantal oefeningen -->
+        <div class="taak-form-sectie">
+          <h3>Aantal oefeningen</h3>
+          <div style="display:flex;align-items:center;gap:12px;">
+            <input type="number" class="taak-input" id="taak-aantal" value="20" min="5" max="50" step="5" style="width:100px;text-align:center;font-size:1.1rem;font-weight:800;">
+            <span style="font-size:.82rem;color:var(--muted);">vragen per sessie (min. 5, max. 50)</span>
+          </div>
+        </div>
+
         <!-- Opslaan -->
         <button class="btn-accent" style="width:100%;justify-content:center;padding:14px;font-size:1rem;" onclick="slaaTaakOp()">
           <i class="fa-solid fa-paper-plane"></i> Taak klaarzetten
@@ -655,7 +664,7 @@
   </div><!-- /taken-sidebar -->
 </div>
 
-<div id="version">v0.18</div>
+<div id="version">v0.19</div>
 
 <script>
 // ════════════════════════════════════════════
@@ -1068,8 +1077,7 @@ function openAiModal(woordId) {
   document.getElementById("ai-overneem-btn").style.display = "none";
   document.getElementById("ai-modal").style.display = "flex";
 
-  var SYSTEEM = "Je bent een leerkracht in het buitengewoon onderwijs (België) die woordverklaringen schrijft voor leerlingen van 11-13 jaar met leermoeilijkheden en een beperkte woordenschat.\n\nRegels:\n- Schrijf altijd in het Nederlands\n- Gebruik KORTE, eenvoudige zinnen (max 12 woorden per zin)\n- Gebruik GEEN moeilijke woorden in je uitleg\n- Wees concreet en beeldend\n- De betekenis mag maximaal 2 zinnen zijn, het woord zelf mag niet in de betekenis voorkomen.\n- De voorbeeldzin gebruikt het woord in een herkenbare, alledaagse situatie (thuis, school, vrienden)\n\nAntwoord ENKEL met geldige JSON, geen uitleg, geen markdown:\n{\"betekenis\": \"...\", \"zin\": \"...\"}";
-
+  var SYSTEEM = "Je bent een leerkracht in het buitengewoon onderwijs (België) die woordverklaringen schrijft voor leerlingen van 11-13 jaar met leermoeilijkheden en een beperkte woordenschat.\n\nRegels:\n- Schrijf altijd in het Nederlands\n- Gebruik KORTE, eenvoudige zinnen (max 12 woorden per zin)\n- Gebruik GEEN moeilijke woorden in je uitleg\n- Wees concreet en beeldend\n- De betekenis mag maximaal 2 zinnen zijn\n- HEEL BELANGRIJK: gebruik het woord dat je uitlegt NOOIT in de betekenis zelf. Schrijf 'het' of 'dit' in plaats van het woord te herhalen. Fout voorbeeld voor beton: begin de betekenis NIET met het woord zelf. Juist: begin met 'Het is...' of 'Dit is...' of 'Een soort van...'\n- De voorbeeldzin gebruikt het woord wel (maar alleen in de zin, niet in de betekenis)\n- De voorbeeldzin is een herkenbare alledaagse situatie\n\nAntwoord ENKEL met geldige JSON zonder uitleg of markdown:\n{\"betekenis\": \"...\", \"zin\": \"...\"}";
   fetch("https://openrouter.ai/api/v1/chat/completions", {
     method: "POST",
     headers: {
@@ -1089,11 +1097,10 @@ function openAiModal(woordId) {
     })
   })
   .then(function(r) {
-    if (!r.ok) return r.text().then(function(t){ throw new Error("HTTP " + r.status + " — " + t.substring(0, 200)); });
+    if (!r.ok) return r.text().then(function(t){ throw new Error("HTTP " + r.status + " - " + t.substring(0,200)); });
     return r.json();
   })
   .then(function(data) {
-    var tekst = "";
     try { tekst = data.choices[0].message.content || ""; } catch(e) {}
     tekst = tekst.replace(/```json|```/g, "").trim();
     var parsed = JSON.parse(tekst);
@@ -1254,10 +1261,10 @@ function getPresetWoorden(idx) {
   if (idx === 0) return alleWoorden.slice(0, 20);
   if (idx === 1) return alleWoorden.filter(function(w){
     return w.aangemaakt && w.aangemaakt.toDate && nu - w.aangemaakt.toDate().getTime() <= 30*DAG;
-  }).slice(0,20);
+  });
   if (idx === 2) return alleWoorden.filter(function(w){
     return w.aangemaakt && w.aangemaakt.toDate && w.aangemaakt.toDate().getTime() >= schooljaarStart;
-  }).slice(0,20);
+  });
   if (idx === 3) {
     return alleWoorden.slice().sort(function(a,b){
       return (woordScores[a.id]||100) - (woordScores[b.id]||100);
@@ -1377,6 +1384,7 @@ function slaaTaakOp() {
   var aangemaakt = firebase.firestore.FieldValue.serverTimestamp();
   leerlingen.forEach(function(leerling){
     var ref = db.collection("woordenschat_taken").doc();
+    var aantalOef = parseInt(document.getElementById("taak-aantal").value) || 20;
     batch.set(ref, {
       titel: titel,
       leerling: leerling,
@@ -1384,6 +1392,7 @@ function slaaTaakOp() {
       modus: taakModus,
       woordselectie: taakPreset,
       aantalWoorden: woordIds.length,
+      aantalOefeningen: aantalOef,
       gedaan: false,
       aangemaakt: aangemaakt
     });
@@ -1393,6 +1402,7 @@ function slaaTaakOp() {
       showToast("📋 Taak klaargezet voor " + leerlingen.length + " leerling(en)!");
       // Reset
       document.getElementById("taak-titel").value = "";
+      document.getElementById("taak-aantal").value = "20";
       taakGeselecteerdeWoorden.clear();
       taakPreset = -1;
       taakModus = 0;
