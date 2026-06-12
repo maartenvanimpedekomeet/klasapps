@@ -274,6 +274,13 @@ input,select{font-family:inherit;}
         <select id="csv-app" style="width:100%;padding:11px;border:2px solid #e5e7eb;border-radius:.75rem;font-weight:700;font-size:.9rem;outline:none;">
           <option value="">Alle vakken</option>
         </select></div>
+      <div><label style="font-size:.78rem;font-weight:700;color:#6b7280;display:block;margin-bottom:5px;">Formaat</label>
+        <select id="csv-formaat" style="width:100%;padding:11px;border:2px solid #e5e7eb;border-radius:.75rem;font-weight:700;font-size:.9rem;outline:none;">
+          <option value="samenvatting">📊 Samenvatting — 1 rij per sessie</option>
+          <option value="vragen">📋 Alle vragen & antwoorden — 1 rij per vraag (voor AI-analyse)</option>
+        </select>
+        <p style="font-size:.72rem;color:#9ca3af;margin-top:5px;">Kies "Alle vragen" als je de CSV door AI wil laten analyseren.</p>
+      </div>
     </div>
     <div style="display:flex;gap:10px;margin-top:1.5rem;">
       <button class="btn btn-outline" style="flex:1;" onclick="document.getElementById('csv-modal').style.display='none'">Annuleren</button>
@@ -448,28 +455,6 @@ function normRecord(raw, col) {
     _mode:        raw.mode || '',
     _tempoSterren: raw.tempoSterren !== undefined ? raw.tempoSterren : null,
     _tempoLabel:   raw.tempoLabel   || '',
-    // IJsberg: opgaven array → vragen mapping voor detail-view
-    vragen: (function(){
-      var src = raw.vragen || raw.opgaven;
-      if (!src || !src.length) return [];
-      return src.map(function(o, i){
-        return {
-          vraagNr: i+1,
-          vraag: o.opgave || o.vraag || '?',
-          isJuist: o.correct || false,
-          antwoordLeerling: o.leerlingAntwoord !== undefined ? o.leerlingAntwoord : (o.antwoord || '?'),
-          juistAntwoord: o.juistAntwoord !== undefined ? o.juistAntwoord : (o.correct_antwoord || '?'),
-          punten: o.punt !== undefined ? o.punt : (o.punten !== undefined ? o.punten : undefined),
-          categorie: o.stapNaam || o.categorie || '',
-          hintGebruikt: o.hulpGebruikt || o.hintGebruikt || false,
-          tijdMs: o.tijdMs || 0,
-          twedeKeerFout: o.twedeKeerFout || false,
-        };
-      });
-    })(),
-    // IJsberg: geselecteerde stappen (fase-info)
-    _stappen: raw.stappen || raw.selectedSteps || [],
-    _bereik: raw.bereik || null,
   });
 }
 function leerlingNaam(id) {
@@ -937,40 +922,55 @@ function openDetail(idx) {
   html += '<div id="ai-output" style="font-size:.88rem;color:#374151;line-height:1.6;min-height:36px;">Klik op "Analyseer" voor een gepersonaliseerde analyse van '+lnaam+'.</div>';
   html += '</div>';
 
-  // Fase/stappen info (IJsberg)
-  if (d._stappen && d._stappen.length) {
-    var stapLabels={'20-1':'Stap 1 — Getalbouw','20-2':'Stap 2 — TE±E (zonder brug)','20-3':'Stap 3 — Brug optellen','20-4':'Stap 4 — Brug aftrekken',
-      '100-1':'Stap 1 — T±T','100-2':'Stap 2 — Getalbouw','100-3':'Stap 3 — TE±E zonder brug','100-4':'Stap 4 — TE±T',
-      '100-5':'Stap 5 — TE±E met brug','100-6':'Stap 6 — TE±TE rijgen','100-7':'Stap 7 — Dubbele brug'};
-    html += '<div class="card" style="background:#eff6ff;border:1px solid #bfdbfe;">';
-    html += '<div style="font-weight:800;color:#1e3a5f;margin-bottom:6px;">📊 Geoefende fase'+(d._stappen.length>1?'s':'')+(d._bereik?' (tot '+d._bereik+')':'')+'</div>';
-    d._stappen.forEach(function(s){
-      html += '<div style="font-size:.88rem;color:#1d4ed8;font-weight:600;margin-bottom:3px;">• '+(stapLabels[s]||s)+'</div>';
-    });
-    html += '</div>';
-  }
+  // Vragenlijst — compatibel met alle veldnaam-varianten van oudere apps
+  // Oudere apps gebruikten: correct/isCorrect/isJuist, user/userAnswer/antwoord/antwoordLeerling,
+  //   answer/correctAnswer/juistAntwoord/juist, question/vraag/title/prompt
+  var vragenRuw = d.vragen || d.questions || [];
+  if (vragenRuw.length) {
+    html += '<div class="card"><h3 style="font-size:.95rem;font-weight:800;color:#374151;margin-bottom:12px;">📋 Alle vragen & antwoorden ('+vragenRuw.length+')</h3>';
+    vragenRuw.forEach(function(v, vi) {
+      // Normaliseer veldnamen naar één consistente set
+      var ok        = v.isJuist     !== undefined ? v.isJuist
+                    : v.isCorrect   !== undefined ? v.isCorrect
+                    : v.correct     !== undefined ? v.correct
+                    : undefined;
+      var antwoord  = v.antwoordLeerling !== undefined ? v.antwoordLeerling
+                    : v.userAnswer       !== undefined ? v.userAnswer
+                    : v.antwoord         !== undefined ? v.antwoord
+                    : v.user             !== undefined ? v.user
+                    : v.chosen           !== undefined ? v.chosen
+                    : v.gekozen          !== undefined ? v.gekozen
+                    : undefined;
+      var juistAnt  = v.juistAntwoord    !== undefined ? v.juistAntwoord
+                    : v.correctAnswer    !== undefined ? v.correctAnswer
+                    : v.juist            !== undefined ? v.juist
+                    : v.answer           !== undefined ? v.answer
+                    : v.correct_answer   !== undefined ? v.correct_answer
+                    : undefined;
+      var vraagTxt  = v.vraag   || v.question || v.title  || v.prompt || v.text || ('Vraag '+(vi+1));
+      var nr        = v.vraagNr || v.questionNr || (vi+1);
 
-  // Vragenlijst
-  if (d.vragen && d.vragen.length) {
-    html += '<div class="card"><h3 style="font-size:.95rem;font-weight:800;color:#374151;margin-bottom:12px;">📋 Alle vragen & antwoorden ('+d.vragen.length+')</h3>';
-    d.vragen.forEach(function(v) {
-      var ok = v.isJuist;
+      // Als antwoord ontbreekt maar ok=true: antwoord = juistAntwoord
+      if (antwoord === undefined && ok === true)  antwoord = juistAnt;
+      // Als ok nog steeds undefined: vergelijk antwoord met juist
+      if (ok === undefined && antwoord !== undefined && juistAnt !== undefined) {
+        ok = String(antwoord).trim().toLowerCase() === String(juistAnt).trim().toLowerCase();
+      }
+
       var bg2 = ok?'#f0fdf4':'#fff1f2';
       var bd2 = ok?'#bbf7d0':'#fecdd3';
+      var antwoordTxt = antwoord !== undefined && antwoord !== null && antwoord !== '' ? String(antwoord) : '(geen antwoord)';
       html += '<div style="background:'+bg2+';border:1px solid '+bd2+';border-radius:.75rem;padding:12px 14px;margin-bottom:8px;">';
       html += '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;flex-wrap:wrap;">';
-      html += '<div style="font-weight:700;color:#1e293b;font-size:.88rem;flex:1;">'+(ok?'✅':'❌')+' '+v.vraagNr+'. '+v.vraag+'</div>';
+      if (v.instr) html += '<div style="font-size:.68rem;font-weight:800;color:#6b7280;text-transform:uppercase;letter-spacing:.06em;width:100%;margin-bottom:2px;">'+v.instr+'</div>';
+      html += '<div style="font-weight:700;color:#1e293b;font-size:.88rem;flex:1;">'+(ok?'✅':'❌')+' '+nr+'. '+vraagTxt+'</div>';
       if (v.punten !== undefined) html += '<div style="font-size:.75rem;font-weight:700;color:#6b7280;white-space:nowrap;">'+String(v.punten).replace('.',',')+'pt</div>';
       html += '</div>';
-      html += '<div style="margin-top:5px;font-size:.82rem;color:#6b7280;">Antwoord: <b style="color:'+(ok?'#16a34a':'#dc2626')+';">'+v.antwoordLeerling+'</b>';
-      if (!ok) html += ' → juist: <b style="color:#1e293b;">'+v.juistAntwoord+'</b>';
+      html += '<div style="margin-top:5px;font-size:.82rem;color:#6b7280;">Antwoord: <b style="color:'+(ok?'#16a34a':'#dc2626')+';">'+antwoordTxt+'</b>';
+      if (!ok && juistAnt !== undefined) html += ' → juist: <b style="color:#1e293b;">'+juistAnt+'</b>';
       html += '</div>';
-      var metaItems = [];
-      if (v.categorie) metaItems.push(v.categorie);
-      if (v.hintGebruikt) metaItems.push('💡 hulp gebruikt');
-      if (v.twedeKeerFout) metaItems.push('⚠️ 2× fout');
-      if (v.tijdMs) metaItems.push('⏱ '+Math.round(v.tijdMs/1000)+'s');
-      if (metaItems.length) html += '<div style="font-size:.72rem;color:#9ca3af;margin-top:3px;">'+metaItems.join(' · ')+'</div>';
+      if (v.tijdSeconden) html += '<div style="font-size:.72rem;color:#9ca3af;margin-top:3px;">⏱ '+v.tijdSeconden+'s</div>';
+      if (v.categorie) html += '<div style="font-size:.72rem;color:#9ca3af;margin-top:1px;">'+v.categorie+(v.hintGebruikt?' · 💡 hint':'')+'</div>';
       html += '</div>';
     });
     html += '</div>';
@@ -1064,6 +1064,7 @@ function doExportCSV() {
   var dagen   = parseInt(document.getElementById('csv-periode').value);
   var filterL = document.getElementById('csv-leerling').value;
   var filterA = document.getElementById('csv-app').value;
+  var formaat = document.getElementById('csv-formaat') ? document.getElementById('csv-formaat').value : 'samenvatting';
   var vanafMs = dagen > 0 ? Date.now() - dagen*86400000 : 0;
 
   var rijen = allRecords.filter(function(d) {
@@ -1075,29 +1076,94 @@ function doExportCSV() {
 
   if (!rijen.length) { alert('Geen resultaten voor deze selectie.'); return; }
 
-  var lines = [['Datum','Leerling','Vak','Vakonderdeel','Mode','Score','Totaal','Percentage','Tijd','Hints','Fouten_categorieen'].join(';')];
-  rijen.forEach(function(d) {
-    var ts = d._ts ? new Date(d._ts).toLocaleString('nl-BE') : '';
-    var fouten = (d.foutenAnalyse&&d.foutenAnalyse.extraOefenen) ? d.foutenAnalyse.extraOefenen.join(' | ') : '';
-    lines.push([
-      '"'+ts+'"',
-      '"'+leerlingNaam(d._leerlingId)+'"',
-      '"'+(d._vak||'')+'"',
-      '"'+d._label+'"',
-      '"'+(modeLabel(d._mode)||'')+'"',
-      d._score, d._total, d._pct,
-      '"'+(d._tijd||'')+'"',
-      d._hints||0,
-      '"'+fouten+'"'
-    ].join(';'));
-  });
+  var csv, bestandsnaam;
 
-  var csv = '\uFEFF' + lines.join('\r\n');
+  if (formaat === 'vragen') {
+    // ── PER VRAAG: één rij per individueel antwoord ──────────────────────
+    var lines = [['Datum','Leerling','Vak','Vakonderdeel','Module','VraagNr','Opdracht','Vraag','AntwoordLeerling','JuistAntwoord','Correct','Punten','TijdSeconden'].join(';')];
+    rijen.forEach(function(d) {
+      var ts = d._ts ? new Date(d._ts).toLocaleString('nl-BE') : '';
+      var vak      = d._vak  || '';
+      var label    = d._label || '';
+      var module   = d._mode || d.module || '';
+      if (d.vragen && d.vragen.length) {
+        d.vragen.forEach(function(v, vi) {
+          // Normaliseer — zelfde logica als detail-view
+          var ok       = v.isJuist     !== undefined ? v.isJuist
+                       : v.isCorrect   !== undefined ? v.isCorrect
+                       : v.correct     !== undefined ? v.correct : false;
+          var antwoord = v.antwoordLeerling !== undefined ? v.antwoordLeerling
+                       : v.userAnswer       !== undefined ? v.userAnswer
+                       : v.antwoord         !== undefined ? v.antwoord
+                       : v.user             !== undefined ? v.user
+                       : v.gekozen          !== undefined ? v.gekozen : '';
+          var juistAnt = v.juistAntwoord    !== undefined ? v.juistAntwoord
+                       : v.correctAnswer    !== undefined ? v.correctAnswer
+                       : v.juist            !== undefined ? v.juist
+                       : v.answer           !== undefined ? v.answer : '';
+          var vraagTxt = v.vraag || v.question || v.title || v.prompt || v.text || ('Vraag '+(vi+1));
+          var nr       = v.vraagNr || v.questionNr || (vi+1);
+          lines.push([
+            '"'+ts+'"',
+            '"'+leerlingNaam(d._leerlingId)+'"',
+            '"'+vak+'"',
+            '"'+label+'"',
+            '"'+module+'"',
+            nr,
+            '"'+((v.instr||'').replace(/"/g,"'"))+'"',
+            '"'+(vraagTxt.replace(/"/g,"'"))+'"',
+            '"'+(String(antwoord||'').replace(/"/g,"'"))+'"',
+            '"'+(String(juistAnt||'').replace(/"/g,"'"))+'"',
+            ok ? 'JUIST' : 'FOUT',
+            (v.punten !== undefined ? v.punten : (ok ? 1 : 0)),
+            v.tijdSeconden||0
+          ].join(';'));
+        });
+      } else {
+        // Sessie zonder vragen-array — toch een rij opnemen
+        var fouten = (d.foutenAnalyse&&d.foutenAnalyse.extraOefenen) ? d.foutenAnalyse.extraOefenen.join(' | ') : '';
+        lines.push([
+          '"'+ts+'"',
+          '"'+leerlingNaam(d._leerlingId)+'"',
+          '"'+vak+'"',
+          '"'+label+'"',
+          '"'+module+'"',
+          '','','',
+          '"'+fouten+'"',
+          '','','',''
+        ].join(';'));
+      }
+    });
+    csv = '\uFEFF' + lines.join('\r\n');
+    bestandsnaam = 'vragen_per_leerling_'+(dagen>0?'laatste_'+dagen+'d':'alles')+'_'+new Date().toISOString().slice(0,10)+'.csv';
+
+  } else {
+    // ── SAMENVATTING: één rij per sessie (origineel gedrag) ──────────────
+    var lines = [['Datum','Leerling','Vak','Vakonderdeel','Mode','Score','Totaal','Percentage','Tijd','Hints','Fouten_categorieen'].join(';')];
+    rijen.forEach(function(d) {
+      var ts = d._ts ? new Date(d._ts).toLocaleString('nl-BE') : '';
+      var fouten = (d.foutenAnalyse&&d.foutenAnalyse.extraOefenen) ? d.foutenAnalyse.extraOefenen.join(' | ') : '';
+      lines.push([
+        '"'+ts+'"',
+        '"'+leerlingNaam(d._leerlingId)+'"',
+        '"'+(d._vak||'')+'"',
+        '"'+d._label+'"',
+        '"'+(modeLabel(d._mode)||'')+'"',
+        d._score, d._total, d._pct,
+        '"'+(d._tijd||'')+'"',
+        d._hints||0,
+        '"'+fouten+'"'
+      ].join(';'));
+    });
+    csv = '\uFEFF' + lines.join('\r\n');
+    bestandsnaam = 'resultaten_'+(dagen>0?'laatste_'+dagen+'d':'alles')+'_'+new Date().toISOString().slice(0,10)+'.csv';
+  }
+
   var blob = new Blob([csv],{type:'text/csv;charset=utf-8;'});
   var url  = URL.createObjectURL(blob);
   var a    = document.createElement('a');
   a.href = url;
-  a.download = 'resultaten_'+(dagen>0?'laatste_'+dagen+'d':'alles')+'_'+new Date().toISOString().slice(0,10)+'.csv';
+  a.download = bestandsnaam;
   document.body.appendChild(a); a.click();
   document.body.removeChild(a); URL.revokeObjectURL(url);
   document.getElementById('csv-modal').style.display = 'none';
