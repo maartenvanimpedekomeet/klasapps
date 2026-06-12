@@ -1,0 +1,881 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Broodjes Bestellen De Komeet</title>
+    <!-- Tailwind CSS, Confetti & FontAwesome -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800;900&display=swap');
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #f8fafc; }
+        .hidden { display: none !important; }
+        .card-anim { transition: transform 0.2s, box-shadow 0.2s; }
+        .card-anim:hover { transform: translateY(-2px); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05); }
+    </style>
+</head>
+<body class="min-h-screen pb-12">
+
+    <!-- NAVIGATIEBALK -->
+    <nav class="bg-white border-b border-slate-100 shadow-sm sticky top-0 z-40 px-6 py-4">
+        <div class="max-w-6xl mx-auto flex justify-between items-center">
+            <div class="flex items-center gap-3">
+                <div class="bg-rose-500 text-white p-2.5 rounded-xl shadow-md shadow-rose-500/20">
+                    <i class="fa-solid fa-bread-slice text-lg"></i>
+                </div>
+                <div>
+                    <span class="text-xs font-bold text-rose-500 uppercase tracking-wider block">Broodjes bestellen</span>
+                    <h1 class="text-lg font-bold text-slate-800 leading-tight">De Komeet</h1>
+                </div>
+            </div>
+            <div id="active-user-badge" class="hidden text-xs font-bold text-slate-500 bg-slate-100 px-3.5 py-1.5 rounded-full"></div>
+        </div>
+    </nav>
+
+    <!-- HOOFDCONTAINER -->
+    <main class="max-w-7xl mx-auto px-4 mt-6">
+
+        <!-- PROGRESS BAR (BOVEN DE SCHERMEN) -->
+        <div id="progressContainer" class="hidden flex flex-col items-center mb-6 gap-2">
+            <div id="niveauLabel" class="text-xs font-bold text-slate-500 bg-slate-200/60 border border-slate-200 px-4 py-1.5 rounded-full uppercase tracking-wider">Onderdeel</div>
+            <div id="progressSectie" class="flex justify-center gap-2 text-3xl">
+                <div id="bullets-container" class="flex gap-1.5 flex-wrap justify-center"></div>
+            </div>
+        </div>
+
+        <!-- HOOFDMENU -->
+        <section id="menuSectie" class="space-y-6 animate-in fade-in duration-300">
+            <div class="text-center max-w-xl mx-auto mb-8">
+                <h2 class="text-3xl font-extrabold text-slate-800 tracking-tight">Welkom bij Broodjes Vicky!</h2>
+                <p class="text-slate-500 mt-2 text-sm">Help mee de kassa te bedienen. Bereken de prijs van de bestelling en geef het juiste wisselgeld terug aan de klanten!</p>
+            </div>
+
+            <!-- OEFENNIVEAUS -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-4xl mx-auto">
+                <button onclick="startOnderdeel('niveau1', 'Niveau 1: 1 Broodje')" class="menu-btn card-anim bg-white p-6 border border-slate-200/60 rounded-3xl text-left flex items-center gap-4 hover:border-rose-400 group transition-all">
+                    <div class="w-12 h-12 bg-rose-50 text-rose-500 rounded-2xl flex items-center justify-center text-xl group-hover:bg-rose-500 group-hover:text-white transition-colors"><i class="fa-solid fa-cookie"></i></div>
+                    <div>
+                        <h3 class="font-bold text-slate-800">Niveau 1</h3>
+                        <p class="text-xs text-slate-400 mt-0.5">Bestelling van exact 1 broodje</p>
+                    </div>
+                </button>
+
+                <button onclick="startOnderdeel('niveau2', 'Niveau 2: 2 Broodjes')" class="menu-btn card-anim bg-white p-6 border border-slate-200/60 rounded-3xl text-left flex items-center gap-4 hover:border-rose-400 group transition-all">
+                    <div class="w-12 h-12 bg-rose-50 text-rose-500 rounded-2xl flex items-center justify-center text-xl group-hover:bg-rose-500 group-hover:text-white transition-colors"><i class="fa-solid fa-pizza-slice"></i></div>
+                    <div>
+                        <h3 class="font-bold text-slate-800">Niveau 2</h3>
+                        <p class="text-xs text-slate-400 mt-0.5">Bestelling van exact 2 broodjes</p>
+                    </div>
+                </button>
+
+                <button onclick="startOnderdeel('niveau3', 'Niveau 3: 3 tot 4 Broodjes')" class="menu-btn card-anim bg-white p-6 border border-slate-200/60 rounded-3xl text-left flex items-center gap-4 hover:border-rose-400 group transition-all">
+                    <div class="w-12 h-12 bg-rose-50 text-rose-500 rounded-2xl flex items-center justify-center text-xl group-hover:bg-rose-500 group-hover:text-white transition-colors"><i class="fa-solid fa-burger"></i></div>
+                    <div>
+                        <h3 class="font-bold text-slate-800">Niveau 3</h3>
+                        <p class="text-xs text-slate-400 mt-0.5">Grote bestellingen van 3-4 broodjes</p>
+                    </div>
+                </button>
+            </div>
+
+            <!-- TOETS KNOP -->
+            <div class="pt-4 border-t border-slate-200 max-w-xl mx-auto">
+                <button onclick="startOnderdeel('toets', 'De Grote Toets')" class="w-full bg-rose-50 text-rose-600 border border-rose-200 font-black p-5 rounded-3xl hover:bg-rose-600 hover:text-white transition-all flex items-center justify-center gap-3 text-lg cursor-pointer shadow-sm">
+                    <i class="fa-solid fa-graduation-cap text-xl"></i> START DE WINKELTOETS (10 BESTELLINGEN)
+                </button>
+            </div>
+        </section>
+
+        <!-- ACTIEF REKEN SCHERM (SPLIT-SCREEN: LINKS MENU, RECHTS OPDRACHT & REKENMACHINE) -->
+        <section id="oefeningSectie" class="hidden grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+            
+            <!-- LINKERKOLOM: DIGITALE INTERACTIEVE MENUKAART -->
+            <div class="lg:col-span-4 bg-white rounded-3xl shadow-md p-6 border border-slate-200 h-[calc(100vh-140px)] overflow-y-auto sticky top-24">
+                <div class="border-b border-slate-100 pb-3 mb-4">
+                    <h3 class="text-lg font-black text-slate-800 flex items-center gap-2">
+                        <i class="fa-solid fa-receipt text-rose-500"></i> Menukaart (2025)
+                    </h3>
+                    <p class="text-xs text-slate-400 font-bold mt-1">OPGELET: Bruin & Flaguette + €0,50</p>
+                </div>
+                
+                <div class="space-y-6" id="menu-vicky-list">
+                    <!-- Wordt dynamisch gevuld per categorie -->
+                </div>
+            </div>
+
+            <!-- RECHTERKOLOM: OPDRACHT, INPUTS & DE REKENMACHINE -->
+            <div class="lg:col-span-8 grid grid-cols-1 md:grid-cols-12 gap-6 items-start">
+                
+                <!-- BESTELLING EN INVOERVELDEN -->
+                <div class="md:col-span-7 bg-white p-6 md:p-8 rounded-[2rem] shadow-xl border border-slate-100 relative space-y-6">
+                    <!-- Sluitknop -->
+                    <button class="absolute top-5 right-5 text-slate-300 hover:text-rose-500 transition-colors cursor-pointer text-xl" onclick="openExitModal()">
+                        <i class="fa-solid fa-circle-xmark"></i>
+                    </button>
+
+                    <!-- De Bestelling (Vraagstelling) -->
+                    <div class="bg-rose-50 border border-rose-100 p-5 rounded-2xl block">
+                        <p class="text-xs font-black text-rose-500 uppercase tracking-widest mb-2" id="orderStepLabel">STAP 1a: VUL DE PRIJZEN IN</p>
+                        <h3 class="text-sm font-bold text-slate-400 uppercase tracking-wider mb-2">Bestelling van de klant (vul per broodje de prijs in):</h3>
+                        <div id="order-items-list" class="space-y-2 mb-2 flex flex-col">
+                            <!-- Sorteerlijst van bestelde broodjes met invoervelden -->
+                        </div>
+                    </div>
+
+                    <!-- INTERACTIEF ANTWOORD-GEBIED -->
+                    <div class="space-y-4">
+                        <!-- Stap 1b: Totaalprijs Invoeren -->
+                        <div id="step-1-container" class="hidden bg-slate-50 border border-slate-200/80 p-5 rounded-2xl flex flex-col items-center">
+                            <label class="text-xs font-black text-slate-500 uppercase mb-3 text-center">Wat is de totaalprijs van deze bestelling?</label>
+                            <div class="flex items-center gap-2">
+                                <span class="text-slate-600 font-extrabold text-2xl">€</span>
+                                <input type="number" id="inputTotaal" step="0.01" class="w-36 p-3.5 text-center text-2xl font-black rounded-xl border-2 border-slate-200 outline-none focus:border-rose-500 focus:bg-white" placeholder="0,00" disabled>
+                            </div>
+                        </div>
+
+                        <!-- Stap 2: Wisselgeld Invoeren -->
+                        <div id="step-2-container" class="hidden bg-slate-50 border border-slate-200/80 p-5 rounded-2xl flex flex-col items-center animate-in fade-in duration-300">
+                            <div class="text-center mb-4">
+                                <p class="text-xs font-bold text-slate-400 uppercase mb-1">Betaling:</p>
+                                <div class="inline-block p-3 bg-emerald-500 text-white rounded-xl font-black text-lg shadow-sm" id="customerBillLabel">
+                                    De klant betaalt met €20,00
+                                </div>
+                            </div>
+                            <label class="text-xs font-black text-slate-500 uppercase mb-3 text-center">Hoeveel wisselgeld geef je terug?</label>
+                            <div class="flex items-center gap-2">
+                                <span class="text-slate-600 font-extrabold text-2xl">€</span>
+                                <input type="number" id="inputWisselgeld" step="0.01" class="w-36 p-3.5 text-center text-2xl font-black rounded-xl border-2 border-slate-200 outline-none focus:border-rose-500 focus:bg-white" placeholder="0,00" disabled>
+                            </div>
+                        </div>
+
+                        <!-- Feedback Box -->
+                        <div id="feedback" class="hidden p-4.5 rounded-2xl font-bold text-center"></div>
+
+                        <!-- Actie Buttons -->
+                        <div class="flex gap-3">
+                            <button id="check-btn" onclick="controleerStap()" class="flex-1 py-4 bg-rose-500 hover:bg-rose-600 text-white font-black rounded-2xl transition-all shadow-md cursor-pointer">
+                                Controleer Antwoord
+                            </button>
+                            <button id="next-btn" onclick="volgendeBestelling()" class="hidden flex-1 py-4 bg-slate-900 hover:bg-black text-white font-black rounded-2xl transition-all shadow-md cursor-pointer">
+                                Volgende bestelling →
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- DE REKENMACHINE (UITGELIJD EN GECORRIGEERD!) -->
+                <div class="md:col-span-5 bg-slate-800 p-5 rounded-[2rem] shadow-xl border border-slate-700 flex flex-col gap-3">
+                    <div class="flex justify-between items-center text-xs font-bold text-slate-400 uppercase tracking-wider px-1">
+                        <span>Rekenmachine 🧮</span>
+                        <button onclick="copyToActiveInput()" class="text-[10px] bg-indigo-600 hover:bg-indigo-700 text-white px-2 py-1 rounded-md transition-all">
+                            📋 Zet in antwoordveld
+                        </button>
+                    </div>
+                    
+                    <!-- Display -->
+                    <div class="bg-slate-950 p-4 rounded-xl text-right font-mono text-xl text-emerald-400 font-bold overflow-x-auto min-h-[56px] shadow-inner tracking-wider" id="calc-display">
+                        0
+                    </div>
+
+                    <!-- Knoppen Grid (Symmetrisch en vlekkeloos uitgelijnd) -->
+                    <div class="grid grid-cols-4 gap-2">
+                        <!-- Rij 1 -->
+                        <button onclick="calcClear()" class="p-3 bg-red-600 hover:bg-red-700 text-white font-bold rounded-lg transition-colors col-span-2">C</button>
+                        <button onclick="calcInput('/')" class="p-3 bg-slate-700 hover:bg-slate-600 text-white font-bold rounded-lg transition-colors">/</button>
+                        <button onclick="calcInput('*')" class="p-3 bg-slate-700 hover:bg-slate-600 text-white font-bold rounded-lg transition-colors">*</button>
+
+                        <!-- Rij 2 -->
+                        <button onclick="calcInput('7')" class="p-3 bg-slate-600 hover:bg-slate-500 text-white font-bold rounded-lg transition-colors">7</button>
+                        <button onclick="calcInput('8')" class="p-3 bg-slate-600 hover:bg-slate-500 text-white font-bold rounded-lg transition-colors">8</button>
+                        <button onclick="calcInput('9')" class="p-3 bg-slate-600 hover:bg-slate-500 text-white font-bold rounded-lg transition-colors">9</button>
+                        <button onclick="calcInput('-')" class="p-3 bg-slate-700 hover:bg-slate-600 text-white font-bold rounded-lg transition-colors">-</button>
+
+                        <!-- Rij 3 -->
+                        <button onclick="calcInput('4')" class="p-3 bg-slate-600 hover:bg-slate-500 text-white font-bold rounded-lg transition-colors">4</button>
+                        <button onclick="calcInput('5')" class="p-3 bg-slate-600 hover:bg-slate-500 text-white font-bold rounded-lg transition-colors">5</button>
+                        <button onclick="calcInput('6')" class="p-3 bg-slate-600 hover:bg-slate-500 text-white font-bold rounded-lg transition-colors">6</button>
+                        <button onclick="calcInput('+')" class="p-3 bg-slate-700 hover:bg-slate-600 text-white font-bold rounded-lg transition-colors">+</button>
+
+                        <!-- Rij 4 -->
+                        <button onclick="calcInput('1')" class="p-3 bg-slate-600 hover:bg-slate-500 text-white font-bold rounded-lg transition-colors">1</button>
+                        <button onclick="calcInput('2')" class="p-3 bg-slate-600 hover:bg-slate-500 text-white font-bold rounded-lg transition-colors">2</button>
+                        <button onclick="calcInput('3')" class="p-3 bg-slate-600 hover:bg-slate-500 text-white font-bold rounded-lg transition-colors">3</button>
+                        <button onclick="calcEval()" class="p-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg transition-colors">=</button>
+
+                        <!-- Rij 5 -->
+                        <button onclick="calcInput('0')" class="p-3 bg-slate-600 hover:bg-slate-500 text-white font-bold rounded-lg col-span-3 transition-colors text-center">0</button>
+                        <button onclick="calcInput('.')" class="p-3 bg-slate-600 hover:bg-slate-500 text-white font-bold rounded-lg transition-colors">.</button>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- EIND RAPPORT SCHERM -->
+        <section id="eindSectie" class="hidden text-center max-w-2xl mx-auto bg-white p-8 rounded-[2.5rem] shadow-xl border border-slate-100">
+            <div class="w-20 h-20 bg-amber-50 text-amber-500 text-4xl flex items-center justify-center rounded-2xl mx-auto mb-4">
+                <i class="fa-solid fa-crown animate-bounce"></i>
+            </div>
+            <h2 class="text-3xl font-extrabold text-slate-800">Sessie voltooid!</h2>
+            <p class="text-slate-400 text-xs mt-1">Hieronder zie je jouw resultaten en foutenanalyse.</p>
+            
+            <div class="grid grid-cols-3 gap-4 my-6">
+                <div class="bg-indigo-50 p-4 rounded-2xl border border-indigo-100/60">
+                    <span class="block text-[10px] text-indigo-400 font-bold uppercase mb-1">Score</span>
+                    <span id="score-val" class="text-2xl font-black text-indigo-600">0/10</span>
+                </div>
+                <div class="bg-emerald-50 p-4 rounded-2xl border border-emerald-100/60">
+                    <span class="block text-[10px] text-emerald-400 font-bold uppercase mb-1">Nauwkeurigheid</span>
+                    <span id="percent-val" class="text-2xl font-black text-emerald-600">0%</span>
+                </div>
+                <div class="bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                    <span class="block text-[10px] text-slate-400 font-bold uppercase mb-1">Tijd</span>
+                    <span id="time-val" class="text-2xl font-black text-slate-700">0:00</span>
+                </div>
+            </div>
+
+            <!-- FOUTENANALYSIS -->
+            <div class="text-left space-y-4">
+                <h3 class="text-xl font-extrabold text-slate-800 flex items-center gap-2">
+                    <i class="fa-solid fa-clipboard-list text-indigo-500"></i> Foutenanalyse per opgave
+                </h3>
+                <div id="mistake-list" class="space-y-3 max-h-[350px] overflow-y-auto pr-2">
+                    <!-- Wordt dynamisch gevuld -->
+                </div>
+            </div>
+
+            <button class="w-full mt-8 bg-slate-950 text-white font-bold py-4 rounded-2xl hover:bg-black transition-all shadow-md cursor-pointer" onclick="stopOefening()">
+                <i class="fa-solid fa-house mr-2"></i> Terug naar hoofdmenu
+            </button>
+        </section>
+
+        <!-- EXIT TOETS MODAL -->
+        <div id="exit-modal" class="hidden fixed inset-0 bg-slate-900/45 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+            <div class="bg-white rounded-3xl p-8 max-w-sm w-full text-center shadow-2xl border border-slate-100 space-y-6">
+                <div class="text-4xl">⚠️</div>
+                <div class="space-y-2">
+                    <h3 class="text-xl font-extrabold text-slate-800">Stoppen met de oefening?</h3>
+                    <p class="text-slate-500 text-sm">Je voortgang van deze ronde gaat verloren.</p>
+                </div>
+                <div class="flex gap-3">
+                    <button onclick="closeExitModal()" class="flex-1 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl transition-all">
+                        Blijf oefenen
+                    </button>
+                    <button onclick="confirmExit()" class="flex-1 py-3 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-xl transition-all">
+                        Stoppen
+                    </button>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <script>
+        // --- 1. BROODJES VICKY DATABANK (2025) ---
+        const BROODJES_DATABASE = {
+            kaas: [
+                { name: "Smos (Kaas, Hesp & Ei)", price: 4.20, emoji: "🧀" },
+                { name: "Jonge Kaas", price: 4.00, emoji: "🧀" },
+                { name: "Brie", price: 4.80, emoji: "🧀" },
+                { name: "Brie Special (bacon, appel)", price: 5.20, emoji: "🥓" },
+                { name: "Mozzarella", price: 4.70, emoji: "🍅" },
+                { name: "Geitenkaasje (honing, walnoot)", price: 5.80, emoji: "🐐" }
+            ],
+            vlees: [
+                { name: "Hesp", price: 4.00, emoji: "🍖" },
+                { name: "Americano (préparé, pesto)", price: 5.50, emoji: "🥩" },
+                { name: "Broodje @Vicky (ei, hesp)", price: 5.00, emoji: "🍳" },
+                { name: "Martino (préparé, martinos)", price: 4.20, emoji: "🌶️" },
+                { name: "Gehaktbal", price: 4.70, emoji: "🧆" },
+                { name: "Salami", price: 4.30, emoji: "🍕" },
+                { name: "Pitta-pikant", price: 4.50, emoji: "🌯" },
+                { name: "Préparé", price: 4.20, emoji: "🥩" }
+            ],
+            vis: [
+                { name: "Gerookte Zalm", price: 5.50, emoji: "🐟" },
+                { name: "Zalm Special (kruidenkaas)", price: 6.20, emoji: "🐟" },
+                { name: "Krabsalade", price: 4.50, emoji: "🦀" },
+                { name: "Scampisalade", price: 4.60, emoji: "🍤" },
+                { name: "Tonijn in mayonaise", price: 4.50, emoji: "🐟" }
+            ],
+            kip: [
+                { name: "Kipcurry", price: 4.50, emoji: "🍛" },
+                { name: "Kipfilet", price: 4.50, emoji: "🍗" },
+                { name: "Kip Hawaï", price: 4.50, emoji: "🍍" },
+                { name: "Krokante Kip (Flaguette)", price: 5.50, emoji: "🍟" }
+            ]
+        };
+
+        const BROOD_TYPES = [
+            { name: "Wit broodje", extra: 0.00 },
+            { name: "Bruin broodje", extra: 0.50 }, // Gecorrigeerd naar 0,50 cent extra
+            { name: "Flaguette", extra: 0.50 }     // Gecorrigeerd naar 0,50 cent extra
+        ];
+
+        // --- 2. APPLICATIE STATE ---
+        let state = {
+            currentMode: '', // 'niveau1', 'niveau2', 'niveau3', 'toets'
+            questions: [],
+            currentIndex: 0,
+            score: 0.0,
+            history: [],
+            totalQ: 10,
+            startTime: null,
+            endTime: null,
+            activeStep: 1, // 1 = Afzonderlijke prijzen invullen, 2 = Totaalprijs berekenen, 3 = Wisselgeld berekenen
+            currentQData: null,
+            secondChanceActive: false
+        };
+
+        // --- 3. REKENMACHINE FUNCTIES ---
+        let calcVal = "0";
+        function calcInput(char) {
+            if (calcVal === "0" && char !== ".") {
+                calcVal = char;
+            } else {
+                calcVal += char;
+            }
+            document.getElementById('calc-display').innerText = calcVal;
+        }
+
+        function calcClear() {
+            calcVal = "0";
+            document.getElementById('calc-display').innerText = calcVal;
+        }
+
+        function calcEval() {
+            try {
+                // Bereken de waarde op een veilige manier
+                let res = Function('"use strict";return (' + calcVal + ')')();
+                calcVal = String(parseFloat(res.toFixed(2)));
+                document.getElementById('calc-display').innerText = calcVal;
+            } catch(e) {
+                document.getElementById('calc-display').innerText = "Fout";
+                calcVal = "0";
+            }
+        }
+
+        function copyToActiveInput() {
+            let activeInp = null;
+            if (state.activeStep === 2) {
+                activeInp = document.getElementById('inputTotaal');
+            } else if (state.activeStep === 3) {
+                activeInp = document.getElementById('inputWisselgeld');
+            } else if (state.activeStep === 1) {
+                // Vind de eerste actieve (niet uitgeschakelde) individuele prijsinvoer die nog leeg is
+                const emptyPriceInp = [...document.querySelectorAll('[id^="item-price-"]')].find(inp => !inp.disabled && !inp.value);
+                if (emptyPriceInp) {
+                    activeInp = emptyPriceInp;
+                } else {
+                    activeInp = document.activeElement;
+                }
+            }
+
+            if (activeInp && !activeInp.disabled) {
+                activeInp.value = parseFloat(calcVal).toFixed(2);
+                activeInp.focus();
+            }
+        }
+
+        // --- 4. ENGINE: GENERATOR EN SESSIONS ---
+        function shuffle(array) {
+            let arr = [...array];
+            for (let i = arr.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [arr[i], arr[j]] = [arr[j], arr[i]];
+            }
+            return arr;
+        }
+
+        // Genereert een willekeurige Vicky bestelling op basis van niveau
+        function genereerBestelling(aantalBroodjes) {
+            const alleBroodjes = [];
+            Object.keys(BROODJES_DATABASE).forEach(cat => {
+                BROODJES_DATABASE[cat].forEach(b => {
+                    alleBroodjes.push(b);
+                });
+            });
+
+            const besteldeBroodjes = [];
+            let som = 0;
+
+            for (let i = 0; i < aantalBroodjes; i++) {
+                const randomB = alleBroodjes[Math.floor(Math.random() * alleBroodjes.length)];
+                const randomType = BROOD_TYPES[Math.floor(Math.random() * BROOD_TYPES.length)];
+                
+                const itemTotaal = randomB.price + randomType.extra;
+                som += itemTotaal;
+
+                besteldeBroodjes.push({
+                    name: randomB.name,
+                    emoji: randomB.emoji,
+                    broodType: randomType.name,
+                    price: randomB.price,
+                    extra: randomType.extra,
+                    totaal: itemTotaal
+                });
+            }
+
+            // Bepaal met welk briefje de klant betaalt
+            som = parseFloat(som.toFixed(2));
+            let bill = 10;
+            if (som >= 20) bill = 50;
+            else if (som >= 10) bill = 20;
+
+            const wisselgeld = parseFloat((bill - som).toFixed(2));
+
+            return {
+                items: besteldeBroodjes,
+                totaalprijs: som,
+                klantBriefje: bill,
+                wisselgeld: wisselgeld
+            };
+        }
+
+        function genereerVragen(mode) {
+            state.totalQ = 10;
+            const pool = [];
+            let aantalBroodjesRange = [1]; // default niveau 1
+
+            if (mode === 'niveau1') aantalBroodjesRange = [1];
+            else if (mode === 'niveau2') aantalBroodjesRange = [2];
+            else if (mode === 'niveau3') aantalBroodjesRange = [3, 4];
+            else if (mode === 'toets') aantalBroodjesRange = [1, 2, 3, 4];
+
+            for (let i = 0; i < state.totalQ; i++) {
+                const aantal = aantalBroodjesRange[Math.floor(Math.random() * aantalBroodjesRange.length)];
+                pool.push(genereerBestelling(aantal));
+            }
+            state.questions = pool;
+        }
+
+        // --- PROGRESSIE EN DISPLAY ---
+        function buildProgressBullets() {
+            const container = document.getElementById("bullets-container");
+            container.innerHTML = "";
+            for (let i = 0; i < state.totalQ; i++) {
+                const bullet = document.createElement("span");
+                bullet.id = `bullet-${i}`;
+                bullet.className = "w-4 h-4 rounded-full bg-slate-200 border-2 border-slate-300 transition-all duration-300";
+                container.appendChild(bullet);
+            }
+        }
+
+        function updateProgressBullets(isCheck = false, isCorrect = false) {
+            for (let i = 0; i < state.totalQ; i++) {
+                const bullet = document.getElementById(`bullet-${i}`);
+                if (bullet) {
+                    if (i < state.currentIndex) {
+                        const record = state.history[i];
+                        if (record) {
+                            bullet.className = record.isCorrect 
+                                ? "w-4 h-4 rounded-full bg-emerald-500 border-2 border-emerald-600" 
+                                : "w-4 h-4 rounded-full bg-rose-500 border-2 border-rose-600";
+                        }
+                    } else if (i === state.currentIndex) {
+                        if (isCheck) {
+                            bullet.className = isCorrect 
+                                ? "w-4 h-4 rounded-full bg-emerald-500 border-2 border-emerald-600" 
+                                : "w-4 h-4 rounded-full bg-rose-500 border-2 border-rose-600";
+                        } else {
+                            bullet.className = "w-4 h-4 rounded-full bg-indigo-600 border-2 border-indigo-700 animate-pulse";
+                        }
+                    } else {
+                        bullet.className = "w-4 h-4 rounded-full bg-slate-200 border-2 border-slate-300";
+                    }
+                }
+            }
+        }
+
+        // Menukaart dynamisch vullen
+        function renderDigitalMenu() {
+            const list = document.getElementById('menu-vicky-list');
+            list.innerHTML = '';
+            
+            Object.keys(BROODJES_DATABASE).forEach(cat => {
+                const catWrapper = document.createElement('div');
+                catWrapper.className = "space-y-2";
+                
+                catWrapper.innerHTML = `
+                    <h4 class="font-extrabold text-xs text-rose-500 uppercase tracking-widest bg-rose-50 px-2.5 py-1 rounded-md w-fit">${cat}</h4>
+                    <div class="grid grid-cols-1 gap-2 pl-1">
+                        ${BROODJES_DATABASE[cat].map(b => `
+                            <div class="flex items-center justify-between text-xs py-1 border-b border-slate-100">
+                                <span class="font-bold text-slate-700">${b.emoji} ${b.name}</span>
+                                <span class="font-black text-rose-600">€${b.price.toFixed(2).replace('.', ',')}</span>
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+                list.appendChild(catWrapper);
+            });
+
+            // Extra types toevoegen onderaan
+            const extrasWrapper = document.createElement('div');
+            extrasWrapper.className = "space-y-2 mt-4 pt-4 border-t border-slate-100";
+            extrasWrapper.innerHTML = `
+                <h4 class="font-extrabold text-xs text-slate-500 uppercase tracking-widest bg-slate-100 px-2.5 py-1 rounded-md w-fit">Extras</h4>
+                <div class="grid grid-cols-1 gap-2 pl-1 text-xs">
+                    <div class="flex items-center justify-between py-1 border-b border-slate-100">
+                        <span class="font-bold text-slate-600">🍞 Bruin broodje</span>
+                        <span class="font-black text-slate-800">+ €0,50</span>
+                    </div>
+                    <div class="flex items-center justify-between py-1">
+                        <span class="font-bold text-slate-600">🫓 Flaguette</span>
+                        <span class="font-black text-slate-800">+ €0,50</span>
+                    </div>
+                </div>
+            `;
+            list.appendChild(extrasWrapper);
+        }
+
+        // --- REKENSCHALEN RENDERING ---
+        function startOnderdeel(mode, label) {
+            state.currentMode = mode;
+            state.currentIndex = 0;
+            state.score = 0.0;
+            state.history = [];
+            state.startTime = new Date();
+
+            document.getElementById("niveauLabel").innerText = label;
+
+            genereerVragen(mode);
+            renderDigitalMenu();
+            buildProgressBullets();
+            showView("oefeningSectie");
+            laadBestelling();
+        }
+
+        function laadBestelling() {
+            state.activeStep = 1; // Start bij stap 1 (afzonderlijke prijzen invullen)
+            state.secondChanceActive = false;
+            state.currentQData = state.questions[state.currentIndex];
+            
+            document.getElementById("orderStepLabel").innerText = "STAP 1a: VUL DE PRIJZEN IN";
+            
+            // Veilige null-guard toegevoegd om runtime TypeErrors op Google Sites en sandboxes te voorkomen
+            const qTypeEl = document.getElementById("opdrachtType");
+            if (qTypeEl) {
+                qTypeEl.innerText = `Klant ${state.currentIndex + 1} van ${state.totalQ}`;
+            }
+
+            updateProgressBullets();
+
+            // Sorteerlijst van broodjes opbouwen - Nu met invulvelden per broodje!
+            const list = document.getElementById("order-items-list");
+            list.innerHTML = "";
+            state.currentQData.items.forEach((item, index) => {
+                const el = document.createElement("div");
+                el.className = "flex items-center justify-between bg-white px-4 py-2.5 rounded-xl border border-rose-100 shadow-sm text-sm";
+                el.innerHTML = `
+                    <div class="flex items-center gap-2">
+                        <span class="text-xl">${item.emoji}</span>
+                        <div>
+                            <span class="font-extrabold text-slate-800">${item.name}</span>
+                            <span class="text-xs text-slate-400 block">${item.broodType}</span>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-1.5">
+                        <span class="font-bold text-rose-500 text-base">€</span>
+                        <input type="number" id="item-price-${index}" step="0.01" class="w-20 p-2 text-center font-bold rounded-lg border-2 border-slate-200 outline-none focus:border-rose-500" placeholder="0,00">
+                    </div>
+                `;
+                list.appendChild(el);
+            });
+
+            // Inputs initialiseren
+            const totaalInp = document.getElementById("inputTotaal");
+            totaalInp.value = "";
+            totaalInp.disabled = true;
+            totaalInp.className = "w-36 p-3.5 text-center text-2xl font-black rounded-xl border-2 border-slate-200 outline-none focus:border-rose-500 focus:bg-white";
+
+            const wisselgeldInp = document.getElementById("inputWisselgeld");
+            wisselgeldInp.value = "";
+            wisselgeldInp.disabled = true;
+            wisselgeldInp.className = "w-36 p-3.5 text-center text-2xl font-black rounded-xl border-2 border-slate-200 outline-none focus:border-rose-500 focus:bg-white";
+
+            document.getElementById("step-1-container").classList.add("hidden"); // Verborgen tot Stap 1a klaar is
+            document.getElementById("step-2-container").classList.add("hidden");
+            document.getElementById("feedback").classList.add("hidden");
+            document.getElementById("next-btn").classList.add("hidden");
+            document.getElementById("check-btn").classList.remove("hidden");
+
+            // Focus op het eerste prijsveld
+            const firstPriceInp = document.getElementById("item-price-0");
+            if (firstPriceInp) setTimeout(() => firstPriceInp.focus(), 150);
+        }
+
+        // --- CONTROLE LOGICA ---
+        function controleerStap() {
+            const fb = document.getElementById("feedback");
+            fb.classList.remove("hidden");
+
+            if (state.activeStep === 1) {
+                // Stap 1a: Controleer de afzonderlijke prijzen van de broodjes
+                let allCorrect = true;
+                state.currentQData.items.forEach((item, index) => {
+                    const priceInp = document.getElementById(`item-price-${index}`);
+                    const userPrice = parseFloat(priceInp.value);
+                    const correctPrice = item.totaal;
+
+                    if (isNaN(userPrice)) {
+                        allCorrect = false;
+                        priceInp.className = "w-20 p-2 text-center font-bold rounded-lg border-2 border-rose-500 outline-none";
+                    } else if (Math.abs(userPrice - correctPrice) < 0.01) {
+                        priceInp.className = "w-20 p-2 text-center font-bold rounded-lg border-2 border-emerald-500 bg-emerald-50 text-emerald-800 outline-none";
+                    } else {
+                        allCorrect = false;
+                        priceInp.className = "w-20 p-2 text-center font-bold rounded-lg border-2 border-rose-500 outline-none";
+                    }
+                });
+
+                if (allCorrect) {
+                    state.currentQData.items.forEach((item, index) => {
+                        document.getElementById(`item-price-${index}`).disabled = true;
+                    });
+                    fb.innerHTML = "🎉 Super! Alle individuele prijzen kloppen. Bereken nu de totaalprijs.";
+                    fb.className = "p-4 rounded-2xl font-bold text-center bg-emerald-50 text-emerald-700 border border-emerald-100 shadow-sm";
+                    confetti({ particleCount: 15, spread: 35, origin: { y: 0.8 }, colors: ['#f43f5e'] });
+
+                    // Activeer Stap 1b
+                    state.activeStep = 2;
+                    state.secondChanceActive = false; // Reset second chance voor deze sub-stap
+                    document.getElementById("orderStepLabel").innerText = "STAP 1b: BEREKEN TOTAALPRIJS";
+                    document.getElementById("step-1-container").classList.remove("hidden");
+                    
+                    const totaalInp = document.getElementById("inputTotaal");
+                    totaalInp.disabled = false;
+                    setTimeout(() => totaalInp.focus(), 800);
+                } else {
+                    if (!state.secondChanceActive) {
+                        state.secondChanceActive = true;
+                        fb.innerHTML = `❌ Sommige prijzen kloppen nog niet. <br><span class="text-sm font-semibold text-rose-500">Kijk goed op de menukaart aan de linkerkant en probeer het nog eens!</span>`;
+                        fb.className = "p-4 rounded-2xl font-bold text-center bg-rose-50 text-rose-700 border border-rose-100 shadow-sm";
+                    } else {
+                        // Fout na 2e kans -> Vul de juiste in en ga door naar Stap 1b
+                        state.currentQData.items.forEach((item, index) => {
+                            const priceInp = document.getElementById(`item-price-${index}`);
+                            priceInp.value = item.totaal.toFixed(2);
+                            priceInp.disabled = true;
+                            priceInp.className = "w-20 p-2 text-center font-bold rounded-lg border-2 border-rose-500 bg-rose-50 text-rose-800 outline-none";
+                        });
+
+                        fb.innerHTML = `❌ Sommige prijzen waren onjuist. We hebben de juiste prijzen voor je ingevuld. <br><span class="text-sm font-semibold text-slate-500">Bereken nu de totaalprijs in stap 1b!</span>`;
+                        fb.className = "p-4 rounded-2xl font-bold text-center bg-rose-50 text-rose-700 border border-rose-100 shadow-sm";
+
+                        state.activeStep = 2;
+                        state.secondChanceActive = false;
+                        document.getElementById("orderStepLabel").innerText = "STAP 1b: BEREKEN TOTAALPRIJS";
+                        document.getElementById("step-1-container").classList.remove("hidden");
+                        
+                        const totaalInp = document.getElementById("inputTotaal");
+                        totaalInp.disabled = false;
+                        setTimeout(() => totaalInp.focus(), 1500);
+                    }
+                }
+            }
+            else if (state.activeStep === 2) {
+                // Controleer totaalprijs
+                const totaalInp = document.getElementById("inputTotaal");
+                const userTotaal = parseFloat(totaalInp.value);
+
+                if (isNaN(userTotaal)) {
+                    fb.innerHTML = "<span class='text-rose-500 font-extrabold'><i class='fa-solid fa-triangle-exclamation'></i> Vul eerst de totaalprijs in!</span>";
+                    return;
+                }
+
+                const isCorrect = (Math.abs(userTotaal - state.currentQData.totaalprijs) < 0.01);
+
+                if (isCorrect) {
+                    totaalInp.disabled = true;
+                    totaalInp.className = "w-36 p-3.5 text-center text-2xl font-black rounded-xl border-2 border-emerald-500 bg-emerald-50 text-emerald-800 outline-none";
+                    
+                    fb.innerHTML = "🎉 Uitstekend! De totaalprijs is helemaal juist.";
+                    fb.className = "p-4 rounded-2xl font-bold text-center bg-emerald-50 text-emerald-700 border border-emerald-100 shadow-sm";
+                    confetti({ particleCount: 20, spread: 45, origin: { y: 0.8 }, colors: ['#f43f5e'] });
+
+                    // Activeer Stap 2
+                    state.activeStep = 3;
+                    state.secondChanceActive = false;
+                    document.getElementById("orderStepLabel").innerText = "STAP 2: BEREKEN WISSELGELD";
+                    document.getElementById("customerBillLabel").innerText = `De klant betaalt met een briefje van €${state.currentQData.klantBriefje.toFixed(2).replace('.', ',')}`;
+                    document.getElementById("step-2-container").classList.remove("hidden");
+                    
+                    const wisselgeldInp = document.getElementById("inputWisselgeld");
+                    wisselgeldInp.disabled = false;
+                    setTimeout(() => wisselgeldInp.focus(), 800);
+                } else {
+                    if (!state.secondChanceActive) {
+                        state.secondChanceActive = true;
+                        fb.innerHTML = `❌ Oeps! Dat klopt niet helemaal. <br><span class="text-sm font-semibold text-rose-500">Je krijgt een tweede kans! Tel alle correcte prijzen hierboven bij elkaar op.</span>`;
+                        fb.className = "p-4 rounded-2xl font-bold text-center bg-rose-50 text-rose-700 border border-rose-100 shadow-sm";
+                        totaalInp.className = "w-36 p-3.5 text-center text-2xl font-black rounded-xl border-2 border-rose-500 outline-none";
+                    } else {
+                        // Fout na 2e kans -> Geef het juiste antwoord en ga door naar stap 2 zodat ze wisselgeld kunnen oefenen
+                        totaalInp.disabled = true;
+                        totaalInp.value = state.currentQData.totaalprijs.toFixed(2);
+                        totaalInp.className = "w-36 p-3.5 text-center text-2xl font-black rounded-xl border-2 border-rose-500 bg-rose-50 text-rose-800 outline-none";
+                        
+                        fb.innerHTML = `❌ Het was helaas niet juist. De totaalprijs is <b>€${state.currentQData.totaalprijs.toFixed(2).replace('.', ',')}</b>. <br><span class="text-sm font-semibold text-slate-500">We hebben het ingevuld voor je. Reken nu het wisselgeld uit in stap 2!</span>`;
+                        fb.className = "p-4 rounded-2xl font-bold text-center bg-rose-50 text-rose-700 border border-rose-100 shadow-sm";
+
+                        state.activeStep = 3;
+                        state.secondChanceActive = false;
+                        document.getElementById("orderStepLabel").innerText = "STAP 2: BEREKEN WISSELGELD";
+                        document.getElementById("customerBillLabel").innerText = `De klant betaalt met een briefje van €${state.currentQData.klantBriefje.toFixed(2).replace('.', ',')}`;
+                        document.getElementById("step-2-container").classList.remove("hidden");
+                        
+                        const wisselgeldInp = document.getElementById("inputWisselgeld");
+                        wisselgeldInp.disabled = false;
+                        setTimeout(() => wisselgeldInp.focus(), 1500);
+                    }
+                }
+            } 
+            else if (state.activeStep === 3) {
+                // Controleer wisselgeld
+                const wisselgeldInp = document.getElementById("inputWisselgeld");
+                const userWisselgeld = parseFloat(wisselgeldInp.value);
+
+                if (isNaN(userWisselgeld)) {
+                    fb.innerHTML = "<span class='text-rose-500 font-extrabold'><i class='fa-solid fa-triangle-exclamation'></i> Vul het wisselgeld in!</span>";
+                    return;
+                }
+
+                const isCorrect = (Math.abs(userWisselgeld - state.currentQData.wisselgeld) < 0.01);
+
+                wisselgeldInp.disabled = true;
+                document.getElementById("check-btn").classList.add("hidden");
+                document.getElementById("next-btn").classList.remove("hidden");
+
+                if (isCorrect) {
+                    wisselgeldInp.className = "w-36 p-3.5 text-center text-2xl font-black rounded-xl border-2 border-emerald-500 bg-emerald-50 text-emerald-800 outline-none";
+                    fb.innerHTML = `🎉 Helemaal juist! De klant krijgt exact €${state.currentQData.wisselgeld.toFixed(2).replace('.', ',')} terug.`;
+                    fb.className = "p-4 rounded-2xl font-bold text-center bg-emerald-50 text-emerald-700 border border-emerald-100 shadow-sm";
+                    confetti({ particleCount: 30, spread: 55, origin: { y: 0.8 }, colors: ['#f43f5e', '#10b981'] });
+                    
+                    state.score += 1.0;
+                } else {
+                    wisselgeldInp.className = "w-36 p-3.5 text-center text-2xl font-black rounded-xl border-2 border-rose-500 bg-rose-50 text-rose-800 outline-none";
+                    fb.innerHTML = `❌ Niet juist. Het wisselgeld was <b>€${state.currentQData.wisselgeld.toFixed(2).replace('.', ',')}</b> (namelijk €${state.currentQData.klantBriefje.toFixed(2).replace('.', ',')} - €${state.currentQData.totaalprijs.toFixed(2).replace('.', ',')}).`;
+                    fb.className = "p-4 rounded-2xl font-bold text-center bg-rose-50 text-rose-700 border border-rose-100 shadow-sm";
+                }
+
+                // Sla de geschiedenis op voor het eindrapport
+                const besteldeNamen = state.currentQData.items.map(item => `${item.name} (${item.broodType})`).join(', ');
+                state.history.push({
+                    title: `Bestelling van: ${besteldeNamen}`,
+                    totaalprijs: state.currentQData.totaalprijs,
+                    wisselgeld: state.currentQData.wisselgeld,
+                    userTotaal: parseFloat(document.getElementById("inputTotaal").value),
+                    userWisselgeld: userWisselgeld,
+                    isCorrect: isCorrect && !state.secondChanceActive
+                });
+
+                // Kleur het vooruitgangsbolletje direct in
+                updateProgressBullets(true, isCorrect && !state.secondChanceActive);
+            }
+        }
+
+        function volgendeBestelling() {
+            state.currentIndex++;
+            if (state.currentIndex < state.totalQ) {
+                laadBestelling();
+            } else {
+                state.endTime = new Date();
+                sluitSessieAf();
+            }
+        }
+
+        // --- SESSIE VOLTOOID EN EINDRAPPORT ---
+        function sluitSessieAf() {
+            showView("eindSectie");
+            const roundedScore = Math.round(state.score * 10) / 10;
+            const percent = Math.round((roundedScore / state.totalQ) * 100);
+
+            document.getElementById("score-val").innerText = `${state.score}/${state.totalQ}`;
+            document.getElementById("percent-val").innerText = `${percent}%`;
+
+            // Tijd berekenen
+            const timeDiff = Math.round((state.endTime - state.startTime) / 1000); // in seconden
+            const mins = Math.floor(timeDiff / 60);
+            const secs = timeDiff % 60;
+            document.getElementById("time-val").innerText = `${mins}:${secs.toString().padStart(2, '0')}`;
+
+            const list = document.getElementById("mistake-list");
+            list.innerHTML = "";
+
+            state.history.forEach((h, idx) => {
+                const card = document.createElement("div");
+                card.className = "p-4 rounded-2xl border flex flex-col gap-2 " + 
+                    (h.isCorrect ? "bg-emerald-50/30 border-emerald-100" : "bg-rose-50/30 border-rose-100");
+                
+                card.innerHTML = `
+                    <div class="flex justify-between items-center text-xs font-bold ${h.isCorrect ? 'text-emerald-600' : 'text-rose-600'}">
+                        <span>BESTELLING ${idx + 1}</span>
+                        <span>${h.isCorrect ? '✓ ALLES JUIST' : '✕ VERBETERD/FOUT'}</span>
+                    </div>
+                    <div class="text-slate-800 text-sm font-semibold">${h.title}</div>
+                    <div class="text-xs text-slate-500 mt-1 border-t border-dashed pt-1.5 flex flex-col gap-1">
+                        <div>Jouw totaalprijs: <b>€${h.userTotaal.toFixed(2).replace('.', ',')}</b> (Correct: €${h.totaalprijs.toFixed(2).replace('.', ',')})</div>
+                        <div>Jouw wisselgeld: <b>€${h.userWisselgeld.toFixed(2).replace('.', ',')}</b> (Correct: €${h.wisselgeld.toFixed(2).replace('.', ',')})</div>
+                    </div>
+                `;
+                list.appendChild(card);
+            });
+
+            if (percent === 100) {
+                confetti({ particleCount: 150, spread: 80, origin: { y: 0.6 } });
+            }
+        }
+
+        window.stopOefening = function() {
+            showView("menuSectie");
+        }
+
+        // --- SITES COMPATIBELE MODAL CONTROLS ---
+        function showView(id) {
+            document.getElementById('menuSectie').classList.add('hidden');
+            document.getElementById('oefeningSectie').classList.add('hidden');
+            document.getElementById('eindSectie').classList.add('hidden');
+            document.getElementById('progressContainer').classList.toggle('hidden', id === 'menuSectie' || id === 'eindSectie');
+            
+            document.getElementById(id).classList.remove('hidden');
+            window.scrollTo(0,0);
+        }
+
+        window.openExitModal = function() {
+            document.getElementById("exit-modal").classList.remove("hidden");
+        }
+
+        window.closeExitModal = function() {
+            document.getElementById("exit-modal").classList.add("hidden");
+        }
+
+        window.confirmExit = function() {
+            closeExitModal();
+            showView("menuSectie");
+        }
+
+        // Enter toets ondersteuning
+        document.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                const nextVisible = !document.getElementById('next-btn').classList.contains('hidden');
+                if (nextVisible) {
+                    volgendeBestelling();
+                } else {
+                    const checkVisible = !document.getElementById('check-btn').classList.contains('hidden');
+                    if (checkVisible) {
+                        controleerStap();
+                    }
+                }
+            }
+        });
+
+        // Start in het hoofdmenu
+        window.onload = function() {
+            showView("menuSectie");
+        }
+    </script>
+</body>
+</html>
