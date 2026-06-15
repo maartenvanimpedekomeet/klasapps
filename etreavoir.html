@@ -168,21 +168,51 @@
         <h2 id="keuze-titel" class="text-xl font-extrabold text-slate-800">Oefenen</h2>
         <p class="text-slate-500 text-sm mt-1">Welke werkwoorden wil je oefenen?</p>
       </div>
-      <div class="grid grid-cols-2 gap-3 mb-6">
-        <label class="cursor-pointer">
-          <input type="checkbox" id="check-etre" value="etre" checked class="hidden peer">
-          <div class="p-4 rounded-2xl border-2 transition-all flex flex-col items-center peer-checked:border-blue-500 peer-checked:bg-blue-50 border-slate-100 hover:border-slate-300">
-            <span class="font-extrabold text-lg">être</span>
-            <span class="text-xs text-slate-500 italic">(zijn)</span>
+      <div class="space-y-5 mb-6">
+        <!-- Werkwoorden -->
+        <div>
+          <p class="text-xs font-extrabold text-slate-500 uppercase tracking-widest mb-3">Welke werkwoorden?</p>
+          <div class="flex flex-col gap-2">
+            <label class="flex items-center gap-3 cursor-pointer p-3 rounded-xl border-2 border-slate-100 hover:border-blue-300 transition-all">
+              <input type="checkbox" id="check-etre" value="etre" checked
+                style="width:20px;height:20px;accent-color:#3b82f6;cursor:pointer;flex-shrink:0;">
+              <div>
+                <span class="font-extrabold text-slate-800">être</span>
+                <span class="text-xs text-slate-400 italic ml-1">(zijn)</span>
+              </div>
+            </label>
+            <label class="flex items-center gap-3 cursor-pointer p-3 rounded-xl border-2 border-slate-100 hover:border-amber-300 transition-all">
+              <input type="checkbox" id="check-avoir" value="avoir" checked
+                style="width:20px;height:20px;accent-color:#f59e0b;cursor:pointer;flex-shrink:0;">
+              <div>
+                <span class="font-extrabold text-slate-800">avoir</span>
+                <span class="text-xs text-slate-400 italic ml-1">(hebben)</span>
+              </div>
+            </label>
           </div>
-        </label>
-        <label class="cursor-pointer">
-          <input type="checkbox" id="check-avoir" value="avoir" checked class="hidden peer">
-          <div class="p-4 rounded-2xl border-2 transition-all flex flex-col items-center peer-checked:border-amber-500 peer-checked:bg-amber-50 border-slate-100 hover:border-slate-300">
-            <span class="font-extrabold text-lg">avoir</span>
-            <span class="text-xs text-slate-500 italic">(hebben)</span>
+        </div>
+        <!-- Richting -->
+        <div>
+          <p class="text-xs font-extrabold text-slate-500 uppercase tracking-widest mb-3">Welke richting?</p>
+          <div class="flex flex-col gap-2">
+            <label class="flex items-center gap-3 cursor-pointer p-3 rounded-xl border-2 border-slate-100 hover:border-indigo-300 transition-all">
+              <input type="checkbox" id="check-fr-nl" checked
+                style="width:20px;height:20px;accent-color:#6366f1;cursor:pointer;flex-shrink:0;">
+              <div>
+                <span class="font-extrabold text-slate-800">Frans → Nederlands</span>
+                <span class="text-xs text-slate-400 ml-1">bv. <em>elles sont</em> → zij zijn</span>
+              </div>
+            </label>
+            <label class="flex items-center gap-3 cursor-pointer p-3 rounded-xl border-2 border-slate-100 hover:border-indigo-300 transition-all">
+              <input type="checkbox" id="check-nl-fr" checked
+                style="width:20px;height:20px;accent-color:#6366f1;cursor:pointer;flex-shrink:0;">
+              <div>
+                <span class="font-extrabold text-slate-800">Nederlands → Frans</span>
+                <span class="text-xs text-slate-400 ml-1">bv. <em>zij zijn</em> → elles sont</span>
+              </div>
+            </label>
           </div>
-        </label>
+        </div>
       </div>
       <button onclick="bevestigKeuze()" class="w-full bg-slate-900 text-white py-4 rounded-2xl font-extrabold text-lg hover:bg-black transition-all shadow-lg">
         Start →
@@ -313,7 +343,7 @@ var currentMode  = "";      // "oefenen" of "toets"
 var questions    = [];
 var currentIndex = 0;
 var score        = 0;
-var history      = [];
+var quizLog      = [];
 var quizState    = "answering";  // "answering" | "feedback"
 
 // ── WERKWOORDEN DATA ──────────────────────────────────────────────────────
@@ -438,16 +468,22 @@ function bevestigKeuze() {
   if (document.getElementById("check-etre").checked)  selected.push("etre");
   if (document.getElementById("check-avoir").checked) selected.push("avoir");
 
+  var richtingen = [];
+  if (document.getElementById("check-fr-nl") && document.getElementById("check-fr-nl").checked) richtingen.push("FR-NL");
+  if (document.getElementById("check-nl-fr") && document.getElementById("check-nl-fr").checked) richtingen.push("NL-FR");
+  if (richtingen.length === 0) richtingen = ["FR-NL", "NL-FR"];
+
   if (selected.length === 0) {
     document.getElementById("keuze-err").textContent = "Selecteer minstens één werkwoord.";
     document.getElementById("keuze-err").classList.remove("hidden");
     return;
   }
-  bouwVragen(selected);
+  bouwVragen(selected, richtingen);
 }
 
 // ── VRAGEN BOUWEN ─────────────────────────────────────────────────────────
-function bouwVragen(selected) {
+function bouwVragen(selected, richtingen) {
+  if (!richtingen) richtingen = ["FR-NL", "NL-FR"];
   var pool = [];
   selected.forEach(function(vKey) {
     var verb = VERBS[vKey];
@@ -455,26 +491,30 @@ function bouwVragen(selected) {
       // Bouw de volledige Franse uitdrukking
       var fr = conj.pr + (conj.pr.slice(-1) === "'" ? "" : " ") + conj.c;
 
-      // FR → NL
-      pool.push({
-        verb:      verb.name,
-        prompt:    fr,
-        answer:    conj.tr,
-        direction: "FR-NL",
-        cat:       conj.cat,
-        fr:        fr,
-        nl:        conj.tr
-      });
-      // NL → FR
-      pool.push({
-        verb:      verb.name,
-        prompt:    conj.tr,
-        answer:    fr,
-        direction: "NL-FR",
-        cat:       conj.cat,
-        fr:        fr,
-        nl:        conj.tr
-      });
+      // FR → NL (alleen als geselecteerd)
+      if (richtingen.indexOf("FR-NL") >= 0) {
+        pool.push({
+          verb:      verb.name,
+          prompt:    fr,
+          answer:    conj.tr,
+          direction: "FR-NL",
+          cat:       conj.cat,
+          fr:        fr,
+          nl:        conj.tr
+        });
+      }
+      // NL → FR (alleen als geselecteerd)
+      if (richtingen.indexOf("NL-FR") >= 0) {
+        pool.push({
+          verb:      verb.name,
+          prompt:    conj.tr,
+          answer:    fr,
+          direction: "NL-FR",
+          cat:       conj.cat,
+          fr:        fr,
+          nl:        conj.tr
+        });
+      }
     });
   });
 
@@ -482,7 +522,7 @@ function bouwVragen(selected) {
   questions    = shuffle(pool).slice(0, 15);
   currentIndex = 0;
   score        = 0;
-  history      = [];
+  quizLog      = [];
 
   // Mode-badge kleur
   var modeBadge = document.getElementById("mode-badge");
@@ -538,13 +578,18 @@ function controleer() {
   var q        = questions[currentIndex];
   var correct  = q.answer.toLowerCase();
 
-  // Accepteer ook deelantwoorden bij slash-varianten (bijv. "jullie zijn" als antwoord op "jullie zijn / u bent")
-  var isCorrect = (val === correct) ||
-    (correct.includes(" / ") && correct.split(" / ").map(function(s){return s.trim();}).indexOf(val) >= 0);
+  // Strip (m) en (v) suffix — leerling hoeft dit niet in te typen
+  function stripMV(s) { return s.replace(/\s*\((m|v)\)\s*$/i, "").trim(); }
+  var correctStripped = stripMV(correct);
+  var valStripped     = stripMV(val);
+
+  // Accepteer: exact match, match zonder (m)/(v), of deelantwoord bij slash-varianten
+  var isCorrect = (val === correct) || (valStripped === correctStripped) ||
+    (correct.includes(" / ") && correct.split(" / ").map(function(s){ return stripMV(s.trim()); }).indexOf(valStripped) >= 0);
 
   if (isCorrect) score++;
 
-  history.push({
+  quizLog.push({
     verb:        q.verb,
     direction:   q.direction,
     prompt:      q.prompt,
@@ -605,10 +650,10 @@ function toonResultaat() {
   // Foutenlijst
   var errList = document.getElementById("error-list");
   errList.innerHTML = "";
-  if (history.filter(function(h){return !h.correct;}).length === 0) {
+  if (quizLog.filter(function(h){return !h.correct;}).length === 0) {
     errList.innerHTML = '<div class="text-center py-5 bg-green-50 rounded-2xl border border-green-100 text-green-700 font-bold">Foutloos! Super gedaan. 🎉</div>';
   } else {
-    history.forEach(function(h, i) {
+    quizLog.forEach(function(h, i) {
       var ok = h.correct;
       var bg = ok ? "bg-green-50 border-green-100" : "bg-red-50 border-red-100";
       var el = document.createElement("div");
@@ -670,7 +715,7 @@ function slaScoreOp(pct) {
 
   // Foutenanalyse per werkwoord
   var foutenTelling = {};
-  history.filter(function(h){return !h.correct;}).forEach(function(h) {
+  quizLog.filter(function(h){return !h.correct;}).forEach(function(h) {
     var k = h.verb + " (" + (h.direction === "FR-NL" ? "FR→NL" : "NL→FR") + ")";
     foutenTelling[k] = (foutenTelling[k] || 0) + 1;
   });
@@ -691,7 +736,7 @@ function slaScoreOp(pct) {
       extraOefenen:       extraOefenen,
       foutenPerCategorie: foutenTelling
     },
-    vragen: history.map(function(h, i) {
+    vragen: quizLog.map(function(h, i) {
       return {
         vraagNr:         i + 1,
         vraag:           h.prompt,
