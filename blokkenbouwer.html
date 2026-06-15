@@ -1,0 +1,1323 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D Blokkenbouwer - Ruimtelijk Inzicht</title>
+    <!-- Tailwind CSS voor modern en responsief design -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Three.js voor echte 3D rendering -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <!-- OrbitControls om met muis/touch te kunnen draaien in 3D -->
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <style>
+        .no-select {
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        /* Zachte animaties */
+        .transition-all {
+            transition: all 0.3s ease;
+        }
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col no-select font-sans">
+
+    <!-- Header -->
+    <header class="bg-white border-b border-slate-200 py-4 px-6 shadow-sm sticky top-0 z-40">
+        <div class="max-w-6xl mx-auto flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="bg-indigo-600 text-white p-2.5 rounded-xl shadow-md">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
+                    </svg>
+                </div>
+                <div>
+                    <h1 class="text-lg md:text-xl font-black text-slate-900 tracking-tight">3D Blokkenbouwer</h1>
+                    <p class="text-xs text-slate-500 hidden sm:block">Train je ruimtelijk inzicht interactief!</p>
+                </div>
+            </div>
+            
+            <!-- Home/Menu knop (altijd zichtbaar behalve op het hoofdmenu) -->
+            <button id="header-menu-btn" onclick="confirmGoToMenu()" class="hidden px-4 py-2 text-xs font-bold text-slate-600 hover:text-indigo-600 bg-slate-100 hover:bg-indigo-50 rounded-xl transition duration-200 flex items-center gap-2 border border-slate-200">
+                🏠 Menu
+            </button>
+        </div>
+    </header>
+
+    <!-- HIERONDER DE SCHERMEN -->
+    
+    <!-- 1. KEUZEMENU SCHERM -->
+    <section id="screen-menu" class="flex-1 max-w-6xl w-full mx-auto p-4 md:p-6 flex flex-col justify-center">
+        <div class="text-center max-w-2xl mx-auto mb-10">
+            <span class="text-indigo-600 font-bold text-xs uppercase tracking-widest bg-indigo-50 px-3 py-1.5 rounded-full">Interactief Leren</span>
+            <h2 class="text-3xl md:text-4xl font-extrabold text-slate-900 mt-3 leading-tight">Kies je Oefenmodule</h2>
+            <p class="text-slate-500 text-sm md:text-base mt-2">Kies een specifieke module om 10 opdrachten te maken, of daag jezelf uit met de grote Toets van 15 gemengde vragen!</p>
+        </div>
+
+        <!-- Cards Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-5xl mx-auto w-full">
+            
+            <!-- Module 1 -->
+            <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm hover:shadow-md hover:-translate-y-1 transition-all flex flex-col justify-between">
+                <div>
+                    <div class="w-12 h-12 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center font-bold text-xl mb-4">1</div>
+                    <h3 class="font-bold text-lg text-slate-900">Draai & Aanzicht</h3>
+                    <p class="text-xs text-slate-500 mt-2 leading-relaxed">Draai het 3D-bouwsel tot het exact overeenkomt met het gevraagde platte 2D-aanzicht.</p>
+                </div>
+                <div class="mt-6 pt-4 border-t border-slate-100 flex items-center justify-between">
+                    <span id="score-badge-1" class="text-xs font-semibold text-slate-400">Geen eerdere score</span>
+                    <button onclick="startModule(1)" class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold py-2.5 px-4 rounded-xl transition duration-150">Start (10x)</button>
+                </div>
+            </div>
+
+            <!-- Module 2 -->
+            <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm hover:shadow-md hover:-translate-y-1 transition-all flex flex-col justify-between">
+                <div>
+                    <div class="w-12 h-12 rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center font-bold text-xl mb-4">2</div>
+                    <h3 class="font-bold text-lg text-slate-900">Bouw vanaf Grondplan</h3>
+                    <p class="text-xs text-slate-500 mt-2 leading-relaxed">Stapel de blokken op de bouwplaat om exact de getallen op het grondplan na te bouwen.</p>
+                </div>
+                <div class="mt-6 pt-4 border-t border-slate-100 flex items-center justify-between">
+                    <span id="score-badge-2" class="text-xs font-semibold text-slate-400">Geen eerdere score</span>
+                    <button onclick="startModule(2)" class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold py-2.5 px-4 rounded-xl transition duration-150">Start (10x)</button>
+                </div>
+            </div>
+
+            <!-- Module 3 -->
+            <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm hover:shadow-md hover:-translate-y-1 transition-all flex flex-col justify-between">
+                <div>
+                    <div class="w-12 h-12 rounded-xl bg-violet-100 text-violet-600 flex items-center justify-center font-bold text-xl mb-4">3</div>
+                    <h3 class="font-bold text-lg text-slate-900">Nachtbouw</h3>
+                    <p class="text-xs text-slate-500 mt-2 leading-relaxed">Bouw een constructie die exact de gevraagde zwarte schaduw (vooraanzicht) werpt.</p>
+                </div>
+                <div class="mt-6 pt-4 border-t border-slate-100 flex items-center justify-between">
+                    <span id="score-badge-3" class="text-xs font-semibold text-slate-400">Geen eerdere score</span>
+                    <button onclick="startModule(3)" class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold py-2.5 px-4 rounded-xl transition duration-150">Start (10x)</button>
+                </div>
+            </div>
+
+            <!-- Module 4 -->
+            <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm hover:shadow-md hover:-translate-y-1 transition-all flex flex-col justify-between">
+                <div>
+                    <div class="w-12 h-12 rounded-xl bg-amber-100 text-amber-600 flex items-center justify-center font-bold text-xl mb-4">4</div>
+                    <h3 class="font-bold text-lg text-slate-900">Vul Grondplan In</h3>
+                    <p class="text-xs text-slate-500 mt-2 leading-relaxed">Bestudeer het 3D-bouwsel en vul de juiste hoogtegetallen in op het grondplan.</p>
+                </div>
+                <div class="mt-6 pt-4 border-t border-slate-100 flex items-center justify-between">
+                    <span id="score-badge-4" class="text-xs font-semibold text-slate-400">Geen eerdere score</span>
+                    <button onclick="startModule(4)" class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold py-2.5 px-4 rounded-xl transition duration-150">Start (10x)</button>
+                </div>
+            </div>
+
+            <!-- Toets (Module 5) -->
+            <div class="bg-slate-900 rounded-2xl border border-slate-800 p-6 shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all flex flex-col justify-between md:col-span-2 lg:col-span-2">
+                <div class="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
+                    <div>
+                        <span class="bg-indigo-500/15 text-indigo-400 text-[10px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full">Eindtoets</span>
+                        <h3 class="font-black text-xl text-white mt-1">Grote Toets (Gemengd)</h3>
+                        <p class="text-xs text-slate-400 mt-2 leading-relaxed max-w-md">Krijg 15 willekeurige opdrachten uit alle 4 de modules door elkaar. Bewijs dat jij een meester bent in ruimtelijk inzicht!</p>
+                    </div>
+                    <div class="bg-indigo-500/10 text-indigo-400 p-4 rounded-2xl text-center self-center hidden sm:block">
+                        <span class="block text-2xl font-black">15</span>
+                        <span class="text-[9px] uppercase font-bold tracking-wider">Vragen</span>
+                    </div>
+                </div>
+                <div class="mt-6 pt-4 border-t border-slate-800 flex items-center justify-between">
+                    <span id="score-badge-5" class="text-xs font-semibold text-slate-500">Geen eerdere score</span>
+                    <button onclick="startModule(5)" class="bg-indigo-500 hover:bg-indigo-400 active:bg-indigo-600 text-white text-xs font-bold py-3 px-6 rounded-xl transition duration-150 shadow-md shadow-indigo-900/20">
+                        Start Toets ⚡
+                    </button>
+                </div>
+            </div>
+
+        </div>
+    </section>
+
+    <!-- 2. GAMEPLAY SCHERM -->
+    <section id="screen-game" class="hidden flex-1 max-w-6xl w-full mx-auto p-4 md:p-6 flex flex-col gap-6">
+        
+        <!-- Progress Bar & Active Mode Info -->
+        <div class="bg-white rounded-2xl border border-slate-200 p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-sm">
+            <div class="flex items-center gap-3">
+                <span id="active-mode-badge" class="bg-indigo-100 text-indigo-800 text-xs px-3 py-1.5 rounded-xl font-black uppercase tracking-wider">Laden...</span>
+                <span id="progress-text" class="text-sm text-slate-500 font-bold">Oefening 1 van 10</span>
+            </div>
+            
+            <!-- Progress Tracker -->
+            <div class="flex-1 max-w-md bg-slate-100 h-2.5 rounded-full overflow-hidden">
+                <div id="progress-bar-fill" class="bg-indigo-600 h-full transition-all duration-300" style="width: 10%"></div>
+            </div>
+        </div>
+
+        <!-- Speelveld Splitter -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
+            
+            <!-- Linker Paneel: Opdracht / Vraag -->
+            <div class="lg:col-span-5 bg-white rounded-2xl border border-slate-200 shadow-sm p-6 flex flex-col justify-between min-h-[400px]">
+                <div>
+                    <div class="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
+                        <span class="text-xs font-bold uppercase tracking-wider text-indigo-500">Opdracht</span>
+                        <span id="left-mode-badge" class="bg-slate-100 text-slate-700 text-xs px-2.5 py-1 rounded-full font-medium">Laden...</span>
+                    </div>
+                    
+                    <!-- Dynamische container voor opdracht -->
+                    <div id="left-canvas-container" class="flex flex-col items-center justify-center min-h-[280px]">
+                        <!-- Wordt live ingevuld door JavaScript -->
+                    </div>
+                </div>
+
+                <!-- Info onderkant opdracht -->
+                <div class="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-400">
+                    <span id="game-difficulty">Niveau: Gemiddeld</span>
+                    <span>3x3 Grondvlak</span>
+                </div>
+            </div>
+
+            <!-- Rechter Paneel: Interactieve 3D Wereld -->
+            <div class="lg:col-span-7 bg-white rounded-2xl border border-slate-200 shadow-sm p-6 flex flex-col justify-between min-h-[500px] relative">
+                
+                <div>
+                    <div class="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
+                        <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Jouw 3D Bouwsel</span>
+                        <div class="flex gap-2">
+                            <span class="text-xs text-slate-500 flex items-center gap-1">
+                                <svg class="w-3.5 h-3.5 text-indigo-500 animate-pulse" fill="currentColor" viewBox="0 0 20 20"><path d="M10 .5a9.5 9.5 0 1 0 9.5 9.5A9.51 9.51 0 0 0 10 .5ZM10 15a5 5 0 1 1 5-5 5.006 5.006 0 0 1-5 5Z"></path></svg>
+                                Sleep om vrij te draaien (3D)
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- 3D Canvas Container -->
+                    <div id="threejs-container" class="w-full h-[320px] bg-slate-900 rounded-xl overflow-hidden relative shadow-inner border border-slate-800">
+                        <!-- Three.js Canvas komt hier -->
+                        <div id="three-loading" class="absolute inset-0 flex items-center justify-center bg-slate-900 text-white text-sm">
+                            <span class="animate-spin mr-2">⏳</span> 3D Wereld opstarten...
+                        </div>
+                        
+                        <!-- Legenda over de kijkpijl -->
+                        <div class="absolute bottom-3 left-3 bg-slate-950/80 backdrop-blur-sm border border-slate-800 text-[10px] text-slate-300 px-2 py-1.5 rounded-md flex items-center gap-1.5">
+                            <span class="w-2.5 h-2.5 bg-red-600 rounded-full inline-block"></span>
+                            <span>Rode pijl = <strong class="text-white">Voorkant</strong></span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Interactieve Knoppen & Bouw-pad onder de 3D Canvas -->
+                <div class="mt-4">
+                    <!-- Bouw-pad (Zichtbaar in Bouw/Nachtbouw modes) -->
+                    <div id="building-pad-container" class="hidden flex flex-col items-center mb-4 p-4 bg-slate-50 rounded-xl border border-slate-200">
+                        <span class="text-[10px] sm:text-xs font-bold text-slate-500 mb-2 uppercase tracking-wide text-center">Klik op een vakje om te bouwen (+1 hoogte per klik, max 4)</span>
+                        <div id="building-grid" class="grid grid-cols-3 gap-2 w-full max-w-[180px]">
+                            <!-- Grid cells worden live gegenereerd -->
+                        </div>
+                        <button onclick="clearPlayerGrid()" class="text-xs text-red-500 hover:text-red-700 font-semibold mt-3 transition">🧹 Maak Bouwplaat Leeg</button>
+                    </div>
+
+                    <!-- Besturing voor Modus 1 (Draaien) -->
+                    <div id="rotation-controls" class="hidden flex flex-col gap-3 mb-4">
+                        <div class="flex justify-center gap-2">
+                            <button onclick="rotateModel(-90)" class="bg-slate-100 hover:bg-slate-200 text-slate-700 px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition border border-slate-200 flex items-center gap-1">
+                                🔄 Linksom Draaien (90°)
+                            </button>
+                            <button onclick="rotateModel(90)" class="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition border border-indigo-200 flex items-center gap-1">
+                                🔄 Rechtsom Draaien (90°)
+                            </button>
+                        </div>
+                        <div class="flex justify-center">
+                            <button id="btn-camera-snap" onclick="snapCameraToRequestedView()" class="bg-amber-500 hover:bg-amber-600 active:bg-amber-700 text-white px-5 py-2.5 rounded-xl text-xs font-bold transition shadow-md shadow-amber-100 flex items-center gap-1.5">
+                                👁️ Zet Camera recht op gevraagd aanzicht
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Actieknoppen onderaan -->
+                    <div class="flex flex-col sm:flex-row gap-3 mt-2">
+                        <button id="btn-submit" onclick="checkAnswer()" class="flex-1 bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white font-bold py-3.5 px-6 rounded-xl shadow-lg transition duration-200 flex items-center justify-center gap-2 text-base">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                            Controleer Mijn Antwoord!
+                        </button>
+                        <button id="btn-next" onclick="loadNextExercise()" class="hidden flex-1 bg-emerald-500 hover:bg-emerald-600 active:bg-emerald-700 text-white font-bold py-3.5 px-6 rounded-xl shadow-lg transition duration-200 flex items-center justify-center gap-2 text-base">
+                            Volgende Vraag ➡️
+                        </button>
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+    </section>
+
+    <!-- 3. RESULTATEN & FOUTENANALYSE SCHERM -->
+    <section id="screen-results" class="hidden flex-1 max-w-4xl w-full mx-auto p-4 md:p-6 flex flex-col gap-6">
+        
+        <!-- Score Overview Card -->
+        <div class="bg-white rounded-3xl border border-slate-200 shadow-xl p-8 text-center max-w-2xl mx-auto w-full relative overflow-hidden">
+            <div class="absolute top-0 inset-x-0 h-2 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500"></div>
+            
+            <div id="trophy-container" class="text-6xl mb-4">🏆</div>
+            <h2 id="results-headline" class="text-2xl md:text-3xl font-black text-slate-900 leading-tight">Gefeliciteerd!</h2>
+            <p id="results-sub" class="text-slate-500 text-sm mt-1">Je hebt de module succesvol afgerond.</p>
+            
+            <div class="my-6 inline-flex flex-col items-center justify-center bg-indigo-50 px-8 py-5 rounded-3xl border border-indigo-100">
+                <span class="text-[10px] uppercase font-bold text-indigo-500 tracking-wider">Jouw Score</span>
+                <span id="results-score-text" class="text-4xl md:text-5xl font-black text-slate-900 mt-1">8 / 10</span>
+                <span id="results-percentage" class="text-xs text-indigo-600 font-semibold mt-1">80% Goed beantwoord</span>
+            </div>
+
+            <div class="flex flex-col sm:flex-row justify-center gap-3">
+                <button onclick="goToMenu()" class="bg-slate-800 hover:bg-slate-900 text-white font-bold py-3 px-6 rounded-xl transition duration-200 text-sm flex items-center justify-center gap-2">
+                    🏠 Terug naar het Keuzemenu
+                </button>
+                <button id="btn-retry-module" onclick="restartCurrentModule()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-6 rounded-xl transition duration-200 text-sm flex items-center justify-center gap-2">
+                    🔄 Probeer Opnieuw
+                </button>
+            </div>
+        </div>
+
+        <!-- Foutenanalyse Lijst -->
+        <div class="bg-white rounded-3xl border border-slate-200 shadow-md p-6 md:p-8 w-full mt-4">
+            <div class="border-b border-slate-100 pb-4 mb-6">
+                <h3 class="font-extrabold text-lg text-slate-900 flex items-center gap-2">
+                    🔍 Gedetailleerde Foutenanalyse
+                </h3>
+                <p class="text-xs text-slate-500 mt-1">Bekijk hieronder per vraag wat er goed ging en waar je op moet letten.</p>
+            </div>
+
+            <!-- Container voor vragen feedback -->
+            <div id="error-analysis-list" class="flex flex-col gap-4">
+                <!-- Wordt dynamisch gevuld met feedback-cards -->
+            </div>
+        </div>
+    </section>
+
+    <!-- Terug naar Menu Bevestigings-modal -->
+    <div id="confirm-modal" class="hidden fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl max-w-sm w-full p-6 shadow-2xl border border-slate-200">
+            <h3 class="text-lg font-black text-slate-900">Weet je het zeker?</h3>
+            <p class="text-xs text-slate-500 mt-2 leading-relaxed">Als je nu teruggaat naar het menu, verlies je alle huidige voortgang van deze oefenserie.</p>
+            <div class="flex gap-2 mt-6">
+                <button onclick="closeConfirmModal()" class="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-2.5 rounded-xl text-xs transition duration-150">
+                    Nee, blijf spelen
+                </button>
+                <button onclick="exitToMenuConfirmed()" class="flex-1 bg-red-500 hover:bg-red-600 text-white font-bold py-2.5 rounded-xl text-xs transition duration-150 shadow-md shadow-red-200">
+                    Ja, naar het menu
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Feedback popups -->
+    <div id="feedback-toast" class="hidden fixed bottom-6 right-6 max-w-md bg-white border-l-4 p-4 rounded-xl shadow-2xl transition-all duration-300 z-50 transform translate-y-2 opacity-0">
+        <!-- Dynamische toast content -->
+    </div>
+
+    <!-- Game Logica Script -->
+    <script>
+        // State & Configuratie
+        let currentScreen = 'menu'; // 'menu' | 'game' | 'results'
+        let gameMode = 1; // 1: Draai & Aanzicht, 2: Bouw Grondplan, 3: Nachtbouw, 4: Vul Grondplan, 5: Toets
+        let currentIndex = 0;
+        let totalExercises = 10;
+        let score = 0;
+        
+        let targetGrid = [[0,0,0],[0,0,0],[0,0,0]];
+        let playerGrid = [[0,0,0],[0,0,0],[0,0,0]];
+        let activeRotationY = 0;
+        let targetViewType = 'voor'; // 'boven' | 'voor' | 'rechts'
+        
+        // Toets State
+        let toetsSequence = []; // Bevat { mode, grid, viewType } per opgave voor de Toets
+        
+        // Foutenanalyse database
+        let history = []; // Slaat op: { index, mode, targetGrid, playerInput, correct, viewType, rotation }
+
+        // Three.js Variabelen
+        let scene, camera, renderer, controls;
+        let blocksGroup;
+        let frontArrowMesh;
+
+        // Lokale scores opslaan
+        const scoresKey = "3d_blokkenbouwer_scores_v2";
+        let savedScores = JSON.parse(localStorage.getItem(scoresKey)) || {
+            1: null, 2: null, 3: null, 4: null, 5: null
+        };
+
+        const modeInstructions = {
+            1: "Draai het 3D-bouwsel rechts met de knoppen tot het exact klopt met het getoonde 2D-aanzicht links. Gebruik de gele knop om je camera recht uit te lijnen!",
+            2: "Stapel de blokken op de bouwplaat rechts zo na dat het exact klopt met de getallen op het grondplan links. Let op de rode pijl voor de VOORKANT!",
+            3: "Bouw aan de rechterkant een constructie die exact de zwarte schaduw werpt die je links ziet. Let goed op de rode pijl!",
+            4: "Bestudeer het 3D-bouwsel links aandachtig door de camera te draaien. Typ de juiste getallen in op de grondplaat rechts."
+        };
+
+        const modeNames = {
+            1: "Draai & Aanzicht",
+            2: "Bouw Grondplan",
+            3: "Nachtbouw",
+            4: "Vul Grondplan In",
+            5: "Toets (Gemengd)"
+        };
+
+        // --- SCORES BADGES UPDATEN ---
+        function updateScoreBadges() {
+            for (let i = 1; i <= 5; i++) {
+                const badge = document.getElementById(`score-badge-${i}`);
+                if (savedScores[i] !== null) {
+                    const total = i === 5 ? 15 : 10;
+                    badge.innerText = `Beste score: ${savedScores[i]} / ${total}`;
+                    badge.className = "text-xs font-bold text-indigo-600 bg-indigo-50 px-2 py-1 rounded-lg";
+                } else {
+                    badge.innerText = "Nog niet gespeeld";
+                    badge.className = "text-xs font-semibold text-slate-400";
+                }
+            }
+        }
+
+        // --- NAVIGATION & SCREENS ---
+        function switchScreen(screen) {
+            currentScreen = screen;
+            document.getElementById('screen-menu').classList.add('hidden');
+            document.getElementById('screen-game').classList.add('hidden');
+            document.getElementById('screen-results').classList.add('hidden');
+            document.getElementById('header-menu-btn').classList.add('hidden');
+
+            if (screen === 'menu') {
+                document.getElementById('screen-menu').classList.remove('hidden');
+                updateScoreBadges();
+            } else if (screen === 'game') {
+                document.getElementById('screen-game').classList.remove('hidden');
+                document.getElementById('header-menu-btn').classList.remove('hidden');
+                // Forceer Three.js resize omdat de container nu zichtbaar is
+                setTimeout(onWindowResize, 100);
+            } else if (screen === 'results') {
+                document.getElementById('screen-results').classList.remove('hidden');
+                document.getElementById('header-menu-btn').classList.remove('hidden');
+            }
+        }
+
+        function confirmGoToMenu() {
+            document.getElementById('confirm-modal').classList.remove('hidden');
+        }
+
+        function closeConfirmModal() {
+            document.getElementById('confirm-modal').classList.add('hidden');
+        }
+
+        function exitToMenuConfirmed() {
+            closeConfirmModal();
+            switchScreen('menu');
+        }
+
+        function goToMenu() {
+            switchScreen('menu');
+        }
+
+        // --- START GAME MODES ---
+        function startModule(mode) {
+            gameMode = mode;
+            currentIndex = 0;
+            score = 0;
+            history = [];
+
+            if (mode === 5) {
+                totalExercises = 15;
+                generateToetsSequence();
+            } else {
+                totalExercises = 10;
+            }
+
+            switchScreen('game');
+            loadExercise();
+        }
+
+        function restartCurrentModule() {
+            startModule(gameMode);
+        }
+
+        // Genereert een evenwichtige mix van 15 opdrachten voor de toets
+        function generateToetsSequence() {
+            let modes = [1,1,1,1, 2,2,2,2, 3,3,3,3, 4,4,4]; // 15 opdrachten
+            // Shuffle modes willekeurig
+            modes.sort(() => Math.random() - 0.5);
+
+            toetsSequence = modes.map(m => {
+                let grid = generateRandomGrid();
+                let views = ['voor', 'rechts', 'boven'];
+                let viewType = views[Math.floor(Math.random() * views.length)];
+                return {
+                    mode: m,
+                    grid: grid,
+                    viewType: viewType
+                };
+            });
+        }
+
+        // --- LEVEL GENERATIE & MANAGEMENT ---
+        function generateRandomGrid() {
+            let grid = [];
+            for (let r = 0; r < 3; r++) {
+                let row = [];
+                for (let c = 0; c < 3; c++) {
+                    const roll = Math.random();
+                    let h = 0;
+                    if (roll > 0.85) h = 3;
+                    else if (roll > 0.6) h = 2;
+                    else if (roll > 0.25) h = 1;
+                    row.push(h);
+                }
+                grid.push(row);
+            }
+            // Zorg voor minstens 3 blokken
+            if (grid.flat().reduce((a, b) => a + b) < 3) {
+                grid[1][1] = 2;
+                grid[0][1] = 1;
+                grid[1][2] = 1;
+            }
+            return grid;
+        }
+
+        function loadExercise() {
+            // UI Resets
+            document.getElementById('btn-submit').classList.remove('hidden');
+            document.getElementById('btn-next').classList.add('hidden');
+
+            let activeMode = gameMode;
+            if (gameMode === 5) {
+                // Toets haalt actieve modus uit de voorgenerateerde sequence
+                const opgave = toetsSequence[currentIndex];
+                activeMode = opgave.mode;
+                targetGrid = opgave.grid;
+                targetViewType = opgave.viewType;
+            } else {
+                targetGrid = generateRandomGrid();
+                const views = ['voor', 'rechts', 'boven'];
+                targetViewType = views[Math.floor(Math.random() * views.length)];
+            }
+
+            playerGrid = [[0,0,0],[0,0,0],[0,0,0]];
+            activeRotationY = 0;
+
+            // Update voortgangsindicatoren
+            document.getElementById('progress-text').innerText = `Oefening ${currentIndex + 1} van ${totalExercises}`;
+            document.getElementById('progress-bar-fill').style.width = `${((currentIndex + 1) / totalExercises) * 100}%`;
+            document.getElementById('active-mode-badge').innerText = modeNames[gameMode];
+            document.getElementById('left-mode-badge').innerText = modeNames[activeMode];
+            document.getElementById('instruction-text').innerText = modeInstructions[activeMode];
+
+            renderGameScreen(activeMode);
+        }
+
+        // --- ELEMENTEN IN DE EXERCISE RENDEREN ---
+        function renderGameScreen(activeMode) {
+            const leftContainer = document.getElementById('left-canvas-container');
+            const rotationCtrls = document.getElementById('rotation-controls');
+            const buildingPad = document.getElementById('building-pad-container');
+
+            leftContainer.innerHTML = ""; // Clear
+            rotationCtrls.classList.add('hidden');
+            buildingPad.classList.add('hidden');
+
+            if (activeMode === 1) {
+                // MODUS 1: Draai en Aanzicht
+                rotationCtrls.classList.remove('hidden');
+
+                const header = document.createElement('div');
+                header.className = "text-center mb-4";
+                header.innerHTML = `
+                    <p class="text-sm font-bold text-slate-500">Gevraagd aanzicht:</p>
+                    <h4 class="text-xl font-black text-indigo-600 uppercase tracking-widest">${targetViewType}aanzicht</h4>
+                `;
+                leftContainer.appendChild(header);
+
+                // Genereer het perfecte 2D doel-aanzicht
+                const viewGrid = render2DProjectionGrid(targetGrid, targetViewType);
+                leftContainer.appendChild(viewGrid);
+
+                // Zet het 3D model met een willekeurige foute start-rotatie (90, 180 of 270 graden)
+                const randomAngles = [90, 180, 270];
+                activeRotationY = randomAngles[Math.floor(Math.random() * randomAngles.length)];
+                
+                render3DBlocks(targetGrid, activeRotationY);
+
+            } else if (activeMode === 2) {
+                // MODUS 2: Bouwen vanaf grondplan
+                buildingPad.classList.remove('hidden');
+                generateBuildingGridPad();
+
+                const header = document.createElement('div');
+                header.className = "text-center mb-4";
+                header.innerHTML = `
+                    <p class="text-sm font-bold text-slate-500">Bouw dit grondplan na:</p>
+                    <div class="flex items-center justify-center gap-1 mt-1 text-xs text-red-500 font-semibold">
+                        <span class="w-2 h-2 bg-red-600 rounded-full inline-block animate-pulse"></span>
+                        Let op de rode pijl (onderkant = voorkant)
+                    </div>
+                `;
+                leftContainer.appendChild(header);
+
+                const blueprint = renderGrondplanNumerical(targetGrid);
+                leftContainer.appendChild(blueprint);
+
+                render3DBlocks(playerGrid, 0);
+
+            } else if (activeMode === 3) {
+                // MODUS 3: Nachtbouw
+                buildingPad.classList.remove('hidden');
+                generateBuildingGridPad();
+
+                const header = document.createElement('div');
+                header.className = "text-center mb-4";
+                header.innerHTML = `
+                    <p class="text-sm font-bold text-slate-500">Bouw exact deze zwarte schaduw na:</p>
+                    <h4 class="text-md font-bold text-slate-800 uppercase tracking-wider">VOORAANZICHT (SCHADUW)</h4>
+                `;
+                leftContainer.appendChild(header);
+
+                const shadowGrid = renderNachtbouwShadow(targetGrid);
+                leftContainer.appendChild(shadowGrid);
+
+                render3DBlocks(playerGrid, 0);
+
+            } else if (activeMode === 4) {
+                // MODUS 4: Vul grondplan in
+                const header = document.createElement('div');
+                header.className = "text-center mb-4";
+                header.innerHTML = `
+                    <p class="text-sm font-bold text-slate-500">Vul het grondplan in voor het 3D-bouwsel:</p>
+                    <div class="flex items-center justify-center gap-1.5 mt-2 text-xs text-red-500 font-semibold">
+                        <span class="w-2 h-2 bg-red-600 rounded-full inline-block"></span>
+                        Kijkrichting rode pijl = Voorkant (onderaan grid)
+                    </div>
+                `;
+                leftContainer.appendChild(header);
+
+                const inputGrid = renderGrondplanInputs();
+                leftContainer.appendChild(inputGrid);
+
+                render3DBlocks(targetGrid, 30); // Lichte initiële schuine rotatie voor diepte-inzicht
+            }
+        }
+
+        // --- 2D PROJECTIES GENEREREN (LINKS) ---
+        function render2DProjectionGrid(grid, type) {
+            let viewGrid = [[0,0,0],[0,0,0],[0,0,0]];
+
+            if (type === 'boven') {
+                for (let r = 0; r < 3; r++) {
+                    for (let c = 0; c < 3; c++) {
+                        viewGrid[r][c] = grid[r][c] > 0 ? 1 : 0;
+                    }
+                }
+            } else if (type === 'voor') {
+                // Vooraanzicht: Maximaal zichtbare hoogte per kolom
+                for (let c = 0; c < 3; c++) {
+                    const maxH = Math.max(grid[0][c], grid[1][c], grid[2][c]);
+                    for (let h = 0; h < maxH; h++) {
+                        if (h < 3) viewGrid[2 - h][c] = 1;
+                    }
+                }
+            } else if (type === 'rechts') {
+                // Rechtsaanzicht: Gekeken vanaf de rechterkant
+                for (let r = 0; r < 3; r++) {
+                    const maxH = Math.max(grid[r][0], grid[r][1], grid[r][2]);
+                    for (let h = 0; h < maxH; h++) {
+                        if (h < 3) viewGrid[2 - h][r] = 1;
+                    }
+                }
+            }
+
+            const gridDiv = document.createElement('div');
+            gridDiv.className = "grid grid-cols-3 gap-2 p-4 bg-slate-100 rounded-2xl border border-slate-200 w-44 h-44 items-center justify-center shadow-inner transition-all duration-300";
+
+            for (let r = 0; r < 3; r++) {
+                for (let c = 0; c < 3; c++) {
+                    const cell = document.createElement('div');
+                    cell.className = "w-10 h-10 rounded-lg border transition-all duration-300 " + 
+                        (viewGrid[r][c] === 1 
+                        ? "bg-indigo-600 border-indigo-700 shadow-md shadow-indigo-100" 
+                        : "bg-white border-slate-200");
+                    gridDiv.appendChild(cell);
+                }
+            }
+            return gridDiv;
+        }
+
+        function renderGrondplanNumerical(grid) {
+            const gridDiv = document.createElement('div');
+            gridDiv.className = "grid grid-cols-3 gap-3 p-4 bg-amber-50 rounded-2xl border-2 border-dashed border-amber-300 w-48 h-48 items-center justify-center relative shadow-sm";
+
+            for (let r = 0; r < 3; r++) {
+                for (let c = 0; c < 3; c++) {
+                    const val = grid[r][c];
+                    const cell = document.createElement('div');
+                    cell.className = `w-12 h-12 rounded-xl flex items-center justify-center font-black text-lg border shadow-sm ${
+                        val > 0 
+                        ? 'bg-amber-500 border-amber-600 text-white' 
+                        : 'bg-white border-amber-200 text-slate-300'
+                    }`;
+                    cell.innerText = val > 0 ? val : "0";
+                    gridDiv.appendChild(cell);
+                }
+            }
+            return gridDiv;
+        }
+
+        function renderNachtbouwShadow(grid) {
+            const gridDiv = document.createElement('div');
+            gridDiv.className = "grid grid-cols-3 gap-2 p-4 bg-slate-900 rounded-2xl border border-slate-950 w-44 h-44 items-center justify-center shadow-lg";
+
+            let kolommen = [0,0,0];
+            for (let c = 0; c < 3; c++) {
+                kolommen[c] = Math.max(grid[0][c], grid[1][c], grid[2][c]);
+            }
+
+            for (let r = 0; r < 3; r++) {
+                let huidigeHoogteLaag = 3 - r;
+                for (let c = 0; c < 3; c++) {
+                    const cell = document.createElement('div');
+                    cell.className = "w-10 h-10 rounded-lg border transition-all duration-300 " + 
+                        (kolommen[c] >= huidigeHoogteLaag 
+                        ? "bg-slate-950 border-black shadow-none animate-pulse" 
+                        : "bg-slate-800 border-slate-700 opacity-40");
+                    gridDiv.appendChild(cell);
+                }
+            }
+            return gridDiv;
+        }
+
+        function renderGrondplanInputs() {
+            const wrapper = document.createElement('div');
+            wrapper.className = "flex flex-col items-center gap-3";
+
+            const gridDiv = document.createElement('div');
+            gridDiv.className = "grid grid-cols-3 gap-3 p-4 bg-slate-100 rounded-2xl border border-slate-200 w-48 h-48 items-center justify-center shadow-inner";
+
+            for (let r = 0; r < 3; r++) {
+                for (let c = 0; c < 3; c++) {
+                    const input = document.createElement('input');
+                    input.type = "number";
+                    input.id = `input-${r}-${c}`;
+                    input.min = "0";
+                    input.max = "4";
+                    input.className = "w-12 h-12 rounded-xl text-center font-black text-xl border-2 border-slate-300 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none transition bg-white text-slate-800 shadow-sm";
+                    input.placeholder = "0";
+                    gridDiv.appendChild(input);
+                }
+            }
+            wrapper.appendChild(gridDiv);
+            return wrapper;
+        }
+
+        // --- INTERACTIEF KLIK-PAD VOOR DE BOUWPLATEN (RECHTS) ---
+        function generateBuildingGridPad() {
+            const pad = document.getElementById('building-grid');
+            pad.innerHTML = "";
+
+            for (let r = 0; r < 3; r++) {
+                for (let c = 0; c < 3; c++) {
+                    const btn = document.createElement('button');
+                    btn.id = `pad-${r}-${c}`;
+                    btn.className = "w-12 h-12 rounded-xl flex flex-col items-center justify-center font-black text-base border-2 transition duration-200";
+                    
+                    btn.onclick = () => {
+                        // Max 4 hoogtes stapelen
+                        playerGrid[r][c] = (playerGrid[r][c] + 1) % 5;
+                        updateBuildingPadUI();
+                        render3DBlocks(playerGrid, 0);
+                    };
+
+                    pad.appendChild(btn);
+                }
+            }
+            updateBuildingPadUI();
+        }
+
+        function updateBuildingPadUI() {
+            for (let r = 0; r < 3; r++) {
+                for (let c = 0; c < 3; c++) {
+                    const btn = document.getElementById(`pad-${r}-${c}`);
+                    if(!btn) continue;
+                    
+                    const height = playerGrid[r][c];
+                    btn.innerText = height > 0 ? height : "0";
+
+                    if (height === 0) {
+                        btn.className = "w-12 h-12 rounded-xl flex flex-col items-center justify-center font-black text-slate-400 border-slate-200 bg-white hover:bg-slate-50 shadow-sm";
+                    } else if (height === 1) {
+                        btn.className = "w-12 h-12 rounded-xl flex flex-col items-center justify-center font-black text-blue-600 border-blue-300 bg-blue-50 hover:bg-blue-100 shadow-sm";
+                    } else if (height === 2) {
+                        btn.className = "w-12 h-12 rounded-xl flex flex-col items-center justify-center font-black text-indigo-600 border-indigo-300 bg-indigo-50 hover:bg-indigo-100 shadow-sm";
+                    } else if (height === 3) {
+                        btn.className = "w-12 h-12 rounded-xl flex flex-col items-center justify-center font-black text-violet-600 border-violet-300 bg-violet-50 hover:bg-violet-100 shadow-sm";
+                    } else {
+                        btn.className = "w-12 h-12 rounded-xl flex flex-col items-center justify-center font-black text-fuchsia-600 border-fuchsia-300 bg-fuchsia-50 hover:bg-fuchsia-100 shadow-sm";
+                    }
+                }
+            }
+        }
+
+        // --- MODEL DRAAIEN ---
+        function rotateModel(deg) {
+            activeRotationY = (activeRotationY + deg) % 360;
+            if (activeRotationY < 0) activeRotationY += 360;
+            render3DBlocks(targetGrid, activeRotationY);
+        }
+
+        // --- TOAST NOTIFICATIONS ---
+        function showToast(message, type = "success") {
+            const toast = document.getElementById('feedback-toast');
+            toast.className = "fixed bottom-6 right-6 max-w-md bg-white border-l-4 p-5 rounded-xl shadow-2xl transition-all duration-300 z-50 transform flex items-start gap-3 ";
+            
+            if (type === "success") {
+                toast.classList.add("border-emerald-500", "text-slate-800");
+                toast.innerHTML = `
+                    <div class="text-emerald-500 mt-0.5 font-bold text-xl">🎉</div>
+                    <div>
+                        <h4 class="font-bold text-emerald-800 text-sm">Uitstekend!</h4>
+                        <p class="text-xs text-slate-600 mt-1">${message}</p>
+                    </div>
+                `;
+            } else if (type === "error") {
+                toast.classList.add("border-red-500", "text-slate-800");
+                toast.innerHTML = `
+                    <div class="text-red-500 mt-0.5 font-bold text-xl">❌</div>
+                    <div>
+                        <h4 class="font-bold text-red-800 text-sm">Oeps! Dat klopt niet.</h4>
+                        <p class="text-xs text-slate-600 mt-1">${message}</p>
+                    </div>
+                `;
+            } else {
+                toast.classList.add("border-indigo-500", "text-slate-800");
+                toast.innerHTML = `
+                    <div class="text-indigo-500 mt-0.5 font-bold text-xl">👁️</div>
+                    <div>
+                        <h4 class="font-bold text-indigo-800 text-sm">Informatie</h4>
+                        <p class="text-xs text-slate-600 mt-1">${message}</p>
+                    </div>
+                `;
+            }
+
+            toast.classList.remove('hidden');
+            setTimeout(() => {
+                toast.classList.remove('translate-y-2', 'opacity-0');
+            }, 50);
+
+            setTimeout(() => {
+                toast.classList.add('translate-y-2', 'opacity-0');
+                setTimeout(() => {
+                    toast.classList.add('hidden');
+                }, 300);
+            }, 3000);
+        }
+
+        // --- EXTREEM NAUKEURIGE ANTWOORD CONTROLE ---
+        function checkAnswer() {
+            let isCorrect = false;
+            let activeMode = gameMode;
+            if (gameMode === 5) {
+                activeMode = toetsSequence[currentIndex].mode;
+            }
+
+            let feedbackMsg = "";
+            let recordedAnswer = null; // Voor de foutenanalyse
+
+            if (activeMode === 1) {
+                const normalizedRot = activeRotationY % 360;
+                
+                // Om een foute uitlijning te voorkomen, berekenen we het aanzicht op basis van de rotatie.
+                let rotatedGrid = rotateGridMatrix(targetGrid, normalizedRot);
+                let playerProjection = get2DProjection(rotatedGrid, targetViewType);
+                let targetProjection = get2DProjection(targetGrid, targetViewType);
+
+                isCorrect = JSON.stringify(playerProjection) === JSON.stringify(targetProjection);
+                recordedAnswer = normalizedRot; // We onthouden de rotatie
+
+                if (isCorrect) {
+                    feedbackMsg = "De aanzichten komen exact overeen! Goed ruimtelijk inzicht!";
+                    score++;
+                } else {
+                    feedbackMsg = "Het aanzicht klopt niet vanuit dit standpunt. Probeer verder te draaien.";
+                }
+
+            } else if (activeMode === 2) {
+                isCorrect = true;
+                for (let r = 0; r < 3; r++) {
+                    for (let c = 0; c < 3; c++) {
+                        if (playerGrid[r][c] !== targetGrid[r][c]) {
+                            isCorrect = false;
+                        }
+                    }
+                }
+                recordedAnswer = JSON.parse(JSON.stringify(playerGrid)); // Deep copy van ingevoerd grid
+
+                if (isCorrect) {
+                    feedbackMsg = "Het bouwsel is exact nagebouwd vanaf het grondplan!";
+                    score++;
+                } else {
+                    feedbackMsg = "Sommige hoogtes van de blokken kloppen nog niet met het grondplan.";
+                }
+
+            } else if (activeMode === 3) {
+                // Nachtbouw: check de vooraanzicht-schaduw
+                let targetCols = [0,0,0], playerCols = [0,0,0];
+                for (let c = 0; c < 3; c++) {
+                    targetCols[c] = Math.max(targetGrid[0][c], targetGrid[1][c], targetGrid[2][c]);
+                    playerCols[c] = Math.max(playerGrid[0][c], playerGrid[1][c], playerGrid[2][c]);
+                }
+
+                isCorrect = (JSON.stringify(targetCols) === JSON.stringify(playerCols));
+                recordedAnswer = JSON.parse(JSON.stringify(playerGrid));
+
+                if (isCorrect) {
+                    feedbackMsg = "Fantastisch! Jouw bouwsel werpt exact de gevraagde schaduw.";
+                    score++;
+                } else {
+                    feedbackMsg = "De schaduw die je bouwsel maakt komt nog niet overeen.";
+                }
+
+            } else if (activeMode === 4) {
+                isCorrect = true;
+                let userGrid = [[0,0,0],[0,0,0],[0,0,0]];
+                for (let r = 0; r < 3; r++) {
+                    for (let c = 0; c < 3; c++) {
+                        const inputVal = document.getElementById(`input-${r}-${c}`).value;
+                        const parsedVal = inputVal === "" ? 0 : parseInt(inputVal);
+                        userGrid[r][c] = parsedVal;
+                        if (parsedVal !== targetGrid[r][c]) {
+                            isCorrect = false;
+                        }
+                    }
+                }
+                recordedAnswer = userGrid;
+
+                if (isCorrect) {
+                    feedbackMsg = "Het grondplan is helemaal correct ingevuld!";
+                    score++;
+                } else {
+                    feedbackMsg = "Er staan nog wat foute hoogtegetallen in het grondplan.";
+                }
+            }
+
+            // Sla op in de geschiedenis voor foutenanalyse
+            history.push({
+                index: currentIndex + 1,
+                mode: activeMode,
+                targetGrid: JSON.parse(JSON.stringify(targetGrid)),
+                playerInput: recordedAnswer,
+                correct: isCorrect,
+                viewType: targetViewType
+            });
+
+            // Toon feedback toast
+            showToast(feedbackMsg, isCorrect ? "success" : "error");
+
+            // Schakel knoppen om
+            document.getElementById('btn-submit').classList.add('hidden');
+            document.getElementById('btn-next').classList.remove('hidden');
+        }
+
+        // Hulpfunctie om matrix te roteren
+        function rotateGridMatrix(grid, deg) {
+            let temp = [[0,0,0],[0,0,0],[0,0,0]];
+            let steps = (deg % 360) / 90;
+            if (steps < 0) steps += 4;
+            
+            for(let r=0; r<3; r++) {
+                for(let c=0; c<3; c++) {
+                    temp[r][c] = grid[r][c];
+                }
+            }
+            
+            for (let s = 0; s < steps; s++) {
+                let next = [[0,0,0],[0,0,0],[0,0,0]];
+                for (let r = 0; r < 3; r++) {
+                    for (let c = 0; c < 3; c++) {
+                        // 90 graden rechtsom draaien
+                        next[c][2-r] = temp[r][c];
+                    }
+                }
+                temp = next;
+            }
+            return temp;
+        }
+
+        // Hulpfunctie om de 2D schaduw te projecteren van een grid
+        function get2DProjection(grid, type) {
+            let projection = [[0,0,0],[0,0,0],[0,0,0]];
+            if (type === 'boven') {
+                for (let r = 0; r < 3; r++) {
+                    for (let c = 0; c < 3; c++) {
+                        projection[r][c] = grid[r][c] > 0 ? 1 : 0;
+                    }
+                }
+            } else if (type === 'voor') {
+                for (let c = 0; c < 3; c++) {
+                    const maxH = Math.max(grid[0][c], grid[1][c], grid[2][c]);
+                    for (let h = 0; h < maxH; h++) if (h < 3) projection[2-h][c] = 1;
+                }
+            } else if (type === 'rechts') {
+                for (let r = 0; r < 3; r++) {
+                    const maxH = Math.max(grid[r][0], grid[r][1], grid[r][2]);
+                    for (let h = 0; h < maxH; h++) if (h < 3) projection[2-h][r] = 1;
+                }
+            }
+            return projection;
+        }
+
+        // --- VOLGENDE VRAAG OF EIND SCHERM ---
+        function loadNextExercise() {
+            currentIndex++;
+            if (currentIndex >= totalExercises) {
+                showResultsScreen();
+            } else {
+                loadExercise();
+            }
+        }
+
+        // --- TOON RESULTATENSCHERM EN BEREKEN HIGHSCORES ---
+        function showResultsScreen() {
+            switchScreen('results');
+
+            // Highscore berekening
+            if (savedScores[gameMode] === null || score > savedScores[gameMode]) {
+                savedScores[gameMode] = score;
+                localStorage.setItem(scoresKey, JSON.stringify(savedScores));
+            }
+
+            // UI Teksten invullen
+            document.getElementById('results-score-text').innerText = `${score} / ${totalExercises}`;
+            const percentage = Math.round((score / totalExercises) * 100);
+            document.getElementById('results-percentage').innerText = `${percentage}% Goed beantwoord`;
+
+            // Pas feedback aan op basis van de behaalde score
+            const headline = document.getElementById('results-headline');
+            const sub = document.getElementById('results-sub');
+            const trophy = document.getElementById('results-trophy-container');
+
+            if (percentage === 100) {
+                headline.innerText = "🌟 Absolute Meesterbouwer! 🌟";
+                sub.innerText = "Je hebt alle opdrachten vlekkeloos en perfect opgelost.";
+                trophy.innerText = "👑";
+            } else if (percentage >= 75) {
+                headline.innerText = "💪 Geweldig Resultaat! 💪";
+                sub.innerText = "Je hebt een zeer scherp ruimtelijk inzicht!";
+                trophy.innerText = "🏆";
+            } else if (percentage >= 50) {
+                headline.innerText = "👍 Goed Gedaan! 👍";
+                sub.innerText = "Je hebt de basis prima onder de knie, blijf oefenen!";
+                trophy.innerText = "🏅";
+            } else {
+                headline.innerText = "📈 Blijf Oefenen! 📈";
+                sub.innerText = "Ruimtelijk inzicht kun je trainen. Bekijk de foutenanalyse hieronder om te leren!";
+                trophy.innerText = "🎯";
+            }
+
+            renderErrorAnalysis();
+        }
+
+        // --- GENEREEER GEDETAILLEERDE FOUTENANALYSE ---
+        function renderErrorAnalysis() {
+            const list = document.getElementById('error-analysis-list');
+            list.innerHTML = ""; // reset
+
+            history.forEach(item => {
+                const card = document.createElement('div');
+                card.className = `p-5 rounded-2xl border transition duration-150 ${
+                    item.correct 
+                    ? 'bg-emerald-50/70 border-emerald-200' 
+                    : 'bg-red-50/70 border-red-200'
+                } flex flex-col md:flex-row md:items-center justify-between gap-4`;
+
+                // Type bepalen
+                let modeLabel = modeNames[item.mode];
+                let detailInfo = "";
+
+                if (item.mode === 1) {
+                    detailInfo = `Gevraagd: <strong class="text-indigo-600">${item.viewType}aanzicht</strong>. `;
+                    if (item.correct) {
+                        detailInfo += `Je hebt het model in de juiste hoek gedraaid!`;
+                    } else {
+                        detailInfo += `Je stopte op rotatie: ${item.playerInput}°. Tip: gebruik de camera-uitlijningsknop!`;
+                    }
+                } else if (item.mode === 2) {
+                    detailInfo = `<strong>Bouw Grondplan</strong>. `;
+                    if (item.correct) {
+                        detailInfo += "Je hebt alle blokken exact nagebouwd vanaf de kaart.";
+                    } else {
+                        detailInfo += "Jouw hoogtes kwamen niet overeen met de vereiste getallen.";
+                    }
+                } else if (item.mode === 3) {
+                    detailInfo = `<strong>Nachtbouw</strong>. `;
+                    if (item.correct) {
+                        detailInfo += "Jouw constructie maakt exact de juiste schaduw!";
+                    } else {
+                        detailInfo += "De kolommen van jouw constructie klopten nog niet met de schaduw.";
+                    }
+                } else if (item.mode === 4) {
+                    detailInfo = `<strong>Vul Grondplan In</strong>. `;
+                    if (item.correct) {
+                        detailInfo += "Alle ingevulde getallen op de grondkaart zijn juist.";
+                    } else {
+                        detailInfo += "Je hebt ergens een typefout of verkeerde hoogte ingevuld.";
+                    }
+                }
+
+                card.innerHTML = `
+                    <div class="flex items-start gap-4">
+                        <div class="w-10 h-10 rounded-xl flex items-center justify-center font-bold text-sm shrink-0 ${
+                            item.correct 
+                            ? 'bg-emerald-500 text-white shadow-md shadow-emerald-200' 
+                            : 'bg-red-500 text-white shadow-md shadow-red-200'
+                        }">
+                            ${item.correct ? '✓' : '✗'}
+                        </div>
+                        <div>
+                            <h4 class="font-extrabold text-slate-900 text-sm md:text-base">Opgave ${item.index}: ${modeLabel}</h4>
+                            <p class="text-xs text-slate-600 mt-1 leading-relaxed">${detailInfo}</p>
+                        </div>
+                    </div>
+                    <div class="flex gap-2 self-end md:self-center">
+                        <button onclick="previewHistoryModel(${item.index - 1})" class="bg-white hover:bg-slate-50 border border-slate-200 text-xs text-slate-700 font-bold px-3.5 py-2 rounded-xl transition shadow-sm">
+                            👁️ Bekijk bouwsel
+                        </button>
+                    </div>
+                `;
+
+                list.appendChild(card);
+            });
+        }
+
+        // Laat leerling in de 3D-viewer achteraf terugkijken naar wat het doel was!
+        function previewHistoryModel(historyIndex) {
+            const item = history[historyIndex];
+            switchScreen('game');
+            
+            // Zet UI in 'kijk modus'
+            document.getElementById('progress-text').innerText = `Terugblik Opgave ${item.index}`;
+            document.getElementById('btn-submit').classList.add('hidden');
+            document.getElementById('btn-next').classList.add('hidden');
+            document.getElementById('left-mode-badge').innerText = "Analyse";
+
+            const leftContainer = document.getElementById('left-canvas-container');
+            leftContainer.innerHTML = `
+                <div class="text-center p-4">
+                    <h4 class="text-sm font-bold text-slate-700">Correcte Grondplanoplossing:</h4>
+                    <div class="mt-4 flex justify-center">
+                        ${renderGrondplanNumerical(item.targetGrid).outerHTML}
+                    </div>
+                    <button onclick="showResultsScreen()" class="mt-6 bg-indigo-600 text-white text-xs font-bold py-2.5 px-4 rounded-xl shadow">
+                        ↩ Terug naar Resultaten
+                    </button>
+                </div>
+            `;
+
+            // Toon het correcte 3D model
+            render3DBlocks(item.targetGrid, 30);
+            showToast("Je bekijkt nu het correcte doellayout in de 3D-viewer.", "info");
+        }
+
+
+        // --- THREE.JS INITIALISATIE & ENGINE ---
+        function initThree() {
+            const container = document.getElementById('threejs-container');
+            const width = container.clientWidth;
+            const height = container.clientHeight;
+
+            // Scene
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x0f172a); // Donkerblauwe premium ruimte
+
+            // Camera
+            camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 1000);
+            camera.position.set(6, 6, 8);
+
+            // Renderer
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(width, height);
+            renderer.shadowMap.enabled = true;
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+            
+            document.getElementById('three-loading').style.display = 'none';
+            container.appendChild(renderer.domElement);
+
+            // OrbitControls
+            controls = new THREE.OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+            controls.dampingFactor = 0.05;
+            controls.maxPolarAngle = Math.PI / 2 - 0.05; // Voorkomt dat camera onder de grond gaat
+            controls.minDistance = 3;
+            controls.maxDistance = 15;
+
+            // Verlichting
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.65);
+            scene.add(ambientLight);
+
+            const dirLight = new THREE.DirectionalLight(0xffffff, 0.85);
+            dirLight.position.set(10, 18, 10);
+            dirLight.castShadow = true;
+            dirLight.shadow.mapSize.width = 1024;
+            dirLight.shadow.mapSize.height = 1024;
+            scene.add(dirLight);
+
+            const dirLight2 = new THREE.DirectionalLight(0x818cf8, 0.35); // Diepte belichting
+            dirLight2.position.set(-10, 5, -10);
+            scene.add(dirLight2);
+
+            // Groep voor blokken
+            blocksGroup = new THREE.Group();
+            scene.add(blocksGroup);
+
+            // Start de animatieloop
+            animate();
+
+            // Window resize handler
+            window.addEventListener('resize', onWindowResize);
+        }
+
+        function onWindowResize() {
+            const container = document.getElementById('threejs-container');
+            if(!container || !renderer || !camera) return;
+            const width = container.clientWidth;
+            const height = container.clientHeight;
+            camera.aspect = width / height;
+            camera.updateProjectionMatrix();
+            renderer.setSize(width, height);
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            if (controls) controls.update();
+            if (renderer && scene && camera) renderer.render(scene, camera);
+        }
+
+        // --- RODE RICHTINGPIJL (VOORKANT) ---
+        function addFrontArrow() {
+            if (frontArrowMesh) {
+                scene.remove(frontArrowMesh);
+            }
+
+            // De pijl wijst naar de voorkant van de plaat (Z-as richting positief)
+            const arrowLength = 2.2;
+            const dir = new THREE.Vector3(0, 0, 1);
+            const origin = new THREE.Vector3(0, -0.49, 1.6); 
+            
+            frontArrowMesh = new THREE.ArrowHelper(
+                dir, 
+                origin, 
+                arrowLength, 
+                0xdc2626, // Helder rood
+                0.6,      
+                0.3       
+            );
+            
+            frontArrowMesh.line.material.linewidth = 5; 
+            scene.add(frontArrowMesh);
+        }
+
+        // --- BLOKKEN IN 3D OPBOUWEN ---
+        function render3DBlocks(grid, rotationDeg = 0) {
+            while(blocksGroup.children.length > 0){
+                blocksGroup.remove(blocksGroup.children[0]);
+            }
+
+            blocksGroup.rotation.y = THREE.MathUtils.degToRad(rotationDeg);
+
+            // 1. Grondplaat (3x3 grid)
+            const gridHelperSize = 3;
+            const gridHelper = new THREE.GridHelper(gridHelperSize, 3, 0x4f46e5, 0x475569);
+            gridHelper.position.y = -0.5;
+            blocksGroup.add(gridHelper);
+
+            // Voeg de voorkant-pijl toe
+            addFrontArrow();
+
+            // 2. Blokken opbouwen uit de matrix
+            const boxGeo = new THREE.BoxGeometry(0.96, 0.96, 0.96);
+            
+            const blockMaterial = new THREE.MeshStandardMaterial({
+                color: 0x3b82f6,
+                roughness: 0.15,
+                metalness: 0.05,
+                flatShading: false
+            });
+
+            const edges = new THREE.EdgesGeometry(boxGeo);
+            const lineMat = new THREE.LineBasicMaterial({ color: 0x1d4ed8, linewidth: 3 });
+
+            for (let r = 0; r < 3; r++) {
+                for (let c = 0; c < 3; c++) {
+                    const height = grid[r][c];
+                    const posX = c - 1; 
+                    const posZ = r - 1;
+
+                    for (let h = 0; h < height; h++) {
+                        const posY = h;
+
+                        const cubeMesh = new THREE.Mesh(boxGeo, blockMaterial);
+                        cubeMesh.position.set(posX, posY, posZ);
+                        cubeMesh.castShadow = true;
+                        cubeMesh.receiveShadow = true;
+
+                        const lineSegments = new THREE.LineSegments(edges, lineMat);
+                        cubeMesh.add(lineSegments);
+
+                        blocksGroup.add(cubeMesh);
+                    }
+                }
+            }
+
+            resetCamera();
+        }
+
+        function resetCamera() {
+            if (currentMode === 1) {
+                camera.position.set(5, 4, 6);
+            } else if (currentMode === 4) {
+                camera.position.set(6, 4.5, 6);
+            } else {
+                camera.position.set(5, 5, 5);
+            }
+            controls.target.set(0, 0.5, 0);
+            controls.update();
+        }
+
+        // Snaps camera recht van voren, rechts, of van boven
+        function snapCameraToRequestedView() {
+            controls.reset();
+            
+            if (targetViewType === 'boven') {
+                camera.position.set(0, 8, 0.01);
+            } else if (targetViewType === 'voor') {
+                camera.position.set(0, 0.5, 8);
+            } else if (targetViewType === 'rechts') {
+                camera.position.set(8, 0.5, 0);
+            }
+            
+            controls.target.set(0, 0.5, 0);
+            controls.update();
+            showToast(`Camera staat nu perfect uitgelijnd op het ${targetViewType}aanzicht!`, "info");
+        }
+
+        // --- OPSTART INITIALISATIE ---
+        window.onload = function() {
+            initThree();
+            updateScoreBadges();
+            switchScreen('menu');
+        };
+    </script>
+</body>
+</html>
