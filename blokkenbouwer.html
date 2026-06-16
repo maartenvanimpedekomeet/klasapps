@@ -348,6 +348,7 @@
         let currentIndex = 0;
         let totalExercises = 10;
         let score = 0;
+        let isNewLevel = true; // Flag om automatische camera-resets bij modelrotaties te reguleren
         
         let targetGrid = [[0,0,0],[0,0,0],[0,0,0]];
         let playerGrid = [[0,0,0],[0,0,0],[0,0,0]];
@@ -372,7 +373,7 @@
         };
 
         const modeInstructions = {
-            1: "Draai het 3D-bouwsel rechts met de knoppen tot het exact klopt met het getoonde 2D-aanzicht links. Gebruik de gele knop om je camera recht uit te lijnen!",
+            1: "Draai het 3D-bouwsel rechts met de knoppen zodat het vooraanzicht (kant van de rode pijl) exact overeenkomt met het gevraagde aanzicht links! Gebruik de gele knop om je camera recht uit te lijnen.",
             2: "Stapel de blokken op de bouwplaat rechts zo na dat het exact klopt met de getallen op het grondplan links. Let op de rode pijl voor de VOORKANT!",
             3: "Bouw aan de rechterkant een constructie die exact de zwarte schaduw werpt die je links ziet. Let goed op de rode pijl!",
             4: "Bestudeer het 3D-bouwsel links aandachtig door de camera te draaien. Typ de juiste getallen in op de grondplaat rechts."
@@ -525,6 +526,7 @@
             playerGrid = [[0,0,0],[0,0,0],[0,0,0]];
             activeRotationY = 0;
             currentMode = activeMode; // Synchroniseer de globale besturingsmodus voor o.a. de camera
+            isNewLevel = true; // Geef aan dat de camera gereset mag worden bij de eerste render
 
             // Update voortgangsindicatoren
             document.getElementById('progress-text').innerText = `Oefening ${currentIndex + 1} van ${totalExercises}`;
@@ -769,7 +771,7 @@
         function updateBuildingPadUI() {
             for (let r = 0; r < 3; r++) {
                 for (let c = 0; c < 3; c++) {
-                    const btn = document.getElementById(`pad-${r}-${c}`);
+                    const btn = document.getElementById('pad-' + r + '-' + c);
                     if(!btn) continue;
                     
                     const height = playerGrid[r][c];
@@ -858,10 +860,23 @@
             if (activeMode === 1) {
                 const normalizedRot = activeRotationY % 360;
                 
-                // Om een foute uitlijning te voorkomen, berekenen we het aanzicht op basis van de rotatie.
+                // Roteer het doelmodel op basis van de stand die de leerling heeft gekozen
                 let rotatedGrid = rotateGridMatrix(targetGrid, normalizedRot);
-                let playerProjection = get2DProjection(rotatedGrid, targetViewType);
-                let targetProjection = get2DProjection(targetGrid, targetViewType);
+                let playerProjection;
+                let targetProjection;
+
+                if (targetViewType === 'boven') {
+                    playerProjection = get2DProjection(rotatedGrid, 'boven');
+                    targetProjection = get2DProjection(targetGrid, 'boven');
+                } else if (targetViewType === 'voor') {
+                    playerProjection = get2DProjection(rotatedGrid, 'voor');
+                    targetProjection = get2DProjection(targetGrid, 'voor');
+                } else if (targetViewType === 'rechts') {
+                    // Het vooraanzicht (voorkant van de rode pijl) van het geroteerde model
+                    // moet overeenkomen met het originele rechtsaanzicht!
+                    playerProjection = get2DProjection(rotatedGrid, 'voor');
+                    targetProjection = get2DProjection(targetGrid, 'rechts');
+                }
 
                 isCorrect = JSON.stringify(playerProjection) === JSON.stringify(targetProjection);
                 recordedAnswer = normalizedRot; // We onthouden de rotatie
@@ -950,7 +965,7 @@
             document.getElementById('btn-next').classList.remove('hidden');
         }
 
-        // Hulpfunctie om matrix te roteren
+        // Hulpfunctie om matrix te roteren (met de klok mee/tegen de klok in matching Three.js Y-as)
         function rotateGridMatrix(grid, deg) {
             let temp = [[0,0,0],[0,0,0],[0,0,0]];
             let steps = (deg % 360) / 90;
@@ -966,8 +981,8 @@
                 let next = [[0,0,0],[0,0,0],[0,0,0]];
                 for (let r = 0; r < 3; r++) {
                     for (let c = 0; c < 3; c++) {
-                        // 90 graden rechtsom draaien
-                        next[c][2-r] = temp[r][c];
+                        // 90 graden tegen de klok in draaien rond grid center
+                        next[2-c][r] = temp[r][c];
                     }
                 }
                 temp = next;
@@ -1146,6 +1161,7 @@
             `;
 
             // Toon het correcte 3D model
+            isNewLevel = true; // Zorg dat de camera eenmalig schuin wordt gepositioneerd
             render3DBlocks(item.targetGrid, 30);
             showToast("Je bekijkt nu het correcte doellayout in de 3D-viewer.", "info");
         }
@@ -1300,10 +1316,19 @@
                 }
             }
 
-            resetCamera();
+            // Reset alleen de camera bij een volledig nieuw geladen level
+            if (isNewLevel) {
+                resetCamera();
+                isNewLevel = false;
+            }
         }
 
         function resetCamera() {
+            if (!camera || !controls) return;
+            
+            // Altijd resetten naar standaard up-vector
+            camera.up.set(0, 1, 0); 
+            
             if (currentMode === 1) {
                 camera.position.set(5, 4, 6);
             } else if (currentMode === 4) {
@@ -1317,19 +1342,25 @@
 
         // Snaps camera recht van voren, rechts, of van boven
         function snapCameraToRequestedView() {
+            if (!controls || !camera) return;
+            
             controls.reset();
             
             if (targetViewType === 'boven') {
-                camera.position.set(0, 8, 0.01);
-            } else if (targetViewType === 'voor') {
+                // Voorkom gimbal-lock door de camera-up-vector tijdelijk langs de z-as te richten (noord)
+                camera.up.set(0, 0, -1);
+                camera.position.set(0, 8, 0);
+                showToast(`Camera staat nu perfect uitgelijnd om het bovenaanzicht te vergelijken!`, "info");
+            } else {
+                // Voor zowel vooraanzicht als rechtsaanzicht willen we het VOORAANZICHT (de voorkant) van het gedraaide
+                // model gaan vergelijken met de gevraagde projectie op de linkerkaart.
+                camera.up.set(0, 1, 0);
                 camera.position.set(0, 0.5, 8);
-            } else if (targetViewType === 'rechts') {
-                camera.position.set(8, 0.5, 0);
+                showToast(`Camera staat nu perfect uitgelijnd om het vooraanzicht te vergelijken!`, "info");
             }
             
             controls.target.set(0, 0.5, 0);
             controls.update();
-            showToast(`Camera staat nu perfect uitgelijnd op het ${targetViewType}aanzicht!`, "info");
         }
 
         // --- OPSTART INITIALISATIE ---
