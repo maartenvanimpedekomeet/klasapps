@@ -33,9 +33,44 @@
         ::-webkit-scrollbar-thumb:hover {
             background: #94a3b8;
         }
+        @keyframes spin { to { transform: rotate(360deg); } }
     </style>
 </head>
 <body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col no-select font-sans">
+
+<!-- LOGIN SCHERM (fixed overlay — app zichtbaar op achtergrond) -->
+<div id="login-screen" style="position:fixed;inset:0;z-index:9999;background:linear-gradient(135deg,#312e81,#4338ca);display:flex;align-items:center;justify-content:center;padding:20px;">
+  <div style="background:white;border-radius:24px;padding:2.5rem 2rem;width:100%;max-width:380px;box-shadow:0 25px 50px rgba(0,0,0,0.25);text-align:center;display:flex;flex-direction:column;gap:12px;">
+    <div style="font-size:3rem">🧱</div>
+    <h1 style="font-size:1.5rem;font-weight:900;color:#1f2937;margin:0;">3D Blokkenbouwer</h1>
+    <p style="color:#6b7280;font-size:.9rem;margin:0;">Voer je naam en code in</p>
+    <div id="klas-err" style="display:none;color:#dc2626;font-size:.85rem;font-weight:700;background:#fee2e2;border:1px solid #fca5a5;padding:8px 12px;border-radius:8px;"></div>
+    <input type="text" id="klas-naam" placeholder="Jouw voornaam"
+      style="width:100%;padding:14px;border:2px solid #e5e7eb;border-radius:12px;font-family:inherit;font-size:1rem;font-weight:600;text-align:center;outline:none;"
+      autocomplete="off" autocapitalize="words">
+    <input type="password" id="klas-code" placeholder="Jouw code"
+      style="width:100%;padding:14px;border:2px solid #e5e7eb;border-radius:12px;font-family:inherit;font-size:1rem;font-weight:600;text-align:center;outline:none;"
+      autocomplete="off">
+    <button id="login-btn"
+      style="width:100%;background:#4338ca;color:white;border:none;border-radius:12px;padding:14px;font-family:inherit;font-size:1rem;font-weight:700;cursor:pointer;">
+      Inloggen
+    </button>
+    <button id="gast-btn"
+      style="width:100%;background:transparent;border:2px solid #e5e7eb;border-radius:12px;padding:12px;font-family:inherit;font-size:.9rem;font-weight:700;color:#6b7280;cursor:pointer;">
+      Doorgaan als gast (geen opslag)
+    </button>
+    <div style="font-size:.75rem;color:#9ca3af;">
+      <a href="dashboard.html" style="color:#4338ca;font-weight:700;text-decoration:none;">Leerkracht? Klik hier</a>
+    </div>
+  </div>
+</div>
+
+<!-- User badge (style.display — nooit classList) -->
+<div id="user-badge" style="display:none;position:fixed;top:68px;right:14px;z-index:50;align-items:center;gap:8px;background:white;border:1px solid #e0e7ff;border-radius:10px;padding:5px 12px;font-size:.8rem;font-weight:700;color:#4338ca;box-shadow:0 2px 8px rgba(0,0,0,.08);">
+  <span id="user-badge-naam"></span>
+  <button id="logout-btn" style="background:none;border:none;cursor:pointer;color:#94a3b8;font-size:.75rem;padding:2px 6px;border-left:1px solid #e5e7eb;margin-left:4px;font-family:inherit;">↩ Uit</button>
+</div>
+<div id="gast-badge" style="display:none;position:fixed;top:68px;right:14px;z-index:50;background:#fefce8;border:1px solid #fde68a;border-radius:8px;padding:4px 10px;font-size:.75rem;font-weight:700;color:#d97706;">👤 Gast – niet opgeslagen</div>
 
     <!-- Header -->
     <header class="bg-white border-b border-slate-200 py-4 px-6 shadow-sm sticky top-0 z-40">
@@ -315,6 +350,16 @@
             <div id="error-analysis-list" class="flex flex-col gap-4">
                 <!-- Wordt dynamisch gevuld met feedback-cards -->
             </div>
+
+            <!-- Upload status (style.display — nooit classList) -->
+            <div id="upload-status" style="display:none;padding:10px 14px;border-radius:10px;border:2px solid;font-size:.85rem;font-weight:700;text-align:center;margin-top:16px;">
+              <span id="upload-spinner" style="display:inline-block;width:13px;height:13px;border:2px solid #e5e7eb;border-top-color:#4338ca;border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle;margin-right:6px;"></span>
+              <span id="upload-status-text">Bezig met opslaan...</span>
+            </div>
+
+            <button onclick="switchScreen('menu')" class="w-full mt-6 bg-slate-900 text-white font-bold py-4 rounded-2xl hover:bg-black transition-all">
+                🏠 Terug naar het menu
+            </button>
         </div>
     </section>
 
@@ -359,7 +404,8 @@
         let toetsSequence = []; // Bevat { mode, grid, viewType } per opgave voor de Toets
         
         // Foutenanalyse database
-        let history = []; // Slaat op: { index, mode, targetGrid, playerInput, correct, viewType }
+        let quizLog = []; // Slaat op: { index, mode, targetGrid, playerInput, correct, viewType, tijdSeconden }
+        let vraagStartTijd = 0; // tijdstip start van huidige vraag (ms)
 
         // Three.js Variabelen
         let scene, camera, renderer, controls;
@@ -452,7 +498,8 @@
             gameMode = mode;
             currentIndex = 0;
             score = 0;
-            history = [];
+            quizLog = [];
+            vraagStartTijd = Date.now();
 
             if (mode === 5) {
                 totalExercises = 15;
@@ -1067,14 +1114,17 @@
             }
 
             // Sla op in de geschiedenis voor foutenanalyse
-            history.push({
+            const tijdSeconden = parseFloat(((Date.now() - vraagStartTijd) / 1000).toFixed(1));
+            quizLog.push({
                 index: currentIndex + 1,
                 mode: activeMode,
                 targetGrid: JSON.parse(JSON.stringify(targetGrid)),
                 playerInput: recordedAnswer,
                 correct: isCorrect,
-                viewType: targetViewType
+                viewType: targetViewType,
+                tijdSeconden: tijdSeconden
             });
+            vraagStartTijd = Date.now(); // reset voor volgende vraag
 
             // Toon feedback toast
             showToast(feedbackMsg, isCorrect ? "success" : "error");
@@ -1138,6 +1188,17 @@
             }
 
             renderErrorAnalysis();
+
+            // Reset upload-status (style.display — nooit classList)
+            document.getElementById("upload-status").style.display = "none";
+            document.getElementById("upload-status-text").textContent = "Bezig met opslaan...";
+            document.getElementById("upload-spinner").style.display = "inline-block";
+
+            // Opslaan enkel bij Toets (gameMode === 5)
+            if (gameMode === 5) {
+                document.getElementById("upload-status").style.display = "block";
+                saveToFirestore(score, totalExercises, percentage);
+            }
         }
 
         // --- GENEREEER GEDETAILLEERDE FOUTENANALYSE ---
@@ -1151,7 +1212,7 @@
                 links: 'Linker-zijaanzicht', rechts: 'Rechter-zijaanzicht', achter: 'Achteraanzicht'
             };
 
-            history.forEach(item => {
+            quizLog.forEach(item => {
                 const card = document.createElement('div');
                 card.className = `p-5 rounded-2xl border transition duration-150 ${
                     item.correct 
@@ -1218,7 +1279,7 @@
         }
 
         function previewHistoryModel(historyIndex) {
-            const item = history[historyIndex];
+            const item = quizLog[historyIndex];
             switchScreen('game');
             
             const progressText = document.getElementById('progress-text');
@@ -1468,11 +1529,204 @@
         }
 
         // --- OPSTART INITIALISATIE ---
-        window.onload = function() {
+        // Three.js initialiseren bij DOMContentLoaded, menu pas tonen na login
+        document.addEventListener('DOMContentLoaded', function() {
             initThree();
-            updateScoreBadges();
-            switchScreen('menu');
-        };
+            // Login-listeners
+            document.getElementById('login-btn').addEventListener('click', klasLogin);
+            document.getElementById('gast-btn').addEventListener('click', klasGast);
+            document.getElementById('logout-btn').addEventListener('click', doLogout);
+            document.getElementById('klas-naam').addEventListener('keypress', function(e){ if(e.key==='Enter') document.getElementById('klas-code').focus(); });
+            document.getElementById('klas-code').addEventListener('keypress', function(e){ if(e.key==='Enter') klasLogin(); });
+        });
     </script>
+
+<!-- FIREBASE compat SDK — geen type="module", geen anonymous auth -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script>
+firebase.initializeApp({
+    apiKey:"AIzaSyCnQDVVAlK6jE-PPUUediRJMTbN0xqrLDE",
+    authDomain:"klaswebsite-database.firebaseapp.com",
+    projectId:"klaswebsite-database",
+    storageBucket:"klaswebsite-database.firebasestorage.app",
+    messagingSenderId:"42912327282",
+    appId:"1:42912327282:web:f13f2c706f6c42c115c4eb"
+});
+var _db          = firebase.firestore();
+var _currentUser = null;
+var _isGuest     = false;
+var COL_NAME     = "wiskunde_blokkenbouwer";
+
+// ── UPLOAD STATUS (style.display — NOOIT classList) ───────────────────────
+function setUploadStatus(type, msg) {
+    var box     = document.getElementById("upload-status");
+    var text    = document.getElementById("upload-status-text");
+    var spinner = document.getElementById("upload-spinner");
+    if (!box) return;
+    box.style.display    = "block";
+    spinner.style.display = (type === "loading") ? "inline-block" : "none";
+    if (type === "loading") {
+        box.style.background="#eef2ff"; box.style.borderColor="#c7d2fe"; box.style.color="#3730a3";
+    } else if (type === "ok") {
+        box.style.background="#f0fdf4"; box.style.borderColor="#86efac"; box.style.color="#15803d";
+    } else {
+        box.style.background="#fff1f2"; box.style.borderColor="#fecdd3"; box.style.color="#be123c";
+    }
+    text.textContent = msg;
+    console.log("[blokkenbouwer saveToFirestore] " + type + ": " + msg);
+}
+
+// ── LOGIN (openApp gebruikt ALLEEN style.display — nooit classList) ────────
+function klasLogin() {
+    var naam = (document.getElementById("klas-naam").value||"").trim().toLowerCase();
+    var code = (document.getElementById("klas-code").value||"").trim();
+    var err  = document.getElementById("klas-err");
+    err.style.display = "none";
+    if (!naam) { err.textContent="Vul je voornaam in."; err.style.display="block"; return; }
+    if (!code) { err.textContent="Vul je code in.";    err.style.display="block"; return; }
+    var btn = document.getElementById("login-btn");
+    btn.textContent = "Even wachten..."; btn.disabled = true;
+    _db.collection("leerlingen").doc(naam).get().then(function(doc) {
+        btn.textContent = "Inloggen"; btn.disabled = false;
+        if (!doc.exists) { err.textContent="Naam niet gevonden."; err.style.display="block"; return; }
+        var data = doc.data();
+        if (data.code !== code) { err.textContent="Verkeerde code."; err.style.display="block"; return; }
+        window._leerlingNaam = data.weergavenaam || (naam.charAt(0).toUpperCase()+naam.slice(1));
+        window._leerlingId   = naam;
+        _currentUser = { uid: naam, displayName: window._leerlingNaam };
+        _isGuest = false;
+        openApp(window._leerlingNaam, false);
+    }).catch(function(e) {
+        btn.textContent = "Inloggen"; btn.disabled = false;
+        err.textContent = "Fout: " + e.message; err.style.display = "block";
+    });
+}
+
+function klasGast() {
+    _isGuest = true; _currentUser = null;
+    window._leerlingId   = null;
+    window._leerlingNaam = "Gast";
+    openApp("Gast", true);
+}
+
+function openApp(naam, isGast) {
+    // ALLEEN style.display — nooit classList
+    // (.hidden { ... } in Tailwind zou classList.remove('hidden') blokkeren)
+    document.getElementById("login-screen").style.display = "none";
+    if (isGast) {
+        document.getElementById("gast-badge").style.display  = "block";
+        document.getElementById("user-badge").style.display  = "none";
+    } else {
+        document.getElementById("user-badge-naam").textContent = naam;
+        document.getElementById("user-badge").style.display    = "flex";
+        document.getElementById("gast-badge").style.display    = "none";
+    }
+    // Menu tonen na login — switchScreen gebruikt classList (game-views), dat is ok
+    switchScreen("menu");
+    updateScoreBadges();
+}
+
+function doLogout() {
+    _currentUser = null; _isGuest = false;
+    window._leerlingId = null; window._leerlingNaam = null;
+    document.getElementById("login-screen").style.display = "flex";
+    document.getElementById("user-badge").style.display   = "none";
+    document.getElementById("gast-badge").style.display   = "none";
+    document.getElementById("klas-naam").value = "";
+    document.getElementById("klas-code").value = "";
+    document.getElementById("klas-err").style.display = "none";
+    document.getElementById("login-btn").disabled = false;
+    document.getElementById("login-btn").textContent = "Inloggen";
+}
+
+// ── OPSLAAN (enkel bij Toets: gameMode === 5) ─────────────────────────────
+async function saveToFirestore(score, total, pct) {
+    if (_isGuest || !_currentUser) {
+        setUploadStatus("error", "❌ Niet opgeslagen: je speelt als gast.");
+        return;
+    }
+    if (!window._leerlingId) {
+        setUploadStatus("error", "❌ Geen leerling-ID. Log opnieuw in.");
+        return;
+    }
+    setUploadStatus("loading", "Bezig met opslaan...");
+
+    var modeNamen = {1:"Welk aanzicht?", 2:"Spiegel de constructie", 3:"Roter de constructie", 4:"Bouw het grondplan"};
+    var totaalTijd = quizLog.reduce(function(s,q){ return s+(q.tijdSeconden||0); }, 0);
+
+    // Foutenanalyse per module
+    var foutenTelling = {};
+    var extraOefenen  = [];
+    quizLog.forEach(function(q) {
+        if (!q.correct) {
+            var lbl = modeNamen[q.mode] || ("Module "+q.mode);
+            foutenTelling[lbl] = (foutenTelling[lbl]||0) + 1;
+            extraOefenen.push("Vraag "+q.index+" ("+lbl+") — fout");
+        }
+    });
+
+    var record = {
+        leerlingId:   window._leerlingId,
+        leerlingNaam: window._leerlingNaam || "Leerling",
+        vak:          "Wiskunde",
+        vakonderdeel: "Ruimtelijk inzicht – 3D Blokkenbouwer",
+        mode:         "Toets (gemengd)",
+        score:        score,
+        totalQ:       total,
+        percentage:   pct,
+        tijd:         parseFloat(totaalTijd.toFixed(1)) + "s",
+        gemTijdPerVraag: total > 0 ? parseFloat((totaalTijd/total).toFixed(1)) : 0,
+        hintsGebruikt: 0,
+        timestamp:    firebase.firestore.FieldValue.serverTimestamp(),
+        foutenAnalyse: {
+            extraOefenen:       extraOefenen,
+            foutenPerCategorie: foutenTelling
+        },
+        vragen: quizLog.map(function(q) {
+            var modeLbl = modeNamen[q.mode] || ("Module "+q.mode);
+            var gridStr = (q.targetGrid||[]).map(function(rij){ return rij.join(","); }).join(" | ");
+            var antwoord = q.mode === 1
+                ? (q.playerInput || "(niets gekozen)")
+                : (q.playerInput ? JSON.stringify(q.playerInput) : "(geen invoer)");
+            return {
+                vraagNr:          q.index,
+                vraag:            "Vraag "+q.index+" – "+modeLbl+(q.viewType?" ("+q.viewType+")":""),
+                categorie:        modeLbl,
+                antwoordLeerling: antwoord,
+                juistAntwoord:    q.mode === 1 ? (q.viewType||"") : gridStr,
+                isJuist:          q.correct,
+                hintGebruikt:     false,
+                punten:           q.correct ? 1 : 0,
+                tijdSeconden:     q.tijdSeconden || 0,
+                detail: {
+                    targetGrid:  q.targetGrid,
+                    playerInput: q.playerInput,
+                    viewType:    q.viewType
+                }
+            };
+        })
+    };
+
+    console.log("[blokkenbouwer saveToFirestore] Opslaan naar " + COL_NAME + ":", record);
+
+    try {
+        var docRef = await _db.collection(COL_NAME).add(record);
+        await _db.collection("toets_registry").doc(COL_NAME).set({
+            naam:       "Wiskunde – 3D Blokkenbouwer",
+            collection: COL_NAME,
+            vak:        "Wiskunde",
+            lastSeen:   firebase.firestore.FieldValue.serverTimestamp()
+        }, { merge: true });
+        setUploadStatus("ok", "✅ Score opgeslagen! (ID: " + docRef.id.substring(0,8) + "…)");
+    } catch(e) {
+        console.error("[blokkenbouwer saveToFirestore] Fout:", e.code, e.message);
+        var uitleg = e.message||"Onbekende fout";
+        if (e.code==="permission-denied") uitleg="Geen schrijfrechten.";
+        else if (e.code==="unavailable")  uitleg="Geen internetverbinding.";
+        setUploadStatus("error", "❌ Opslaan mislukt: "+uitleg);
+    }
+}
+</script>
 </body>
 </html>
