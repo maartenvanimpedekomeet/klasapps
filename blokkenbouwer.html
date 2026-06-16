@@ -151,6 +151,19 @@
     <!-- 2. GAMEPLAY SCHERM -->
     <section id="screen-game" class="hidden flex-1 max-w-6xl w-full mx-auto p-4 md:p-6 flex flex-col gap-6">
         
+        <!-- Instructie Balk -->
+        <div class="bg-indigo-50 border-l-4 border-indigo-500 p-4 rounded-r-xl shadow-sm">
+            <div class="flex gap-3">
+                <div class="text-indigo-500 mt-0.5">
+                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path></svg>
+                </div>
+                <div>
+                    <h3 class="font-bold text-indigo-900 text-sm">Speluitleg</h3>
+                    <p id="instruction-text" class="text-sm text-indigo-700 mt-0.5">Laden van instructies...</p>
+                </div>
+            </div>
+        </div>
+
         <!-- Progress Bar & Active Mode Info -->
         <div class="bg-white rounded-2xl border border-slate-200 p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-sm">
             <div class="flex items-center gap-3">
@@ -331,6 +344,7 @@
         // State & Configuratie
         let currentScreen = 'menu'; // 'menu' | 'game' | 'results'
         let gameMode = 1; // 1: Draai & Aanzicht, 2: Bouw Grondplan, 3: Nachtbouw, 4: Vul Grondplan, 5: Toets
+        let currentMode = 1; // Unieke actieve sub-modus voor de huidige opgave (voor o.a. de Toets)
         let currentIndex = 0;
         let totalExercises = 10;
         let score = 0;
@@ -510,13 +524,19 @@
 
             playerGrid = [[0,0,0],[0,0,0],[0,0,0]];
             activeRotationY = 0;
+            currentMode = activeMode; // Synchroniseer de globale besturingsmodus voor o.a. de camera
 
             // Update voortgangsindicatoren
             document.getElementById('progress-text').innerText = `Oefening ${currentIndex + 1} van ${totalExercises}`;
             document.getElementById('progress-bar-fill').style.width = `${((currentIndex + 1) / totalExercises) * 100}%`;
             document.getElementById('active-mode-badge').innerText = modeNames[gameMode];
             document.getElementById('left-mode-badge').innerText = modeNames[activeMode];
-            document.getElementById('instruction-text').innerText = modeInstructions[activeMode];
+            
+            // Controleer of de instructiebalk correct is geladen alvorens innerText te zetten
+            const instructionEl = document.getElementById('instruction-text');
+            if (instructionEl) {
+                instructionEl.innerText = modeInstructions[activeMode];
+            }
 
             renderGameScreen(activeMode);
         }
@@ -664,7 +684,7 @@
                 for (let c = 0; c < 3; c++) {
                     const val = grid[r][c];
                     const cell = document.createElement('div');
-                    cell.className = `w-12 h-12 rounded-xl flex items-center justify-center font-black text-lg border shadow-sm ${
+                    cell.className = `w-12 h-12 rounded-xl flex items-center justify-center font-bold text-lg border shadow-sm ${
                         val > 0 
                         ? 'bg-amber-500 border-amber-600 text-white' 
                         : 'bg-white border-amber-200 text-slate-300'
