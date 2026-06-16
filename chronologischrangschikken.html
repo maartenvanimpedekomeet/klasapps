@@ -1,0 +1,1128 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tijdlijn Helden - Chronologische Volgorde</title>
+    <!-- Tailwind CSS voor een speelse en moderne vormgeving -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Canvas-confetti voor een vrolijke beloningsanimatie -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <style>
+        .no-select {
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        /* Extra animatie-klassen voor feedback */
+        @keyframes bounce-slow {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-6px); }
+        }
+        .bounce-slow {
+            animation: bounce-slow 2s infinite;
+        }
+        /* Custom styles voor touchscreen-vriendelijk slepen */
+        .drag-item {
+            touch-action: none; /* Voorkom standaard scrollen tijdens het slepen */
+            transition: transform 0.2s, box-shadow 0.2s, background-color 0.2s;
+            cursor: grab;
+        }
+        .drag-item:active {
+            cursor: grabbing;
+            transform: scale(1.03);
+            box-shadow: 0 10px 20px -3px rgba(79, 70, 229, 0.15), 0 4px 6px -2px rgba(79, 70, 229, 0.1);
+        }
+        /* Grip-knop animatie effect */
+        .grip-icon {
+            color: #cbd5e1;
+            transition: color 0.2s;
+        }
+        .drag-item:hover .grip-icon {
+            color: #6366f1;
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-b from-amber-50 to-orange-100 text-slate-800 min-h-screen flex flex-col no-select font-sans">
+
+    <!-- Header -->
+    <header class="bg-white border-b-4 border-amber-400 py-4 px-6 shadow-sm sticky top-0 z-40">
+        <div class="max-w-4xl mx-auto flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="bg-amber-500 text-white p-2.5 rounded-2xl shadow-md bounce-slow">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                </div>
+                <div>
+                    <h1 class="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">Tijdlijn Helden</h1>
+                    <p class="text-xs text-amber-600 font-bold">Zet alles in de juiste volgorde!</p>
+                </div>
+            </div>
+            
+            <!-- Menu knop (zichtbaar in het spel) -->
+            <button id="btn-home" onclick="confirmGoToMenu()" class="hidden px-4 py-2 text-xs font-black text-amber-700 bg-amber-100 hover:bg-amber-200 border-2 border-amber-300 rounded-2xl transition flex items-center gap-1">
+                🏠 Menu
+            </button>
+        </div>
+    </header>
+
+    <!-- 1. HOOFDMENU SCHERM -->
+    <section id="screen-menu" class="flex-1 max-w-4xl w-full mx-auto p-4 md:p-6 flex flex-col justify-center items-center">
+        <div class="text-center max-w-md mx-auto mb-8">
+            <h2 class="text-3xl font-black text-slate-900 leading-tight">Wat gebeurt er eerst?</h2>
+            <p class="text-slate-600 text-sm mt-2 font-medium">Zet de kaarten in de juiste volgorde en word een echte Tijdlijn Held!</p>
+        </div>
+
+        <div class="w-full max-w-md bg-white rounded-3xl border-4 border-indigo-400 p-8 shadow-xl text-center flex flex-col justify-between items-center gap-6">
+            <div class="w-16 h-14 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center font-black text-3xl">⭐</div>
+            <div>
+                <h3 class="font-extrabold text-xl text-slate-900">Start het Spel</h3>
+                <p class="text-xs text-slate-500 mt-2 leading-relaxed">
+                    Je krijgt 5 leuke, korte verhaaltjes om op te lossen. <br>
+                    Sleep de kaarten eenvoudig met je vinger in de juiste volgorde!
+                </p>
+            </div>
+            <div class="w-full pt-4 border-t border-slate-100 flex flex-col items-center gap-3">
+                <span id="score-badge-easy" class="text-xs font-bold text-indigo-600 bg-indigo-50 px-3 py-1.5 rounded-xl border border-indigo-100">Nog niet gespeeld</span>
+                <button onclick="startGame(1)" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-black py-4 px-6 rounded-2xl shadow-lg shadow-indigo-100 transition duration-150 text-base">
+                    Spelen! ▶️
+                </button>
+            </div>
+        </div>
+    </section>
+
+    <!-- 2. GAMEPLAY SCHERM -->
+    <section id="screen-game" class="hidden flex-1 max-w-3xl w-full mx-auto p-4 md:p-6 flex flex-col gap-4">
+        
+        <!-- Spel status & Scorebord -->
+        <div class="bg-white rounded-2xl border-2 border-amber-200 p-4 flex flex-row items-center justify-between gap-4 shadow-sm">
+            <div class="flex items-center gap-3">
+                <span class="bg-indigo-100 text-indigo-800 text-xs px-3 py-1.5 rounded-full font-black uppercase tracking-wider">Tijdlijn held</span>
+                <span id="progress-text" class="text-sm text-slate-500 font-extrabold">Oefening 1 van 5</span>
+            </div>
+            
+            <!-- Sterren progressie bar -->
+            <div class="flex items-center gap-1" id="stars-container">
+                <!-- Gevuld met JavaScript -->
+            </div>
+        </div>
+
+        <!-- De Opgave & Uitleg -->
+        <div class="bg-white rounded-3xl border-2 border-slate-200 p-5 shadow-sm">
+            <div class="flex items-start gap-3">
+                <div class="text-indigo-500 text-xl font-bold mt-1">💡</div>
+                <div>
+                    <h3 class="font-black text-slate-900 text-base" id="task-title">Zet het verhaal in de juiste volgorde:</h3>
+                    <p class="text-xs text-slate-500 mt-0.5">Houd een kaart vast met je vinger of muis en <strong class="text-indigo-600">sleep hem omhoog of omlaag</strong>.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sorteren Container -->
+        <div id="cards-container" class="flex flex-col gap-3 py-2">
+            <!-- Kaarten worden hier ingeladen via JS -->
+        </div>
+
+        <!-- Actiebalk Onderaan -->
+        <div class="flex flex-col sm:flex-row gap-3 mt-4">
+            <button id="btn-submit" onclick="checkOrder()" class="flex-1 bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white font-black py-4 px-6 rounded-2xl shadow-lg shadow-indigo-100 transition duration-200 flex items-center justify-center gap-2 text-base">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                Controleer mijn volgorde!
+            </button>
+            <button id="btn-next" onclick="loadNextQuestion()" class="hidden flex-1 bg-emerald-500 hover:bg-emerald-600 active:bg-emerald-700 text-white font-black py-4 px-6 rounded-2xl shadow-lg shadow-emerald-100 transition duration-200 flex items-center justify-center gap-2 text-base">
+                Volgende vraag ➡️
+            </button>
+        </div>
+    </section>
+
+    <!-- 3. RESULTATENSCHERM + SCORES & COMMENTAAR -->
+    <section id="screen-results" class="hidden flex-1 max-w-2xl w-full mx-auto p-4 md:p-6 flex flex-col justify-center items-center">
+        <div class="bg-white rounded-3xl border-4 border-indigo-400 p-8 text-center w-full shadow-xl relative overflow-hidden">
+            <div class="absolute top-0 inset-x-0 h-2 bg-gradient-to-r from-indigo-500 to-indigo-700"></div>
+            
+            <div id="trophy-icon" class="text-6xl mb-4">🏆</div>
+            <h2 id="results-title" class="text-2xl sm:text-3xl font-black text-slate-900 leading-tight">Goed gedaan!</h2>
+            <p id="results-sub" class="text-slate-500 text-sm mt-1">Je bent klaar met alle vragen van dit niveau.</p>
+            
+            <div class="my-6 inline-flex flex-col items-center justify-center bg-indigo-50 px-8 py-5 rounded-2xl border-2 border-dashed border-indigo-200">
+                <span class="text-xs uppercase font-extrabold text-indigo-600 tracking-wider">Jouw score</span>
+                <span id="results-score" class="text-4xl font-black text-slate-900 mt-1">5 / 5</span>
+                <span id="results-percentage" class="text-xs text-slate-500 font-bold mt-1">100% Goedgekeurd!</span>
+            </div>
+
+            <!-- Foutenanalyse / Feedback blok -->
+            <div id="results-feedback-block" class="mb-6 p-4 bg-slate-50 rounded-2xl text-left border border-slate-200">
+                <h4 class="font-bold text-slate-800 text-sm mb-1">🌟 Superhelden Rapport:</h4>
+                <p id="results-text" class="text-xs text-slate-600 leading-relaxed">Je hebt fantastisch geoefend! Probeer nu de volgende module of ga voor een perfecte score.</p>
+            </div>
+
+            <div class="flex flex-col sm:flex-row justify-center gap-3">
+                <button onclick="goToMenu()" class="bg-slate-800 hover:bg-slate-900 text-white font-black py-3 px-6 rounded-2xl transition text-sm flex items-center justify-center gap-2">
+                    🏠 Terug naar Menu
+                </button>
+                <button id="btn-replay" onclick="replayCurrentLevel()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-black py-3 px-6 rounded-2xl transition text-sm flex items-center justify-center gap-2 shadow-md shadow-indigo-100">
+                    🔄 Speel nog eens
+                </button>
+            </div>
+        </div>
+    </section>
+
+    <!-- Bevestigings-modal -->
+    <div id="confirm-modal" class="hidden fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl max-w-sm w-full p-6 shadow-2xl border-2 border-slate-200">
+            <h3 class="text-lg font-black text-slate-900">Wil je stoppen?</h3>
+            <p class="text-xs text-slate-500 mt-2 leading-relaxed">Als je nu teruggaat naar het menu, verlies je je behaalde score van dit potje.</p>
+            <div class="flex gap-2 mt-6">
+                <button onclick="closeConfirmModal()" class="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-3 rounded-2xl text-xs transition">
+                    Nee, blijf spelen
+                </button>
+                <button onclick="exitToMenuConfirmed()" class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 rounded-2xl text-xs transition shadow-md shadow-indigo-100">
+                    Ja, naar het menu
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Feedback popups -->
+    <div id="feedback-toast" class="hidden fixed bottom-6 right-6 max-w-md bg-white border-l-4 p-4 rounded-xl shadow-2xl transition-all duration-300 z-50 transform translate-y-2 opacity-0">
+        <!-- Dynamische toast content -->
+    </div>
+
+    <!-- Script met alle content en spel-mechanica -->
+    <script>
+        // --- POOL VAN 50 ALKEDAAGSE VERHALEN (EENVOUDIG NEDERLANDS, AVI M4/E4) ---
+        const storiesPool = [
+            {
+                title: "Tanden poetsen",
+                items: [
+                    { id: "A", text: "Ik doe tandpasta op mijn tandenborstel.", emoji: "🪥" },
+                    { id: "B", text: "Ik poets mijn tanden heel goed schoon.", emoji: "🦷" },
+                    { id: "C", text: "Ik spoel mijn mond met een beetje water.", emoji: "🚰" },
+                    { id: "D", text: "Ik veeg mijn mond droog met een handdoek.", emoji: "🧼" },
+                    { id: "E", text: "Ik zet mijn tandenborstel weer in de beker.", emoji: "🥤" }
+                ],
+                correctOrder: ["A", "B", "C", "D", "E"]
+            },
+            {
+                title: "Opstaan voor school",
+                items: [
+                    { id: "A", text: "De wekker gaat en ik doe mijn ogen open.", emoji: "⏰" },
+                    { id: "B", text: "Ik trek mijn broek en trui aan.", emoji: "👕" },
+                    { id: "C", text: "Ik eet een lekkere boterham met choco.", emoji: "🍞" },
+                    { id: "D", text: "Ik poets mijn tanden in de badkamer.", emoji: "🪥" },
+                    { id: "E", text: "Ik doe mijn jas aan en loop naar school.", emoji: "🎒" }
+                ],
+                correctOrder: ["A", "B", "C", "D", "E"]
+            },
+            {
+                title: "Een hond aaien",
+                items: [
+                    { id: "A", text: "Ik zie een lieve hond op straat.", emoji: "🐕" },
+                    { id: "B", text: "Ik vraag aan de baas of ik mag aaien.", emoji: "🙋" },
+                    { id: "C", text: "Ik laat de hond eerst rustig aan mijn hand ruiken.", emoji: "👃" },
+                    { id: "D", text: "Ik aai de hond zachtjes over zijn rug.", emoji: "👋" },
+                    { id: "E", text: "De hond kwispelt met zijn staart omdat hij blij is.", emoji: "🐕‍Gl" }
+                ],
+                correctOrder: ["A", "B", "C", "D", "E"]
+            },
+            {
+                title: "Pizza eten",
+                items: [
+                    { id: "A", text: "We rollen het deeg uit op de bakplaat.", emoji: "👩‍🍳" },
+                    { id: "B", text: "We doen rode tomatensaus en kaas op de pizza.", emoji: "🍅" },
+                    { id: "C", text: "De pizza gaat in de hete oven.", emoji: "🔥" },
+                    { id: "D", text: "De oven zegt 'biep' en de pizza is klaar.", emoji: "🔔" },
+                    { id: "E", text: "We snijden de pizza en eten hem lekker op.", emoji: "🍕" }
+                ],
+                correctOrder: ["A", "B", "C", "D", "E"]
+            },
+            {
+                title: "Handen wassen",
+                items: [
+                    { id: "A", text: "Ik maak mijn handen nat onder de kraan.", emoji: "🚰" },
+                    { id: "B", text: "Ik doe een beetje zeep op mijn handen.", emoji: "🧼" },
+                    { id: "C", text: "Ik wrijf de zeep heel goed tussen mijn vingers.", emoji: "🧼" },
+                    { id: "D", text: "Ik spoel alle zeep weg met schoon water.", emoji: "💦" },
+                    { id: "E", text: "Ik droog mijn natte handen goed af met een handdoek.", emoji: "🧣" }
+                ],
+                correctOrder: ["A", "B", "C", "D", "E"]
+            },
+            {
+                title: "Een bericht sturen op de telefoon",
+                items: [
+                    { id: "A", text: "Ik pak de telefoon van tafel en tik op de groene app.", emoji: "📱" },
+                    { id: "B", text: "Ik zoek de naam van mijn beste vriend op in de lijst.", emoji: "🔍" },
+                    { id: "C", text: "Ik typ: 'Kom je vandaag spelen bij mij?'", emoji: "⌨️" },
+                    { id: "D", text: "Ik druk op de knop om het berichtje te sturen.", emoji: "📨" }
+                ],
+                correctOrder: ["A", "B", "C", "D"]
+            },
+            {
+                title: "De plant water geven",
+                items: [
+                    { id: "A", text: "Ik zie dat de blaadjes van de plant slap hangen.", emoji: "🥀" },
+                    { id: "B", text: "Ik loop naar de keuken en vul de gieter met water.", emoji: "💧" },
+                    { id: "C", text: "Ik giet het water rustig bij de wortels van de plant.", emoji: "🪴" },
+                    { id: "D", text: "De volgende dag staat de plant weer heel mooi recht.", emoji: "🌻" }
+                ],
+                correctOrder: ["A", "B", "C", "D"]
+            },
+            {
+                title: "Een tekening maken",
+                items: [
+                    { id: "A", text: "Ik pak een wit papier en leg het plat op mijn bureau.", emoji: "📄" },
+                    { id: "B", text: "Met een zwart potlood teken ik een grote boom met takken.", emoji: "✏️" },
+                    { id: "C", text: "Ik kleur de boom in met groen en bruin potlood.", emoji: "🖍️" },
+                    { id: "D", text: "Ik hang mijn mooie boom met een plakbandje op de muur.", emoji: "🖼️" }
+                ],
+                correctOrder: ["A", "B", "C", "D"]
+            },
+            {
+                title: "Zwemmen in het zwembad",
+                items: [
+                    { id: "A", text: "Ik doe mijn zwembroek aan in het kleedhokje.", emoji: "🩳" },
+                    { id: "B", text: "Ik loop onder de douche door om mij af te spoelen.", emoji: "🚿" },
+                    { id: "C", text: "Ik neem een grote aanloop en spring in het diepe water.", emoji: "💦" },
+                    { id: "D", text: "Na het zwemmen droog ik mijn haren af met een zachte handdoek.", emoji: "🧣" }
+                ],
+                correctOrder: ["A", "B", "C", "D"]
+            },
+            {
+                title: "Naar de bioscoop gaan",
+                items: [
+                    { id: "A", text: "We kopen een ticket aan de kassa van de bioscoop.", emoji: "🎟️" },
+                    { id: "B", text: "We halen een grote emmer zoete popcorn en een drankje.", emoji: "🍿" },
+                    { id: "C", text: "We zoeken onze stoel in de donkere zaal.", emoji: "🪑" },
+                    { id: "D", text: "Het grote scherm gaat aan en de film begint te spelen.", emoji: "🎬" }
+                ],
+                correctOrder: ["A", "B", "C", "D"]
+            },
+            {
+                title: "Een appeltje eten",
+                items: [
+                    { id: "A", text: "Ik spoel de appel goed af onder de koude kraan.", emoji: "🍎" },
+                    { id: "B", text: "Mama snijdt de appel voorzichtig in partjes.", emoji: "🔪" },
+                    { id: "C", text: "Ik eet de zoete stukjes appel lekker op.", emoji: "😋" },
+                    { id: "D", text: "Ik gooi het lege klokhuis in de groene vuilnisbak.", emoji: "🗑️" }
+                ],
+                correctOrder: ["A", "B", "C", "D"]
+            },
+            {
+                title: "Mijn bed opmaken",
+                items: [
+                    { id: "A", text: "Ik schud mijn kussen op en leg het bovenaan het bed.", emoji: "🛏️" },
+                    { id: "B", text: "Ik trek het laken en de deken strak over het matras.", emoji: "✨" },
+                    { id: "C", text: "Ik leg mijn favoriete knuffelbeer zachtjes op de deken.", emoji: "🧸" },
+                    { id: "D", text: "Mijn slaapkamer ziet er nu super netjes uit!", emoji: "🚪" }
+                ],
+                correctOrder: ["A", "B", "C", "D"]
+            },
+            {
+                title: "Een brief sturen",
+                items: [
+                    { id: "A", text: "Ik schrijf een kort verhaaltje op het papier.", emoji: "📝" },
+                    { id: "B", text: "Ik vouw de brief op en doe hem in de witte envelop.", emoji: "✉️" },
+                    { id: "C", text: "Ik plak een postzegel in de hoek van de envelop.", emoji: "🎫" },
+                    { id: "D", text: "Ik gooi de brief in de rode brievenbus op straat.", emoji: "📮" }
+                ],
+                correctOrder: ["A", "B", "C", "D"]
+            },
+            {
+                title: "Cadeautje inpakken",
+                items: [
+                    { id: "A", text: "Ik leg het cadeautje in het midden van het papier.", emoji: "🎁" },
+                    { id: "B", text: "Ik vouw het papier er strak omheen.", emoji: "📄" },
+                    { id: "C", text: "Ik plak het papier dicht met twee plakbandjes.", emoji: "🩹" },
+                    { id: "D", text: "Ik maak een mooie, grote strik met een lintje.", emoji: "🎀" }
+                ],
+                correctOrder: ["A", "B", "C", "D"]
+            },
+            {
+                title: "De fietsband oppompen",
+                items: [
+                    { id: "A", text: "Ik draai het kleine dopje van het ventiel eraf.", emoji: "🚲" },
+                    { id: "B", text: "Ik klem de slang van de fietspomp op het ventiel.", emoji: "⚙️" },
+                    { id: "C", text: "Ik duw de fietspomp een paar keer krachtig op en neer.", emoji: "💨" },
+                    { id: "D", text: "Ik haal de slang eraf en draai het dopje weer vast.", emoji: "👍" }
+                ],
+                correctOrder: ["A", "B", "C", "D"]
+            },
+            {
+                title: "Limonade maken",
+                items: [
+                    { id: "A", text: "Ik pak een leeg glas en zet het op het aanrecht.", emoji: "🥛" },
+                    { id: "B", text: "Ik giet een klein laagje zoete siroop in het glas.", emoji: "🍯" },
+                    { id: "C", text: "Ik vul het glas verder aan met koud water.", emoji: "🚰" },
+                    { id: "D", text: "Ik roer alles goed door elkaar met een lepel.", emoji: "🥄" }
+                ],
+                correctOrder: ["A", "B", "C", "D"]
+            },
+            {
+                title: "Warme chocomelk maken",
+                items: [
+                    { id: "A", text: "Ik giet koude witte melk in mijn grote mok.", emoji: "🥛" },
+                    { id: "B", text: "Ik schep twee lepels chocoladepoeder in de melk.", emoji: "🥄" },
+                    { id: "C", text: "Ik roer het poeder goed door de melk.", emoji: "🌀" },
+                    { id: "D", text: "De mok gaat even in de magnetron tot het lekker warm is.", emoji: "🔥" }
+                ],
+                correctOrder: ["A", "B", "C", "D"]
+            },
+            {
+                title: "Met klei spelen",
+                items: [
+                    { id: "A", text: "Ik haal een bolletje rode klei uit de plastic pot.", emoji: "🏺" },
+                    { id: "B", text: "Ik rol de klei met een deegroller helemaal plat.", emoji: "🥖" },
+                    { id: "C", text: "Ik druk een vormpje van een ster uit de klei.", emoji: "⭐" },
+                    { id: "D", text: "Ik leg de ster op een bordje om te laten drogen.", emoji: "🍽️" }
+                ],
+                correctOrder: ["A", "B", "C", "D"]
+            },
+            {
+                title: "Schoenen aantrekken",
+                items: [
+                    { id: "A", text: "Ik steek mijn voeten diep in mijn blauwe schoenen.", emoji: "👟" },
+                    { id: "B", text: "Ik trek de veters goed strak aan.", emoji: "🪢" },
+                    { id: "C", text: "Ik maak een mooie dubbele strik in de veters.", emoji: "🎀" },
+                    { id: "D", text: "Nu kan ik lekker buiten gaan spelen in het park!", emoji: "🌳" }
+                ],
+                correctOrder: ["A", "B", "C", "D"]
+            },
+            {
+                title: "Een boek lezen",
+                items: [
+                    { id: "A", text: "Ik kies een spannend stripboek uit de kast.", emoji: "📚" },
+                    { id: "B", text: "Ik ga lekker relaxed op de bank zitten.", emoji: "🛋️" },
+                    { id: "C", text: "Ik sla het boek open en begin te lezen.", emoji: "📖" },
+                    { id: "D", text: "Als de bladzijde uit is, sla ik hem voorzichtig om.", emoji: "📄" }
+                ],
+                correctOrder: ["A", "B", "C", "D"]
+            },
+            {
+                title: "Spaghettisaus maken",
+                items: [
+                    { id: "A", text: "We zetten een grote pan op het warme vuur.", emoji: "🍳" },
+                    { id: "B", text: "We bakken het gehakt tot het mooi bruin is.", emoji: "🥩" },
+                    { id: "C", text: "We gieten de rode tomatensaus over het gehakt.", emoji: "🥫" },
+                    { id: "D", text: "We laten de saus rustig een tijdje warm worden.", emoji: "🔥" }
+                ],
+                correctOrder: ["A", "B", "C", "D"]
+            },
+            {
+                title: "Sokken wassen",
+                items: [
+                    { id: "A", text: "Ik doe alle vuile sokken in de wasmachine.", emoji: "🧺" },
+                    { id: "B", text: "Ik giet een beetje vloeibare zeep in het bakje.", emoji: "🧼" },
+                    { id: "C", text: "Ik doe de deur dicht en zet de wasmachine aan.", emoji: "🔌" },
+                    { id: "D", text: "Ik hang de schone, natte sokken aan het wasrek.", emoji: "🧣" }
+                ],
+                correctOrder: ["A", "B", "C", "D"]
+            },
+            {
+                title: "Een banaan eten",
+                items: [
+                    { id: "A", text: "Ik pak een gele banaan uit de fruitschaal.", emoji: "🍌" },
+                    { id: "B", text: "Ik pel de schil aan de bovenkant voorzichtig los.", emoji: "🙌" },
+                    { id: "C", text: "Ik neem een paar lekkere hapjes van de banaan.", emoji: "😋" },
+                    { id: "D", text: "Ik gooi de lege bananenschil in de biobak.", emoji: "🗑️" }
+                ],
+                correctOrder: ["A", "B", "C", "D"]
+            },
+            {
+                title: "Naar de kapper",
+                items: [
+                    { id: "A", text: "Ik ga zitten in de grote, draaiende stoel.", emoji: "🪑" },
+                    { id: "B", text: "De kapper maakt mijn haar nat met een spuitje water.", emoji: "💦" },
+                    { id: "C", text: "De kapper knipt mijn haar korter met een schaar.", emoji: "✂️" },
+                    { id: "D", text: "Mijn haar wordt droog geblazen met de warme föhn.", emoji: "💨" }
+                ],
+                correctOrder: ["A", "B", "C", "D"]
+            },
+            {
+                title: "Glijden van de glijbaan",
+                items: [
+                    { id: "A", text: "Ik klim via het trappetje helemaal omhoog.", emoji: "🪜" },
+                    { id: "B", text: "Ik ga rustig zitten aan de bovenkant van de glijbaan.", emoji: "🛝" },
+                    { id: "C", text: "Ik laat de handvatten los en glijd snel naar beneden.", emoji: "💨" },
+                    { id: "D", text: "Met mijn voeten land ik zachtjes in het zand.", emoji: "🦶" }
+                ],
+                correctOrder: ["A", "B", "C", "D"]
+            },
+            {
+                title: "Lego bouwen",
+                items: [
+                    { id: "A", text: "Ik kiep de doos met Legoblokjes leeg op het tapijt.", emoji: "📦" },
+                    { id: "B", text: "Ik leg het bouwboekje geopend voor mij neer.", emoji: "📖" },
+                    { id: "C", text: "Ik zoek de gekleurde blokjes bij elkaar.", emoji: "🎨" },
+                    { id: "D", text: "Ik klik de blokjes op elkaar en bouw een mooi kasteel.", emoji: "🏰" }
+                ],
+                correctOrder: ["A", "B", "C", "D"]
+            },
+            {
+                title: "Koekjes bakken",
+                items: [
+                    { id: "A", text: "Ik kneed het zachte deeg goed met mijn handen.", emoji: "🥯" },
+                    { id: "B", text: "Ik druk leuke vormpjes zoals hartjes uit het deeg.", emoji: "❤️" },
+                    { id: "C", text: "Ik leg de deegkoekjes netjes op de bakplaat.", emoji: "🍽️" },
+                    { id: "D", text: "De koekjes bakken goudbruin in de warme oven.", emoji: "🔥" }
+                ],
+                correctOrder: ["A", "B", "C", "D"]
+            },
+            {
+                title: "Boodschappen doen",
+                items: [
+                    { id: "A", text: "We schrijven een handig boodschappenlijstje op papier.", emoji: "📝" },
+                    { id: "B", text: "We pakken een winkelkarretje bij de supermarkt.", emoji: "🛒" },
+                    { id: "C", text: "We zoeken de appels en melk in de winkelpaden.", emoji: "🍎" },
+                    { id: "D", text: "We betalen alle spulletjes netjes bij de kassa.", emoji: "💳" }
+                ],
+                correctOrder: ["A", "B", "C", "D"]
+            },
+            {
+                title: "Stoepkrijten",
+                items: [
+                    { id: "A", text: "Ik doe de kartonnen doos met stoepkrijt open.", emoji: "📦" },
+                    { id: "B", text: "Ik pak een groot roze krijtje in mijn hand.", emoji: "🖍️" },
+                    { id: "C", text: "Ik teken een grote zon op de stoeptegels.", emoji: "☀️" },
+                    { id: "D", text: "Ik leg de krijtjes weer terug in de doos.", emoji: "📥" }
+                ],
+                correctOrder: ["A", "B", "C", "D"]
+            },
+            {
+                title: "Met de bus gaan",
+                items: [
+                    { id: "A", text: "Ik wacht rustig bij de bushalte langs de straat.", emoji: "🚏" },
+                    { id: "B", text: "De grote bus stopt en ik stap voorzichtig in.", emoji: "🚌" },
+                    { id: "C", text: "Ik scan mijn vervoerskaart bij de scanner.", emoji: "💳" },
+                    { id: "D", text: "Ik zoek een lege stoel aan het raam.", emoji: "🪑" }
+                ],
+                correctOrder: ["A", "B", "C", "D"]
+            },
+            {
+                title: "Een vogelhuisje ophangen",
+                items: [
+                    { id: "A", text: "We timmeren een houten vogelhuisje met papa.", emoji: "🔨" },
+                    { id: "B", text: "We strooien een paar vogelzaadjes in het huisje.", emoji: "🌾" },
+                    { id: "C", text: "Papa zet een stevige ladder tegen de dikke boom.", emoji: "🪜" },
+                    { id: "D", text: "We hangen het vogelhuisje stevig op aan een tak.", emoji: "🐦" }
+                ],
+                correctOrder: ["A", "B", "C", "D"]
+            },
+            {
+                title: "Een sneeuwpop maken",
+                items: [
+                    { id: "A", text: "Ik rol een gigantische sneeuwbal voor het lijf.", emoji: "❄️" },
+                    { id: "B", text: "Ik zet een iets kleinere sneeuwbal erbovenop.", emoji: "⛄" },
+                    { id: "C", text: "Ik geef de sneeuwpop een oranje wortel als neus.", emoji: "🥕" },
+                    { id: "D", text: "Ik hang mijn oude sjaal om de nek van de pop.", emoji: "🧣" }
+                ],
+                correctOrder: ["A", "B", "C", "D"]
+            },
+            {
+                title: "Een dagje aan het strand",
+                items: [
+                    { id: "A", text: "We leggen onze strandhanddoek in het warme zand.", emoji: "🏖️" },
+                    { id: "B", text: "Mama smeert mijn armen en benen in met zonnebrand.", emoji: "🧴" },
+                    { id: "C", text: "Ik ren vrolijk naar de zee om te zwemmen.", emoji: "🌊" },
+                    { id: "D", text: "Als beloning kopen we een lekker koud ijsje.", emoji: "🍦" }
+                ],
+                correctOrder: ["A", "B", "C", "D"]
+            },
+            {
+                title: "De kat voeren",
+                items: [
+                    { id: "A", text: "Ik pak het blauwe voerbakje van de vloer.", emoji: "🐈" },
+                    { id: "B", text: "Ik doe het blikje met kattenvoer voorzichtig open.", emoji: "🥫" },
+                    { id: "C", text: "Ik schep het voer met een lepel in het bakje.", emoji: "🥄" },
+                    { id: "D", text: "De kat begint meteen heel tevreden te eten.", emoji: "🍽️" }
+                ],
+                correctOrder: ["A", "B", "C", "D"]
+            },
+            {
+                title: "Huiswerk maken",
+                items: [
+                    { id: "A", text: "Ik neem mijn agenda en leg hem geopend op mijn bureau.", emoji: "📓" },
+                    { id: "B", text: "Ik lees rustig de vragen die in het boek staan.", emoji: "📖" },
+                    { id: "C", text: "Ik schrijf alle goede antwoorden netjes op het papier.", emoji: "✍️" },
+                    { id: "D", text: "Ik berg de spulletjes weer op in mijn schooltas.", emoji: "🎒" }
+                ],
+                correctOrder: ["A", "B", "C", "D"]
+            },
+            {
+                title: "Pakketje openmaken",
+                items: [
+                    { id: "A", text: "De deurbel gaat en de postbode staat aan de deur.", emoji: "🔔" },
+                    { id: "B", text: "Ik neem de grote kartonnen doos aan van de meneer.", emoji: "📦" },
+                    { id: "C", text: "We snijden het plakband op de doos voorzichtig los.", emoji: "✂️" },
+                    { id: "D", text: "Ik haal mijn nieuwe, mooie speelgoed uit de doos.", emoji: "🧸" }
+                ],
+                correctOrder: ["A", "B", "C", "D"]
+            },
+            {
+                title: "Fruitpap maken",
+                items: [
+                    { id: "A", text: "Ik rasp een zachte banaan en een halve appel.", emoji: "🍎" },
+                    { id: "B", text: "Ik pers een lekkere, zoete sinaasappel uit.", emoji: "🍊" },
+                    { id: "C", text: "Ik roer al het fruit heel goed door elkaar in een kom.", emoji: "🥣" },
+                    { id: "D", text: "Ik eet de gezonde fruitpap op met een lepeltje.", emoji: "🥄" }
+                ],
+                correctOrder: ["A", "B", "C", "D"]
+            },
+            {
+                title: "Kaarsje aansteken",
+                items: [
+                    { id: "A", text: "Ik zet een kleine, witte kaars stevig op de tafel.", emoji: "🕯️" },
+                    { id: "B", text: "Mama haalt een lucifer uit het kleine doosje.", emoji: "📦" },
+                    { id: "C", text: "Ze strijkt de lucifer krachtig langs het doosje.", emoji: "🔥" },
+                    { id: "D", text: "De lucifer brandt en we steken het pitje van de kaars aan.", emoji: "✨" }
+                ],
+                correctOrder: ["A", "B", "C", "D"]
+            },
+            {
+                title: "Warme thee zetten",
+                items: [
+                    { id: "A", text: "We koken het water in de elektrische waterkoker.", emoji: "🔌" },
+                    { id: "B", text: "Ik leg een zakje kersenthee onderin mijn lege mok.", emoji: "☕" },
+                    { id: "C", text: "We gieten het hete water heel voorzichtig in de mok.", emoji: "🫖" },
+                    { id: "D", text: "We wachten even tot het water lekker rood kleurt.", emoji: "⏱️" }
+                ],
+                correctOrder: ["A", "B", "C", "D"]
+            },
+            {
+                title: "Mijn haren borstelen",
+                items: [
+                    { id: "A", text: "Ik pak de roze haarborstel uit de badkamerkast.", emoji: "🧼" },
+                    { id: "B", text: "Ik haal de borstel zachtjes van boven naar beneden door mijn haar.", emoji: "💇" },
+                    { id: "C", text: "Ik bind mijn haren samen met een zacht elastiekje.", emoji: "🎀" },
+                    { id: "D", text: "Ik kijk lachend in de spiegel naar mijn mooie staart.", emoji: "🪞" }
+                ],
+                correctOrder: ["A", "B", "C", "D"]
+            },
+            {
+                title: "De computer aanzetten",
+                items: [
+                    { id: "A", text: "Ik klap het scherm van mijn Chromebook omhoog.", emoji: "💻" },
+                    { id: "B", text: "Ik druk kort op de zilveren aan-knop.", emoji: "🔘" },
+                    { id: "C", text: "Ik typ mijn geheime wachtwoord in om in te loggen.", emoji: "⌨️" },
+                    { id: "D", text: "Ik open Google om het leuke spel op te starten.", emoji: "🌐" }
+                ],
+                correctOrder: ["A", "B", "C", "D"]
+            },
+            {
+                title: "De tafel dekken",
+                items: [
+                    { id: "A", text: "Ik leg de borden netjes neer op de lege eettafel.", emoji: "🍽️" },
+                    { id: "B", text: "Ik leg een mes en een vork naast elk bord neer.", emoji: "🍴" },
+                    { id: "C", text: "Ik zet de glazen voor het water neer.", emoji: "🥛" },
+                    { id: "D", text: "Ik roep luid naar iedereen dat we kunnen eten!", emoji: "🗣️" }
+                ],
+                correctOrder: ["A", "B", "C", "D"]
+            },
+            {
+                title: "Zwembandjes opblazen",
+                items: [
+                    { id: "A", text: "Ik trek het plastic ventiel van het zwembandje open.", emoji: "🏊" },
+                    { id: "B", text: "Ik neem diep adem en blaas veel lucht in het bandje.", emoji: "💨" },
+                    { id: "C", text: "Ik duw het dopje van het ventiel er stevig in.", emoji: "👍" },
+                    { id: "D", text: "Ik schuif het opgeblazen bandje zachtjes om mijn arm.", emoji: "💪" }
+                ],
+                correctOrder: ["A", "B", "C", "D"]
+            },
+            {
+                title: "Speelgoed opruimen",
+                items: [
+                    { id: "A", text: "Ik raap de rondslingerende Lego-blokjes op van het tapijt.", emoji: "🧹" },
+                    { id: "B", text: "Ik leg al het speelgoed voorzichtig in de grote kist.", emoji: "📦" },
+                    { id: "C", text: "Ik leg het zware deksel stevig op de speelgoedkist.", emoji: "✨" },
+                    { id: "D", text: "Mijn slaapkamer is nu weer helemaal netjes en schoon!", emoji: "🚪" }
+                ],
+                correctOrder: ["A", "B", "C", "D"]
+            },
+            {
+                title: "Een plantje zaaien",
+                items: [
+                    { id: "A", text: "Ik vul een leeg bloempotje met donkere aarde.", emoji: "🪴" },
+                    { id: "B", text: "Ik maak een klein gaatje in de aarde met mijn vinger.", emoji: "👉" },
+                    { id: "C", text: "Ik stop een zaadje in de aarde en duw het gaatje dicht.", emoji: "🌱" },
+                    { id: "D", text: "Ik geef de aarde een heel klein beetje water.", emoji: "💧" }
+                ],
+                correctOrder: ["A", "B", "C", "D"]
+            },
+            {
+                title: "Naar bed gaan",
+                items: [
+                    { id: "A", text: "Ik trek mijn warme pyjama aan in mijn kamer.", emoji: "👕" },
+                    { id: "B", text: "Ik poets mijn tanden heel goed schoon in de badkamer.", emoji: "🪥" },
+                    { id: "C", text: "Ik kruip lekker diep onder de zachte deken.", emoji: "🛌" },
+                    { id: "D", text: "Mama geeft mij een dikke nachtzoen en doet de lamp uit.", emoji: "😘" }
+                ],
+                correctOrder: ["A", "B", "C", "D"]
+            },
+            {
+                title: "Een ijsje kopen",
+                items: [
+                    { id: "A", text: "Ik sluit netjes achteraan de rij aan bij de ijskraam.", emoji: "🚶" },
+                    { id: "B", text: "Ik kies de lekkere smaken banaan en aardbei.", emoji: "🍦" },
+                    { id: "C", text: "Ik geef de euro's aan de aardige meneer van het ijs.", emoji: "🪙" },
+                    { id: "D", text: "Ik begin lekker te likken aan de bolletjes.", emoji: "😋" }
+                ],
+                correctOrder: ["A", "B", "C", "D"]
+            },
+            {
+                title: "Vissen vangen",
+                items: [
+                    { id: "A", text: "We schuiven de uitschuifbare hengel helemaal uit.", emoji: "🎣" },
+                    { id: "B", text: "We doen een klein wormpje aan de scherpe haak.", emoji: "🪱" },
+                    { id: "C", text: "We werpen de vislijn ver weg in het rimpelende water.", emoji: "🌊" },
+                    { id: "D", text: "We wachten heel rustig tot de gekleurde dobber zakt.", emoji: "⏱️" }
+                ],
+                correctOrder: ["A", "B", "C", "D"]
+            },
+            {
+                title: "De tent opzetten",
+                items: [
+                    { id: "A", text: "We schuiven de lange tentstokken in elkaar.", emoji: "🏕️" },
+                    { id: "B", text: "We trekken het grote tentdoek helemaal strak op het gras.", emoji: "⛺" },
+                    { id: "C", text: "We slaan de haringen met een hamer stevig in de grond.", emoji: "🔨" },
+                    { id: "D", text: "We leggen ons matras en slaapzak in de tent.", emoji: "🛌" }
+                ],
+                correctOrder: ["A", "B", "C", "D"]
+            },
+            {
+                title: "Trampoline springen",
+                items: [
+                    { id: "A", text: "Ik doe mijn schoenen uit en zet ze naast de trampoline.", emoji: "👟" },
+                    { id: "B", text: "Ik klim op de trampoline en rits het grote veiligheidsnet dicht.", emoji: "🧗" },
+                    { id: "C", text: "Ik begin heel hoog te springen in de frisse buitenlucht.", emoji: "🤸" },
+                    { id: "D", text: "Ik stop rustig met springen en sta weer stil op mijn voeten.", emoji: "🧍" }
+                ],
+                correctOrder: ["A", "B", "C", "D"]
+            }
+        ];
+
+        // --- SPEL STATE ---
+        let activeQuestions = [];
+        let currentQuestionIndex = 0;
+        let currentSequence = []; // Bevat de ID's in de huidige weergave-volgorde
+        let score = 0;
+        let userProgressList = []; // Slaat op welke vragen goed/fout waren voor feedback
+
+        // Drag & Drop State
+        let dragSrcEl = null;
+        let touchStartY = 0;
+        let activeTouchEl = null;
+
+        const scoresKey = "tijdlijn_helden_scores_single";
+        let localHighScore = localStorage.getItem(scoresKey) ? parseInt(localStorage.getItem(scoresKey)) : null;
+
+        // --- TOAST NOTIFICATIONS ---
+        function showToast(message, type = "success") {
+            const toast = document.getElementById('feedback-toast');
+            if (!toast) return;
+            toast.className = "fixed bottom-6 right-6 max-w-md bg-white border-l-4 p-5 rounded-xl shadow-2xl transition-all duration-300 z-50 transform flex items-start gap-3 ";
+            
+            if (type === "success") {
+                toast.classList.add("border-emerald-500", "text-slate-800");
+                toast.innerHTML = `
+                    <div class="text-emerald-500 mt-0.5 font-bold text-xl">🎉</div>
+                    <div>
+                        <h4 class="font-bold text-emerald-800 text-sm">Uitstekend!</h4>
+                        <p class="text-xs text-slate-600 mt-1">${message}</p>
+                    </div>
+                `;
+            } else if (type === "error") {
+                toast.classList.add("border-red-500", "text-slate-800");
+                toast.innerHTML = `
+                    <div class="text-red-500 mt-0.5 font-bold text-xl">❌</div>
+                    <div>
+                        <h4 class="font-bold text-red-800 text-sm">Oeps! Dat klopt niet.</h4>
+                        <p class="text-xs text-slate-600 mt-1">${message}</p>
+                    </div>
+                `;
+            } else {
+                toast.classList.add("border-indigo-500", "text-slate-800");
+                toast.innerHTML = `
+                    <div class="text-indigo-500 mt-0.5 font-bold text-xl">👁️</div>
+                    <div>
+                        <h4 class="font-bold text-indigo-800 text-sm">Informatie</h4>
+                        <p class="text-xs text-slate-600 mt-1">${message}</p>
+                    </div>
+                `;
+            }
+
+            toast.classList.remove('hidden');
+            setTimeout(() => {
+                toast.classList.remove('translate-y-2', 'opacity-0');
+            }, 50);
+
+            setTimeout(() => {
+                toast.classList.add('translate-y-2', 'opacity-0');
+                setTimeout(() => {
+                    toast.classList.add('hidden');
+                }, 300);
+            }, 3000);
+        }
+
+        // --- SCHERMEN EN SCENEMODELS WISSELEN ---
+        function switchScreen(screen) {
+            document.getElementById('screen-menu').classList.add('hidden');
+            document.getElementById('screen-game').classList.add('hidden');
+            document.getElementById('screen-results').classList.add('hidden');
+            document.getElementById('btn-home').classList.add('hidden');
+
+            if (screen === 'menu') {
+                document.getElementById('screen-menu').classList.remove('hidden');
+                updateMenuScoreBadges();
+            } else if (screen === 'game') {
+                document.getElementById('screen-game').classList.remove('hidden');
+                document.getElementById('btn-home').classList.remove('hidden');
+            } else if (screen === 'results') {
+                document.getElementById('screen-results').classList.remove('hidden');
+                document.getElementById('btn-home').classList.remove('hidden');
+            }
+        }
+
+        function updateMenuScoreBadges() {
+            const badge = document.getElementById('score-badge-easy');
+            if (badge) {
+                if (localHighScore !== null) {
+                    badge.innerText = `Beste score: ${localHighScore} / 5 goed!`;
+                    badge.className = "text-xs font-bold text-indigo-600 bg-indigo-50 px-3 py-1.5 rounded-xl border border-indigo-100";
+                } else {
+                    badge.innerText = "Nog niet gespeeld";
+                    badge.className = "text-xs font-bold text-slate-400 bg-slate-100 px-3 py-1.5 rounded-xl";
+                }
+            }
+        }
+
+        // --- GAMEPLAY INITIALISEREN ---
+        function startGame() {
+            currentQuestionIndex = 0;
+            score = 0;
+            userProgressList = [];
+
+            // Kies 5 willekeurige verhalen uit de pool van 50
+            activeQuestions = [...storiesPool]
+                .sort(() => Math.random() - 0.5)
+                .slice(0, 5);
+
+            switchScreen('game');
+            loadQuestion();
+        }
+
+        function replayCurrentLevel() {
+            startGame();
+        }
+
+        function loadQuestion() {
+            // UI Herstellen
+            document.getElementById('btn-submit').classList.remove('hidden');
+            document.getElementById('btn-next').classList.add('hidden');
+
+            const opgave = activeQuestions[currentQuestionIndex];
+            document.getElementById('progress-text').innerText = `Oefening ${currentQuestionIndex + 1} van 5`;
+            
+            // Render de sterren progressie bar
+            renderStarsProgress();
+
+            // Schud de antwoordelementen zodanig dat ze NIET meteen in de goede volgorde staan
+            let shuffledItems = [];
+            let tries = 0;
+            do {
+                shuffledItems = [...opgave.items].sort(() => Math.random() - 0.5);
+                tries++;
+            } while (isCorrectOrder(shuffledItems, opgave.correctOrder) && tries < 10);
+
+            currentSequence = shuffledItems.map(item => item.id);
+            renderCards(shuffledItems);
+        }
+
+        function renderStarsProgress() {
+            const container = document.getElementById('stars-container');
+            if (!container) return;
+            container.innerHTML = ""; // reset
+
+            for (let i = 0; i < 5; i++) {
+                const star = document.createElement('span');
+                if (i < currentQuestionIndex) {
+                    const isCorrect = userProgressList[i];
+                    star.innerText = isCorrect ? "⭐" : "⚪";
+                    star.className = "text-sm";
+                } else if (i === currentQuestionIndex) {
+                    star.innerText = "⭐";
+                    star.className = "text-sm animate-pulse scale-125 inline-block";
+                } else {
+                    star.innerText = "▫️";
+                    star.className = "text-sm text-slate-300";
+                }
+                container.appendChild(star);
+            }
+        }
+
+        function isCorrectOrder(items, correctOrder) {
+            return JSON.stringify(items.map(item => item.id)) === JSON.stringify(correctOrder);
+        }
+
+        // --- INTERACTIEVE KAARTEN RENDERING & SLEEP MECHANISME ---
+        function renderCards(items) {
+            const container = document.getElementById('cards-container');
+            if (!container) return;
+            container.innerHTML = ""; // reset
+
+            items.forEach((item, index) => {
+                const card = document.createElement('div');
+                card.id = `card-id-${item.id}`;
+                card.dataset.id = item.id;
+                card.className = "drag-item bg-white border-2 border-slate-200 p-4 rounded-2xl shadow-sm flex items-center justify-between gap-3 select-none";
+                card.setAttribute('draggable', 'true');
+                
+                // Index nummering links
+                const numberCircle = document.createElement('div');
+                numberCircle.className = "number-circle w-8 h-8 rounded-full bg-slate-100 border border-slate-200 text-slate-700 font-black flex items-center justify-center text-xs shrink-0 transition-colors duration-200";
+                numberCircle.innerText = index + 1;
+
+                // Emoji + Tekst
+                const contentBox = document.createElement('div');
+                contentBox.className = "flex-1 flex items-center gap-3 pointer-events-none";
+                
+                const emoji = document.createElement('span');
+                emoji.className = "text-2xl";
+                emoji.innerText = item.emoji;
+
+                const label = document.createElement('p');
+                label.className = "text-xs sm:text-sm font-extrabold text-slate-800 leading-snug";
+                label.innerText = item.text;
+
+                contentBox.appendChild(emoji);
+                contentBox.appendChild(label);
+
+                // Tactiel sleep-handvat
+                const dragGrip = document.createElement('div');
+                dragGrip.className = "flex items-center justify-center p-2 text-slate-300 shrink-0 pointer-events-none";
+                dragGrip.innerHTML = `
+                    <svg class="w-6 h-6 grip-icon transition-colors" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M7 6a1 1 0 110-2 1 1 0 010 2zM13 6a1 1 0 110-2 1 1 0 010 2zM7 11a1 1 0 110-2 1 1 0 010 2zM13 11a1 1 0 110-2 1 1 0 010 2zM7 16a1 1 0 110-2 1 1 0 010 2zM13 16a1 1 0 110-2 1 1 0 010 2z"></path>
+                    </svg>
+                `;
+
+                card.appendChild(numberCircle);
+                card.appendChild(contentBox);
+                card.appendChild(dragGrip);
+
+                // VOEG SLEEP-EVENTS TOE (Voor muis en desktop Chrome)
+                setupDragAndDrop(card);
+
+                // VOEG TOUCH-EVENTS TOE (Voor vlekkeloze werking op Chromebook Touchscreens)
+                setupTouchSorting(card);
+
+                container.appendChild(card);
+            });
+        }
+
+        // --- DRAG AND DROP (MOUSE) ---
+        function setupDragAndDrop(card) {
+            card.addEventListener('dragstart', (e) => {
+                dragSrcEl = card;
+                card.classList.add('dragging', 'bg-indigo-50/50', 'border-indigo-400');
+                e.dataTransfer.effectAllowed = 'move';
+            });
+
+            card.addEventListener('dragend', () => {
+                card.classList.remove('dragging', 'bg-indigo-50/50', 'border-indigo-400');
+                dragSrcEl = null;
+                updateSequenceAndNumbers();
+            });
+
+            card.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                const container = document.getElementById('cards-container');
+                const activeDragging = document.querySelector('.dragging');
+                if (!activeDragging || activeDragging === card) return;
+
+                const cardRect = card.getBoundingClientRect();
+                const nextSibling = (e.clientY - cardRect.top) / cardRect.height > 0.5 ? card.nextSibling : card;
+                container.insertBefore(activeDragging, nextSibling);
+                
+                // Werk live de nummertjes bij tijdens het slepen voor realtime feedback!
+                updateSequenceAndNumbers(true); 
+            });
+        }
+
+        // --- TOUCH-ONLY SWIPE-SORTING (POINTER/TOUCH) ---
+        function setupTouchSorting(card) {
+            card.addEventListener('touchstart', (e) => {
+                touchStartY = e.touches[0].clientY;
+                activeTouchEl = card;
+                card.classList.add('bg-indigo-50/50', 'border-indigo-400');
+            }, { passive: true });
+
+            card.addEventListener('touchmove', (e) => {
+                if (!activeTouchEl) return;
+                const currentY = e.touches[0].clientY;
+                const diff = currentY - touchStartY;
+
+                // Als er ver genoeg gesleept is, verwissel de kaarten live
+                if (Math.abs(diff) > 35) {
+                    const container = document.getElementById('cards-container');
+                    const cards = [...container.children];
+                    const index = cards.indexOf(card);
+
+                    if (diff > 0 && index < cards.length - 1) {
+                        // Sleep omlaag
+                        container.insertBefore(cards[index + 1], card);
+                        touchStartY = currentY;
+                    } else if (diff < 0 && index > 0) {
+                        // Sleep omhoog
+                        container.insertBefore(card, cards[index - 1]);
+                        touchStartY = currentY;
+                    }
+                    updateSequenceAndNumbers(true); // update nummers tijdens het slepen
+                }
+            }, { passive: true });
+
+            card.addEventListener('touchend', () => {
+                if (activeTouchEl) {
+                    activeTouchEl.classList.remove('bg-indigo-50/50', 'border-indigo-400');
+                    activeTouchEl = null;
+                }
+                updateSequenceAndNumbers(); // Definitieve array synchronisatie
+            });
+        }
+
+        // Synchroniseer de array-volgorde live met de visuele kaarten op het scherm
+        function updateSequenceAndNumbers(onlyNumbers = false) {
+            const container = document.getElementById('cards-container');
+            if (!container) return;
+
+            const cards = [...container.children];
+            cards.forEach((card, index) => {
+                const numberCircle = card.querySelector('.number-circle');
+                if (numberCircle) {
+                    numberCircle.innerText = index + 1;
+                }
+            });
+
+            if (!onlyNumbers) {
+                currentSequence = cards.map(card => card.dataset.id);
+            }
+        }
+
+        // --- ANTWOORD CONTROLE & BELONINGSMUTATIES ---
+        function checkOrder() {
+            // Definitieve synchronisatie
+            updateSequenceAndNumbers();
+
+            const opgave = activeQuestions[currentQuestionIndex];
+            const isCorrect = JSON.stringify(currentSequence) === JSON.stringify(opgave.correctOrder);
+
+            userProgressList.push(isCorrect);
+
+            currentSequence.forEach((id, index) => {
+                const card = document.getElementById(`card-id-${id}`);
+                if (card) {
+                    const numberCircle = card.querySelector('.number-circle');
+                    const isElementOnCorrectPlace = (id === opgave.correctOrder[index]);
+
+                    // Schakel slepen volledig uit na controle
+                    card.setAttribute('draggable', 'false');
+                    
+                    // Kloon de elementen om eventuele touchlisteners te verwijderen
+                    const clonedCard = card.cloneNode(true);
+                    card.parentNode.replaceChild(clonedCard, card);
+
+                    if (isElementOnCorrectPlace) {
+                        clonedCard.className = "drag-item bg-emerald-50 border-2 border-emerald-400 p-4 rounded-2xl shadow-sm flex items-center justify-between gap-3 transition-all duration-300";
+                        const num = clonedCard.querySelector('.number-circle');
+                        if (num) num.className = "number-circle w-8 h-8 rounded-full bg-emerald-500 border border-emerald-600 text-white font-black flex items-center justify-center text-xs shrink-0";
+                    } else {
+                        clonedCard.className = "drag-item bg-red-50 border-2 border-red-300 p-4 rounded-2xl shadow-sm flex items-center justify-between gap-3 transition-all duration-300";
+                        const num = clonedCard.querySelector('.number-circle');
+                        if (num) num.className = "number-circle w-8 h-8 rounded-full bg-red-500 border border-red-600 text-white font-black flex items-center justify-center text-xs shrink-0";
+                    }
+                }
+            });
+
+            if (isCorrect) {
+                score++;
+                showToast("Helemaal juist! Wat ben je knap! 🌟", "success");
+                
+                // Confetti beloningsanimatie
+                confetti({
+                    particleCount: 120,
+                    spread: 80,
+                    origin: { y: 0.85 }
+                });
+            } else {
+                showToast("Oeps, nog niet helemaal juist. Kijk goed naar de rode kaarten!", "error");
+            }
+
+            document.getElementById('btn-submit').classList.add('hidden');
+            document.getElementById('btn-next').classList.remove('hidden');
+            
+            renderStarsProgress();
+        }
+
+        // --- NAVIGATIE VOLGENDE VRAAG OF EIND SCORE ---
+        function loadNextQuestion() {
+            currentQuestionIndex++;
+            if (currentQuestionIndex >= 5) {
+                showResultsScreen();
+            } else {
+                loadQuestion();
+            }
+        }
+
+        function showResultsScreen() {
+            switchScreen('results');
+
+            // Beste score updaten in lokale opslag
+            if (localHighScore === null || score > localHighScore) {
+                localHighScore = score;
+                localStorage.setItem(scoresKey, localHighScore.toString());
+            }
+
+            document.getElementById('results-score').innerText = `${score} / 5`;
+            const percentage = Math.round((score / 5) * 100);
+            document.getElementById('results-percentage').innerText = `${percentage}% Goedgekeurd!`;
+
+            const title = document.getElementById('results-title');
+            const trophy = document.getElementById('trophy-icon');
+            const reportText = document.getElementById('results-text');
+
+            if (score === 5) {
+                title.innerText = "🌟 Absolute Tijdlijn Held! 🌟";
+                trophy.innerText = "👑";
+                reportText.innerText = "Super! Je bent een echte meester in tijdlijnen. Je hebt alle 5 de verhaaltjes helemaal foutloos opgelost. Wat een prestatie!";
+            } else if (score >= 3) {
+                title.innerText = "💪 Geweldig gedaan! 💪";
+                trophy.innerText = "🏆";
+                reportText.innerText = "Knap hoor! Je begrijpt de volgorde van gebeurtenissen al heel goed. Speel nog een keertje om te proberen alle 5 de sterren te halen!";
+            } else {
+                title.innerText = "📈 Blijf oefenen! 📈";
+                trophy.innerText = "🎯";
+                reportText.innerText = "Goed geprobeerd! Chronologische volgorde kan soms heel uitdagend zijn. Speel het spel gerust nog een keer rustig opnieuw.";
+            }
+        }
+
+        // Bevestiging voor stoppen midden in het spel
+        function confirmGoToMenu() {
+            const confirmModal = document.getElementById('confirm-modal');
+            if (confirmModal) confirmModal.classList.remove('hidden');
+        }
+
+        function closeConfirmModal() {
+            const confirmModal = document.getElementById('confirm-modal');
+            if (confirmModal) confirmModal.classList.add('hidden');
+        }
+
+        function exitToMenuConfirmed() {
+            closeConfirmModal();
+            switchScreen('menu');
+        }
+
+        // Direct opstarten op het menu
+        window.onload = function() {
+            switchScreen('menu');
+        };
+    </script>
+</body>
+</html>
