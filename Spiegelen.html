@@ -1,0 +1,857 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Spiegeling Master - Symmetrisch Tekenen</title>
+    <!-- Tailwind CSS, Confetti & FontAwesome -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800;900&display=swap');
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #f8fafc; }
+        .hidden { display: none !important; }
+        .card-anim { transition: transform 0.2s, box-shadow 0.2s; }
+        .card-anim:hover { transform: translateY(-2px); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05); }
+        
+        /* Voorkom tekstselectie tijdens het slepen op de grid */
+        .no-select {
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+        }
+
+        /* Sleepbare handvaten op de SVG */
+        .drag-handle {
+            cursor: grab;
+            transition: fill 0.15s, r 0.15s;
+        }
+        .drag-handle:active {
+            cursor: grabbing;
+        }
+    </style>
+</head>
+<body class="min-h-screen pb-12 no-select">
+
+    <!-- NAVIGATIEBALK -->
+    <nav class="bg-white border-b border-slate-100 shadow-sm sticky top-0 z-40 px-6 py-4">
+        <div class="max-w-6xl mx-auto flex justify-between items-center">
+            <div class="flex items-center gap-3">
+                <div class="bg-indigo-600 text-white p-2.5 rounded-xl shadow-md shadow-indigo-600/20">
+                    <i class="fa-solid fa-arrows-left-right text-lg"></i>
+                </div>
+                <div>
+                    <span class="text-xs font-bold text-indigo-600 uppercase tracking-wider block">Symmetrisch Tekenen</span>
+                    <h1 class="text-lg font-bold text-slate-800 leading-tight">Spiegeling Master</h1>
+                </div>
+            </div>
+            <div id="active-user-badge" class="hidden text-xs font-bold text-slate-500 bg-slate-100 px-3.5 py-1.5 rounded-full"></div>
+        </div>
+    </nav>
+
+    <!-- HOOFDCONTAINER -->
+    <main class="max-w-5xl mx-auto px-4 mt-6">
+
+        <!-- PROGRESSIEBALK -->
+        <div id="progressContainer" class="hidden flex flex-col items-center mb-6 gap-2 animate-in fade-in duration-300">
+            <div id="niveauLabel" class="text-xs font-bold text-slate-500 bg-slate-200/60 border border-slate-200 px-4 py-1.5 rounded-full uppercase tracking-wider">Onderdeel</div>
+            <div id="progressSectie" class="flex justify-center gap-2 text-3xl">
+                <div id="bullets-container" class="flex gap-1.5 flex-wrap justify-center"></div>
+            </div>
+        </div>
+
+        <!-- HOOFDMENU -->
+        <section id="menuSectie" class="space-y-6 animate-in fade-in duration-300">
+            <div class="text-center max-w-xl mx-auto mb-8">
+                <h2 class="text-3xl font-extrabold text-slate-800 tracking-tight">Leer Spiegelen op een Raster</h2>
+                <p class="text-slate-500 mt-2 text-sm">Sleep de rode hoekpunten naar de juiste positie aan de andere kant van de spiegelas!</p>
+            </div>
+
+            <div class="bg-amber-50 border border-amber-200 p-5 rounded-2xl max-w-2xl mx-auto text-sm text-amber-900 font-medium text-left space-y-1 shadow-sm">
+                <p>⚠️ <strong>Puntensysteem:</strong> Elk niveau is maximaal <strong>1,0 punt</strong> waard.</p>
+                <p>💡 Spiegel je de figuur in <strong>één keer</strong> foutloos? Dan krijg je de volle <strong>1,0 punt</strong>!</p>
+                <p>🔄 Maak je een foutje maar herstel je dit zelf via de <strong>extra kansen</strong>? Dan verdien je alsnog <strong>0,5 punt</strong>!</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-3xl mx-auto">
+                <!-- OEFENMODUS -->
+                <button onclick="startOnderdeel('oefenen')" class="menu-btn card-anim bg-white p-8 border border-slate-200/60 rounded-3xl text-left flex flex-col justify-between hover:border-indigo-400 group transition-all">
+                    <div class="w-14 h-14 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center text-2xl group-hover:bg-indigo-600 group-hover:text-white transition-colors mb-6"><i class="fa-solid fa-graduation-cap"></i></div>
+                    <div>
+                        <h3 class="font-extrabold text-slate-800 text-xl">Oefenmodus</h3>
+                        <p class="text-sm text-slate-500 mt-2">Neem alle tijd die je nodig hebt. Geen stress of tijdsdruk, perfect om de spiegelas te leren begrijpen!</p>
+                        <span class="inline-block mt-4 text-xs font-bold text-indigo-600 uppercase tracking-wider">Start Oefening →</span>
+                    </div>
+                </button>
+
+                <!-- TOETSMODUS -->
+                <button onclick="startOnderdeel('toets')" class="menu-btn card-anim bg-white p-8 border border-slate-200/60 rounded-3xl text-left flex flex-col justify-between hover:border-rose-400 group transition-all">
+                    <div class="w-14 h-14 bg-rose-50 text-rose-600 rounded-2xl flex items-center justify-center text-2xl group-hover:bg-rose-600 group-hover:text-white transition-colors mb-6"><i class="fa-solid fa-stopwatch"></i></div>
+                    <div>
+                        <h3 class="font-extrabold text-slate-800 text-xl">Toetsmodus</h3>
+                        <p class="text-sm text-slate-500 mt-2">Test je vaardigheden! Je krijgt maximaal <strong>2 minuten</strong> per spiegeling. Slaag jij voor alle 10 niveaus?</p>
+                        <span class="inline-block mt-4 text-xs font-bold text-rose-600 uppercase tracking-wider">Start Toets →</span>
+                    </div>
+                </button>
+            </div>
+        </section>
+
+        <!-- SPEELVELD -->
+        <section id="oefeningSectie" class="hidden">
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+                
+                <!-- LINKER INTERACTIEVE PANEL: DE SVG CANVAS -->
+                <div class="lg:col-span-8 bg-white p-4 md:p-6 rounded-[2rem] shadow-xl border border-slate-100 flex flex-col items-center justify-center relative">
+                    <!-- Sluitknop -->
+                    <button class="absolute top-5 right-5 text-slate-300 hover:text-rose-500 transition-colors cursor-pointer text-2xl z-10" onclick="openExitModal()">
+                        <i class="fa-solid fa-circle-xmark"></i>
+                    </button>
+
+                    <!-- Spiegelas & Type indicator -->
+                    <div class="w-full flex justify-between items-center px-4 mb-4 select-none">
+                        <span id="level-title-display" class="font-black text-slate-700 text-sm md:text-base uppercase tracking-wider">Niveau 1: Driehoek</span>
+                        <div id="timer-container" class="hidden items-center gap-2 px-4 py-2 bg-rose-50 border border-rose-100 rounded-2xl text-rose-700 font-extrabold text-sm animate-pulse">
+                            <i class="fa-solid fa-stopwatch"></i> <span id="timer-text">02:00</span>
+                        </div>
+                    </div>
+
+                    <!-- SVG Spiegelvlak -->
+                    <div class="w-full max-w-[500px] aspect-square relative bg-slate-50 border border-slate-200 rounded-2xl overflow-hidden shadow-inner touch-none">
+                        <svg id="mirror-svg" viewBox="0 0 500 500" class="w-full h-full">
+                            <!-- Dynamische rasterlijnen, figuren en handles komen hier -->
+                        </svg>
+                    </div>
+
+                    <!-- Spelinstructie / Status -->
+                    <div class="mt-4 text-center select-none text-xs md:text-sm font-bold text-slate-400 flex items-center gap-2">
+                        <span>☝️ Sleep de rode cirkels naar hun spiegelbeeld op het raster.</span>
+                    </div>
+                </div>
+
+                <!-- RECHTERKOLOM: STATUS, FEEDBACK & CONTROLE -->
+                <div class="lg:col-span-4 bg-white p-6 rounded-[2rem] shadow-xl border border-slate-100 space-y-6">
+                    <div>
+                        <h3 class="font-extrabold text-slate-800 text-lg border-b border-slate-100 pb-3 mb-4">Opdracht Controle</h3>
+                        <p class="text-sm text-slate-500 leading-relaxed" id="task-description">
+                            Spiegel de blauwe figuur over de as.
+                        </p>
+                    </div>
+
+                    <!-- Live coördinaten of status info (Wordt verborgen tot de controle om gokken te voorkomen!) -->
+                    <div id="coordinate-panel" class="hidden bg-slate-50 p-4 rounded-2xl border border-slate-100 space-y-3">
+                        <p class="text-xs font-black text-slate-400 uppercase tracking-widest">Richtingen:</p>
+                        <div class="space-y-1.5 text-xs text-slate-600 font-bold" id="coordinate-checks">
+                            <!-- Wordt gevuld met overzicht van geplaatste punten -->
+                        </div>
+                    </div>
+
+                    <!-- Feedback Box -->
+                    <div id="feedback" class="hidden p-4 rounded-2xl font-bold text-center animate-in fade-in duration-150"></div>
+
+                    <!-- Knoppen -->
+                    <div class="space-y-3">
+                        <button id="check-btn" onclick="controleerSymmetrie()" class="w-full py-4.5 bg-indigo-600 hover:bg-indigo-700 text-white font-black rounded-2xl transition-all shadow-md cursor-pointer">
+                            Controleer Figuur
+                        </button>
+                        <button id="next-btn" onclick="volgendeNiveau()" class="hidden w-full py-4.5 bg-slate-900 hover:bg-black text-white font-black rounded-2xl transition-all shadow-md cursor-pointer">
+                            Volgend Niveau →
+                        </button>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- AFSLUITING / RAPPORT CARD -->
+        <section id="eindSectie" class="hidden text-center max-w-2xl mx-auto bg-white p-8 rounded-[2.5rem] shadow-xl border border-slate-100">
+            <div class="w-20 h-20 bg-amber-50 text-amber-500 text-4xl flex items-center justify-center rounded-2xl mx-auto mb-4">
+                <i class="fa-solid fa-crown animate-bounce"></i>
+            </div>
+            <h2 class="text-3xl font-extrabold text-slate-800">Prachtig gespiegeld!</h2>
+            <p class="text-slate-400 text-xs mt-1">Hieronder zie je jouw resultaten.</p>
+            
+            <div class="grid grid-cols-2 gap-4 my-6">
+                <div class="bg-indigo-50 p-6 rounded-3xl border border-indigo-100">
+                    <span class="block text-xs text-indigo-400 font-black uppercase mb-1">Score</span>
+                    <span id="score-val" class="text-3xl font-black text-indigo-600">0/10</span>
+                </div>
+                <div class="bg-emerald-50 p-6 rounded-3xl border border-emerald-100">
+                    <span class="block text-xs text-emerald-400 font-black uppercase mb-1">Nauwkeurigheid</span>
+                    <span id="percent-val" class="text-3xl font-black text-emerald-600">0%</span>
+                </div>
+            </div>
+
+            <!-- FOUTENANALYSIS -->
+            <div class="text-left space-y-4">
+                <h3 class="text-xl font-extrabold text-slate-800 flex items-center gap-2">
+                    <i class="fa-solid fa-clipboard-list text-indigo-500"></i> Overzicht per niveau
+                </h3>
+                <div id="mistake-list" class="space-y-3 max-h-[350px] overflow-y-auto pr-2">
+                    <!-- Wordt dynamisch gevuld -->
+                </div>
+            </div>
+
+            <button class="w-full mt-8 bg-slate-950 text-white font-bold py-4 rounded-2xl hover:bg-black transition-all shadow-md cursor-pointer" onclick="stopOefening()">
+                <i class="fa-solid fa-house mr-2"></i> Terug naar hoofdmenu
+            </button>
+        </section>
+
+    </main>
+
+    <script>
+        // --- 1. CONFIGURATIE EN OPBOUW 10 NIVEAUS (Met verlaagde moeilijkheidsgraad bij start!) ---
+        const NIVEAUS = [
+            {
+                titel: "Niveau 1: Eenvoudige Driehoek (Dichtbij de as)",
+                type: "vertical",
+                points: [{x: 5, y: 4}, {x: 5, y: 8}, {x: 4, y: 6}],
+                desc: "Spiegel de blauwe driehoek over de verticale spiegelas. Deze staat heel dichtbij, dus makkelijk te tellen!"
+            },
+            {
+                titel: "Niveau 2: Horizontale Driehoek (Dichtbij de as)",
+                type: "horizontal",
+                points: [{x: 4, y: 5}, {x: 8, y: 5}, {x: 6, y: 4}],
+                desc: "Spiegel de blauwe driehoek over de horizontale spiegelas (y=6). Slechts 1 en 2 vakjes omhoog!"
+            },
+            {
+                titel: "Niveau 3: Rechthoek (Verticaal)",
+                type: "vertical",
+                points: [{x: 5, y: 4}, {x: 3, y: 4}, {x: 3, y: 8}, {x: 5, y: 8}],
+                desc: "Spiegel deze rechthoek over de verticale as. Tel zorgvuldig de afstand tot de rode lijn!"
+            },
+            {
+                titel: "Niveau 4: Vlieger (Verticaal)",
+                type: "vertical",
+                points: [{x: 5, y: 4}, {x: 2, y: 6}, {x: 5, y: 8}, {x: 4, y: 6}],
+                desc: "Spiegel de vliegervorm over de verticale spiegelas."
+            },
+            {
+                titel: "Niveau 5: Pijl naar links (Verticaal)",
+                type: "vertical",
+                points: [{x: 5, y: 3}, {x: 3, y: 5}, {x: 3, y: 9}, {x: 5, y: 9}, {x: 5, y: 5}],
+                desc: "Spiegel de 5 hoekpunten van deze pijl over de verticale spiegelas."
+            },
+            {
+                titel: "Niveau 6: Kroon (Horizontaal)",
+                type: "horizontal",
+                points: [{x: 2, y: 4}, {x: 4, y: 2}, {x: 6, y: 5}, {x: 8, y: 2}, {x: 10, y: 4}],
+                desc: "Spiegel deze kroon over de horizontale spiegelas."
+            },
+            {
+                titel: "Niveau 7: Raket (Verticaal)",
+                type: "vertical",
+                points: [{x: 5, y: 2}, {x: 3, y: 4}, {x: 3, y: 8}, {x: 1, y: 10}, {x: 5, y: 10}, {x: 5, y: 5}],
+                desc: "Spiegel de 6 hoekpunten van de halve raket over de verticale as."
+            },
+            {
+                titel: "Niveau 8: Zeilboot (Horizontaal)",
+                type: "horizontal",
+                points: [{x: 3, y: 5}, {x: 9, y: 5}, {x: 8, y: 3}, {x: 7, y: 3}, {x: 6, y: 1}, {x: 4, y: 3}],
+                desc: "Spiegel de halve zeilboot over de horizontale spiegelas."
+            },
+            {
+                titel: "Niveau 9: Complex 7-hoek (Horizontaal)",
+                type: "horizontal",
+                points: [{x: 2, y: 5}, {x: 4, y: 2}, {x: 5, y: 4}, {x: 6, y: 1}, {x: 7, y: 4}, {x: 8, y: 2}, {x: 10, y: 5}],
+                desc: "Een pittige opgave met 7 hoekpunten over de horizontale as."
+            },
+            {
+                titel: "Niveau 10: De Zandloper (Verticaal)",
+                type: "vertical",
+                points: [{x: 5, y: 2}, {x: 2, y: 2}, {x: 2, y: 5}, {x: 4, y: 5}, {x: 2, y: 8}, {x: 2, y: 10}, {x: 5, y: 10}, {x: 4, y: 6}],
+                desc: "De ultieme uitdaging! Spiegel deze ingewikkelde 8-hoek over de verticale as."
+            }
+        ];
+
+        // --- 2. STATE ---
+        let state = {
+            currentMode: '', // 'oefenen', 'toets'
+            currentIndex: 0,
+            score: 0,
+            history: [],
+            totalQ: 10,
+            
+            // Huidige levelspecifieke coördinaten
+            originalPoints: [],  // [{x, y}]
+            userPoints: [],      // [{x, y}] (waar de leerling de handles heeft geplaatst)
+            correctPoints: [],   // [{x, y}] (de doellocaties)
+            
+            // Drag-state
+            draggedIndex: null,  // Welke handgreep slepen we?
+            
+            // Toets timer
+            timerSeconds: 120,    // 2 minuten per vraag in Toetsmodus
+            timerInterval: null,
+
+            // Pogingen teller per vraag
+            currentQuestionAttempts: 0
+        };
+
+        const GRID_SIZE = 12; // 12x12 grid
+        const PADDING = 40;   // padding binnen de 500x500 SVG
+        const STEP = (500 - 2 * PADDING) / GRID_SIZE; // pixelafstand per gridstap
+
+        // --- 3. DISPLAY & NAVIGATIE ---
+        function showView(id) {
+            document.getElementById('menuSectie').classList.add('hidden');
+            document.getElementById('oefeningSectie').classList.add('hidden');
+            document.getElementById('eindSectie').classList.add('hidden');
+            document.getElementById('progressContainer').classList.toggle('hidden', id === 'menuSectie' || id === 'eindSectie');
+            
+            document.getElementById(id).classList.remove('hidden');
+            window.scrollTo(0,0);
+        }
+
+        function startOnderdeel(mode) {
+            state.currentMode = mode;
+            state.currentIndex = 0;
+            state.score = 0;
+            state.history = [];
+
+            buildProgressBullets();
+            showView("oefeningSectie");
+            laadNiveau();
+        }
+
+        function buildProgressBullets() {
+            const container = document.getElementById("bullets-container");
+            if (!container) return;
+            container.innerHTML = "";
+            for (let i = 0; i < state.totalQ; i++) {
+                const bullet = document.createElement("span");
+                bullet.id = `bullet-${i}`;
+                bullet.className = "w-4 h-4 rounded-full bg-slate-200 border-2 border-slate-300 transition-all duration-300";
+                container.appendChild(bullet);
+            }
+        }
+
+        function updateProgressBullets(isCheck = false, isCorrect = false) {
+            for (let i = 0; i < state.totalQ; i++) {
+                const bullet = document.getElementById(`bullet-${i}`);
+                if (bullet) {
+                    if (i < state.currentIndex) {
+                        const record = state.history[i];
+                        if (record) {
+                            bullet.className = record.isCorrect 
+                                ? "w-4 h-4 rounded-full bg-emerald-500 border-2 border-emerald-600" 
+                                : "w-4 h-4 rounded-full bg-rose-500 border-2 border-rose-600";
+                        }
+                    } else if (i === state.currentIndex) {
+                        if (isCheck) {
+                            bullet.className = isCorrect 
+                                ? "w-4 h-4 rounded-full bg-emerald-500 border-2 border-emerald-600" 
+                                : "w-4 h-4 rounded-full bg-rose-500 border-2 border-rose-600";
+                        } else {
+                            bullet.className = "w-4 h-4 rounded-full bg-indigo-600 border-2 border-indigo-700 animate-pulse";
+                        }
+                    } else {
+                        bullet.className = "w-4 h-4 rounded-full bg-slate-200 border-2 border-slate-300";
+                    }
+                }
+            }
+        }
+
+        // --- 4. ENGINE & RENDERING ---
+        function laadNiveau() {
+            const q = NIVEAUS[state.currentIndex];
+            state.originalPoints = q.points;
+            state.correctPoints = berekenGespiegeldePunten(q.points, q.type);
+            state.currentQuestionAttempts = 0; // Reset pogingen teller
+            
+            // Handvaten in een willekeurige opstelling op de as of langs de rand plaatsen
+            state.userPoints = q.points.map((pt, idx) => {
+                if (q.type === "vertical") {
+                    return { x: 6, y: pt.y }; // Plaats ze netjes op de spiegelas (x=6) om te starten
+                } else {
+                    return { x: pt.x, y: 6 }; // Plaats ze op de spiegelas (y=6) om te starten
+                }
+            });
+
+            document.getElementById('level-title-display').innerText = q.titel;
+            document.getElementById('task-description').innerText = q.desc;
+            
+            // Verberg feedback en toon controle-knop
+            document.getElementById('feedback').classList.add('hidden');
+            document.getElementById('check-btn').classList.remove('hidden');
+            document.getElementById('next-btn').classList.add('hidden');
+
+            updateProgressBullets();
+
+            // Timer regelen voor Toetsmodus
+            if (state.currentMode === 'toets') {
+                document.getElementById('timer-container').classList.remove('hidden');
+                startToetsTimer();
+            } else {
+                document.getElementById('timer-container').classList.add('hidden');
+                stopToetsTimer();
+            }
+
+            drawScene();
+            updateCoordinateChecks();
+        }
+
+        // Bereken de exacte wiskundig gespiegelde coördinaten
+        function berekenGespiegeldePunten(points, type) {
+            return points.map(pt => {
+                if (type === "vertical") {
+                    return { x: 12 - pt.x, y: pt.y }; // Spiegel x-coördinaat over x=6
+                } else {
+                    return { x: pt.x, y: 12 - pt.y }; // Spiegel y-coördinaat over y=6
+                }
+            });
+        }
+
+        // Converteer gridcoördinaten naar SVG pixels
+        function getSvgCoords(gridX, gridY) {
+            const x = PADDING + gridX * STEP;
+            const y = PADDING + gridY * STEP;
+            return { x, y };
+        }
+
+        // Converteer SVG pixels terug naar gridcoördinaten met snap-werking
+        function getGridCoords(svgX, svgY) {
+            let gridX = Math.round((svgX - PADDING) / STEP);
+            let gridY = Math.round((svgY - PADDING) / STEP);
+
+            // Zorg dat ze binnen de grenzen van de 12x12 grid blijven
+            gridX = Math.max(0, Math.min(12, gridX));
+            gridY = Math.max(0, Math.min(12, gridY));
+
+            return { x: gridX, y: gridY };
+        }
+
+        // --- SVG GRAPHICS TEKENEN ---
+        function drawScene() {
+            const svg = document.getElementById('mirror-svg');
+            if (!svg) return;
+            svg.innerHTML = ''; // Maak leeg
+
+            // 1. Teken rasterlijnen (duidelijker en met meer contrast gemaakt!)
+            for (let i = 0; i <= GRID_SIZE; i++) {
+                const cStart = getSvgCoords(i, 0);
+                const cEnd = getSvgCoords(i, GRID_SIZE);
+                
+                // Verticale lijnen (duidelijker en met hogere opacity)
+                const vLine = document.createElementNS("http://www.w3.org/2000/svg", "line");
+                vLine.setAttribute("x1", cStart.x);
+                vLine.setAttribute("y1", cStart.y);
+                vLine.setAttribute("x2", cEnd.x);
+                vLine.setAttribute("y2", cEnd.y);
+                vLine.setAttribute("stroke", "#94a3b8"); // Donkerdere slate-kleur voor hoog contrast
+                vLine.setAttribute("stroke-width", "1.5");
+                vLine.setAttribute("opacity", "0.65");
+                svg.appendChild(vLine);
+
+                // Horizontale lijnen
+                const hLine = document.createElementNS("http://www.w3.org/2000/svg", "line");
+                hLine.setAttribute("x1", getSvgCoords(0, i).x);
+                hLine.setAttribute("y1", getSvgCoords(0, i).y);
+                hLine.setAttribute("x2", getSvgCoords(GRID_SIZE, i).x);
+                hLine.setAttribute("y2", getSvgCoords(GRID_SIZE, i).y);
+                hLine.setAttribute("stroke", "#94a3b8");
+                hLine.setAttribute("stroke-width", "1.5");
+                hLine.setAttribute("opacity", "0.65");
+                svg.appendChild(hLine);
+            }
+
+            // 2. Teken grotere, duidelijkere gridpunten op de kruisingen
+            for (let x = 0; x <= GRID_SIZE; x++) {
+                for (let y = 0; y <= GRID_SIZE; y++) {
+                    const coords = getSvgCoords(x, y);
+                    const dot = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+                    dot.setAttribute("cx", coords.x);
+                    dot.setAttribute("cy", coords.y);
+                    dot.setAttribute("r", "3"); // Vergroot van 2 naar 3
+                    dot.setAttribute("fill", "#64748b"); // Donkerder blauwgrijs
+                    svg.appendChild(dot);
+                }
+            }
+
+            // 3. Spiegelas (Rood/Dashed)
+            const q = NIVEAUS[state.currentIndex];
+            const axisLine = document.createElementNS("http://www.w3.org/2000/svg", "line");
+            if (q.type === "vertical") {
+                const start = getSvgCoords(6, 0);
+                const end = getSvgCoords(6, 12);
+                axisLine.setAttribute("x1", start.x);
+                axisLine.setAttribute("y1", start.y);
+                axisLine.setAttribute("x2", end.x);
+                axisLine.setAttribute("y2", end.y);
+            } else {
+                const start = getSvgCoords(0, 6);
+                const end = getSvgCoords(12, 6);
+                axisLine.setAttribute("x1", start.x);
+                axisLine.setAttribute("y1", start.y);
+                axisLine.setAttribute("x2", end.x);
+                axisLine.setAttribute("y2", end.y);
+            }
+            axisLine.setAttribute("stroke", "#dc2626");
+            axisLine.setAttribute("stroke-width", "4");
+            axisLine.setAttribute("stroke-dasharray", "8,6");
+            svg.appendChild(axisLine);
+
+            // 4. Teken de OORSPRONKELIJKE BLAUWE FIGUUR (semi-transparant)
+            const origPolygon = document.createElementNS("http://www.w3.org/2000/svg", "polygon");
+            const origPointsStr = state.originalPoints.map(p => {
+                const coords = getSvgCoords(p.x, p.y);
+                return `${coords.x},${coords.y}`;
+            }).join(' ');
+            origPolygon.setAttribute("points", origPointsStr);
+            origPolygon.setAttribute("fill", "rgba(59, 130, 246, 0.2)");
+            origPolygon.setAttribute("stroke", "#2563eb");
+            origPolygon.setAttribute("stroke-width", "3");
+            svg.appendChild(origPolygon);
+
+            // Blauwe hoekpunten met letter-labels ter ondersteuning
+            state.originalPoints.forEach((p, idx) => {
+                const coords = getSvgCoords(p.x, p.y);
+                
+                // Blauw bolletje
+                const dot = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+                dot.setAttribute("cx", coords.x);
+                dot.setAttribute("cy", coords.y);
+                dot.setAttribute("r", "5");
+                dot.setAttribute("fill", "#1d4ed8");
+                svg.appendChild(dot);
+
+                // Klein blauw cirkeltje als achtergrond voor de letter (linksboven geplaatst)
+                const letterBg = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+                letterBg.setAttribute("cx", coords.x - 14);
+                letterBg.setAttribute("cy", coords.y - 14);
+                letterBg.setAttribute("r", "9");
+                letterBg.setAttribute("fill", "#1d4ed8");
+                letterBg.setAttribute("stroke", "#ffffff");
+                letterBg.setAttribute("stroke-width", "1.5");
+                svg.appendChild(letterBg);
+
+                // Letter label
+                const label = document.createElementNS("http://www.w3.org/2000/svg", "text");
+                label.setAttribute("x", coords.x - 14);
+                label.setAttribute("y", coords.y - 11);
+                label.setAttribute("font-size", "10");
+                label.setAttribute("font-weight", "black");
+                label.setAttribute("fill", "#ffffff");
+                label.setAttribute("text-anchor", "middle");
+                label.setAttribute("class", "pointer-events-none select-none");
+                label.textContent = String.fromCharCode(65 + idx); // A, B, C...
+                svg.appendChild(label);
+            });
+
+            // 5. Teken de USER RODE SPIEGELFIGUUR (semi-transparant)
+            const userPolygon = document.createElementNS("http://www.w3.org/2000/svg", "polygon");
+            const userPointsStr = state.userPoints.map(p => {
+                const coords = getSvgCoords(p.x, p.y);
+                return `${coords.x},${coords.y}`;
+            }).join(' ');
+            userPolygon.setAttribute("points", userPointsStr);
+            userPolygon.setAttribute("fill", "rgba(225, 29, 72, 0.15)");
+            userPolygon.setAttribute("stroke", "#e11d48");
+            userPolygon.setAttribute("stroke-width", "3");
+            userPolygon.setAttribute("stroke-dasharray", "4,2");
+            svg.appendChild(userPolygon);
+
+            // 6. Teken sleepbare RODE handvaten met hoekpunt-labels (A, B, C...)
+            state.userPoints.forEach((p, idx) => {
+                const coords = getSvgCoords(p.x, p.y);
+                const handleGroup = document.createElementNS("http://www.w3.org/2000/svg", "g");
+                
+                const handle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+                handle.setAttribute("cx", coords.x);
+                handle.setAttribute("cy", coords.y);
+                handle.setAttribute("r", "11");
+                handle.setAttribute("fill", "#be123c");
+                handle.setAttribute("stroke", "#ffffff");
+                handle.setAttribute("stroke-width", "2");
+                handle.setAttribute("class", "drag-handle");
+                
+                // Voeg drag eventlisteners toe
+                bindDragEvents(handle, idx);
+
+                const label = document.createElementNS("http://www.w3.org/2000/svg", "text");
+                label.setAttribute("x", coords.x);
+                label.setAttribute("y", coords.y + 4);
+                label.setAttribute("font-size", "10");
+                label.setAttribute("font-weight", "black");
+                label.setAttribute("fill", "#ffffff");
+                label.setAttribute("text-anchor", "middle");
+                label.setAttribute("class", "pointer-events-none select-none");
+                label.textContent = String.fromCharCode(65 + idx); // A, B, C...
+
+                handleGroup.appendChild(handle);
+                handleGroup.appendChild(label);
+                svg.appendChild(handleGroup);
+            });
+        }
+
+        // --- DRAG EN DROP HANDLERS ---
+        function bindDragEvents(element, index) {
+            // Muisbesturing
+            element.addEventListener('mousedown', (e) => {
+                state.draggedIndex = index;
+                e.preventDefault();
+            });
+
+            // Touchbesturing (mobiel/tablet)
+            element.addEventListener('touchstart', (e) => {
+                state.draggedIndex = index;
+                e.preventDefault();
+            }, { passive: false });
+        }
+
+        // Global sleep events gebonden aan het window voor optimale Google Sites/Iframe compatibiliteit
+        window.addEventListener('mousemove', (e) => {
+            if (state.draggedIndex === null) return;
+            handleDrag(e.clientX, e.clientY);
+        });
+
+        window.addEventListener('touchmove', (e) => {
+            if (state.draggedIndex === null) return;
+            // Voorkom pagina scrollen tijdens het slepen op mobiel/tablet
+            if (e.cancelable) e.preventDefault();
+            const touch = e.touches[0];
+            handleDrag(touch.clientX, touch.clientY);
+        }, { passive: false });
+
+        window.addEventListener('mouseup', () => {
+            state.draggedIndex = null;
+        });
+
+        window.addEventListener('touchend', () => {
+            state.draggedIndex = null;
+        });
+
+        function handleDrag(clientX, clientY) {
+            const svg = document.getElementById('mirror-svg');
+            if (!svg || state.draggedIndex === null) return;
+            const rect = svg.getBoundingClientRect();
+            // Schaal de coördinaten correct ten opzichte van de 500x500 viewport
+            const svgX = ((clientX - rect.left) / rect.width) * 500;
+            const svgY = ((clientY - rect.top) / rect.height) * 500;
+
+            const gridCoords = getGridCoords(svgX, svgY);
+            
+            // Update het getrokken punt
+            state.userPoints[state.draggedIndex] = gridCoords;
+            drawScene();
+            // Let op: updateCoordinateChecks wordt live berekend, maar de HTML blijft hidden tot de controleknop is geklikt!
+            updateCoordinateChecks();
+        }
+
+        // Toon de live status van de geplaatste coördinaten
+        function updateCoordinateChecks() {
+            const container = document.getElementById('coordinate-checks');
+            if (!container) return;
+            container.innerHTML = '';
+
+            state.userPoints.forEach((p, idx) => {
+                const target = state.correctPoints[idx];
+                const label = String.fromCharCode(65 + idx);
+                const isCorrect = (p.x === target.x && p.y === target.y);
+
+                const item = document.createElement('div');
+                item.className = "flex justify-between items-center";
+                item.innerHTML = `
+                    <span class="font-extrabold text-slate-700">Punt ${label}:</span>
+                    <span class="font-black ${isCorrect ? 'text-emerald-600' : 'text-slate-400'}">
+                        (${p.x}, ${p.y}) ${isCorrect ? '✓' : ''}
+                    </span>
+                `;
+                container.appendChild(item);
+            });
+        }
+
+        // --- TIMER VOOR TOETSMODUS ---
+        function startToetsTimer() {
+            stopToetsTimer(); // Reset eventuele actieve timers
+            state.timerSeconds = 120; // 2 minuten (120s)
+            
+            const timerContainer = document.getElementById('timer-container');
+            const timerText = document.getElementById('timer-text');
+            
+            if (timerText) timerText.innerText = "02:00";
+            if (timerContainer) timerContainer.classList.remove('hidden');
+
+            state.timerInterval = setInterval(() => {
+                state.timerSeconds--;
+                
+                const mins = Math.floor(state.timerSeconds / 60);
+                const secs = state.timerSeconds % 60;
+                if (timerText) timerText.innerText = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+
+                if (state.timerSeconds <= 0) {
+                    stopToetsTimer();
+                    verwerkFoutieveToetsvraag(); // Tijd om = vraag definitief fout gerekend en doorgaan
+                }
+            }, 1000);
+        }
+
+        function stopToetsTimer() {
+            if (state.timerInterval) {
+                clearInterval(state.timerInterval);
+                state.timerInterval = null;
+            }
+        }
+
+        function verwerkFoutieveToetsvraag() {
+            const q = NIVEAUS[state.currentIndex];
+            const fb = document.getElementById('feedback');
+            
+            if (fb) {
+                fb.classList.remove('hidden');
+                fb.innerHTML = `❌ <strong>Tijd om!</strong><br>De tijd voor dit niveau is verstreken. We gaan door naar de volgende vraag.`;
+                fb.className = "p-5 rounded-2xl font-bold text-center bg-rose-50 text-rose-700 border-2 border-rose-100";
+            }
+
+            state.history.push({
+                niveau: q.titel,
+                userPoints: [...state.userPoints],
+                correctPoints: [...state.correctPoints],
+                isCorrect: false,
+                pointsAwarded: 0
+            });
+
+            document.getElementById('check-btn').classList.add('hidden');
+            document.getElementById('next-btn').classList.remove('hidden');
+        }
+
+        // --- BEWERKING CONTROLES EN MEERDERE KANSEN ---
+        function controleerSymmetrie() {
+            const q = NIVEAUS[state.currentIndex];
+            let incorrectList = [];
+
+            state.userPoints.forEach((p, idx) => {
+                const target = state.correctPoints[idx];
+                if (p.x !== target.x || p.y !== target.y) {
+                    incorrectList.push(String.fromCharCode(65 + idx)); // Voeg foutieve letter toe
+                }
+            });
+
+            // Toon nu de 'richtingen' / coördinaten tabel zodat leerlingen kunnen zien wat er verkeerd is gegaan!
+            const coordPanel = document.getElementById('coordinate-panel');
+            if (coordPanel) coordPanel.classList.remove('hidden');
+
+            const fb = document.getElementById('feedback');
+            if (fb) fb.classList.remove('hidden');
+
+            if (incorrectList.length === 0) {
+                // Volledig correct! Stop de timer als die loopt
+                stopToetsTimer();
+
+                // Bereken te behalen score: 1.0 punt bij eerste poging, 0.5 bij herkansing(en)
+                let pointsAwarded = state.currentQuestionAttempts === 0 ? 1.0 : 0.5;
+                state.score += pointsAwarded;
+
+                let scoreMsg = pointsAwarded === 1.0 ? "+1,0 punt (foutloos!)" : "+0,5 punt (hersteld)";
+
+                if (fb) {
+                    fb.innerHTML = `🎉 <strong>Helemaal juist!</strong><br>Je hebt het spiegelbeeld perfect getekend! <span class="block text-sm font-semibold mt-1 text-emerald-600">${scoreMsg}</span>`;
+                    fb.className = "p-5 rounded-2xl font-bold text-center bg-emerald-50 text-emerald-700 border-2 border-emerald-100";
+                }
+                
+                state.history.push({
+                    niveau: q.titel,
+                    userPoints: [...state.userPoints],
+                    correctPoints: [...state.correctPoints],
+                    isCorrect: true,
+                    pointsAwarded: pointsAwarded
+                });
+
+                // Update voortgangsbolletjes direct naar Groen
+                updateProgressBullets(true, true);
+
+                document.getElementById('check-btn').classList.add('hidden');
+                document.getElementById('next-btn').classList.remove('hidden');
+                
+                confetti({ particleCount: 35, spread: 60, origin: { y: 0.8 }, colors: ['#6366f1', '#10b981'] });
+            } else {
+                // Foutieve poging! Registreer poging
+                state.currentQuestionAttempts++;
+
+                // Toon gerichte feedback en geef de leerling meerdere kansen
+                fb.innerHTML = `❌ <strong>Nog niet helemaal correct!</strong><br>Kijk goed naar de spiegelas. De volgende punt(en) staan nog niet op de juiste plek: <strong class="text-rose-700 text-lg">${incorrectList.join(', ')}</strong>.<br><span class="text-xs text-rose-600 mt-1 block">Pas de posities aan en controleer opnieuw!</span>`;
+                fb.className = "p-5 rounded-2xl font-bold text-center bg-rose-50 text-rose-700 border-2 border-rose-100";
+
+                // De "Volgend Niveau" knop wordt NIET getoond, de leerling moet eerst corrigeren!
+                document.getElementById('check-btn').classList.remove('hidden');
+                document.getElementById('next-btn').classList.add('hidden');
+            }
+        }
+
+        // --- GOOGLE SITES COMPATIBELE MODAL CONTROL ---
+        function volgendeNiveau() {
+            state.currentIndex++;
+            if (state.currentIndex < state.totalQ) {
+                laadNiveau();
+            } else {
+                sluitSessieAf();
+            }
+        }
+
+        // --- RAPPORTAGE & VOLTOOIEN ---
+        function sluitSessieAf() {
+            showView('eindSectie');
+            const roundedScore = Math.round(state.score * 10) / 10;
+            const percent = Math.round((roundedScore / state.totalQ) * 100);
+
+            document.getElementById('score-val').innerText = `${roundedScore.toString().replace('.', ',')}/${state.totalQ}`;
+            document.getElementById('percent-val').innerText = `${percent}%`;
+
+            const list = document.getElementById('mistake-list');
+            if (list) {
+                list.innerHTML = "";
+
+                state.history.forEach((h, idx) => {
+                    const card = document.createElement('div');
+                    card.className = "p-4 rounded-2xl border flex flex-col gap-2 " + 
+                        (h.isCorrect ? "bg-emerald-50/30 border-emerald-100" : "bg-rose-50/30 border-rose-100");
+                    
+                    const userCoordsStr = h.userPoints.map((p, i) => `${String.fromCharCode(65+i)}(${p.x},${p.y})`).join(' ');
+                    const correctCoordsStr = h.correctPoints.map((p, i) => `${String.fromCharCode(65+i)}(${p.x},${p.y})`).join(' ');
+
+                    card.innerHTML = `
+                        <div class="flex justify-between items-center text-xs font-bold ${h.isCorrect ? 'text-emerald-600' : 'text-rose-600'}">
+                            <span>${h.niveau}</span>
+                            <span>${h.isCorrect ? `✓ BEHAALD (${h.pointsAwarded.toString().replace('.', ',')} pt)` : '✕ NIET BEHAALD'}</span>
+                        </div>
+                        <div class="text-xs text-slate-500 mt-1 border-t border-dashed pt-1.5 flex flex-col gap-1">
+                            <div>Jouw coördinaten: <span class="font-mono font-bold">${userCoordsStr}</span></div>
+                            ${!h.isCorrect ? `<div>Correcte coördinaten: <span class="font-mono font-bold text-slate-800">${correctCoordsStr}</span></div>` : ''}
+                        </div>
+                    `;
+                    list.appendChild(card);
+                });
+            }
+
+            if (percent === 100) {
+                confetti({ particleCount: 150, spread: 80, origin: { y: 0.6 } });
+            }
+        }
+
+        window.stopOefening = function() {
+            stopToetsTimer();
+            showView("menuSectie");
+        }
+
+        // --- MODAL CONTROLS ---
+        window.openExitModal = function() {
+            document.getElementById("exit-modal").classList.remove("hidden");
+        }
+
+        window.closeExitModal = function() {
+            document.getElementById("exit-modal").classList.add("hidden");
+        }
+
+        window.confirmExit = function() {
+            closeExitModal();
+            stopOefening();
+        }
+
+        // Start in het menu
+        window.onload = function() {
+            showView("menuSectie");
+        }
+    </script>
+</body>
+</html>
