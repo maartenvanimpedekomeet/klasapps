@@ -589,7 +589,7 @@
   </div>
 </div>
 
-<div id="version">v1.2</div>
+<div id="version">v1.3</div>
 
 <script>
 // ════════════════════════════════════════════════════
@@ -1303,32 +1303,50 @@ function toonResultaat() {
 function slaOefenResultaatOp(correct, totaal) {
   var pct = totaal > 0 ? Math.round((correct / totaal) * 100) : 0;
   var leerlingNaam = capitalize(CU.naam);
+  var MODI_NAMEN_KORT = ["Willekeurig","Betekenis MC","Afbeelding MC","Woord raden","Overtypen","Blind typen","Ontbrekende letters"];
+
+  // Bouw vragen-array conform dashboard-standaard
+  var vragenArray = [];
+  var fouteLijst = [];
+  resultaten.forEach(function(r, i) {
+    var modusNaam = MODI_NAMEN_KORT[r.modus] || ("Modus " + r.modus);
+    vragenArray.push({
+      vraagNr:          i + 1,
+      vraag:            r.woord.woord,
+      antwoordLeerling: r.correct ? r.woord.woord : "(fout)",
+      juistAntwoord:    r.woord.woord,
+      isJuist:          r.correct,
+      tijdSeconden:     0,
+      modus:            modusNaam,
+      betekenis:        r.woord.betekenis || ""
+    });
+    if (!r.correct) fouteLijst.push(r.woord.woord);
+  });
 
   // Sessie opslaan — veldnamen conform dashboard
   db.collection("woordenschat_resultaten").add({
-    // Dashboard-velden
-    leerlingId:   CU.naam,
-    leerlingNaam: leerlingNaam,
-    vak:          "Taal",
-    mode:         gekozenModus + " (" + gekozenWoordselectie + ")",
-    score:        correct,
-    totalQ:       totaal,
-    percentage:   pct,
-    tijd:         "",
+    leerlingId:    CU.naam,
+    leerlingNaam:  leerlingNaam,
+    vak:           "Taal",
+    mode:          MODI_NAMEN_KORT[gekozenModus] || "Willekeurig",
+    score:         correct,
+    totalQ:        totaal,
+    percentage:    pct,
+    tijd:          "",
     hintsGebruikt: 0,
-    timestamp:    firebase.firestore.FieldValue.serverTimestamp(),
+    timestamp:     firebase.firestore.FieldValue.serverTimestamp(),
     foutenAnalyse: {
-      extraOefenen:       [],
+      extraOefenen:       fouteLijst,
       foutenPerCategorie: { "Woordenschat": totaal - correct }
     },
-    vragen: [],
-    // Originele velden (behouden voor woordenschat_voortgang logica)
-    leerling:       CU.naam,
-    correct:        correct,
-    totaal:         totaal,
-    modus:          gekozenModus,
-    woordselectie:  gekozenWoordselectie,
-    datum:          firebase.firestore.FieldValue.serverTimestamp()
+    vragen:        vragenArray,
+    // Extra velden
+    leerling:      CU.naam,
+    correct:       correct,
+    totaal:        totaal,
+    modus:         gekozenModus,
+    woordselectie: gekozenWoordselectie,
+    datum:         firebase.firestore.FieldValue.serverTimestamp()
   }).then(function() {
     // Registry — dashboard ontdekt collection automatisch
     db.collection("toets_registry").doc("woordenschat_resultaten").set({
