@@ -1,0 +1,1317 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>We oefenen de klok!</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;}
+body{font-family:'Inter',sans-serif;background:#f7fafc;margin:0;}
+.hidden{display:none!important;}
+#login-screen{position:fixed;inset:0;z-index:9999;background:linear-gradient(135deg,#1e3a5f,#2563eb);display:flex;align-items:center;justify-content:center;padding:20px;}
+.card{background:#fff;border-radius:1.25rem;box-shadow:0 4px 20px rgba(0,0,0,.08);padding:1.5rem;margin-bottom:1.25rem;}
+.menu-btn{display:flex;align-items:center;gap:16px;width:100%;text-align:left;padding:18px 22px;border-radius:1.25rem;font-weight:800;font-size:1.05rem;color:#fff;box-shadow:0 4px 14px rgba(0,0,0,.12);margin-bottom:14px;border:none;cursor:pointer;transition:transform .15s,box-shadow .15s;}
+.menu-btn:hover{transform:scale(1.015);box-shadow:0 6px 18px rgba(0,0,0,.16);}
+.menu-btn small{display:block;font-weight:600;font-size:.82rem;opacity:.92;margin-top:5px;}
+.menu-icon{width:50px;height:50px;min-width:50px;border-radius:50%;background:rgba(255,255,255,.25);display:flex;align-items:center;justify-content:center;font-size:1.5rem;}
+.app-header-icon{width:74px;height:74px;border-radius:50%;background:linear-gradient(135deg,#60a5fa,#2563eb);display:flex;align-items:center;justify-content:center;font-size:2.2rem;margin:0 auto 10px;box-shadow:0 6px 16px rgba(37,99,235,.3);}
+.lvl-btn{width:100%;padding:14px 20px;border-radius:1rem;font-weight:800;font-size:1rem;color:#fff;border:none;cursor:pointer;box-shadow:0 3px 8px rgba(0,0,0,.1);margin-bottom:12px;}
+.btn{padding:12px 24px;border-radius:1rem;font-weight:800;font-size:.95rem;cursor:pointer;border:none;}
+.btn-blue{background:#2563eb;color:#fff;} .btn-blue:hover{background:#1d4ed8;}
+.btn-gray{background:#e5e7eb;color:#374151;} .btn-gray:hover{background:#d1d5db;}
+.clock-canvas{border:4px solid #3b82f6;border-radius:50%;background:#fff;box-shadow:0 6px 12px rgba(0,0,0,.08);display:block;width:100%;height:auto;aspect-ratio:1/1;}
+.clock-canvas-sm{border:3px solid #93c5fd;border-radius:50%;background:#fff;width:100%;height:auto;aspect-ratio:1/1;cursor:pointer;transition:border-color .15s,transform .15s;}
+.clock-canvas-sm:hover{border-color:#2563eb;transform:scale(1.02);}
+.clock-choice.correct{border-color:#16a34a!important;box-shadow:0 0 0 4px #bbf7d0;}
+.clock-choice.incorrect{border-color:#dc2626!important;box-shadow:0 0 0 4px #fecaca;}
+.speak-btn{background:#eff6ff;border:2px solid #bfdbfe;color:#1d4ed8;border-radius:99px;width:38px;height:38px;font-size:1.1rem;cursor:pointer;flex-shrink:0;}
+.speak-btn:hover{background:#dbeafe;}
+.input-field{border:2px solid #d1d5db;padding:10px;border-radius:.6rem;font-weight:700;font-size:1.1rem;text-align:center;font-family:inherit;}
+.input-field:focus{outline:none;border-color:#2563eb;}
+.input-field.correct{background:#f0fdf4;border-color:#16a34a;}
+.input-field.incorrect{background:#fff1f2;border-color:#dc2626;}
+.feedback-ok{color:#15803d;font-weight:800;}
+.feedback-fout{color:#be123c;font-weight:800;}
+#home-btn{position:fixed;top:14px;right:14px;z-index:80;background:#facc15;color:#78350f;border:none;border-radius:.9rem;padding:10px 18px;font-weight:800;font-size:.9rem;cursor:pointer;box-shadow:0 3px 8px rgba(0,0,0,.15);}
+#upload-status{display:none;position:fixed;bottom:18px;left:50%;transform:translateX(-50%);z-index:90;padding:10px 16px;border-radius:.9rem;border:2px solid;font-size:.85rem;font-weight:700;max-width:90vw;}
+@keyframes spin{to{transform:rotate(360deg);}}
+#upload-spinner{display:inline-block;width:13px;height:13px;border:2px solid #e5e7eb;border-top-color:#3b82f6;border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle;margin-right:6px;}
+.mw-svg{width:100%;max-width:320px;touch-action:none;}
+.tb-card{height:110px;display:flex;align-items:center;justify-content:center;text-align:center;font-weight:700;cursor:pointer;user-select:none;transition:all .2s;border:3px solid #1e40af;background:#f0f9ff;color:#1e40af;border-radius:.8rem;padding:6px;font-size:.9rem;}
+.tb-card.selected{background:#3b82f6;color:#fff;transform:scale(1.04);}
+.tb-card.matched{cursor:default;pointer-events:none;}
+.tb-card.disabled{pointer-events:none;}
+.time-display{background:#fffbe6;border:2px solid #fcd34d;border-radius:.75rem;padding:8px 16px;font-size:1.6rem;font-weight:800;color:#1f2937;min-width:110px;text-align:center;}
+</style>
+</head>
+<body class="p-4">
+
+<!-- LOGIN SCHERM -->
+<div id="login-screen">
+  <div style="background:white;border-radius:24px;padding:2.5rem 2rem;width:100%;max-width:380px;box-shadow:0 25px 50px rgba(0,0,0,.25);text-align:center;display:flex;flex-direction:column;gap:12px;">
+    <div class="app-header-icon" style="width:64px;height:64px;font-size:1.9rem;">🕐</div>
+    <h1 style="font-size:1.5rem;font-weight:900;color:#1f2937;margin:0;">We oefenen de klok!</h1>
+    <p style="color:#6b7280;font-size:.9rem;margin:0;">Voer je naam en code in</p>
+    <div id="klas-err" style="display:none;color:#dc2626;font-size:.85rem;font-weight:700;background:#fee2e2;border:1px solid #fca5a5;padding:8px 12px;border-radius:8px;"></div>
+    <input type="text" id="klas-naam" placeholder="Jouw voornaam" style="width:100%;padding:14px;border:2px solid #e5e7eb;border-radius:12px;font-family:inherit;font-size:1rem;font-weight:600;text-align:center;outline:none;" autocomplete="off" autocapitalize="words">
+    <input type="password" id="klas-code" placeholder="Jouw code" style="width:100%;padding:14px;border:2px solid #e5e7eb;border-radius:12px;font-family:inherit;font-size:1rem;font-weight:600;text-align:center;outline:none;" autocomplete="off">
+    <button id="login-btn" style="width:100%;background:#2563eb;color:white;border:none;border-radius:12px;padding:14px;font-family:inherit;font-size:1rem;font-weight:700;cursor:pointer;">Inloggen</button>
+    <button id="gast-btn" style="width:100%;background:transparent;border:2px solid #d1d5db;border-radius:12px;padding:12px;font-family:inherit;font-size:.9rem;font-weight:700;color:#6b7280;cursor:pointer;">Doorgaan als gast (geen opslag)</button>
+    <div style="font-size:.75rem;color:#9ca3af;"><a href="dashboard.html" style="color:#2563eb;font-weight:700;text-decoration:none;">Leerkracht? Klik hier</a></div>
+  </div>
+</div>
+
+<div id="user-badge" style="display:none;position:fixed;top:10px;left:14px;z-index:50;align-items:center;gap:8px;background:white;border:1px solid #bfdbfe;border-radius:10px;padding:5px 12px;font-size:.8rem;font-weight:700;color:#1d4ed8;box-shadow:0 2px 8px rgba(0,0,0,.08);">
+  <span id="user-badge-naam"></span>
+  <button id="logout-btn" style="background:none;border:none;cursor:pointer;color:#94a3b8;font-size:.75rem;padding:2px 6px;border-left:1px solid #e5e7eb;margin-left:4px;font-family:inherit;">↩ Uit</button>
+</div>
+<div id="gast-badge" style="display:none;position:fixed;top:10px;left:14px;z-index:50;background:#fefce8;border:1px solid #fde68a;border-radius:8px;padding:4px 10px;font-size:.75rem;font-weight:700;color:#d97706;">👤 Gast – niet opgeslagen</div>
+
+<button id="home-btn" style="display:none;">🏠 HOME</button>
+<button class="sound-toggle-btn" onclick="toggleSound()" title="Geluid aan/uit" style="position:fixed;top:14px;right:132px;z-index:80;background:#eff6ff;border:2px solid #bfdbfe;color:#1d4ed8;border-radius:99px;width:42px;height:42px;font-size:1.2rem;cursor:pointer;box-shadow:0 3px 8px rgba(0,0,0,.1);">🔊</button>
+
+<div id="app" class="max-w-3xl mx-auto">
+
+  <!-- HOOFDMENU -->
+  <div id="mainMenu" class="pt-6">
+    <div class="app-header-icon">🕐</div>
+    <h1 class="text-2xl md:text-3xl font-extrabold text-center text-gray-800 mb-1">We oefenen de klok!</h1>
+    <p class="text-center text-gray-500 mb-6">Kies een oefening.</p>
+    <button class="menu-btn" style="background:linear-gradient(135deg,#0ea5e9,#0369a1);" data-module="m1"><span class="menu-icon">🧩</span><span>1. Tijdsbegrippen<small>Woorden zoals uur, kwartier, week en jaar. Een geheugenspel.</small></span></button>
+    <button class="menu-btn" style="background:linear-gradient(135deg,#6366f1,#4338ca);" data-module="m2"><span class="menu-icon">🌗</span><span>2. Uren na de middag<small>Bijvoorbeeld: 1 uur 's namiddags is 13 uur. 24 vragen, door elkaar.</small></span></button>
+    <button class="menu-btn" style="background:linear-gradient(135deg,#14b8a6,#0d9488);" data-module="m3"><span class="menu-icon">🎯</span><span>3. De minutenwijzer plaatsen<small>Zet de minutenwijzer op de juiste plaats.</small></span></button>
+    <button class="menu-btn" style="background:linear-gradient(135deg,#10b981,#059669);" data-module="m4"><span class="menu-icon">🕓</span><span>4. Klok aflezen<small>Uur, half uur, kwartier en 5 minuten.</small></span></button>
+    <button class="menu-btn" style="background:linear-gradient(135deg,#3b82f6,#2563eb);" data-module="m5"><span class="menu-icon">💬</span><span>5. Voor en over<small>Klok aflezen en verwoorden: "10 voor 4", "kwart over 8".</small></span></button>
+    <button class="menu-btn" style="background:linear-gradient(135deg,#fb923c,#ea580c);" data-module="m6"><span class="menu-icon">⏳</span><span>6. Tijdsduur berekenen<small>Hoeveel tijd zit er tussen een begin- en einduur?</small></span></button>
+  </div>
+
+  <!-- MODULE 1: TIJDSBEGRIPPEN -->
+  <div id="m1Screen" style="display:none;">
+    <div id="tb-levelScreen">
+      <h2 class="text-xl font-extrabold text-center text-gray-800 mb-4">1. Tijdsbegrippen</h2>
+      <button class="lvl-btn" style="background:#16a34a;" onclick="tbStart('oefen')">Oefenen</button>
+      <button class="lvl-btn" style="background:linear-gradient(to right,#1d4ed8,#4338ca);" onclick="tbStart('toets')">🏆 Toets<br><small style="font-weight:600;opacity:.85;">Score wordt opgeslagen</small></button>
+    </div>
+    <div id="tb-exerciseScreen" class="hidden">
+      <p class="text-center text-gray-500 mb-4">Welke kaarten passen bij elkaar?</p>
+      <div class="flex justify-center items-center gap-4 mb-4">
+        <div id="tb-timer" class="text-xl font-bold text-blue-700 bg-blue-100 px-4 py-1 rounded-lg">00:00</div>
+        <button id="tb-new-btn" class="btn btn-blue">Opnieuw</button>
+      </div>
+      <div id="tb-message" class="hidden p-4 mb-4 bg-green-100 border-l-4 border-green-500 text-green-700 rounded-lg">
+        <p class="font-bold">Gefeliciteerd!</p>
+        <p id="tb-final-time"></p>
+      </div>
+      <div id="tb-board" class="card grid gap-3" style="grid-template-columns:repeat(auto-fit,minmax(110px,1fr));"></div>
+    </div>
+  </div>
+
+  <!-- MODULE 2: UREN NA DE MIDDAG -->
+  <div id="m2Screen" style="display:none;">
+    <div id="unm-levelScreen">
+      <h2 class="text-xl font-extrabold text-center text-gray-800 mb-2">2. Uren na de middag</h2>
+      <p class="text-center text-gray-500 mb-4">24 vragen: elk uur van de dag komt een keer aan bod, helemaal door elkaar.</p>
+      <button class="lvl-btn" style="background:#16a34a;" onclick="unmStart('oefen')">Oefenen (24 vragen)</button>
+      <button class="lvl-btn" style="background:linear-gradient(to right,#1d4ed8,#4338ca);" onclick="unmStart('toets')">🏆 Toets (24 vragen)<br><small style="font-weight:600;opacity:.85;">Score wordt opgeslagen</small></button>
+    </div>
+    <div id="unm-exerciseScreen" class="card hidden">
+      <div class="flex justify-between items-center mb-4 text-sm font-bold text-gray-600">
+        <span>Score: <span id="unm-score" class="text-blue-600">0/24</span></span>
+        <span id="unm-vraagLabel"></span>
+      </div>
+      <div class="mb-1"><div style="background:#e5e7eb;border-radius:99px;height:8px;overflow:hidden;"><div id="unm-progressBar" style="background:#4338ca;height:100%;width:0%;transition:width .3s;"></div></div></div>
+      <div class="flex flex-col items-center gap-3 mb-4">
+        <div class="flex items-center gap-2">
+          <p id="unm-instructie" class="text-lg font-bold text-gray-700 text-center"></p>
+          <button class="speak-btn" onclick="unmSpeak()">🔊</button>
+        </div>
+        <canvas id="unm-canvas" class="clock-canvas" style="max-width:220px;"></canvas>
+      </div>
+      <div class="flex justify-center items-center gap-2 mb-4">
+        <span class="font-bold">24-uurstelsel:</span>
+        <select id="unm-inputHour" class="input-field"></select><span class="font-bold">:</span><select id="unm-inputMin" class="input-field"></select>
+      </div>
+      <div class="text-center">
+        <button id="unm-checkBtn" class="btn btn-blue" onclick="unmCheck()">Controleer</button>
+        <p id="unm-feedback" class="mt-3 text-lg"></p>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODULE 3: MINUTENWIJZER -->
+  <div id="m3Screen" style="display:none;">
+    <div id="mw-levelScreen">
+      <h2 class="text-xl font-extrabold text-center text-gray-800 mb-4">3. De minutenwijzer plaatsen</h2>
+      <button class="lvl-btn" style="background:#16a34a;" onclick="mwStart(1)">Oefenen</button>
+      <button class="lvl-btn" style="background:linear-gradient(to right,#1d4ed8,#4338ca);" onclick="mwStart(2)">🏆 Toets: 10 vragen<br><small style="font-weight:600;opacity:.85;">Score wordt opgeslagen</small></button>
+    </div>
+    <div id="mw-exerciseScreen" class="card hidden">
+      <div class="flex justify-between items-center mb-4 text-sm font-bold text-gray-600">
+        <span>Score: <span id="mw-score" class="text-blue-600">0/10</span></span>
+      </div>
+      <div class="flex items-center justify-center gap-2 mb-4">
+        <p class="text-lg font-bold text-gray-700 text-center">Zet de minutenwijzer op <span id="mw-target" class="text-blue-600"></span> minuten.</p>
+        <button class="speak-btn" onclick="mwSpeak()">🔊</button>
+      </div>
+      <div class="flex justify-center mb-4">
+        <svg id="mw-svg" class="mw-svg" viewBox="0 0 300 300"></svg>
+      </div>
+      <div class="text-center">
+        <button id="mw-checkBtn" class="btn btn-blue" onclick="mwCheck()">Controleer</button>
+        <button id="mw-nextBtn" class="btn btn-gray hidden" onclick="mwNext()">Volgende vraag</button>
+        <p id="mw-feedback" class="mt-3 text-lg"></p>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODULE 4: KLOK AFLEZEN -->
+  <div id="m4Screen" style="display:none;">
+    <div id="ka-levelScreen">
+      <h2 class="text-xl font-extrabold text-center text-gray-800 mb-4">4. Klok aflezen</h2>
+      <button class="lvl-btn" style="background:#16a34a;" onclick="kaStart(1)">Niveau 1: Hele uren</button>
+      <button class="lvl-btn" style="background:#eab308;" onclick="kaStart(2)">Niveau 2: Half uur</button>
+      <button class="lvl-btn" style="background:#ea580c;" onclick="kaStart(3)">Niveau 3: Kwartier</button>
+      <button class="lvl-btn" style="background:#dc2626;" onclick="kaStart(4)">Niveau 4: 5 minuten</button>
+      <button class="lvl-btn" style="background:linear-gradient(to right,#1d4ed8,#4338ca);" onclick="kaStart(5)">🏆 Toets: door elkaar<br><small style="font-weight:600;opacity:.85;">Score wordt opgeslagen</small></button>
+    </div>
+    <div id="ka-exerciseScreen" class="card hidden">
+      <div class="flex justify-between items-center mb-4 text-sm font-bold text-gray-600">
+        <span>Score: <span id="ka-score" class="text-blue-600">0/10</span></span>
+      </div>
+      <div class="flex items-center justify-center gap-2 mb-4">
+        <p id="ka-instructie" class="text-lg font-bold text-gray-700 text-center"></p>
+        <button class="speak-btn" onclick="kaSpeak()">🔊</button>
+      </div>
+      <div id="ka-grid" class="grid grid-cols-2 gap-4 max-w-sm mx-auto mb-4"></div>
+      <p id="ka-feedback" class="mt-2 text-lg text-center"></p>
+      <div class="text-center">
+        <button id="ka-nextBtn" class="btn btn-gray hidden" onclick="kaNext()">Volgende vraag</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODULE 5: VOOR EN OVER -->
+  <div id="m5Screen" style="display:none;">
+    <div id="vo-startScreen">
+      <h2 class="text-xl font-extrabold text-center text-gray-800 mb-4">5. Voor en over</h2>
+      <p class="text-center text-gray-500 mb-4">Kies de minutenbereiken die je wilt oefenen. Het doel is 10 correcte antwoorden.</p>
+      <button class="lvl-btn vo-level-button" data-level="1" style="background:#16a34a;">Niveau 1: Enkel '... over ...' (1 t/m 29 min)</button>
+      <button class="lvl-btn vo-level-button" data-level="2" style="background:#eab308;">Niveau 2: Enkel '... voor ...' (31 t/m 59 min)</button>
+      <button class="lvl-btn vo-level-button" data-level="3" style="background:#2563eb;">Niveau 3: 'Voor' en 'Over' (1-29 &amp; 31-59 min)</button>
+      <button class="lvl-btn vo-level-button" data-level="4" style="background:linear-gradient(to right,#1d4ed8,#4338ca);">🏆 Toets: alles door elkaar<br><small style="font-weight:600;opacity:.85;">Score wordt opgeslagen</small></button>
+    </div>
+    <div id="vo-gameContainer" class="hidden">
+      <div class="flex justify-between items-center text-sm font-bold text-gray-600 border-b pb-3 mb-4">
+        <span id="vo-scoreDisplay" class="text-blue-600">Score: 0</span>
+        <span id="vo-statusMessage"></span>
+        <span class="text-green-600">Doel: 10 Punten</span>
+      </div>
+      <div class="flex justify-center mb-4"><canvas id="vo-clockCanvas" class="clock-canvas" style="max-width:260px;"></canvas></div>
+      <p class="text-center text-lg font-bold text-gray-700 mb-2">Wat is de tijd?</p>
+      <div id="vo-feedbackBox" class="hidden p-3 rounded-lg font-medium mb-3 text-center"></div>
+      <form id="vo-answerForm" class="space-y-4 card">
+        <fieldset class="border p-3 rounded-lg">
+          <legend class="text-sm font-bold text-gray-600 px-2">1. Digitale klok (voormiddag: 0 t/m 11 uur)</legend>
+          <div class="flex justify-center space-x-2 mt-2">
+            <select id="vo-inputHourAM" class="input-field"><option value="" disabled selected>HH</option></select>
+            <span class="text-2xl font-bold">:</span>
+            <select id="vo-inputMinuteAM" class="input-field"><option value="" disabled selected>MM</option></select>
+          </div>
+        </fieldset>
+        <fieldset class="border p-3 rounded-lg">
+          <legend class="text-sm font-bold text-gray-600 px-2">2. Digitale klok (namiddag: 12 t/m 23 uur)</legend>
+          <div class="flex justify-center space-x-2 mt-2">
+            <select id="vo-inputHourPM" class="input-field"><option value="" disabled selected>HH</option></select>
+            <span class="text-2xl font-bold">:</span>
+            <select id="vo-inputMinutePM" class="input-field"><option value="" disabled selected>MM</option></select>
+          </div>
+        </fieldset>
+        <fieldset class="border p-3 rounded-lg">
+          <legend class="text-sm font-bold text-gray-600 px-2">3. Verbale klok ('... voor ...' / '... over ...')</legend>
+          <div class="flex flex-wrap justify-center items-center gap-2 mt-2">
+            <span class="font-bold">Het is</span>
+            <select id="vo-inputVerbalMinute" class="input-field"><option value="" disabled selected>min.</option></select>
+            <select id="vo-inputVerbalRelation" class="input-field"><option value="" disabled selected>Kies...</option><option value="over">over</option><option value="voor">voor</option></select>
+            <select id="vo-inputVerbalHour" class="input-field"><option value="" disabled selected>uur</option></select>
+          </div>
+        </fieldset>
+        <div class="text-center">
+          <button type="submit" id="vo-submitButton" class="btn btn-blue">Controleer Antwoord</button>
+        </div>
+      </form>
+      <div class="text-center mt-4">
+        <button id="vo-nextQuestionButton" class="btn btn-gray hidden">Volgende Vraag</button>
+      </div>
+    </div>
+    <div id="vo-endScreen" class="hidden text-center card">
+      <h2 class="text-2xl font-extrabold text-green-600 mb-3">Gefeliciteerd!</h2>
+      <p class="text-lg text-gray-700 mb-4">Je hebt 10 punten behaald.</p>
+      <button id="vo-restartButton" class="btn btn-blue">Opnieuw Beginnen</button>
+    </div>
+  </div>
+
+  <!-- MODULE 6: TIJDSDUUR BEREKENEN -->
+  <div id="m6Screen" style="display:none;">
+    <div id="td-levelScreen">
+      <h2 class="text-xl font-extrabold text-center text-gray-800 mb-1">6. Tijdsduur berekenen</h2>
+      <p class="text-center text-gray-500 mb-4">De Grote Klokkenrace</p>
+      <button class="lvl-btn" style="background:#16a34a;" onclick="tdStart(1)">Niveau 1: Binnen hetzelfde uur (Makkelijk)</button>
+      <button class="lvl-btn" style="background:#eab308;" onclick="tdStart(2)">Niveau 2: Over 1 uur heen</button>
+      <button class="lvl-btn" style="background:#dc2626;" onclick="tdStart(3)">Niveau 3: Over meerdere uren heen</button>
+      <button class="lvl-btn" style="background:linear-gradient(to right,#1d4ed8,#4338ca);" onclick="tdStart(4)">🏆 Toets: alles door elkaar<br><small style="font-weight:600;opacity:.85;">Score wordt opgeslagen</small></button>
+    </div>
+    <div id="td-exerciseScreen" class="hidden card">
+      <div class="flex justify-between items-center mb-4 border-b pb-3 text-sm font-bold text-gray-600">
+        <span>Niveau: <span id="td-levelDisplay" class="text-blue-600"></span></span>
+        <span>Score: <span id="td-scoreDisplay" class="text-green-600">0/10</span></span>
+      </div>
+      <div class="flex justify-around items-center gap-4 mb-6">
+        <div class="flex flex-col items-center">
+          <div class="text-sm font-bold text-gray-600 mb-1">START om</div>
+          <div id="td-startTime" class="time-display"></div>
+        </div>
+        <div class="text-2xl font-bold text-gray-400">→</div>
+        <div class="flex flex-col items-center">
+          <div class="text-sm font-bold text-gray-600 mb-1">STOP om</div>
+          <div id="td-stopTime" class="time-display"></div>
+        </div>
+      </div>
+      <div id="td-steps" class="flex flex-col items-center gap-4">
+        <div id="td-step-n1" class="flex items-center gap-2 hidden">
+          <span class="font-bold">Totale tijdsduur:</span>
+          <input type="number" id="td-inputN1" class="input-field" style="width:70px;" min="0" max="59">
+          <span class="font-bold">minuten</span>
+        </div>
+        <div id="td-steps-n23" class="flex flex-col items-center gap-4 w-full max-w-md hidden">
+          <div class="flex items-center gap-3 justify-center flex-wrap">
+            <div class="text-sm text-gray-500">Minuten tot volgend uur (<span id="td-nextHour"></span>:00)</div>
+            <span class="text-xl font-bold text-green-500">+</span>
+            <input type="number" id="td-inputMinToNext" class="input-field" style="width:70px;" min="0" max="59">
+          </div>
+          <div id="td-fullHoursStep" class="flex items-center gap-3 justify-center flex-wrap">
+            <div class="text-sm text-gray-500">Volle uren tussen</div>
+            <span class="text-xl font-bold text-green-500">+</span>
+            <input type="number" id="td-inputFullHours" class="input-field" style="width:70px;" min="0">
+          </div>
+          <div class="flex items-center gap-3 justify-center flex-wrap">
+            <div class="text-sm text-gray-500">Resterende minuten na het uur</div>
+            <span class="text-xl font-bold text-green-500">+</span>
+            <input type="number" id="td-inputRemaining" class="input-field" style="width:70px;" min="0" max="59">
+          </div>
+          <div class="border-t pt-3 w-full text-center">
+            <span class="font-bold text-gray-700">Totale tijdsduur:</span>
+            <input type="number" id="td-inputTotalN2" class="input-field" style="width:70px;display:none;" min="0">
+            <span id="td-calculatedTotal" class="text-xl font-extrabold text-blue-600">0</span>
+            <span class="font-bold text-gray-700">minuten</span>
+            <div id="td-totalInfo" class="text-xs mt-1 text-gray-500 italic hidden"></div>
+          </div>
+        </div>
+      </div>
+      <div class="mt-6 text-center">
+        <button onclick="tdCheck()" id="td-checkButton" class="btn btn-blue">Controleer Antwoord</button>
+        <p id="td-feedback" class="mt-3 text-lg font-bold"></p>
+      </div>
+    </div>
+    <div id="td-endScreen" class="hidden text-center card">
+      <h2 class="text-2xl font-extrabold text-green-600 mb-3">Gefeliciteerd!</h2>
+      <p class="text-lg text-gray-700 mb-4">Je hebt 10 punten behaald op Niveau <span id="td-finalLevel"></span>.</p>
+      <button onclick="tdReset()" class="btn btn-blue">Nieuwe Race Starten</button>
+    </div>
+  </div>
+
+</div><!-- /app -->
+
+<div id="upload-status"><span id="upload-spinner"></span><span id="upload-status-text"></span></div>
+
+<!-- FIREBASE compat SDK -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script>
+firebase.initializeApp({apiKey:"AIzaSyCnQDVVAlK6jE-PPUUediRJMTbN0xqrLDE",authDomain:"klaswebsite-database.firebaseapp.com",projectId:"klaswebsite-database",storageBucket:"klaswebsite-database.firebasestorage.app",messagingSenderId:"42912327282",appId:"1:42912327282:web:f13f2c706f6c42c115c4eb"});
+var _db=firebase.firestore(),_currentUser=null,_isGuest=false;
+
+var MODULE_CONFIG={
+  tijdsbegrippen:{col:'klok_tijdsbegrippen_toets', naam:'Tijdsbegrippen'},
+  urennamiddag:  {col:'klok_urennamiddag_toets', naam:'Uren na de middag (12u/24u)'},
+  minutenwijzer: {col:'klok_minutenwijzer_toets', naam:'Minutenwijzer plaatsen'},
+  aflezen:       {col:'klok_aflezen_toets', naam:'Klok aflezen (uur/half uur/kwartier/5 min)'},
+  vooroverl:     {col:'kloklezen_toets', naam:'Kloklezen (voor & over)'},
+  tijdsduur:     {col:'klok_tijdsduur_toets', naam:'Tijdsduur berekenen'}
+};
+
+function setUploadStatus(type,msg){
+  var box=document.getElementById("upload-status"),text=document.getElementById("upload-status-text"),spinner=document.getElementById("upload-spinner");
+  box.style.display="block"; spinner.style.display=(type==="loading")?"inline-block":"none";
+  if(type==="loading"){box.style.background="#eff6ff";box.style.borderColor="#bfdbfe";box.style.color="#1d4ed8";}
+  else if(type==="ok"){box.style.background="#f0fdf4";box.style.borderColor="#86efac";box.style.color="#15803d";}
+  else{box.style.background="#fff1f2";box.style.borderColor="#fecdd3";box.style.color="#be123c";}
+  text.textContent=msg;
+}
+
+async function saveModuleScore(moduleKey, extra){
+  var conf=MODULE_CONFIG[moduleKey];
+  if(_isGuest||!_currentUser){setUploadStatus("error","❌ Niet opgeslagen: je speelt als gast.");return;}
+  if(!window._leerlingId){setUploadStatus("error","❌ Geen leerling-ID. Log opnieuw in.");return;}
+  setUploadStatus("loading","Bezig met opslaan...");
+  var record=Object.assign({
+    leerlingId:window._leerlingId,
+    leerlingNaam:window._leerlingNaam||"Leerling",
+    vak:"WO",
+    timestamp:firebase.firestore.FieldValue.serverTimestamp()
+  },extra);
+  try{
+    var docRef=await _db.collection(conf.col).add(record);
+    await _db.collection("toets_registry").doc(conf.col).set({naam:conf.naam,collection:conf.col,vak:"WO",lastSeen:firebase.firestore.FieldValue.serverTimestamp()},{merge:true});
+    setUploadStatus("ok","✅ Score opgeslagen! (ID: "+docRef.id.substring(0,8)+"…)");
+  }catch(e){
+    var uitleg=e.message||"Onbekende fout";
+    if(e.code==="permission-denied")uitleg="Geen schrijfrechten.";
+    else if(e.code==="unavailable")uitleg="Geen internet.";
+    setUploadStatus("error","❌ Opslaan mislukt: "+uitleg);
+  }
+}
+
+function speakText(text){
+  if(!window.speechSynthesis)return;
+  try{
+    var u=new SpeechSynthesisUtterance(text);
+    u.lang='nl-NL';
+    speechSynthesis.cancel();
+    speechSynthesis.speak(u);
+  }catch(e){}
+}
+
+// ── GELUID (Web Audio, geen externe bestanden nodig) ──
+var soundEnabled = (localStorage.getItem('klokapp_sound_enabled') !== 'false');
+var _audioCtx = null;
+function getAudioCtx(){
+  if(!_audioCtx){
+    try{_audioCtx = new (window.AudioContext||window.webkitAudioContext)();}catch(e){return null;}
+  }
+  if(_audioCtx.state==='suspended')_audioCtx.resume();
+  return _audioCtx;
+}
+function playTone(freq,startOffset,duration,vol){
+  var ctx=getAudioCtx();
+  if(!ctx)return;
+  var t0=ctx.currentTime+startOffset;
+  var osc=ctx.createOscillator();
+  var gain=ctx.createGain();
+  osc.type='sine';
+  osc.frequency.setValueAtTime(freq,t0);
+  gain.gain.setValueAtTime(0,t0);
+  gain.gain.linearRampToValueAtTime(vol||0.15,t0+0.02);
+  gain.gain.linearRampToValueAtTime(0,t0+duration);
+  osc.connect(gain);gain.connect(ctx.destination);
+  osc.start(t0);osc.stop(t0+duration+0.02);
+}
+function playCorrectSound(){
+  if(!soundEnabled)return;
+  playTone(523.25,0,0.16);
+  playTone(659.25,0.14,0.22);
+}
+function playIncorrectSound(){
+  if(!soundEnabled)return;
+  playTone(220,0,0.18,0.12);
+  playTone(196,0.15,0.22,0.12);
+}
+function toggleSound(){
+  soundEnabled=!soundEnabled;
+  localStorage.setItem('klokapp_sound_enabled',soundEnabled?'true':'false');
+  updateSoundButtons();
+  if(soundEnabled)playCorrectSound();
+}
+function updateSoundButtons(){
+  document.querySelectorAll('.sound-toggle-btn').forEach(function(btn){
+    btn.textContent=soundEnabled?'🔊':'🔇';
+    btn.title=soundEnabled?'Geluid staat aan. Klik om uit te zetten.':'Geluid staat uit. Klik om aan te zetten.';
+  });
+}
+
+// ── GEDEELDE KLOKTEKENING (statisch, gebruikt door module 2, 4 en 5) ──
+function renderStaticClock(canvas,h24,m){
+  if(!canvas)return;
+  var ctx=canvas.getContext('2d');
+  var size=canvas.clientWidth||canvas.width||150;
+  canvas.width=size;canvas.height=size;
+  var R=size/2,C=R;
+  ctx.clearRect(0,0,size,size);
+  ctx.textAlign='center';ctx.textBaseline='middle';
+  ctx.beginPath();ctx.arc(C,C,R*.94,0,2*Math.PI);ctx.strokeStyle='#3b82f6';ctx.lineWidth=R*.045;ctx.stroke();
+  ctx.font='bold '+(R*.2)+'px Inter,sans-serif';ctx.fillStyle='#1f2937';
+  for(var n=1;n<=12;n++){var a=(n*Math.PI/6)-(Math.PI/2);ctx.fillText(n,C+R*.72*Math.cos(a),C+R*.72*Math.sin(a));}
+  ctx.strokeStyle='#9ca3af';
+  for(var i=0;i<60;i++){
+    var a2=(i*Math.PI/30)-(Math.PI/2),ll,lw,sr;
+    if(i%5===0){ll=R*.06;lw=R*.02;sr=R*.9;}else{ll=R*.03;lw=R*.008;sr=R*.9;}
+    ctx.lineWidth=lw;ctx.beginPath();
+    ctx.moveTo(C+sr*Math.cos(a2),C+sr*Math.sin(a2));
+    ctx.lineTo(C+(sr-ll)*Math.cos(a2),C+(sr-ll)*Math.sin(a2));
+    ctx.stroke();
+  }
+  var ha=(h24%12*Math.PI/6)+(m/60*Math.PI/6)-(Math.PI/2),ma=(m*Math.PI/30)-(Math.PI/2);
+  function hand(len,w,ang,col){ctx.beginPath();ctx.strokeStyle=col;ctx.lineWidth=w;ctx.lineCap='round';ctx.moveTo(C-R*.12*Math.cos(ang),C-R*.12*Math.sin(ang));ctx.lineTo(C+len*Math.cos(ang),C+len*Math.sin(ang));ctx.stroke();}
+  hand(R*.78,R*.03,ma,'#000');hand(R*.5,R*.045,ha,'#000');
+  ctx.beginPath();ctx.arc(C,C,R*.045,0,2*Math.PI);ctx.fillStyle='#3b82f6';ctx.fill();
+}
+
+function fillSelect(sel,start,end,pad,step){
+  var ph=sel.querySelector("option[disabled][selected]");
+  sel.innerHTML="";if(ph)sel.appendChild(ph);
+  step=step||1;
+  for(var i=start;i<=end;i+=step){
+    var o=document.createElement("option");
+    o.value=pad?String(i).padStart(pad,"0"):String(i);
+    o.textContent=o.value;
+    sel.appendChild(o);
+  }
+}
+
+// ── LOGIN ──
+function klasLogin(){
+  var naam=(document.getElementById("klas-naam").value||"").trim().toLowerCase();
+  var code=(document.getElementById("klas-code").value||"").trim();
+  var err=document.getElementById("klas-err");
+  err.style.display="none";
+  if(!naam){err.textContent="Vul je voornaam in.";err.style.display="block";return;}
+  if(!code){err.textContent="Vul je code in.";err.style.display="block";return;}
+  var btn=document.getElementById("login-btn");
+  btn.textContent="Even wachten...";btn.disabled=true;
+  _db.collection("leerlingen").doc(naam).get().then(function(doc){
+    btn.textContent="Inloggen";btn.disabled=false;
+    if(!doc.exists){err.textContent="Naam niet gevonden.";err.style.display="block";return;}
+    var data=doc.data();
+    if(data.code!==code){err.textContent="Verkeerde code.";err.style.display="block";return;}
+    window._leerlingNaam=data.weergavenaam||(naam.charAt(0).toUpperCase()+naam.slice(1));
+    window._leerlingId=naam;
+    _currentUser={uid:naam,displayName:window._leerlingNaam};
+    _isGuest=false;
+    openApp(window._leerlingNaam,false);
+  }).catch(function(e){btn.textContent="Inloggen";btn.disabled=false;err.textContent="Fout: "+e.message;err.style.display="block";});
+}
+function klasGast(){_isGuest=true;_currentUser=null;window._leerlingId=null;window._leerlingNaam="Gast";openApp("Gast",true);}
+function openApp(naam,isGast){
+  document.getElementById("login-screen").style.display="none";
+  if(isGast){document.getElementById("gast-badge").style.display="block";document.getElementById("user-badge").style.display="none";}
+  else{document.getElementById("user-badge-naam").textContent=naam;document.getElementById("user-badge").style.display="flex";document.getElementById("gast-badge").style.display="none";}
+}
+function doLogout(){
+  _currentUser=null;_isGuest=false;window._leerlingId=null;window._leerlingNaam=null;
+  document.getElementById("login-screen").style.display="flex";
+  document.getElementById("user-badge").style.display="none";
+  document.getElementById("gast-badge").style.display="none";
+  document.getElementById("klas-naam").value="";document.getElementById("klas-code").value="";
+  document.getElementById("klas-err").style.display="none";
+  document.getElementById("login-btn").disabled=false;document.getElementById("login-btn").textContent="Inloggen";
+  goHome();
+}
+
+// ── NAVIGATIE TUSSEN MODULES ──
+var ALL_MODULE_SCREENS=["m1Screen","m2Screen","m3Screen","m4Screen","m5Screen","m6Screen"];
+function showModule(id){
+  document.getElementById("mainMenu").style.display="none";
+  ALL_MODULE_SCREENS.forEach(function(s){document.getElementById(s).style.display=(s===id+"Screen")?"block":"none";});
+  document.getElementById("home-btn").style.display="block";
+  if(id==="m1")tbResetLevelScreen();
+  if(id==="m2")unmResetLevelScreen();
+  if(id==="m5")voResetLevelScreen();
+  if(id==="m6")tdReset();
+}
+function goHome(){
+  ALL_MODULE_SCREENS.forEach(function(s){document.getElementById(s).style.display="none";});
+  document.getElementById("mainMenu").style.display="block";
+  document.getElementById("home-btn").style.display="none";
+  document.getElementById("upload-status").style.display="none";
+  if(typeof tbStopTimer==="function")tbStopTimer();
+}
+
+document.addEventListener("DOMContentLoaded",function(){
+  document.getElementById("login-btn").addEventListener("click",klasLogin);
+  document.getElementById("gast-btn").addEventListener("click",klasGast);
+  document.getElementById("logout-btn").addEventListener("click",doLogout);
+  document.getElementById("klas-naam").addEventListener("keypress",function(e){if(e.key==="Enter")klasLogin();});
+  document.getElementById("klas-code").addEventListener("keypress",function(e){if(e.key==="Enter")klasLogin();});
+  document.getElementById("home-btn").addEventListener("click",goHome);
+  document.querySelectorAll(".menu-btn").forEach(function(btn){
+    btn.addEventListener("click",function(){showModule(btn.dataset.module);});
+  });
+  updateSoundButtons();
+});
+</script>
+
+<!-- MODULE 1: TIJDSBEGRIPPEN -->
+<script>
+var tbConcepts=[
+  {term:"1 dag",value:"24 uur"},{term:"1 uur",value:"60 minuten"},{term:"1 minuut",value:"60 seconden"},
+  {term:"half uur",value:"30 minuten"},{term:"kwartier",value:"15 minuten"},{term:"3 kwartier",value:"45 minuten"},
+  {term:"halve dag",value:"12 uur"},{term:"1 week",value:"7 dagen"},{term:"1 weekend",value:"2 dagen"},
+  {term:"1 maand",value:"meestal 30 of 31 dagen"},{term:"februari",value:"28 dagen (29 in een schrikkeljaar)"},
+  {term:"1 seizoen",value:"3 maanden"},{term:"1 jaar is ... dagen",value:"365 dagen"},{term:"1 schrikkeljaar",value:"366 dagen"},
+  {term:"1 jaar is ... maanden",value:"12 maanden"},{term:"1 eeuw",value:"100 jaar"},{term:"1 decennium",value:"10 jaar"},
+  {term:"1 millennium",value:"1000 jaar"}
+];
+var tbBoard,tbNewBtn,tbMessage,tbTimerDisplay,tbFinalTime;
+var tbCard1=null,tbCard2=null,tbChecking=false,tbMatches=0,tbTotal=tbConcepts.length;
+var tbStartTime=0,tbInterval=null;
+var tbMode='oefen',tbCardMismatched=null,tbQuizLog=[],tbSessionStart=0;
+function tbFormatTime(sec){var m=Math.floor(sec/60),s=Math.floor(sec%60);return String(m).padStart(2,'0')+":"+String(s).padStart(2,'0');}
+function tbStartTimer(){if(tbInterval)clearInterval(tbInterval);tbStartTime=Date.now();tbInterval=setInterval(function(){tbTimerDisplay.textContent=tbFormatTime((Date.now()-tbStartTime)/1000);},1000);}
+function tbStopTimer(){if(tbInterval){clearInterval(tbInterval);tbInterval=null;var el=(Date.now()-tbStartTime)/1000;return tbFormatTime(el);}return tbTimerDisplay?tbTimerDisplay.textContent:"00:00";}
+function tbDisableAll(){tbBoard.querySelectorAll('.tb-card:not(.matched)').forEach(function(c){c.classList.add('disabled');});}
+function tbEnableAll(){tbBoard.querySelectorAll('.tb-card').forEach(function(c){c.classList.remove('disabled');});}
+function tbShuffle(arr){for(var i=arr.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=arr[i];arr[i]=arr[j];arr[j]=t;}return arr;}
+function tbResetLevelScreen(){
+  document.getElementById('tb-levelScreen').classList.remove('hidden');
+  document.getElementById('tb-exerciseScreen').classList.add('hidden');
+  if(tbInterval){clearInterval(tbInterval);tbInterval=null;}
+}
+function tbStart(mode){
+  tbMode=mode;
+  document.getElementById('tb-levelScreen').classList.add('hidden');
+  document.getElementById('tb-exerciseScreen').classList.remove('hidden');
+  tbInit();
+}
+function tbInit(){
+  tbBoard=document.getElementById('tb-board');tbNewBtn=document.getElementById('tb-new-btn');
+  tbMessage=document.getElementById('tb-message');tbTimerDisplay=document.getElementById('tb-timer');tbFinalTime=document.getElementById('tb-final-time');
+  tbStopTimer();tbTimerDisplay.textContent='00:00';
+  tbMessage.classList.add('hidden');tbMatches=0;tbCard1=null;tbCard2=null;tbChecking=false;
+  tbCardMismatched=new Set();tbQuizLog=[];tbSessionStart=Date.now();
+  var cards=[];
+  tbConcepts.forEach(function(pair,idx){var id="match-"+idx;cards.push({id:id,content:pair.term});cards.push({id:id,content:pair.value});});
+  tbShuffle(cards);
+  tbBoard.innerHTML='';
+  cards.forEach(function(cd){
+    var el=document.createElement('div');
+    el.className='tb-card';el.setAttribute('data-match',cd.id);el.textContent=cd.content;
+    el.addEventListener('click',tbHandleClick);
+    tbBoard.appendChild(el);
+  });
+  tbEnableAll();
+  tbStartTimer();
+}
+function tbHandleClick(e){
+  var c=e.currentTarget;
+  if(tbChecking||c.classList.contains('matched')||c.classList.contains('selected'))return;
+  if(!tbCard1){tbCard1=c;tbCard1.classList.add('selected');}
+  else if(!tbCard2){
+    tbCard2=c;tbCard2.classList.add('selected');tbChecking=true;tbDisableAll();
+    setTimeout(tbCheckMatch,1000);
+  }
+}
+function tbPairColor(matchId){
+  var idx=parseInt(matchId.split('-')[1],10);
+  var hue=Math.round((idx*360)/tbTotal);
+  return{bg:'hsl('+hue+',72%,88%)',border:'hsl('+hue+',55%,55%)',fg:'hsl('+hue+',65%,28%)'};
+}
+function tbCheckMatch(){
+  var c1=tbCard1,c2=tbCard2;
+  var m1=c1.getAttribute('data-match'),m2=c2.getAttribute('data-match');
+  if(m1===m2){
+    c1.classList.remove('selected');c2.classList.remove('selected');
+    c1.classList.add('matched');c2.classList.add('matched');
+    var col=tbPairColor(m1);
+    [c1,c2].forEach(function(c){c.style.background=col.bg;c.style.borderColor=col.border;c.style.color=col.fg;});
+    playCorrectSound();
+    if(tbMode==='toets'){
+      var firstTry=!tbCardMismatched.has(c1)&&!tbCardMismatched.has(c2);
+      var pairIdx=parseInt(m1.split('-')[1],10);
+      var pair=tbConcepts[pairIdx];
+      tbQuizLog.push({vraagNr:tbMatches+1,vraag:pair.term+' ↔ '+pair.value,antwoordLeerling:firstTry?'meteen gevonden':'gevonden na een foute poging',juistAntwoord:pair.term+' = '+pair.value,isJuist:firstTry});
+    }
+    tbMatches++;tbCard1=null;tbCard2=null;tbChecking=false;tbEnableAll();
+    if(tbMatches===tbTotal){
+      var t=tbStopTimer();
+      tbFinalTime.textContent="Je hebt alle paren gevonden in "+t+"! Klik op 'Opnieuw' om opnieuw te beginnen.";
+      tbMessage.classList.remove('hidden');
+      if(tbMode==='toets'){
+        var score=tbQuizLog.filter(function(q){return q.isJuist;}).length;
+        var timeSeconds=Math.round((Date.now()-tbSessionStart)/1000);
+        saveModuleScore('tijdsbegrippen',{mode:'Toets',score:score,totalQ:tbTotal,percentage:Math.round(score/tbTotal*100),timeSeconds:timeSeconds,hintsGebruikt:0,vragen:tbQuizLog});
+      }
+    }
+  }else{
+    playIncorrectSound();
+    if(tbMode==='toets'){tbCardMismatched.add(c1);tbCardMismatched.add(c2);}
+    setTimeout(function(){
+      c1.classList.remove('selected');c2.classList.remove('selected');
+      tbCard1=null;tbCard2=null;tbChecking=false;tbEnableAll();
+    },600);
+  }
+}
+document.addEventListener("DOMContentLoaded",function(){
+  document.getElementById('tb-new-btn').addEventListener('click',tbInit);
+});
+</script>
+
+<!-- MODULE 2: UREN NA DE MIDDAG -->
+<script>
+var unmScore=0,unmTarget=24,unmQuestion={},unmCanvas,unmQueue=[],unmQueueIndex=0,unmQuizLog=[],unmSessionStart=0,unmMode='oefen';
+function unmPeriodInfo(h24){
+  if(h24<=5)return["'s nachts"];
+  if(h24<=11)return["'s morgens","in de voormiddag","'s ochtends"];
+  if(h24===12)return["'s middags"];
+  if(h24<=17)return["'s namiddags","in de namiddag"];
+  return["'s avonds"];
+}
+function unmResetLevelScreen(){
+  document.getElementById('unm-levelScreen').classList.remove('hidden');
+  document.getElementById('unm-exerciseScreen').classList.add('hidden');
+}
+function unmStart(mode){
+  unmMode=mode;
+  unmScore=0;unmQueueIndex=0;unmQuizLog=[];unmSessionStart=Date.now();
+  unmQueue=tbShuffle([0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23]);
+  document.getElementById('unm-levelScreen').classList.add('hidden');
+  document.getElementById('unm-exerciseScreen').classList.remove('hidden');
+  fillSelect(document.getElementById('unm-inputHour'),0,23,2);
+  fillSelect(document.getElementById('unm-inputMin'),0,55,2,5);
+  unmUpdateScore();
+  unmNewQuestion();
+}
+function unmUpdateScore(){
+  document.getElementById('unm-score').textContent=unmScore+"/"+unmTarget;
+  document.getElementById('unm-progressBar').style.width=Math.round((unmQueueIndex/unmTarget)*100)+'%';
+}
+function unmNewQuestion(){
+  var h24=unmQueue[unmQueueIndex];
+  var min=Math.floor(Math.random()*12)*5; // 0,5,...,55
+  var words=unmPeriodInfo(h24);
+  var word=words[Math.floor(Math.random()*words.length)];
+  var h12=h24%12;if(h12===0)h12=12;
+  unmQuestion={h24:h24,min:min,word:word,h12:h12,answered:false,firstCorrect:false,givenAnswer:''};
+  document.getElementById('unm-instructie').textContent=
+    "Het is "+h12+" uur "+String(min).padStart(2,'0')+" "+word+". Wat is dat in het 24-uurstelsel?";
+  document.getElementById('unm-vraagLabel').textContent="Vraag "+(unmQueueIndex+1)+"/"+unmTarget;
+  unmCanvas=document.getElementById('unm-canvas');
+  renderStaticClock(unmCanvas,h12%12,min);
+  document.getElementById('unm-inputHour').selectedIndex=0;
+  document.getElementById('unm-inputMin').selectedIndex=0;
+  document.getElementById('unm-feedback').textContent='';
+  ['unm-inputHour','unm-inputMin'].forEach(function(id){document.getElementById(id).classList.remove('correct','incorrect');});
+  document.getElementById('unm-checkBtn').disabled=false;
+  document.getElementById('unm-checkBtn').textContent="Controleer";
+}
+function unmSpeak(){speakText(document.getElementById('unm-instructie').textContent);}
+function unmCheck(){
+  var hSel=document.getElementById('unm-inputHour'),mSel=document.getElementById('unm-inputMin');
+  var h=parseInt(hSel.value,10),m=parseInt(mSel.value,10);
+  hSel.classList.remove('correct','incorrect');mSel.classList.remove('correct','incorrect');
+  var hOk=h===unmQuestion.h24,mOk=m===unmQuestion.min;
+  hSel.classList.add(hOk?'correct':'incorrect');mSel.classList.add(mOk?'correct':'incorrect');
+  var isCorrect=hOk&&mOk;
+  if(!unmQuestion.answered){
+    unmQuestion.answered=true;
+    unmQuestion.firstCorrect=isCorrect;
+    unmQuestion.givenAnswer=(isNaN(h)?'--':String(h).padStart(2,'0'))+":"+(isNaN(m)?'--':String(m).padStart(2,'0'));
+  }
+  var fb=document.getElementById('unm-feedback');
+  if(isCorrect){
+    playCorrectSound();
+    if(unmQuestion.firstCorrect)unmScore++;
+    unmQuizLog.push({
+      vraagNr:unmQueueIndex+1,
+      vraag:document.getElementById('unm-instructie').textContent,
+      antwoordLeerling:unmQuestion.givenAnswer,
+      juistAntwoord:String(unmQuestion.h24).padStart(2,'0')+":"+String(unmQuestion.min).padStart(2,'0'),
+      isJuist:unmQuestion.firstCorrect
+    });
+    unmUpdateScore();
+    fb.className='mt-3 text-lg feedback-ok';fb.textContent='✅ Juist! Goed gedaan.';
+    document.getElementById('unm-checkBtn').disabled=true;
+    setTimeout(function(){
+      unmQueueIndex++;
+      if(unmQueueIndex>=unmTarget)unmComplete();else unmNewQuestion();
+    },1200);
+  }else{
+    playIncorrectSound();
+    fb.className='mt-3 text-lg feedback-fout';
+    fb.textContent='❌ Nog niet juist. Het juiste antwoord is '+String(unmQuestion.h24).padStart(2,'0')+":"+String(unmQuestion.min).padStart(2,'0')+". Probeer opnieuw.";
+    document.getElementById('unm-checkBtn').textContent="Probeer opnieuw";
+  }
+}
+function unmComplete(){
+  document.getElementById('unm-exerciseScreen').classList.add('hidden');
+  document.getElementById('unm-levelScreen').classList.remove('hidden');
+  if(unmMode==='toets'){
+    var timeSeconds=Math.round((Date.now()-unmSessionStart)/1000);
+    saveModuleScore('urennamiddag',{mode:'Toets: 24 vragen door elkaar',score:unmScore,totalQ:unmTarget,percentage:Math.round(unmScore/unmTarget*100),timeSeconds:timeSeconds,hintsGebruikt:0,vragen:unmQuizLog});
+  }
+}
+</script>
+<!-- MODULE 3: MINUTENWIJZER -->
+<script>
+var mwLevel=0,mwScore=0,mwTarget=10,mwTargetMinutes=0,mwSelectedMinutes=null;
+var mwSvg,mwMinHand,mwHandle,mwDragging=false,mwCurrentAngleMinutes=0,mwFaceBuilt=false;
+var mwQuestionsCount=0,mwCurrentAnswered=false,mwCurrentFirstCorrect=false,mwCurrentGivenAnswer=null,mwQuizLog=[],mwSessionStart=0;
+
+function mwSetupFace(){
+  mwSvg=document.getElementById('mw-svg');
+  mwSvg.innerHTML='';
+  var NS='http://www.w3.org/2000/svg';
+  function el(tag,attrs){var e=document.createElementNS(NS,tag);Object.keys(attrs).forEach(function(k){e.setAttribute(k,attrs[k]);});return e;}
+  mwSvg.appendChild(el('circle',{cx:150,cy:150,r:140,fill:'#fff',stroke:'#3b82f6','stroke-width':8}));
+  for(var n=1;n<=12;n++){
+    var a=(n*Math.PI/6)-(Math.PI/2);
+    var tx=150+108*Math.cos(a),ty=150+108*Math.sin(a);
+    var t=el('text',{x:tx,y:ty+7,'text-anchor':'middle','font-size':22,'font-weight':'bold',fill:'#1f2937'});
+    t.textContent=n;
+    mwSvg.appendChild(t);
+  }
+  for(var i=0;i<60;i+=5){
+    var a2=(i*Math.PI/30)-(Math.PI/2);
+    var sr=132,ll=(i%15===0)?16:10;
+    var x1=150+sr*Math.cos(a2),y1=150+sr*Math.sin(a2);
+    var x2=150+(sr-ll)*Math.cos(a2),y2=150+(sr-ll)*Math.sin(a2);
+    mwSvg.appendChild(el('line',{x1:x1,y1:y1,x2:x2,y2:y2,stroke:'#9ca3af','stroke-width':3}));
+  }
+  mwMinHand=el('line',{x1:150,y1:150,x2:150,y2:40,stroke:'#1d4ed8','stroke-width':6,'stroke-linecap':'round'});
+  mwSvg.appendChild(mwMinHand);
+  mwHandle=el('circle',{cx:150,cy:40,r:16,fill:'#1d4ed8',style:'cursor:grab;'});
+  mwSvg.appendChild(mwHandle);
+  mwSvg.appendChild(el('circle',{cx:150,cy:150,r:8,fill:'#111'}));
+  mwSvg.addEventListener('pointerdown',mwPointerDown);
+  mwSvg.addEventListener('pointermove',mwPointerMove);
+  mwSvg.addEventListener('pointerup',mwPointerUp);
+  mwSvg.addEventListener('pointercancel',mwPointerUp);
+  mwFaceBuilt=true;
+}
+function mwAngleFromEvent(evt){
+  var rect=mwSvg.getBoundingClientRect();
+  var x=(evt.clientX-rect.left)/rect.width*300;
+  var y=(evt.clientY-rect.top)/rect.height*300;
+  return Math.atan2(y-150,x-150);
+}
+function mwSetHandAngle(angle){
+  var len=110;
+  var x2=150+len*Math.cos(angle),y2=150+len*Math.sin(angle);
+  mwMinHand.setAttribute('x2',x2);mwMinHand.setAttribute('y2',y2);
+  mwHandle.setAttribute('cx',x2);mwHandle.setAttribute('cy',y2);
+}
+function mwAngleToMinutes(angle){
+  var deg=(angle*180/Math.PI)+90;
+  if(deg<0)deg+=360;
+  return deg/6;
+}
+function mwUpdateFromEvent(evt){
+  var angle=mwAngleFromEvent(evt);
+  mwSetHandAngle(angle);
+  mwCurrentAngleMinutes=mwAngleToMinutes(angle);
+}
+function mwPointerDown(evt){
+  var scr=document.getElementById('mw-exerciseScreen');
+  if(!scr||scr.classList.contains('hidden'))return;
+  mwDragging=true;
+  try{mwSvg.setPointerCapture(evt.pointerId);}catch(e){}
+  mwUpdateFromEvent(evt);
+  evt.preventDefault();
+}
+function mwPointerMove(evt){if(mwDragging)mwUpdateFromEvent(evt);}
+function mwPointerUp(evt){
+  if(!mwDragging)return;
+  mwDragging=false;
+  var snapped=Math.round(mwCurrentAngleMinutes/5)*5;
+  if(snapped>=60)snapped=0;
+  var snapAngle=(snapped/60*2*Math.PI)-Math.PI/2;
+  mwSetHandAngle(snapAngle);
+  mwSelectedMinutes=snapped;
+}
+function mwUpdateScoreDisplay(){document.getElementById('mw-score').textContent=mwScore+"/"+mwTarget;}
+function mwStart(level){
+  mwLevel=level;mwScore=0;mwSelectedMinutes=null;mwQuestionsCount=0;mwQuizLog=[];mwSessionStart=Date.now();
+  document.getElementById('mw-levelScreen').classList.add('hidden');
+  document.getElementById('mw-exerciseScreen').classList.remove('hidden');
+  if(!mwFaceBuilt)mwSetupFace();
+  mwUpdateScoreDisplay();
+  mwNextQuestion();
+}
+function mwNextQuestion(){
+  var opts=[5,10,15,20,25,30,35,40,45,50,55];
+  mwTargetMinutes=opts[Math.floor(Math.random()*opts.length)];
+  document.getElementById('mw-target').textContent=mwTargetMinutes;
+  mwSelectedMinutes=null;
+  mwCurrentAnswered=false;
+  mwSetHandAngle(-Math.PI/2);
+  document.getElementById('mw-feedback').textContent='';
+  document.getElementById('mw-checkBtn').classList.remove('hidden');
+  document.getElementById('mw-nextBtn').classList.add('hidden');
+}
+function mwSpeak(){speakText("Zet de minutenwijzer op "+mwTargetMinutes+" minuten.");}
+function mwCheck(){
+  var fb=document.getElementById('mw-feedback');
+  if(mwSelectedMinutes===null){fb.className='mt-3 text-lg feedback-fout';fb.textContent='Sleep of klik eerst de wijzer naar een plek op de klok.';return;}
+  var correct=mwSelectedMinutes===mwTargetMinutes;
+  if(!mwCurrentAnswered){mwCurrentAnswered=true;mwCurrentFirstCorrect=correct;mwCurrentGivenAnswer=mwSelectedMinutes;}
+  if(correct){
+    playCorrectSound();
+    if(mwLevel===2){
+      if(mwCurrentFirstCorrect)mwScore++;
+      mwQuestionsCount++;
+      mwQuizLog.push({vraagNr:mwQuestionsCount,vraag:'Zet de minutenwijzer op '+mwTargetMinutes+' minuten.',antwoordLeerling:mwCurrentGivenAnswer+' min.',juistAntwoord:mwTargetMinutes+' min.',isJuist:mwCurrentFirstCorrect});
+    }else{
+      mwScore++;
+    }
+    mwUpdateScoreDisplay();
+    fb.className='mt-3 text-lg feedback-ok';fb.textContent='✅ Juist! Goed gedaan.';
+    document.getElementById('mw-checkBtn').classList.add('hidden');
+    document.getElementById('mw-nextBtn').classList.remove('hidden');
+    var klaar=mwLevel===2?(mwQuestionsCount>=mwTarget):(mwScore>=mwTarget);
+    if(klaar){setTimeout(mwComplete,1000);}
+  }else{
+    playIncorrectSound();
+    fb.className='mt-3 text-lg feedback-fout';fb.textContent='❌ Nog niet juist. Probeer opnieuw.';
+  }
+}
+function mwNext(){
+  document.getElementById('mw-nextBtn').classList.add('hidden');
+  document.getElementById('mw-checkBtn').classList.remove('hidden');
+  mwNextQuestion();
+}
+function mwComplete(){
+  document.getElementById('mw-exerciseScreen').classList.add('hidden');
+  document.getElementById('mw-levelScreen').classList.remove('hidden');
+  if(mwLevel===2){
+    var timeSeconds=Math.round((Date.now()-mwSessionStart)/1000);
+    saveModuleScore('minutenwijzer',{mode:'Toets: 10 vragen',score:mwScore,totalQ:mwTarget,percentage:Math.round(mwScore/mwTarget*100),timeSeconds:timeSeconds,hintsGebruikt:0,vragen:mwQuizLog});
+  }
+}
+</script>
+
+<!-- MODULE 4: KLOK AFLEZEN -->
+<script>
+var kaLevel=0,kaScore=0,kaTarget=10,kaOptions=[],kaCorrectIndex=0,kaAnswered=false;
+var kaQuizLog=[],kaSessionStart=0;
+function kaShuffle(arr){for(var i=arr.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=arr[i];arr[i]=arr[j];arr[j]=t;}return arr;}
+function kaFormatVerbal(h24,m){
+  var h12=h24%12;if(h12===0)h12=12;
+  var nextH12=(h12%12)+1;
+  if(m===0)return h12+' uur';
+  if(m===30)return 'half '+nextH12;
+  if(m===15)return 'kwart over '+h12;
+  if(m===45)return 'kwart voor '+nextH12;
+  if(m>=1&&m<=29)return m+' over '+h12;
+  return (60-m)+' voor '+nextH12;
+}
+function kaGenerateTime(subLevel){
+  var h12=1+Math.floor(Math.random()*12);
+  var h24=h12%12;
+  var m;
+  if(subLevel===1)m=0;
+  else if(subLevel===2)m=30;
+  else if(subLevel===3)m=(Math.random()<0.5)?15:45;
+  else{var opts=[5,10,15,20,25,30,35,40,45,50,55];m=opts[Math.floor(Math.random()*opts.length)];}
+  return{h24:h24,m:m};
+}
+function kaUpdateScore(){document.getElementById('ka-score').textContent=kaScore+"/"+kaTarget;}
+function kaStart(level){
+  kaLevel=level;kaScore=0;
+  if(level===5){kaQuizLog=[];kaSessionStart=Date.now();}
+  document.getElementById('ka-levelScreen').classList.add('hidden');
+  document.getElementById('ka-exerciseScreen').classList.remove('hidden');
+  kaUpdateScore();
+  kaNextQuestion();
+}
+function kaNextQuestion(){
+  var subLevel=kaLevel===5?(1+Math.floor(Math.random()*4)):kaLevel;
+  var correct=kaGenerateTime(subLevel);
+  var used={};used[correct.h24+'_'+correct.m]=true;
+  var options=[correct];
+  var attempts=0;
+  while(options.length<4&&attempts<300){
+    attempts++;
+    var cand=kaGenerateTime(subLevel);
+    var key=cand.h24+'_'+cand.m;
+    if(used[key])continue;
+    used[key]=true;
+    options.push(cand);
+  }
+  kaShuffle(options);
+  kaCorrectIndex=options.findIndex(function(o){return o.h24===correct.h24&&o.m===correct.m;});
+  kaOptions=options;
+  kaAnswered=false;
+  var label=kaFormatVerbal(correct.h24,correct.m);
+  document.getElementById('ka-instructie').innerHTML='Klik op het uurwerk dat <b>"'+label+'"</b> toont.';
+  var grid=document.getElementById('ka-grid');
+  grid.innerHTML='';
+  options.forEach(function(opt,idx){
+    var canvas=document.createElement('canvas');
+    canvas.className='clock-canvas-sm';
+    canvas.addEventListener('click',function(){kaAnswer(idx);});
+    grid.appendChild(canvas);
+  });
+  var canvases=grid.querySelectorAll('canvas');
+  canvases.forEach(function(c,idx){renderStaticClock(c,options[idx].h24,options[idx].m);});
+  document.getElementById('ka-feedback').textContent='';
+  document.getElementById('ka-nextBtn').classList.add('hidden');
+}
+function kaSpeak(){speakText(document.getElementById('ka-instructie').textContent);}
+function kaAnswer(idx){
+  if(kaAnswered)return;
+  kaAnswered=true;
+  var canvases=document.querySelectorAll('#ka-grid canvas');
+  var correct=idx===kaCorrectIndex;
+  var fb=document.getElementById('ka-feedback');
+  var correctLabel=kaFormatVerbal(kaOptions[kaCorrectIndex].h24,kaOptions[kaCorrectIndex].m);
+  if(correct){
+    canvases[idx].classList.add('clock-choice','correct');
+    kaScore++;kaUpdateScore();
+    playCorrectSound();
+    fb.className='mt-2 text-lg text-center feedback-ok';fb.textContent='✅ Juist! Goed gedaan.';
+  }else{
+    canvases[idx].classList.add('clock-choice','incorrect');
+    canvases[kaCorrectIndex].classList.add('clock-choice','correct');
+    playIncorrectSound();
+    fb.className='mt-2 text-lg text-center feedback-fout';fb.textContent='❌ Niet juist. Dit is het juiste uurwerk.';
+  }
+  if(kaLevel===5){
+    kaQuizLog.push({vraagNr:kaQuizLog.length+1,vraag:'Klik op het uurwerk dat "'+correctLabel+'" toont.',antwoordLeerling:kaFormatVerbal(kaOptions[idx].h24,kaOptions[idx].m),juistAntwoord:correctLabel,isJuist:correct});
+  }
+  document.getElementById('ka-nextBtn').classList.remove('hidden');
+  if(kaScore>=kaTarget){
+    setTimeout(function(){kaLevel===5?kaComplete():kaCompletePractice();},1300);
+  }
+}
+function kaNext(){kaNextQuestion();}
+function kaComplete(){
+  document.getElementById('ka-exerciseScreen').classList.add('hidden');
+  document.getElementById('ka-levelScreen').classList.remove('hidden');
+  var timeSeconds=Math.round((Date.now()-kaSessionStart)/1000);
+  saveModuleScore('aflezen',{mode:'Toets: door elkaar',score:kaScore,totalQ:kaTarget,percentage:Math.round(kaScore/kaTarget*100),timeSeconds:timeSeconds,hintsGebruikt:0,vragen:kaQuizLog});
+}
+function kaCompletePractice(){
+  document.getElementById('ka-exerciseScreen').classList.add('hidden');
+  document.getElementById('ka-levelScreen').classList.remove('hidden');
+}
+</script>
+
+<!-- MODULE 5: VOOR EN OVER -->
+<script>
+var voScore=0,voCurrentHour24=0,voCurrentMinute=0,voGameActive=true,voSelectedLevel=0,voTARGET=10;
+var voQuizLog=[],voIsToetsMode=false,voVoorCount=0,voOverCount=0,voCanvas,voDropdownsReady=false,voSessionStart=0;
+function voPopulateDropdowns(){
+  fillSelect(document.getElementById("vo-inputHourAM"),0,11,2);
+  fillSelect(document.getElementById("vo-inputMinuteAM"),0,59,2);
+  fillSelect(document.getElementById("vo-inputHourPM"),12,23,2);
+  fillSelect(document.getElementById("vo-inputMinutePM"),0,59,2);
+  fillSelect(document.getElementById("vo-inputVerbalMinute"),1,30,0);
+  fillSelect(document.getElementById("vo-inputVerbalHour"),1,12,0);
+  voDropdownsReady=true;
+}
+function voGenerateRandomTime(){
+  var s,e;
+  if(voSelectedLevel===1){s=1;e=29;}
+  else if(voSelectedLevel===2){s=31;e=59;}
+  else if(voSelectedLevel===3){if(Math.random()<.5){s=1;e=29;}else{s=31;e=59;}}
+  else if(voSelectedLevel===4){
+    var helft=Math.ceil(voTARGET/2);
+    if(voOverCount<helft&&voVoorCount>=helft){s=1;e=29;}
+    else if(voVoorCount<helft&&voOverCount>=helft){s=31;e=59;}
+    else if(Math.random()<.5){s=1;e=29;}
+    else{s=31;e=59;}
+  }
+  voCurrentHour24=Math.floor(Math.random()*24);
+  voCurrentMinute=Math.floor(Math.random()*(e-s+1))+s;
+}
+function voGetVerbalTime(h24,m){
+  var h12=h24%12||12,vm,vr,vh;
+  if(m>=1&&m<=30){vm=m;vr="over";vh=h12;}
+  else{vm=60-m;vr="voor";vh=(h12%12)+1;}
+  return{verbalMinute:vm,verbalRelation:vr,verbalHour:vh,h24:h24,m:m};
+}
+function voNewQuestion(){
+  if(!voGameActive)return;
+  voGenerateRandomTime();
+  voCanvas=document.getElementById("vo-clockCanvas");
+  renderStaticClock(voCanvas,voCurrentHour24,voCurrentMinute);
+  document.getElementById("vo-answerForm").reset();
+  document.getElementById("vo-feedbackBox").classList.add("hidden");
+  document.getElementById("vo-submitButton").classList.remove("hidden");
+  document.getElementById("vo-nextQuestionButton").classList.add("hidden");
+  document.querySelectorAll("#vo-answerForm select").forEach(function(el){el.disabled=false;});
+  var lbls=["","Niveau 1: over","Niveau 2: voor","Niveau 3: voor & over","🏆 Toets: alles door elkaar"];
+  document.getElementById("vo-statusMessage").textContent=lbls[voSelectedLevel]||"";
+}
+function voUpdateScore(isCorrect){
+  if(!voGameActive)return;
+  if(isCorrect)voScore++;
+  document.getElementById("vo-scoreDisplay").textContent="Score: "+voScore;
+  if(voScore>=voTARGET){
+    voGameActive=false;
+    document.getElementById("vo-gameContainer").classList.add("hidden");
+    document.getElementById("vo-endScreen").classList.remove("hidden");
+    if(voIsToetsMode){
+      var juist=voQuizLog.filter(function(v){return v.isJuist;}).length;
+      var total=voQuizLog.length;
+      var pct=Math.round(juist/total*100);
+      var foutenVoor=voQuizLog.filter(function(v){return !v.isJuist&&v.relatie==="voor";}).length;
+      var foutenOver=voQuizLog.filter(function(v){return !v.isJuist&&v.relatie==="over";}).length;
+      var extraOefenen=[];
+      if(foutenVoor>0)extraOefenen.push("'voor' ("+foutenVoor+"x fout)");
+      if(foutenOver>0)extraOefenen.push("'over' ("+foutenOver+"x fout)");
+      var timeSeconds=Math.round((Date.now()-voSessionStart)/1000);
+      saveModuleScore('vooroverl',{
+        mode:'Toets: alles door elkaar',score:juist,totalQ:total,percentage:pct,timeSeconds:timeSeconds,hintsGebruikt:0,
+        foutenAnalyse:{extraOefenen:extraOefenen,foutenPerCategorie:{voor:foutenVoor,over:foutenOver}},
+        vragen:voQuizLog.map(function(v,i){return{vraagNr:i+1,vraag:v.vraag||"",categorie:v.relatie==="voor"?"voor":"over",antwoordLeerling:v.antwoord||"(leeg)",juistAntwoord:v.juistAntwoord||"",isJuist:v.isJuist||false,hintGebruikt:false,punten:v.isJuist?1:0,tijdSeconden:0};})
+      });
+    }
+  }
+}
+function voCheckAnswer(event){
+  event.preventDefault();if(!voGameActive)return;
+  var ct=voGetVerbalTime(voCurrentHour24,voCurrentMinute);
+  var iHAM=parseInt(document.getElementById("vo-inputHourAM").value,10);
+  var iMAM=parseInt(document.getElementById("vo-inputMinuteAM").value,10);
+  var iHPM=parseInt(document.getElementById("vo-inputHourPM").value,10);
+  var iMPM=parseInt(document.getElementById("vo-inputMinutePM").value,10);
+  var iVM=parseInt(document.getElementById("vo-inputVerbalMinute").value,10);
+  var iVR=document.getElementById("vo-inputVerbalRelation").value;
+  var iVH=parseInt(document.getElementById("vo-inputVerbalHour").value,10);
+  var amOk=!isNaN(iHAM)&&!isNaN(iMAM),pmOk=!isNaN(iHPM)&&!isNaN(iMPM),verbOk=!isNaN(iVM)&&!isNaN(iVH)&&iVR!=="";
+  var minOk=(iMAM===ct.m)&&(iMPM===ct.m);
+  var hourOk=false;
+  if(amOk&&pmOk&&minOk){if(ct.h24<=11)hourOk=(iHAM===ct.h24);else hourOk=(iHPM===ct.h24);}
+  var digOk=amOk&&pmOk&&minOk&&hourOk;
+  var verOk=verbOk&&iVM===ct.verbalMinute&&iVR===ct.verbalRelation&&iVH===ct.verbalHour;
+  var isCorrect=digOk&&verOk;
+  if(voSelectedLevel===4){if(ct.verbalRelation==="voor")voVoorCount++;else voOverCount++;}
+  var c24=String(ct.h24).padStart(2,"0")+":"+String(ct.m).padStart(2,"0");
+  var cVerb=ct.verbalMinute+" "+ct.verbalRelation+" "+ct.verbalHour;
+  var antw=verbOk?(iVM+" "+iVR+" "+iVH):"(onvolledig)";
+  voQuizLog.push({vraag:"Klok "+c24+" = "+cVerb,antwoord:antw,juistAntwoord:cVerb,relatie:ct.verbalRelation,isJuist:isCorrect});
+  var fb=document.getElementById("vo-feedbackBox");fb.classList.remove("hidden");
+  var cMD=String(ct.m).padStart(2,"0"),cAM,cPM;
+  if(ct.h24<=11){cAM=String(ct.h24).padStart(2,"0")+":"+cMD;cPM="(12 t/m 23 blok leeg laten)";}
+  else{cAM="(0 t/m 11 blok leeg laten)";cPM=String(ct.h24).padStart(2,"0")+":"+cMD;}
+  var ftxt="";
+  if(isCorrect){playCorrectSound();fb.className="p-3 rounded-lg font-medium bg-green-100 text-green-700 text-center";ftxt="✅ Juist! Goed gedaan.";}
+  else{
+    playIncorrectSound();
+    fb.className="p-3 rounded-lg font-medium bg-red-100 text-red-700 text-center";
+    ftxt=(!amOk||!pmOk||!verbOk)?"❌ Vul eerst alle velden in.":"❌ Nog niet juist.";
+    ftxt+="<br>De juiste tijd is: <b>"+c24+"</b>";
+    ftxt+="<br>Digitale klok (0-11): <b>"+cAM+"</b>";
+    ftxt+="<br>Digitale klok (12-23): <b>"+cPM+"</b>";
+    ftxt+="<br>Verbale klok: <b>"+cVerb+"</b>";
+  }
+  fb.innerHTML=ftxt;
+  voUpdateScore(isCorrect);
+  document.getElementById("vo-submitButton").classList.add("hidden");
+  document.getElementById("vo-nextQuestionButton").classList.remove("hidden");
+  document.querySelectorAll("#vo-answerForm select").forEach(function(el){el.disabled=true;});
+}
+function voResetLevelScreen(){
+  voScore=0;voGameActive=true;voSelectedLevel=0;voQuizLog=[];voVoorCount=0;voOverCount=0;voIsToetsMode=false;
+  document.getElementById("vo-startScreen").classList.remove("hidden");
+  document.getElementById("vo-gameContainer").classList.add("hidden");
+  document.getElementById("vo-endScreen").classList.add("hidden");
+  if(!voDropdownsReady)voPopulateDropdowns();
+}
+function voStartGame(level){
+  voSelectedLevel=level;voIsToetsMode=(level===4);
+  voQuizLog=[];voVoorCount=0;voOverCount=0;voScore=0;voGameActive=true;voSessionStart=Date.now();
+  document.getElementById("vo-scoreDisplay").textContent="Score: 0";
+  document.getElementById("vo-startScreen").classList.add("hidden");
+  document.getElementById("vo-gameContainer").classList.remove("hidden");
+  voNewQuestion();
+}
+document.addEventListener("DOMContentLoaded",function(){
+  document.getElementById("vo-answerForm").addEventListener("submit",voCheckAnswer);
+  document.getElementById("vo-nextQuestionButton").addEventListener("click",voNewQuestion);
+  document.getElementById("vo-restartButton").addEventListener("click",voResetLevelScreen);
+  document.querySelectorAll(".vo-level-button").forEach(function(btn){
+    btn.addEventListener("click",function(e){voStartGame(parseInt(e.currentTarget.dataset.level,10));});
+  });
+});
+</script>
+
+<!-- MODULE 6: TIJDSDUUR BEREKENEN -->
+<script>
+var tdCurrentLevel=0,tdScore=0,tdMaxScore=10,tdCurrentQuestion={},tdMAX_HOUR=23,tdIsToets=false;
+var tdQuestionsCount=0,tdCurrentAnswered=false,tdCurrentFirstCorrect=false,tdCurrentGivenAnswer='',tdDetailedLog=[],tdSessionStart=0;
+function tdFormatTime(v){return v.toString().padStart(2,'0');}
+function tdGenerateRandomTime(){
+  var hour=Math.floor(Math.random()*(tdMAX_HOUR+1));
+  var minute=Math.floor(Math.random()*60);
+  return{hour:hour,minute:minute};
+}
+function tdGenerateQuestion(level){
+  var startTime,stopTime,totalDurationMin,minToNextHour=0,fullHours=0,remainingMin=0,validQuestion=false,effLevel=level;
+  while(!validQuestion){
+    startTime=tdGenerateRandomTime();stopTime=tdGenerateRandomTime();
+    if(stopTime.hour<startTime.hour||(stopTime.hour===startTime.hour&&stopTime.minute<=startTime.minute)){stopTime.hour+=24;}
+    var startTotalMinutes=startTime.hour*60+startTime.minute;
+    var stopTotalMinutes=stopTime.hour*60+stopTime.minute;
+    totalDurationMin=stopTotalMinutes-startTotalMinutes;
+    if(totalDurationMin<=0)continue;
+    minToNextHour=(60-startTime.minute)%60;
+    remainingMin=stopTime.minute%60;
+    var remainingDurationAfterMinToNext=totalDurationMin-minToNextHour;
+    var durationForFullHours=remainingDurationAfterMinToNext-remainingMin;
+    fullHours=Math.floor(durationForFullHours/60);
+    var checkTotal=minToNextHour+(fullHours*60)+remainingMin;
+    if(checkTotal!==totalDurationMin)continue;
+    effLevel=(level===4)?(1+Math.floor(Math.random()*3)):level;
+    if(effLevel===1){if(stopTime.hour%24===startTime.hour%24&&totalDurationMin>0&&totalDurationMin<60)validQuestion=true;}
+    else if(effLevel===2){if(fullHours===0&&totalDurationMin>60&&totalDurationMin<120)validQuestion=true;}
+    else if(effLevel===3){if(fullHours>0)validQuestion=true;}
+  }
+  var displayStopHour=stopTime.hour%24;
+  return{
+    startTime:{hour:startTime.hour%24,minute:startTime.minute},
+    stopTime:{hour:displayStopHour,minute:stopTime.minute},
+    totalDurationMin:totalDurationMin,minToNextHour:minToNextHour,fullHours:fullHours,remainingMin:remainingMin,
+    effLevel:effLevel
+  };
+}
+function tdStart(level){
+  tdCurrentLevel=level;tdScore=0;tdIsToets=(level===4);tdQuestionsCount=0;tdDetailedLog=[];tdSessionStart=Date.now();
+  document.getElementById('td-levelScreen').classList.add('hidden');
+  document.getElementById('td-exerciseScreen').classList.remove('hidden');
+  document.getElementById('td-levelDisplay').textContent=tdIsToets?'Toets':level;
+  tdUpdateScoreDisplay();
+  tdLoadNewQuestion();
+}
+function tdSetupExerciseScreen(){
+  [document.getElementById('td-inputN1'),document.getElementById('td-inputMinToNext'),document.getElementById('td-inputFullHours'),document.getElementById('td-inputRemaining'),document.getElementById('td-inputTotalN2')].forEach(function(input){input.value='';input.classList.remove('correct','incorrect');input.disabled=false;});
+  [document.getElementById('td-inputMinToNext'),document.getElementById('td-inputFullHours'),document.getElementById('td-inputRemaining')].forEach(function(input){input.oninput=null;});
+  var dl=tdCurrentQuestion.effLevel;
+  var fullHoursStep=document.getElementById('td-fullHoursStep');
+  var inputTotalN2=document.getElementById('td-inputTotalN2');
+  var calcTotalEl=document.getElementById('td-calculatedTotal');
+  var totalInfo=document.getElementById('td-totalInfo');
+  if(dl===1){
+    document.getElementById('td-steps-n23').classList.add('hidden');
+    document.getElementById('td-step-n1').classList.remove('hidden');
+    totalInfo.classList.add('hidden');
+  }else{
+    document.getElementById('td-steps-n23').classList.remove('hidden');
+    document.getElementById('td-step-n1').classList.add('hidden');
+    totalInfo.classList.remove('hidden');
+    if(dl===2){
+      fullHoursStep.classList.add('hidden');
+      document.getElementById('td-inputFullHours').value=0;
+      inputTotalN2.style.display='inline-block';
+      calcTotalEl.style.display='none';
+      totalInfo.textContent="(Tel de minuten uit de stappen op en vul hier het totaal in.)";
+    }else{
+      fullHoursStep.classList.remove('hidden');
+      document.getElementById('td-inputFullHours').value='';
+      inputTotalN2.style.display='none';
+      calcTotalEl.style.display='inline-block';
+      totalInfo.textContent="(Dit is de som van de stappen.)";
+      [document.getElementById('td-inputMinToNext'),document.getElementById('td-inputFullHours'),document.getElementById('td-inputRemaining')].forEach(function(input){input.oninput=tdUpdateCalculatedTotal;});
+    }
+  }
+}
+function tdUpdateCalculatedTotal(){
+  var minToNext=parseInt(document.getElementById('td-inputMinToNext').value,10)||0;
+  var fullHours=parseInt(document.getElementById('td-inputFullHours').value,10)||0;
+  var remainingMin=parseInt(document.getElementById('td-inputRemaining').value,10)||0;
+  var total=minToNext+(fullHours*60)+remainingMin;
+  if(tdCurrentQuestion.effLevel===3)document.getElementById('td-calculatedTotal').textContent=total>0?total:'0';
+  return total;
+}
+function tdLoadNewQuestion(){
+  document.getElementById('td-feedback').textContent='';
+  document.getElementById('td-checkButton').disabled=false;
+  document.getElementById('td-checkButton').textContent='Controleer Antwoord';
+  tdCurrentAnswered=false;
+  tdCurrentQuestion=tdGenerateQuestion(tdCurrentLevel);
+  document.getElementById('td-startTime').textContent=tdFormatTime(tdCurrentQuestion.startTime.hour)+":"+tdFormatTime(tdCurrentQuestion.startTime.minute);
+  document.getElementById('td-stopTime').textContent=tdFormatTime(tdCurrentQuestion.stopTime.hour)+":"+tdFormatTime(tdCurrentQuestion.stopTime.minute);
+  tdSetupExerciseScreen();
+  if(tdCurrentQuestion.effLevel>1){
+    document.getElementById('td-nextHour').textContent=tdFormatTime((tdCurrentQuestion.startTime.hour+1)%24);
+    if(tdCurrentQuestion.effLevel===3)document.getElementById('td-calculatedTotal').textContent='0';
+  }
+}
+function tdCheck(){
+  var isCorrect=false;
+  [document.getElementById('td-inputN1'),document.getElementById('td-inputMinToNext'),document.getElementById('td-inputFullHours'),document.getElementById('td-inputRemaining'),document.getElementById('td-inputTotalN2')].forEach(function(input){input.classList.remove('correct','incorrect');});
+  var dl=tdCurrentQuestion.effLevel;
+  if(dl===1){
+    var totalMinInput=parseInt(document.getElementById('td-inputN1').value,10);
+    if(totalMinInput===tdCurrentQuestion.totalDurationMin){isCorrect=true;document.getElementById('td-inputN1').classList.add('correct');}
+    else{document.getElementById('td-inputN1').classList.add('incorrect');}
+  }else{
+    var minToNextInput=parseInt(document.getElementById('td-inputMinToNext').value,10);
+    var remainingMinInput=parseInt(document.getElementById('td-inputRemaining').value,10);
+    var fullHoursInput=dl===2?0:parseInt(document.getElementById('td-inputFullHours').value,10);
+    var totalDurationInput=dl===2?parseInt(document.getElementById('td-inputTotalN2').value,10):-1;
+    var step1Correct=minToNextInput===tdCurrentQuestion.minToNextHour;
+    var step3Correct=remainingMinInput===tdCurrentQuestion.remainingMin;
+    var step2Correct=true;
+    document.getElementById('td-inputMinToNext').classList.add(step1Correct?'correct':'incorrect');
+    document.getElementById('td-inputRemaining').classList.add(step3Correct?'correct':'incorrect');
+    if(dl===3){
+      step2Correct=fullHoursInput===tdCurrentQuestion.fullHours;
+      document.getElementById('td-inputFullHours').classList.add(step2Correct?'correct':'incorrect');
+    }
+    if(dl===2){
+      var totalInputCorrect=totalDurationInput===tdCurrentQuestion.totalDurationMin;
+      isCorrect=step1Correct&&step3Correct&&totalInputCorrect;
+      document.getElementById('td-inputTotalN2').classList.add(totalInputCorrect?'correct':'incorrect');
+    }else{
+      isCorrect=step1Correct&&step2Correct&&step3Correct;
+    }
+  }
+  var userTotal=(dl===1)?parseInt(document.getElementById('td-inputN1').value,10)
+    :(dl===2)?parseInt(document.getElementById('td-inputTotalN2').value,10)
+    :tdUpdateCalculatedTotal();
+  if(!tdCurrentAnswered){
+    tdCurrentAnswered=true;
+    tdCurrentFirstCorrect=isCorrect;
+    tdCurrentGivenAnswer=isNaN(userTotal)?'(leeg)':(userTotal+' minuten');
+  }
+  var fb=document.getElementById('td-feedback');
+  if(isCorrect){
+    playCorrectSound();
+    fb.textContent='✅ Super! Dat is juist.';fb.className='mt-3 text-lg font-bold feedback-ok';
+    document.getElementById('td-checkButton').disabled=true;
+    if(tdIsToets){
+      if(tdCurrentFirstCorrect)tdScore++;
+      tdQuestionsCount++;
+      tdDetailedLog.push({
+        vraagNr:tdQuestionsCount,
+        vraag:'Van '+tdFormatTime(tdCurrentQuestion.startTime.hour)+':'+tdFormatTime(tdCurrentQuestion.startTime.minute)+' tot '+tdFormatTime(tdCurrentQuestion.stopTime.hour)+':'+tdFormatTime(tdCurrentQuestion.stopTime.minute),
+        antwoordLeerling:tdCurrentGivenAnswer,
+        juistAntwoord:tdCurrentQuestion.totalDurationMin+' minuten',
+        isJuist:tdCurrentFirstCorrect
+      });
+    }else{
+      tdScore++;
+    }
+    tdUpdateScoreDisplay();
+    setTimeout(function(){
+      var klaar=tdIsToets?(tdQuestionsCount>=tdMaxScore):(tdScore>=tdMaxScore);
+      if(klaar)tdShowEnd();else tdLoadNewQuestion();
+    },1300);
+  }else{
+    playIncorrectSound();
+    fb.textContent='❌ Nog niet helemaal juist. Kijk goed na en probeer opnieuw.';fb.className='mt-3 text-lg font-bold feedback-fout';
+    document.getElementById('td-checkButton').textContent='Probeer opnieuw';
+  }
+}
+function tdUpdateScoreDisplay(){document.getElementById('td-scoreDisplay').textContent=tdScore+"/"+tdMaxScore;}
+function tdShowEnd(){
+  document.getElementById('td-exerciseScreen').classList.add('hidden');
+  document.getElementById('td-endScreen').classList.remove('hidden');
+  document.getElementById('td-finalLevel').textContent=tdIsToets?'Toets':tdCurrentLevel;
+  if(tdIsToets){
+    var timeSeconds=Math.round((Date.now()-tdSessionStart)/1000);
+    var totaal=tdDetailedLog.length,juist=tdDetailedLog.filter(function(q){return q.isJuist;}).length;
+    saveModuleScore('tijdsduur',{mode:'Toets: alles door elkaar',score:juist,totalQ:totaal,percentage:Math.round(juist/totaal*100),timeSeconds:timeSeconds,hintsGebruikt:0,vragen:tdDetailedLog});
+  }
+}
+function tdReset(){
+  tdCurrentLevel=0;tdScore=0;tdCurrentQuestion={};tdDetailedLog=[];tdIsToets=false;tdQuestionsCount=0;
+  document.getElementById('td-levelScreen').classList.remove('hidden');
+  document.getElementById('td-exerciseScreen').classList.add('hidden');
+  document.getElementById('td-endScreen').classList.add('hidden');
+}
+</script>
+</body>
+</html>
